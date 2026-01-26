@@ -1,0 +1,58 @@
+{
+  "metadata": {
+    "registryVersion": "1.0.0",
+    "schemaVersion": "1.0.0",
+    "publishedAt": "2026-01-25T00:00:00Z",
+    "channel": "stable",
+    "sequence": 1,
+    "publisher": "CantonConnect"
+  },
+  "wallets": [
+    {
+      "id": "console",
+      "name": "Console Wallet",
+      "description": "Official Console Wallet for Canton Network",
+      "homepage": "https://console.digitalasset.com",
+      "icon": "https://console.digitalasset.com/icon.png",
+      "supportedNetworks": ["devnet", "testnet", "mainnet"],
+      "capabilities": {
+        "signMessage": true,
+        "signTransaction": true,
+        "submitTransaction": true,
+        "transactionStatus": true,
+        "switchNetwork": false,
+        "multiParty": false
+      },
+      "adapter": {
+        "type": "@cantonconnect/adapter-console"
+      },
+      "installation": {
+        "windowProperty": "consoleWallet"
+      },
+      "sdkVersion": ">=0.1.0"
+    },
+    {
+      "id": "loop",
+      "name": "5N Loop",
+      "description": "5N Loop Wallet for Canton Network",
+      "homepage": "https://cantonloop.com",
+      "icon": "https://cantonloop.com/icon.png",
+      "supportedNetworks": ["devnet", "testnet", "mainnet"],
+      "capabilities": {
+        "signMessage": true,
+        "signTransaction": false,
+        "submitTransaction": true,
+        "transactionStatus": true,
+        "switchNetwork": false,
+        "multiParty": false
+      },
+      "adapter": {
+        "type": "@cantonconnect/adapter-loop"
+      },
+      "installation": {
+        "scriptTag": "@fivenorth/loop-sdk"
+      },
+      "sdkVersion": ">=0.1.0"
+    }
+  ]
+}

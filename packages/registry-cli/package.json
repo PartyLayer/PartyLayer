@@ -1,0 +1,23 @@
+{
+  "name": "@cantonconnect/registry-cli",
+  "version": "0.1.2",
+  "description": "CLI tool for managing CantonConnect wallet registry",
+  "type": "module",
+  "bin": {
+    "cantonconnect-registry": "./dist/index.js"
+  },
+  "main": "./dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "commander": "^14.0.2",
+    "@cantonconnect/registry-client": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "tsx": "^4.21.0",
+    "typescript": "^5.3.3"
+  }
+}

@@ -1,0 +1,53 @@
+{
+  "name": "@cantonconnect/sdk",
+  "version": "0.2.1",
+  "description": "Main SDK for CantonConnect - WalletConnect-like experience for Canton Network",
+  "main": "./dist/index.js",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "clean": "rm -rf dist",
+    "lint": "eslint src --ext .ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "keywords": [
+    "canton",
+    "wallet",
+    "sdk",
+    "dapp"
+  ],
+  "author": "CantonConnect Contributors",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/cayvox/CantonConnect.git",
+    "directory": "packages/sdk"
+  },
+  "homepage": "https://github.com/cayvox/CantonConnect#readme",
+  "bugs": {
+    "url": "https://github.com/cayvox/CantonConnect/issues"
+  },
+  "dependencies": {
+    "@cantonconnect/core": "workspace:*",
+    "@cantonconnect/registry-client": "workspace:*",
+    "@cantonconnect/adapter-console": "workspace:*",
+    "@cantonconnect/adapter-loop": "workspace:*",
+    "@cantonconnect/adapter-cantor8": "workspace:*",
+    "@cantonconnect/adapter-bron": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "typescript": "^5.3.3"
+  }
+}

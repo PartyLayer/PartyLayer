@@ -1,0 +1,107 @@
+{
+  "metadata": {
+    "version": "1.0.0",
+    "schemaVersion": "1.0.0",
+    "timestamp": 1737849600000,
+    "publisher": "CantonConnect",
+    "previousVersion": null
+  },
+  "wallets": [
+    {
+      "id": "console",
+      "name": "Console Wallet",
+      "description": "Official Console Wallet for Canton Network",
+      "homepage": "https://console.digitalasset.com",
+      "icon": "https://console.digitalasset.com/icon.png",
+      "supportedNetworks": ["mainnet", "devnet", "local"],
+      "capabilities": {
+        "signMessage": true,
+        "signTransaction": true,
+        "submitTransaction": true,
+        "transactionStatus": true,
+        "switchNetwork": true,
+        "multiParty": false
+      },
+      "adapter": {
+        "type": "console",
+        "config": {}
+      },
+      "installation": {
+        "windowProperty": "consoleWallet"
+      },
+      "sdkVersion": "0.1.0"
+    },
+    {
+      "id": "loop",
+      "name": "5N Loop",
+      "description": "5N Loop Wallet for Canton Network",
+      "homepage": "https://cantonloop.com",
+      "icon": "https://cantonloop.com/icon.png",
+      "supportedNetworks": ["mainnet", "devnet", "local"],
+      "capabilities": {
+        "signMessage": true,
+        "signTransaction": true,
+        "submitTransaction": true,
+        "transactionStatus": true,
+        "switchNetwork": true,
+        "multiParty": false
+      },
+      "adapter": {
+        "type": "loop",
+        "config": {}
+      },
+      "installation": {
+        "scriptTag": "loop-sdk"
+      },
+      "sdkVersion": "0.1.0"
+    },
+    {
+      "id": "cantor8",
+      "name": "Cantor8 (C8)",
+      "description": "Cantor8 Wallet for Canton Network",
+      "homepage": "https://www.canton.network/ecosystem/cantor8",
+      "icon": "https://cantor8.com/icon.png",
+      "supportedNetworks": ["mainnet", "devnet", "local"],
+      "capabilities": {
+        "signMessage": true,
+        "signTransaction": true,
+        "submitTransaction": true,
+        "transactionStatus": true,
+        "switchNetwork": false,
+        "multiParty": false
+      },
+      "adapter": {
+        "type": "cantor8",
+        "config": {}
+      },
+      "installation": {
+        "windowProperty": "cantor8"
+      },
+      "sdkVersion": "0.1.0"
+    },
+    {
+      "id": "bron",
+      "name": "Bron",
+      "description": "Bron Wallet for Canton Network",
+      "homepage": "https://developer.bron.org",
+      "icon": "https://bron.org/icon.png",
+      "supportedNetworks": ["mainnet", "devnet", "local"],
+      "capabilities": {
+        "signMessage": true,
+        "signTransaction": true,
+        "submitTransaction": true,
+        "transactionStatus": true,
+        "switchNetwork": false,
+        "multiParty": false
+      },
+      "adapter": {
+        "type": "bron",
+        "config": {}
+      },
+      "installation": {
+        "windowProperty": "bron"
+      },
+      "sdkVersion": "0.1.0"
+    }
+  ]
+}

@@ -1,0 +1,11 @@
+{
+  "metadata": {
+    "registryVersion": "1.0.0",
+    "schemaVersion": "1.0.0",
+    "publishedAt": "2026-01-25T00:00:00Z",
+    "channel": "beta",
+    "sequence": 1,
+    "publisher": "CantonConnect"
+  },
+  "wallets": []
+}

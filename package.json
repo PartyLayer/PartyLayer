@@ -1,0 +1,60 @@
+{
+  "name": "cantonconnect",
+  "version": "0.1.0",
+  "private": true,
+  "description": "CantonConnect - WalletConnect-like SDK for Canton Network wallets",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/cayvox/CantonConnect.git"
+  },
+  "homepage": "https://github.com/cayvox/CantonConnect#readme",
+  "bugs": {
+    "url": "https://github.com/cayvox/CantonConnect/issues"
+  },
+  "author": "CantonConnect Contributors",
+  "scripts": {
+    "build": "pnpm -r build",
+    "test": "pnpm -r test",
+    "lint": "pnpm -r lint",
+    "clean": "pnpm -r clean && rm -rf node_modules",
+    "dev": "pnpm --filter demo dev",
+    "typecheck": "pnpm -r typecheck",
+    "registry:sign": "tsx scripts/registry/sign.ts",
+    "registry:verify": "tsx scripts/registry/verify.ts",
+    "verify:e2e": "tsx scripts/verify/e2e.ts",
+    "changeset": "changeset",
+    "version-packages": "changeset version",
+    "release": "changeset publish"
+  },
+  "keywords": [
+    "canton",
+    "wallet",
+    "sdk",
+    "dapp",
+    "blockchain"
+  ],
+  "license": "MIT",
+  "devDependencies": {
+    "@changesets/cli": "^2.29.8",
+    "@playwright/test": "^1.58.0",
+    "@types/node": "^20.11.0",
+    "@typescript-eslint/eslint-plugin": "^6.19.0",
+    "@typescript-eslint/parser": "^6.19.0",
+    "commander": "^14.0.2",
+    "eslint": "^8.56.0",
+    "prettier": "^3.2.4",
+    "tsup": "^8.5.1",
+    "tsx": "^4.21.0",
+    "typescript": "^5.3.3",
+    "vitest": "^1.2.0"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "pnpm": ">=8.0.0"
+  },
+  "packageManager": "pnpm@8.15.0",
+  "dependencies": {
+    "@types/express": "^4.17.25",
+    "express": "^4.22.1"
+  }
+}

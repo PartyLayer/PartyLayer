@@ -1,0 +1,32 @@
+{
+  "name": "@cantonconnect/conformance-runner",
+  "version": "0.1.2",
+  "description": "CLI tool for running adapter conformance tests",
+  "type": "module",
+  "bin": {
+    "cantonconnect-conformance": "./dist/index.js"
+  },
+  "main": "./dist/index.js",
+  "scripts": {
+    "build": "tsc && tsc --project tsconfig.esm.json",
+    "clean": "rm -rf dist",
+    "lint": "eslint src --ext .ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "keywords": [
+    "canton",
+    "wallet",
+    "adapter",
+    "conformance",
+    "testing"
+  ],
+  "license": "MIT",
+  "dependencies": {
+    "@cantonconnect/core": "workspace:*",
+    "commander": "^14.0.2"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "typescript": "^5.3.3"
+  }
+}
