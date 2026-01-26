@@ -1,5 +1,14 @@
 # @cantonconnect/react
 
+## 0.2.2
+
+### Patch Changes
+
+- Update GitHub repository URLs to cayvox/CantonConnect
+- Updated dependencies
+  - @cantonconnect/sdk@0.2.2
+  - @cantonconnect/registry-client@0.2.2
+
 ## 0.2.1
 
 ### Patch Changes

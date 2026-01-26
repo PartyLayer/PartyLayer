@@ -1,6 +1,6 @@
 {
   "name": "@cantonconnect/adapter-loop",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "description": "5N Loop Wallet adapter for CantonConnect",
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",

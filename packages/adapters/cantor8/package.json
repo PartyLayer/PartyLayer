@@ -1,6 +1,6 @@
 {
   "name": "@cantonconnect/adapter-cantor8",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "description": "Cantor8 (C8) Wallet adapter for CantonConnect",
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",

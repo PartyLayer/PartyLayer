@@ -1,5 +1,11 @@
 # @cantonconnect/core
 
+## 0.2.2
+
+### Patch Changes
+
+- Update GitHub repository URLs to cayvox/CantonConnect
+
 ## 0.2.1
 
 ### Patch Changes
