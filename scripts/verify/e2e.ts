@@ -298,12 +298,14 @@ async function main() {
     });
 
     // Step 5: Run unit tests
+    // Only run tests for packages that have test scripts configured
     runStep('Run unit tests', () => {
       report.testResults.unit = [
         ...runTests('@cantonconnect/core', 'core'),
-        ...runTests('@cantonconnect/sdk', 'sdk'),
         ...runTests('@cantonconnect/registry-client', 'registry-client'),
-        ...runTests('@cantonconnect/react', 'react'),
+        // sdk and react don't have test scripts - mark as skipped
+        { name: 'sdk', status: 'skipped', error: 'No test script defined' },
+        { name: 'react', status: 'skipped', error: 'No test script defined' },
       ];
     });
 
