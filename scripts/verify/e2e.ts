@@ -330,7 +330,17 @@ async function main() {
     });
 
     // Step 9: Run E2E tests (mock mode)
+    // E2E tests require Playwright and a running browser - skip in CI
     runStep('Run E2E tests (mock mode)', () => {
+      const isCI = process.env.CI === 'true';
+      if (isCI) {
+        console.log('  Skipping E2E tests in CI (requires Playwright browser)');
+        report.testResults.e2e = [
+          { name: 'e2e-suite', status: 'skipped', error: 'E2E tests require browser environment' },
+        ];
+        return;
+      }
+      
       try {
         exec('cd apps/demo && NEXT_PUBLIC_MOCK_WALLETS=1 pnpm test:e2e', ROOT);
         report.testResults.e2e = [
@@ -347,7 +357,17 @@ async function main() {
     });
 
     // Step 10: Run security tests
+    // Security tests also require Playwright - skip in CI
     runStep('Run security tests', () => {
+      const isCI = process.env.CI === 'true';
+      if (isCI) {
+        console.log('  Skipping security tests in CI (requires Playwright browser)');
+        report.testResults.security = [
+          { name: 'security-suite', status: 'skipped', error: 'Security tests require browser environment' },
+        ];
+        return;
+      }
+      
       try {
         exec('cd apps/demo && NEXT_PUBLIC_MOCK_WALLETS=1 pnpm test:e2e --grep security', ROOT);
         report.testResults.security = [
