@@ -703,7 +703,7 @@ export class CantonConnectClient {
  * @example
  * ```typescript
  * const client = createCantonConnect({
- *   registryUrl: 'https://registry.cantonconnect.xyz/v1/wallets.json',
+ *   registryUrl: 'https://registry.cantonconnect.xyz',
  *   channel: 'stable',
  *   network: 'devnet',
  *   app: { name: 'My dApp' }

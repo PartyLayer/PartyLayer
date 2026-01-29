@@ -1,6 +1,6 @@
 {
   "name": "@cantonconnect/sdk",
-  "version": "0.2.3",
+  "version": "0.2.4",
   "description": "Main SDK for CantonConnect - WalletConnect-like experience for Canton Network",
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",
