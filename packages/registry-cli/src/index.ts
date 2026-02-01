@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * CantonConnect Registry CLI
+ * PartyLayer Registry CLI
  * 
  * Command-line tool for managing wallet registry.
  */
@@ -25,8 +25,8 @@ import { signRegistry, writeSignature } from './sign';
 import type { RegistryWalletEntry, RegistryChannel } from '@partylayer/registry-client';
 
 program
-  .name('cantonconnect-registry')
-  .description('CLI tool for managing CantonConnect wallet registry')
+  .name('partylayer-registry')
+  .description('CLI tool for managing PartyLayer wallet registry')
   .version('0.1.0');
 
 /**

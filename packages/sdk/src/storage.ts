@@ -9,7 +9,7 @@ import type { Session } from '@partylayer/core';
 /**
  * Storage key prefix
  */
-const STORAGE_PREFIX = 'cantonconnect_session_';
+const STORAGE_PREFIX = 'partylayer_session_';
 
 /**
  * Simple encryption/decryption using Web Crypto API

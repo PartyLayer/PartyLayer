@@ -1,5 +1,5 @@
 /**
- * Core types for CantonConnect SDK
+ * Core types for PartyLayer SDK
  * 
  * References:
  * - Wallet Integration Guide: https://docs.digitalasset.com/integrate/devnet/index.html

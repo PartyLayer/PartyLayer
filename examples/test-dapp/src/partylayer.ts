@@ -25,7 +25,7 @@ import type { PartyLayerClient } from '@partylayer/sdk';
  * 
  * @example
  * ```typescript
- * import { createClient } from './cantonconnect';
+ * import { createClient } from './partylayer';
  * 
  * const client = createClient();
  * const wallets = await client.listWallets();  // All wallets available!

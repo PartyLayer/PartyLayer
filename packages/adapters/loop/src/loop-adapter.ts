@@ -518,7 +518,7 @@ export class LoopAdapter implements WalletAdapter {
       // Loop SDK's submitTransaction takes a DAML command and signs/submits it
       // params.signedTx should be the DAML command structure
       const result = await this.currentProvider.submitTransaction(params.signedTx, {
-        message: 'Submit transaction via CantonConnect',
+        message: 'Submit transaction via PartyLayer',
       });
 
       // Use command_id as transaction hash

@@ -1,6 +1,6 @@
 /**
  * @partylayer/adapter-starter
- * Starter template for building CantonConnect wallet adapters
+ * Starter template for building PartyLayer wallet adapters
  */
 
 export * from './adapter';

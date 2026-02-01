@@ -190,7 +190,7 @@ export async function runConformanceTests(
   }
 
   // Test 6: Error mapping
-  // Verify adapter uses mapUnknownErrorToCantonConnectError
+  // Verify adapter uses mapUnknownErrorToPartyLayerError
   // (This is a code inspection test - hard to test at runtime)
 
   return results;

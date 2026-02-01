@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { PartyLayerProvider } from '@partylayer/react';
-import { createClient } from './cantonconnect';
+import { createClient } from './partylayer';
 import type { PartyLayerClient } from '@partylayer/sdk';
 import ConnectButton from './components/ConnectButton';
 import SessionInfo from './components/SessionInfo';

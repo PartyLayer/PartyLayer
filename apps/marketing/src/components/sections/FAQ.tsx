@@ -30,7 +30,7 @@ const faqItems = [
   {
     question: 'How do I add a new wallet to the registry?',
     answer:
-      'Wallet providers can apply for registry inclusion by submitting a pull request to the cantonconnect repository. Requirements include implementing the standard adapter interface, passing conformance tests, and providing wallet metadata. See the wallet-provider-guide in our docs.',
+      'Wallet providers can apply for registry inclusion by submitting a pull request to the PartyLayer repository. Requirements include implementing the standard adapter interface, passing conformance tests, and providing wallet metadata. See the wallet-provider-guide in our docs.',
   },
 ];
 

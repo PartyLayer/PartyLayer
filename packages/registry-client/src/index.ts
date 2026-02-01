@@ -1,6 +1,6 @@
 /**
  * @partylayer/registry-client
- * Wallet registry client for CantonConnect
+ * Wallet registry client for PartyLayer
  */
 
 export * from './schema';

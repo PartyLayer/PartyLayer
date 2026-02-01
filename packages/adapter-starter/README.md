@@ -27,7 +27,7 @@ A starter template for building wallet adapters for PartyLayer SDK.
 
 5. **Run conformance tests**:
    ```bash
-   cantonconnect-conformance run --adapter ./dist
+   partylayer-conformance run --adapter ./dist
    ```
 
 ## Adapter Contract
@@ -123,10 +123,10 @@ SDK will enforce this automatically.
 pnpm build
 
 # Run conformance tests
-cantonconnect-conformance run --adapter ./dist
+partylayer-conformance run --adapter ./dist
 
 # View report
-cantonconnect-conformance report --input conformance-report.json
+partylayer-conformance report --input conformance-report.json
 ```
 
 ### Integration Testing
@@ -166,7 +166,7 @@ See `docs/security-checklist.md` for complete checklist.
 
 1. **Add to beta registry**:
    ```bash
-   cantonconnect-registry add-wallet \
+   partylayer-registry add-wallet \
      --channel beta \
      --walletId mywallet \
      --name "My Wallet" \
@@ -181,7 +181,7 @@ See `docs/security-checklist.md` for complete checklist.
 
 3. **Promote to stable**:
    ```bash
-   cantonconnect-registry promote --from beta --to stable
+   partylayer-registry promote --from beta --to stable
    ```
 
 See `docs/registry-onboarding.md` for detailed workflow.

@@ -49,7 +49,7 @@ export interface PartyLayerConfig {
    * @example
    * ```typescript
    * // Default: all adapters (recommended)
-   * const client = createCantonConnect({
+   * const client = createPartyLayer({
    *   network: 'devnet',
    *   app: { name: 'My dApp' },
    *   // adapters not specified = all built-in adapters (Console, Loop, Cantor8)
@@ -64,7 +64,7 @@ export interface PartyLayerConfig {
    * 
    * // With Bron (enterprise wallet with OAuth)
    * import { BronAdapter, getBuiltinAdapters } from '@partylayer/sdk';
-   * const client = createCantonConnect({
+   * const client = createPartyLayer({
    *   adapters: [
    *     ...getBuiltinAdapters(),
    *     new BronAdapter({ auth: {...}, api: {...} }),

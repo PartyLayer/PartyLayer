@@ -696,7 +696,7 @@ export class PartyLayerClient {
 }
 
 /**
- * Create CantonConnect client
+ * Create PartyLayer client
  * 
  * This is the main entry point for dApps.
  * 

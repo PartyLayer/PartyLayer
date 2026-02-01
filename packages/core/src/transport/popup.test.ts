@@ -161,7 +161,7 @@ describe('PopupTransport', () => {
 
       expect(global.window.open).toHaveBeenCalled();
       const callArgs = (global.window.open as ReturnType<typeof vi.fn>).mock.calls[0];
-      expect(callArgs[1]).toBe('CantonConnect');
+      expect(callArgs[1]).toBe('PartyLayer');
       expect(callArgs[2]).toContain('width=500');
       expect(callArgs[2]).toContain('height=600');
       

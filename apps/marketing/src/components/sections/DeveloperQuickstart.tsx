@@ -36,7 +36,7 @@ export default client;`,
     id: 'react',
     label: 'React Setup',
     code: `import { PartyLayerProvider } from '@partylayer/react';
-import client from './cantonconnect';
+import client from './partylayer';
 
 function App() {
   return (

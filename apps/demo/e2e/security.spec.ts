@@ -80,7 +80,7 @@ test.describe('Security Tests', () => {
         // Simulate postMessage from wrong origin
         // Real implementation would validate origin in transport layer
         window.postMessage({
-          type: 'cantonconnect-callback',
+          type: 'partylayer-callback',
           state: 'fake-state',
           partyId: 'party::evil',
         }, 'https://evil.com');

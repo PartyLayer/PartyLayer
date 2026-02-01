@@ -2,7 +2,7 @@
 /**
  * Wallet Adapter Starter Template
  * 
- * This is a starter template for building CantonConnect wallet adapters.
+ * This is a starter template for building PartyLayer wallet adapters.
  * 
  * Steps to customize:
  * 1. Rename this file to match your wallet name (e.g., `mywallet-adapter.ts`)
@@ -11,7 +11,7 @@
  * 4. Implement `connect()` to establish connection
  * 5. Implement optional methods (`signMessage`, `signTransaction`, etc.) if supported
  * 6. Update `getCapabilities()` to reflect actual capabilities
- * 7. Run conformance tests: `cantonconnect-conformance run --adapter ./dist`
+ * 7. Run conformance tests: `partylayer-conformance run --adapter ./dist`
  * 
  * References:
  * - Wallet Integration Guide: https://docs.digitalasset.com/integrate/devnet/index.html

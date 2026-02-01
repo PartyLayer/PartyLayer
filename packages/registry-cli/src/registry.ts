@@ -177,7 +177,7 @@ export function createRegistry(channel: RegistryChannel): WalletRegistryV1 {
       publishedAt: new Date().toISOString(),
       channel,
       sequence: 0,
-      publisher: 'CantonConnect',
+      publisher: 'PartyLayer',
     },
     wallets: [],
   };

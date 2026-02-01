@@ -82,7 +82,7 @@ export class PopupTransport implements Transport {
 
     return window.open(
       url,
-      'CantonConnect',
+      'PartyLayer',
       `width=${width},height=${height},left=${left},top=${top},resizable=yes,scrollbars=yes`
     );
   }

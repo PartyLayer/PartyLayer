@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * CantonConnect Conformance Runner CLI
+ * PartyLayer Conformance Runner CLI
  * 
  * Runs adapter conformance tests and generates reports.
  */
@@ -12,8 +12,8 @@ import { runConformanceTests, createMockContext } from './tests';
 import { generateReport, formatReportText, type ConformanceReport } from './report';
 
 program
-  .name('cantonconnect-conformance')
-  .description('Run conformance tests for CantonConnect wallet adapters')
+  .name('partylayer-conformance')
+  .description('Run conformance tests for PartyLayer wallet adapters')
   .version('0.1.0');
 
 program

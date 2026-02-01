@@ -62,7 +62,7 @@ export function formatReportText(report: ConformanceReport): string {
   const lines: string[] = [];
 
   lines.push('='.repeat(60));
-  lines.push('CantonConnect Adapter Conformance Report');
+  lines.push('PartyLayer Adapter Conformance Report');
   lines.push('='.repeat(60));
   lines.push('');
   lines.push(`Adapter: ${report.adapter.name} (${report.adapter.walletId})`);

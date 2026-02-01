@@ -138,7 +138,7 @@ const client = createPartyLayer({
   },
 
   // Optional
-  registryUrl: 'https://registry.cantonconnect.xyz/v1/wallets.json', // Default
+  registryUrl: 'https://registry.partylayer.xyz/v1/wallets.json', // Default
   channel: 'stable', // 'stable' | 'beta'
   
   // Advanced: Custom adapters

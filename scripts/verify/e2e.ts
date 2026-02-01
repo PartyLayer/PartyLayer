@@ -145,7 +145,7 @@ function runConformanceTests(): TestResult[] {
     
     try {
       exec(`pnpm --filter ${adapter} build`, ROOT);
-      exec(`pnpm --filter @partylayer/conformance-runner exec cantonconnect-conformance run --adapter ${adapter}`, ROOT);
+      exec(`pnpm --filter @partylayer/conformance-runner exec partylayer-conformance run --adapter ${adapter}`, ROOT);
       results.push({ name: adapter, status: 'passed' });
     } catch (error: any) {
       results.push({ 

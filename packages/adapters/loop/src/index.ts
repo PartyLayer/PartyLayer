@@ -1,6 +1,6 @@
 /**
  * @partylayer/adapter-loop
- * 5N Loop Wallet adapter for CantonConnect
+ * 5N Loop Wallet adapter for PartyLayer
  */
 
 export * from './loop-adapter';
