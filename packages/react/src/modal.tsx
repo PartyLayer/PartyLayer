@@ -1,9 +1,13 @@
 /**
  * Wallet selection modal component
+ *
+ * Theme-aware: picks up PartyLayerTheme from ThemeProvider context.
+ * If no ThemeProvider is present, falls back to light theme defaults.
  */
 
 import { useState, useEffect } from 'react';
 import { useWallets, useConnect, useRegistryStatus } from './hooks';
+import { useTheme } from './theme';
 import type { WalletId } from '@partylayer/sdk';
 
 interface WalletModalProps {
@@ -74,6 +78,7 @@ export function WalletModal({
   const { wallets, isLoading } = useWallets();
   const { connect, isConnecting, error } = useConnect();
   const { status: registryStatus } = useRegistryStatus();
+  const theme = useTheme();
   const [selectedWallet, setSelectedWallet] = useState<WalletId | null>(null);
   const [installedWallets, setInstalledWallets] = useState<Set<WalletId>>(
     new Set()
@@ -122,7 +127,7 @@ export function WalletModal({
         left: 0,
         right: 0,
         bottom: 0,
-        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+        backgroundColor: theme.colors.overlay,
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
@@ -132,24 +137,26 @@ export function WalletModal({
     >
       <div
         style={{
-          backgroundColor: 'white',
-          borderRadius: '8px',
+          backgroundColor: theme.colors.background,
+          borderRadius: theme.borderRadius,
           padding: '24px',
           maxWidth: '500px',
           width: '90%',
           maxHeight: '80vh',
           overflow: 'auto',
+          fontFamily: theme.fontFamily,
+          color: theme.colors.text,
         }}
         onClick={(e) => e.stopPropagation()}
       >
-        <h2 style={{ marginTop: 0 }}>Select a Wallet</h2>
+        <h2 style={{ marginTop: 0, color: theme.colors.text }}>Select a Wallet</h2>
 
         {/* Registry Status Indicators */}
         {registryStatus && (
           <div
             style={{
               padding: '8px 12px',
-              backgroundColor: registryStatus.verified ? '#e8f5e9' : '#fff3e0',
+              backgroundColor: registryStatus.verified ? theme.colors.successBg : theme.colors.warningBg,
               borderRadius: '4px',
               marginBottom: '12px',
               fontSize: '12px',
@@ -163,16 +170,16 @@ export function WalletModal({
               <strong>Registry:</strong> {registryStatus.channel}
             </span>
             {registryStatus.verified && (
-              <span style={{ color: '#2e7d32' }}>✓ Verified</span>
+              <span style={{ color: theme.colors.success }}>Verified</span>
             )}
             {registryStatus.source === 'cache' && (
-              <span style={{ color: '#f57c00' }}>
-                {registryStatus.stale ? '⚠ Stale (offline)' : '📦 Cached'}
+              <span style={{ color: theme.colors.warning }}>
+                {registryStatus.stale ? 'Stale (offline)' : 'Cached'}
               </span>
             )}
             {registryStatus.error && (
-              <span style={{ color: '#d32f2f' }}>
-                ⚠ {registryStatus.error.code}
+              <span style={{ color: theme.colors.error }}>
+                {registryStatus.error.code}
               </span>
             )}
           </div>
@@ -182,10 +189,10 @@ export function WalletModal({
           <div
             style={{
               padding: '12px',
-              backgroundColor: '#fee',
+              backgroundColor: theme.colors.errorBg,
               borderRadius: '4px',
               marginBottom: '16px',
-              color: '#c33',
+              color: theme.colors.error,
             }}
           >
             <strong>Error:</strong> {getErrorMessage(error)}
@@ -198,9 +205,9 @@ export function WalletModal({
         )}
 
         {isLoading ? (
-          <div>Loading wallets...</div>
+          <div style={{ color: theme.colors.textSecondary }}>Loading wallets...</div>
         ) : wallets.length === 0 ? (
-          <div style={{ padding: '20px', textAlign: 'center', color: '#666' }}>
+          <div style={{ padding: '20px', textAlign: 'center', color: theme.colors.textSecondary }}>
             <p>No wallets found.</p>
             <p style={{ fontSize: '12px', marginTop: '8px' }}>
               Registry Status: {registryStatus ? (registryStatus.verified ? 'Verified' : 'Not Verified') : 'Unknown'}
@@ -222,7 +229,7 @@ export function WalletModal({
                   disabled={isConnecting && isSelected}
                   style={{
                     padding: '16px',
-                    border: '1px solid #ccc',
+                    border: `1px solid ${theme.colors.border}`,
                     borderRadius: '4px',
                     cursor: isConnecting && isSelected ? 'wait' : 'pointer',
                     textAlign: 'left',
@@ -231,6 +238,9 @@ export function WalletModal({
                     gap: '12px',
                     opacity: isConnecting && isSelected ? 0.6 : 1,
                     position: 'relative',
+                    backgroundColor: theme.colors.surface,
+                    color: theme.colors.text,
+                    fontFamily: theme.fontFamily,
                   }}
                 >
                   {wallet.icons?.sm && (
@@ -248,7 +258,7 @@ export function WalletModal({
                           style={{
                             fontSize: '10px',
                             padding: '2px 6px',
-                            backgroundColor: '#4caf50',
+                            backgroundColor: theme.colors.success,
                             color: 'white',
                             borderRadius: '4px',
                           }}
@@ -261,7 +271,7 @@ export function WalletModal({
                           style={{
                             fontSize: '10px',
                             padding: '2px 6px',
-                            backgroundColor: '#ff9800',
+                            backgroundColor: theme.colors.warning,
                             color: 'white',
                             borderRadius: '4px',
                           }}
@@ -274,7 +284,7 @@ export function WalletModal({
                           style={{
                             fontSize: '10px',
                             padding: '2px 6px',
-                            backgroundColor: '#2196f3',
+                            backgroundColor: theme.colors.primary,
                             color: 'white',
                             borderRadius: '4px',
                           }}
@@ -283,20 +293,20 @@ export function WalletModal({
                         </span>
                       )}
                     </div>
-                    <div style={{ fontSize: '14px', color: '#666', marginTop: '4px' }}>
+                    <div style={{ fontSize: '14px', color: theme.colors.textSecondary, marginTop: '4px' }}>
                       {wallet.website && (
                         <a
                           href={wallet.website}
                           target="_blank"
                           rel="noopener noreferrer"
                           onClick={(e) => e.stopPropagation()}
-                          style={{ color: '#0066cc' }}
+                          style={{ color: theme.colors.primary }}
                         >
                           Learn more
                         </a>
                       )}
                     </div>
-                    <div style={{ fontSize: '12px', color: '#999', marginTop: '4px' }}>
+                    <div style={{ fontSize: '12px', color: theme.colors.textSecondary, marginTop: '4px', opacity: 0.7 }}>
                       Capabilities: {wallet.capabilities.join(', ')}
                     </div>
                   </div>
@@ -311,10 +321,13 @@ export function WalletModal({
           style={{
             marginTop: '16px',
             padding: '8px 16px',
-            border: '1px solid #ccc',
+            border: `1px solid ${theme.colors.border}`,
             borderRadius: '4px',
             cursor: 'pointer',
             width: '100%',
+            backgroundColor: theme.colors.surface,
+            color: theme.colors.text,
+            fontFamily: theme.fontFamily,
           }}
         >
           Cancel
