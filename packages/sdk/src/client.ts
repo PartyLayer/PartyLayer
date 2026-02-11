@@ -238,12 +238,33 @@ export class PartyLayerClient {
 
       // Select wallet
       let selectedWallet: WalletInfo;
+      let isNativeWallet = false;
       if (options?.walletId) {
-        selectedWallet = availableWallets.find(
+        const found = availableWallets.find(
           (w) => w.walletId === options.walletId
-        )!;
-        if (!selectedWallet) {
-          throw new WalletNotFoundError(String(options.walletId));
+        );
+        if (found) {
+          selectedWallet = found;
+        } else {
+          // Fallback: check if a native CIP-0103 adapter is registered
+          const nativeAdapter = this.adapters.get(options.walletId);
+          if (nativeAdapter) {
+            isNativeWallet = true;
+            selectedWallet = {
+              walletId: options.walletId,
+              name: nativeAdapter.name,
+              website: '',
+              icons: {},
+              capabilities: nativeAdapter.getCapabilities(),
+              adapter: { packageName: 'native-cip0103', versionRange: '*' },
+              docs: [],
+              networks: [this.config.network],
+              channel: 'stable' as const,
+              metadata: { source: 'native-cip0103' },
+            };
+          } else {
+            throw new WalletNotFoundError(String(options.walletId));
+          }
         }
       } else if (availableWallets.length === 0) {
         throw new WalletNotFoundError('No wallets available');
@@ -257,15 +278,17 @@ export class PartyLayerClient {
         throw new WalletNotFoundError(String(selectedWallet.walletId));
       }
 
-      // Check origin allowlist (if configured)
-      const walletEntry = await this.registryClient.getWalletEntry(String(selectedWallet.walletId));
-      if (walletEntry.originAllowlist && walletEntry.originAllowlist.length > 0) {
-        if (!walletEntry.originAllowlist.includes(this.origin)) {
-          const { OriginNotAllowedError } = await import('@partylayer/core');
-          throw new OriginNotAllowedError(
-            this.origin,
-            walletEntry.originAllowlist
-          );
+      // Check origin allowlist (skip for native CIP-0103 wallets not in registry)
+      if (!isNativeWallet) {
+        const walletEntry = await this.registryClient.getWalletEntry(String(selectedWallet.walletId));
+        if (walletEntry.originAllowlist && walletEntry.originAllowlist.length > 0) {
+          if (!walletEntry.originAllowlist.includes(this.origin)) {
+            const { OriginNotAllowedError } = await import('@partylayer/core');
+            throw new OriginNotAllowedError(
+              this.origin,
+              walletEntry.originAllowlist
+            );
+          }
         }
       }
 

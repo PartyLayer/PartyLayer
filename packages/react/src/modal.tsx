@@ -1,14 +1,14 @@
 /**
  * Wallet selection modal component
  *
+ * Priority: CIP-0103 native wallets first, registry wallets second.
  * Theme-aware: picks up PartyLayerTheme from ThemeProvider context.
- * If no ThemeProvider is present, falls back to light theme defaults.
  */
 
 import { useState, useEffect } from 'react';
 import { useWallets, useConnect, useRegistryStatus } from './hooks';
 import { useTheme } from './theme';
-import type { WalletId } from '@partylayer/sdk';
+import type { WalletId, WalletInfo } from '@partylayer/sdk';
 
 interface WalletModalProps {
   isOpen: boolean;
@@ -53,7 +53,6 @@ function getErrorMessage(error: Error): string {
 async function checkWalletInstalled(
   walletId: WalletId
 ): Promise<boolean> {
-  // This is a simplified check - in production, would use adapter registry
   if (typeof window === 'undefined') {
     return false;
   }
@@ -63,12 +62,19 @@ async function checkWalletInstalled(
   }
 
   if (walletId === 'loop') {
-    // Check if Loop SDK is loaded
     return typeof (window as unknown as { loop?: unknown }).loop !== 'undefined';
   }
 
   return false;
 }
+
+// ─── Helpers ────────────────────────────────────────────────────────────────
+
+function isNativeWallet(wallet: WalletInfo): boolean {
+  return wallet.metadata?.source === 'native-cip0103';
+}
+
+// ─── Component ──────────────────────────────────────────────────────────────
 
 export function WalletModal({
   isOpen,
@@ -84,13 +90,14 @@ export function WalletModal({
     new Set()
   );
 
-  // Check installed status for all wallets
+  // Check installed status for registry wallets
   useEffect(() => {
     if (!isOpen) return;
 
     const checkInstalled = async () => {
       const installed = new Set<WalletId>();
       for (const wallet of wallets) {
+        if (isNativeWallet(wallet)) continue; // native wallets are always "installed"
         const isInstalled = await checkWalletInstalled(wallet.walletId);
         if (isInstalled) {
           installed.add(wallet.walletId);
@@ -106,6 +113,10 @@ export function WalletModal({
     return null;
   }
 
+  // Split wallets into CIP-0103 native vs registry
+  const nativeWallets = wallets.filter(isNativeWallet);
+  const registryWallets = wallets.filter((w) => !isNativeWallet(w));
+
   const handleWalletClick = async (walletId: WalletId) => {
     setSelectedWallet(walletId);
     const session = await connect({
@@ -118,6 +129,206 @@ export function WalletModal({
     }
     setSelectedWallet(null);
   };
+
+  // ─── Wallet Card Renderer ─────────────────────────────────────────
+
+  const renderWalletCard = (wallet: WalletInfo) => {
+    const isNative = isNativeWallet(wallet);
+    const isInstalled = installedWallets.has(wallet.walletId);
+    const isSelected = selectedWallet === wallet.walletId;
+
+    return (
+      <button
+        key={wallet.walletId}
+        onClick={() => handleWalletClick(wallet.walletId)}
+        disabled={isConnecting && isSelected}
+        style={{
+          padding: '14px 16px',
+          border: isNative
+            ? '1.5px solid #6366f1'
+            : `1px solid ${theme.colors.border}`,
+          borderRadius: theme.borderRadius,
+          cursor: isConnecting && isSelected ? 'wait' : 'pointer',
+          textAlign: 'left',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '12px',
+          opacity: isConnecting && isSelected ? 0.6 : 1,
+          backgroundColor: isNative
+            ? (theme.mode === 'dark' ? 'rgba(99,102,241,0.08)' : 'rgba(99,102,241,0.04)')
+            : theme.colors.surface,
+          color: theme.colors.text,
+          fontFamily: theme.fontFamily,
+          transition: 'border-color 0.15s ease, background-color 0.15s ease',
+        }}
+      >
+        {/* Icon */}
+        {wallet.icons?.sm ? (
+          <img
+            src={wallet.icons.sm}
+            alt={wallet.name}
+            style={{ width: '36px', height: '36px', borderRadius: '8px', flexShrink: 0 }}
+          />
+        ) : (
+          <span
+            style={{
+              width: '36px',
+              height: '36px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              backgroundColor: isNative ? '#6366f1' : theme.colors.border,
+              borderRadius: '8px',
+              color: 'white',
+              fontSize: '15px',
+              fontWeight: 700,
+              flexShrink: 0,
+            }}
+          >
+            {wallet.name.charAt(0).toUpperCase()}
+          </span>
+        )}
+
+        {/* Info */}
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+            <span style={{ fontWeight: 600, fontSize: '14px' }}>{wallet.name}</span>
+
+            {/* CIP-0103 badge for native wallets */}
+            {isNative && (
+              <span
+                style={{
+                  fontSize: '10px',
+                  padding: '2px 6px',
+                  background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
+                  color: 'white',
+                  borderRadius: '4px',
+                  fontWeight: 600,
+                  letterSpacing: '0.3px',
+                }}
+              >
+                CIP-0103
+              </span>
+            )}
+
+            {/* Registry badge for non-native wallets */}
+            {!isNative && (
+              <span
+                style={{
+                  fontSize: '10px',
+                  padding: '2px 6px',
+                  backgroundColor: theme.colors.primary,
+                  color: 'white',
+                  borderRadius: '4px',
+                  fontWeight: 500,
+                }}
+              >
+                Registry
+              </span>
+            )}
+
+            {/* Installed badge for registry wallets */}
+            {!isNative && isInstalled && (
+              <span
+                style={{
+                  fontSize: '10px',
+                  padding: '2px 6px',
+                  backgroundColor: theme.colors.success,
+                  color: 'white',
+                  borderRadius: '4px',
+                }}
+              >
+                Installed
+              </span>
+            )}
+
+            {/* Beta badge */}
+            {wallet.channel === 'beta' && (
+              <span
+                style={{
+                  fontSize: '10px',
+                  padding: '2px 6px',
+                  backgroundColor: theme.colors.warning,
+                  color: 'white',
+                  borderRadius: '4px',
+                }}
+              >
+                Beta
+              </span>
+            )}
+          </div>
+
+          {/* Capabilities */}
+          <div style={{ fontSize: '11px', color: theme.colors.textSecondary, marginTop: '3px', opacity: 0.8 }}>
+            {wallet.capabilities.join(', ')}
+          </div>
+
+          {/* Website link for registry wallets */}
+          {!isNative && wallet.website && (
+            <div style={{ marginTop: '2px' }}>
+              <a
+                href={wallet.website}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={(e) => e.stopPropagation()}
+                style={{ color: theme.colors.primary, fontSize: '11px' }}
+              >
+                Learn more
+              </a>
+            </div>
+          )}
+        </div>
+
+        {/* Connecting indicator */}
+        {isConnecting && isSelected && (
+          <span
+            style={{
+              width: '16px',
+              height: '16px',
+              border: '2px solid rgba(0,0,0,0.1)',
+              borderTop: `2px solid ${theme.colors.primary}`,
+              borderRadius: '50%',
+              animation: 'partylayer-spin 0.8s linear infinite',
+              flexShrink: 0,
+            }}
+          />
+        )}
+      </button>
+    );
+  };
+
+  // ─── Section Header ───────────────────────────────────────────────
+
+  const renderSectionHeader = (title: string, count: number, color: string) => (
+    <div
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: '8px',
+        marginBottom: '8px',
+        marginTop: '4px',
+      }}
+    >
+      <span
+        style={{
+          width: '8px',
+          height: '8px',
+          borderRadius: '50%',
+          backgroundColor: color,
+          flexShrink: 0,
+        }}
+      />
+      <span style={{ fontSize: '12px', fontWeight: 600, color: theme.colors.text, letterSpacing: '0.3px' }}>
+        {title}
+      </span>
+      <span style={{ fontSize: '11px', color: theme.colors.textSecondary }}>
+        ({count})
+      </span>
+      <div style={{ flex: 1, height: '1px', backgroundColor: theme.colors.border, marginLeft: '4px' }} />
+    </div>
+  );
+
+  // ─── Render ───────────────────────────────────────────────────────
 
   return (
     <div
@@ -149,32 +360,90 @@ export function WalletModal({
         }}
         onClick={(e) => e.stopPropagation()}
       >
-        <h2 style={{ marginTop: 0, color: theme.colors.text }}>Select a Wallet</h2>
+        <h2 style={{ marginTop: 0, marginBottom: '16px', color: theme.colors.text, fontSize: '18px' }}>
+          Select a Wallet
+        </h2>
 
-        {/* Registry Status Indicators */}
+        {/* Error */}
+        {error && (
+          <div
+            style={{
+              padding: '12px',
+              backgroundColor: theme.colors.errorBg,
+              borderRadius: '4px',
+              marginBottom: '16px',
+              color: theme.colors.error,
+              fontSize: '13px',
+            }}
+          >
+            <strong>Error:</strong> {getErrorMessage(error)}
+            {error instanceof Error && 'code' in error && (
+              <div style={{ fontSize: '11px', marginTop: '4px', opacity: 0.8 }}>
+                Code: {(error as { code: string }).code}
+              </div>
+            )}
+          </div>
+        )}
+
+        {isLoading ? (
+          <div style={{ color: theme.colors.textSecondary, padding: '20px 0', textAlign: 'center' }}>
+            Discovering wallets...
+          </div>
+        ) : wallets.length === 0 ? (
+          <div style={{ padding: '20px', textAlign: 'center', color: theme.colors.textSecondary }}>
+            <p style={{ margin: '0 0 8px' }}>No wallets found.</p>
+            <p style={{ fontSize: '12px', margin: 0, opacity: 0.7 }}>
+              Install a CIP-0103 compatible Canton wallet or check the registry connection.
+            </p>
+          </div>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+
+            {/* CIP-0103 Native Wallets — Priority Section */}
+            {nativeWallets.length > 0 && (
+              <>
+                {renderSectionHeader('CIP-0103 Native', nativeWallets.length, '#6366f1')}
+                {nativeWallets.map(renderWalletCard)}
+              </>
+            )}
+
+            {/* Registry Wallets — Fallback Section */}
+            {registryWallets.length > 0 && (
+              <>
+                {renderSectionHeader(
+                  nativeWallets.length > 0 ? 'Registry' : 'Available Wallets',
+                  registryWallets.length,
+                  theme.colors.primary,
+                )}
+                {registryWallets.map(renderWalletCard)}
+              </>
+            )}
+          </div>
+        )}
+
+        {/* Registry Status — subtle footer */}
         {registryStatus && (
           <div
             style={{
-              padding: '8px 12px',
-              backgroundColor: registryStatus.verified ? theme.colors.successBg : theme.colors.warningBg,
-              borderRadius: '4px',
-              marginBottom: '12px',
-              fontSize: '12px',
+              marginTop: '12px',
+              padding: '6px 10px',
+              fontSize: '10px',
+              color: theme.colors.textSecondary,
               display: 'flex',
               alignItems: 'center',
-              gap: '8px',
+              gap: '6px',
               flexWrap: 'wrap',
+              borderTop: `1px solid ${theme.colors.border}`,
+              paddingTop: '10px',
             }}
           >
-            <span>
-              <strong>Registry:</strong> {registryStatus.channel}
-            </span>
+            <span>Registry: {registryStatus.channel}</span>
             {registryStatus.verified && (
               <span style={{ color: theme.colors.success }}>Verified</span>
             )}
             {registryStatus.source === 'cache' && (
               <span style={{ color: theme.colors.warning }}>
-                {registryStatus.stale ? 'Stale (offline)' : 'Cached'}
+                {registryStatus.stale ? 'Stale' : 'Cached'}
               </span>
             )}
             {registryStatus.error && (
@@ -185,153 +454,26 @@ export function WalletModal({
           </div>
         )}
 
-        {error && (
-          <div
-            style={{
-              padding: '12px',
-              backgroundColor: theme.colors.errorBg,
-              borderRadius: '4px',
-              marginBottom: '16px',
-              color: theme.colors.error,
-            }}
-          >
-            <strong>Error:</strong> {getErrorMessage(error)}
-            {error instanceof Error && 'code' in error && (
-              <div style={{ fontSize: '12px', marginTop: '4px' }}>
-                Code: {(error as { code: string }).code}
-              </div>
-            )}
-          </div>
-        )}
-
-        {isLoading ? (
-          <div style={{ color: theme.colors.textSecondary }}>Loading wallets...</div>
-        ) : wallets.length === 0 ? (
-          <div style={{ padding: '20px', textAlign: 'center', color: theme.colors.textSecondary }}>
-            <p>No wallets found.</p>
-            <p style={{ fontSize: '12px', marginTop: '8px' }}>
-              Registry Status: {registryStatus ? (registryStatus.verified ? 'Verified' : 'Not Verified') : 'Unknown'}
-            </p>
-            <p style={{ fontSize: '12px' }}>
-              Source: {registryStatus?.source || 'Unknown'}
-            </p>
-          </div>
-        ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-            {wallets.map((wallet) => {
-              const isInstalled = installedWallets.has(wallet.walletId);
-              const isSelected = selectedWallet === wallet.walletId;
-
-              return (
-                <button
-                  key={wallet.walletId}
-                  onClick={() => handleWalletClick(wallet.walletId)}
-                  disabled={isConnecting && isSelected}
-                  style={{
-                    padding: '16px',
-                    border: `1px solid ${theme.colors.border}`,
-                    borderRadius: '4px',
-                    cursor: isConnecting && isSelected ? 'wait' : 'pointer',
-                    textAlign: 'left',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '12px',
-                    opacity: isConnecting && isSelected ? 0.6 : 1,
-                    position: 'relative',
-                    backgroundColor: theme.colors.surface,
-                    color: theme.colors.text,
-                    fontFamily: theme.fontFamily,
-                  }}
-                >
-                  {wallet.icons?.sm && (
-                    <img
-                      src={wallet.icons.sm}
-                      alt={wallet.name}
-                      style={{ width: '32px', height: '32px' }}
-                    />
-                  )}
-                  <div style={{ flex: 1 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-                      <span style={{ fontWeight: 'bold' }}>{wallet.name}</span>
-                      {isInstalled && (
-                        <span
-                          style={{
-                            fontSize: '10px',
-                            padding: '2px 6px',
-                            backgroundColor: theme.colors.success,
-                            color: 'white',
-                            borderRadius: '4px',
-                          }}
-                        >
-                          Installed
-                        </span>
-                      )}
-                      {wallet.channel === 'beta' && (
-                        <span
-                          style={{
-                            fontSize: '10px',
-                            padding: '2px 6px',
-                            backgroundColor: theme.colors.warning,
-                            color: 'white',
-                            borderRadius: '4px',
-                          }}
-                        >
-                          Beta
-                        </span>
-                      )}
-                      {wallet.channel === 'stable' && (
-                        <span
-                          style={{
-                            fontSize: '10px',
-                            padding: '2px 6px',
-                            backgroundColor: theme.colors.primary,
-                            color: 'white',
-                            borderRadius: '4px',
-                          }}
-                        >
-                          Stable
-                        </span>
-                      )}
-                    </div>
-                    <div style={{ fontSize: '14px', color: theme.colors.textSecondary, marginTop: '4px' }}>
-                      {wallet.website && (
-                        <a
-                          href={wallet.website}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          onClick={(e) => e.stopPropagation()}
-                          style={{ color: theme.colors.primary }}
-                        >
-                          Learn more
-                        </a>
-                      )}
-                    </div>
-                    <div style={{ fontSize: '12px', color: theme.colors.textSecondary, marginTop: '4px', opacity: 0.7 }}>
-                      Capabilities: {wallet.capabilities.join(', ')}
-                    </div>
-                  </div>
-                </button>
-              );
-            })}
-          </div>
-        )}
-
         <button
           onClick={onClose}
           style={{
-            marginTop: '16px',
+            marginTop: '12px',
             padding: '8px 16px',
             border: `1px solid ${theme.colors.border}`,
-            borderRadius: '4px',
+            borderRadius: theme.borderRadius,
             cursor: 'pointer',
             width: '100%',
             backgroundColor: theme.colors.surface,
             color: theme.colors.text,
             fontFamily: theme.fontFamily,
+            fontSize: '13px',
           }}
         >
           Cancel
         </button>
+
+        {/* Spinner keyframes */}
+        <style>{`@keyframes partylayer-spin { to { transform: rotate(360deg); } }`}</style>
       </div>
     </div>
   );

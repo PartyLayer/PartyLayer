@@ -81,7 +81,7 @@ export function PartyLayerKit({
 
   return (
     <ThemeProvider theme={themeValue}>
-      <PartyLayerProvider client={client}>
+      <PartyLayerProvider client={client} network={network}>
         {children}
       </PartyLayerProvider>
     </ThemeProvider>

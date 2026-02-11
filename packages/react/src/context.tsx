@@ -1,5 +1,8 @@
 /**
  * React context for PartyLayer
+ *
+ * Manages wallet listing (registry + native CIP-0103 discovery),
+ * session state, and event subscriptions.
  */
 
 import { createContext, useContext, useEffect, useState } from 'react';
@@ -8,6 +11,12 @@ import type {
   Session,
   WalletInfo,
 } from '@partylayer/sdk';
+import { discoverInjectedProviders } from '@partylayer/sdk';
+import {
+  createNativeAdapter,
+  createSyntheticWalletInfo,
+  enrichProviderInfo,
+} from './native-cip0103-adapter';
 
 interface PartyLayerContextValue {
   client: PartyLayerClient | null;
@@ -33,11 +42,14 @@ export function usePartyLayerContext(): PartyLayerContextValue {
 interface PartyLayerProviderProps {
   client: PartyLayerClient;
   children: React.ReactNode;
+  /** Network identifier for native CIP-0103 wallet discovery */
+  network?: string;
 }
 
 export function PartyLayerProvider({
   client,
   children,
+  network = 'devnet',
 }: PartyLayerProviderProps) {
   const [session, setSession] = useState<Session | null>(null);
   const [wallets, setWallets] = useState<WalletInfo[]>([]);
@@ -49,16 +61,44 @@ export function PartyLayerProvider({
 
     async function load() {
       try {
-        const [sessionData, walletsData] = await Promise.all([
+        // Fetch registry wallets and discover native CIP-0103 providers in parallel
+        const [sessionData, registryWallets, rawDiscovered] = await Promise.all([
           client.getActiveSession(),
           client.listWallets(),
+          Promise.resolve(discoverInjectedProviders()),
         ]);
 
-        if (mounted) {
-          setSession(sessionData);
-          setWallets(walletsData);
-          setIsLoading(false);
+        if (!mounted) return;
+
+        // Enrich discovered providers with status info (name, etc.)
+        const discovered = await Promise.all(
+          rawDiscovered.map((d) => enrichProviderInfo(d)),
+        );
+
+        if (!mounted) return;
+
+        // Register native adapters with the client and create synthetic WalletInfo
+        const nativeWallets: WalletInfo[] = [];
+        const registryWalletIds = new Set(registryWallets.map((w) => String(w.walletId)));
+
+        for (const dp of discovered) {
+          const adapterId = `cip0103:${dp.id}`;
+          // Skip if there's already a registry wallet that covers this provider
+          if (registryWalletIds.has(adapterId)) continue;
+
+          const adapter = createNativeAdapter(dp);
+          client.registerAdapter(adapter);
+
+          const walletInfo = createSyntheticWalletInfo(dp, network);
+          nativeWallets.push(walletInfo);
         }
+
+        // Merge: native (detected) wallets first, then registry wallets
+        const mergedWallets = [...nativeWallets, ...registryWallets];
+
+        setSession(sessionData);
+        setWallets(mergedWallets);
+        setIsLoading(false);
       } catch (err) {
         if (mounted) {
           setError(err instanceof Error ? err : new Error('Unknown error'));

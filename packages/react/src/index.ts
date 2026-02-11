@@ -19,6 +19,9 @@ export type { ConnectButtonProps } from './connect-button';
 export { ThemeProvider, useTheme, lightTheme, darkTheme } from './theme';
 export type { PartyLayerTheme } from './theme';
 
+// Native CIP-0103 adapter (for advanced usage)
+export { NativeCIP0103Adapter, createNativeAdapter, createSyntheticWalletInfo } from './native-cip0103-adapter';
+
 // Backward compatibility aliases
 export { PartyLayerProvider as CantonConnectProvider } from './context';
 export { usePartyLayer as useCantonConnect } from './hooks';
