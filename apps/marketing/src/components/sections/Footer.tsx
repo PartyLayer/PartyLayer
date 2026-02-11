@@ -4,7 +4,7 @@ import { cn } from '@/design/cn';
 const links = [
   {
     label: 'GitHub',
-    href: 'https://github.com/anilkaracay/partylayer',
+    href: 'https://github.com/cayvox/PartyLayer',
     external: true,
   },
   {
@@ -14,17 +14,17 @@ const links = [
   },
   {
     label: 'Issues',
-    href: 'https://github.com/anilkaracay/partylayer/issues',
+    href: 'https://github.com/cayvox/PartyLayer/issues',
     external: true,
   },
   {
     label: 'Discussions',
-    href: 'https://github.com/anilkaracay/partylayer/discussions',
+    href: 'https://github.com/cayvox/PartyLayer/discussions',
     external: true,
   },
   {
     label: 'License',
-    href: 'https://github.com/anilkaracay/partylayer/blob/main/LICENSE',
+    href: 'https://github.com/cayvox/PartyLayer/blob/main/LICENSE',
     external: true,
   },
 ];
