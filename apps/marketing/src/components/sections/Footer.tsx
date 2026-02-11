@@ -4,7 +4,7 @@ import { cn } from '@/design/cn';
 const links = [
   {
     label: 'GitHub',
-    href: 'https://github.com/cayvox/PartyLayer',
+    href: 'https://github.com/anilkaracay/partylayer',
     external: true,
   },
   {
@@ -14,17 +14,17 @@ const links = [
   },
   {
     label: 'Issues',
-    href: 'https://github.com/cayvox/PartyLayer/issues',
+    href: 'https://github.com/anilkaracay/partylayer/issues',
     external: true,
   },
   {
     label: 'Discussions',
-    href: 'https://github.com/cayvox/PartyLayer/discussions',
+    href: 'https://github.com/anilkaracay/partylayer/discussions',
     external: true,
   },
   {
     label: 'License',
-    href: 'https://github.com/cayvox/PartyLayer/blob/main/LICENSE',
+    href: 'https://github.com/anilkaracay/partylayer/blob/main/LICENSE',
     external: true,
   },
 ];
@@ -94,18 +94,16 @@ export function Footer() {
                 target="_blank"
                 rel="noopener noreferrer"
                 className={cn(
-                  'inline-flex items-center gap-1.5 font-medium',
-                  'text-fg hover:text-brand-600 transition-colors duration-hover'
+                  'inline-flex items-center font-medium',
+                  'hover:opacity-70 transition-opacity duration-hover'
                 )}
               >
-                <svg
-                  className="w-4 h-4"
-                  viewBox="0 0 24 24"
-                  fill="currentColor"
-                >
-                  <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
-                </svg>
-                Cayvox Labs
+                <img
+                  src="/Cayvox Logo gradian.svg"
+                  alt="Cayvox Labs"
+                  className="h-[90px] -my-[30px] -ml-[10px]"
+                  draggable={false}
+                />
               </a>
               <span className="text-brand-500">✦</span>
             </div>
