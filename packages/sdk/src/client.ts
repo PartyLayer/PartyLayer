@@ -158,38 +158,59 @@ export class PartyLayerClient {
    * List available wallets
    */
   async listWallets(filter?: WalletFilter): Promise<WalletInfo[]> {
+    let registryWallets: WalletInfo[];
+
     try {
       // getWallets() already returns WalletInfo[]
-      const allWalletInfos = await this.registryClient.getWallets();
+      registryWallets = await this.registryClient.getWallets();
 
       // Update registry status after successful fetch
       this.updateRegistryStatus();
-
-      // Filter by capabilities
-      if (filter?.requiredCapabilities) {
-        return allWalletInfos.filter((walletInfo) =>
-          filter.requiredCapabilities!.every((cap) =>
-            walletInfo.capabilities.includes(cap as CapabilityKey)
-          )
-        );
-      }
-
-      // Filter experimental
-      if (!filter?.includeExperimental) {
-        return allWalletInfos.filter((walletInfo) => walletInfo.channel === 'stable');
-      }
-
-      return allWalletInfos;
     } catch (err) {
       // Update registry status even on error (may have fallback info)
       this.updateRegistryStatus();
-      
-      const error = mapUnknownErrorToPartyLayerError(err, {
-        phase: 'connect',
+
+      this.logger.warn('Registry fetch failed, using registered adapters only', {
+        error: err instanceof Error ? err.message : String(err),
       });
-      this.emit('error', { type: 'error', error });
-      throw error;
+
+      registryWallets = [];
     }
+
+    // Merge: include registered adapters that are NOT in the registry
+    // (e.g. NightlyAdapter is builtin but may not have a registry entry yet)
+    const registryIds = new Set(registryWallets.map((w) => String(w.walletId)));
+    for (const [, adapter] of this.adapters) {
+      if (registryIds.has(String(adapter.walletId))) continue;
+
+      registryWallets.push({
+        walletId: adapter.walletId,
+        name: adapter.name,
+        website: '',
+        icons: {},
+        capabilities: adapter.getCapabilities(),
+        adapter: { packageName: 'builtin', versionRange: '*' },
+        docs: [],
+        networks: [this.config.network || 'devnet'],
+        channel: 'stable',
+      } as WalletInfo);
+    }
+
+    // Filter by capabilities
+    if (filter?.requiredCapabilities) {
+      return registryWallets.filter((walletInfo) =>
+        filter.requiredCapabilities!.every((cap) =>
+          walletInfo.capabilities.includes(cap as CapabilityKey)
+        )
+      );
+    }
+
+    // Filter experimental
+    if (!filter?.includeExperimental) {
+      return registryWallets.filter((walletInfo) => walletInfo.channel === 'stable');
+    }
+
+    return registryWallets;
   }
 
   /**
@@ -212,28 +233,6 @@ export class PartyLayerClient {
         availableWallets = wallets.filter((w) =>
           options.allowWallets!.includes(w.walletId)
         );
-      }
-
-      // Prefer installed wallets
-      if (options?.preferInstalled) {
-        const installedWallets: WalletInfo[] = [];
-        const notInstalledWallets: WalletInfo[] = [];
-
-        for (const wallet of availableWallets) {
-          const adapter = this.adapters.get(wallet.walletId);
-          if (adapter) {
-            const detect = await adapter.detectInstalled();
-            if (detect.installed) {
-              installedWallets.push(wallet);
-            } else {
-              notInstalledWallets.push(wallet);
-            }
-          } else {
-            notInstalledWallets.push(wallet);
-          }
-        }
-
-        availableWallets = [...installedWallets, ...notInstalledWallets];
       }
 
       // Select wallet
@@ -278,16 +277,24 @@ export class PartyLayerClient {
         throw new WalletNotFoundError(String(selectedWallet.walletId));
       }
 
-      // Check origin allowlist (skip for native CIP-0103 wallets not in registry)
+      // Check origin allowlist (skip for native CIP-0103 wallets and
+      // adapter-merged wallets that aren't in the registry)
       if (!isNativeWallet) {
-        const walletEntry = await this.registryClient.getWalletEntry(String(selectedWallet.walletId));
-        if (walletEntry.originAllowlist && walletEntry.originAllowlist.length > 0) {
-          if (!walletEntry.originAllowlist.includes(this.origin)) {
-            const { OriginNotAllowedError } = await import('@partylayer/core');
-            throw new OriginNotAllowedError(
-              this.origin,
-              walletEntry.originAllowlist
-            );
+        try {
+          const walletEntry = await this.registryClient.getWalletEntry(String(selectedWallet.walletId));
+          if (walletEntry.originAllowlist && walletEntry.originAllowlist.length > 0) {
+            if (!walletEntry.originAllowlist.includes(this.origin)) {
+              const { OriginNotAllowedError } = await import('@partylayer/core');
+              throw new OriginNotAllowedError(
+                this.origin,
+                walletEntry.originAllowlist
+              );
+            }
+          }
+        } catch (e) {
+          // Wallet not in registry (adapter-merged) — skip origin check
+          if (!(e instanceof WalletNotFoundError)) {
+            throw e;
           }
         }
       }

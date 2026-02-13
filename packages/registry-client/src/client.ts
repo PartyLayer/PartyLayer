@@ -51,6 +51,8 @@ export interface RegistryClientOptions {
   enableCache?: boolean;
   /** Custom fetch function */
   fetch?: typeof fetch;
+  /** Fetch timeout in milliseconds (default: 8000) */
+  fetchTimeout?: number;
   /** Storage adapter for persistent cache */
   storage?: {
     get(key: string): Promise<string | null>;
@@ -75,6 +77,7 @@ export class RegistryClient {
   private staleTtl: number;
   private enableCache: boolean;
   private fetchFn: typeof fetch;
+  private fetchTimeout: number;
   private storage?: RegistryClientOptions['storage'];
 
   // In-memory cache
@@ -109,6 +112,7 @@ export class RegistryClient {
     } else {
       this.fetchFn = fetch;
     }
+    this.fetchTimeout = options.fetchTimeout || 8000;
     this.storage = options.storage;
 
     // Load from persistent storage if available
@@ -208,12 +212,18 @@ export class RegistryClient {
     const sigUrl = this.getSignatureUrl();
     const requireSignature = this.publicKeys.length > 0;
 
+    // AbortController for fetch timeout
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), this.fetchTimeout);
+
+    try {
     // Fetch registry (always required)
     const registryResponse = await this.fetchFn(registryUrl, {
       headers: {
         'Accept': 'application/json',
         'If-None-Match': this.memoryCache.lastKnownGood?.etag || '',
       },
+      signal: controller.signal,
     });
 
     // Handle 304 Not Modified
@@ -227,6 +237,7 @@ export class RegistryClient {
           try {
             const sigResponse = await this.fetchFn(sigUrl, {
               headers: { 'Accept': 'application/json' },
+              signal: controller.signal,
             });
             if (sigResponse.ok) {
               signature = JSON.parse(await sigResponse.text()) as RegistrySignature;
@@ -278,6 +289,7 @@ export class RegistryClient {
         headers: {
           'Accept': 'application/json',
         },
+        signal: controller.signal,
       });
 
       if (!sigResponse.ok) {
@@ -313,6 +325,9 @@ export class RegistryClient {
     }
 
     return { registry, signature, etag };
+    } finally {
+      clearTimeout(timeoutId);
+    }
   }
 
   /**

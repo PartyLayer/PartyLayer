@@ -89,6 +89,7 @@ const WALLET_LOGOS: Record<string, string> = {
   loop: '/wallets/loop.svg',
   cantor8: '/wallets/cantor8.png',
   bron: '/wallets/bron.png',
+  nightly: '/wallets/nightly.svg',
 };
 
 function getWalletLogo(walletId: string): string | null {

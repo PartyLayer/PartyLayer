@@ -85,6 +85,7 @@ export {
   ConsoleAdapter,
   LoopAdapter,
   Cantor8Adapter,
+  NightlyAdapter,
   BronAdapter,
   getBuiltinAdapters,
 } from './builtin-adapters';

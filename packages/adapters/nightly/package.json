@@ -1,7 +1,7 @@
 {
-  "name": "@partylayer/sdk",
-  "version": "0.2.5",
-  "description": "Main SDK for PartyLayer - WalletConnect-like experience for Canton Network",
+  "name": "@partylayer/adapter-nightly",
+  "version": "0.2.3",
+  "description": "Nightly Wallet adapter for PartyLayer",
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",
   "types": "./dist/index.d.ts",
@@ -25,32 +25,25 @@
   "keywords": [
     "canton",
     "wallet",
-    "sdk",
-    "dapp"
+    "nightly"
   ],
   "author": "PartyLayer Contributors",
   "license": "MIT",
   "repository": {
     "type": "git",
     "url": "https://github.com/cayvox/PartyLayer.git",
-    "directory": "packages/sdk"
+    "directory": "packages/adapters/nightly"
   },
   "homepage": "https://github.com/cayvox/PartyLayer#readme",
   "bugs": {
     "url": "https://github.com/cayvox/PartyLayer/issues"
   },
   "dependencies": {
-    "@partylayer/core": "workspace:*",
-    "@partylayer/registry-client": "workspace:*",
-    "@partylayer/adapter-console": "workspace:*",
-    "@partylayer/adapter-loop": "workspace:*",
-    "@partylayer/adapter-cantor8": "workspace:*",
-    "@partylayer/adapter-bron": "workspace:*",
-    "@partylayer/adapter-nightly": "workspace:*",
-    "@partylayer/provider": "workspace:*"
+    "@partylayer/core": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^20.11.0",
-    "typescript": "^5.3.3"
+    "typescript": "^5.3.3",
+    "vitest": "^1.2.0"
   }
 }

@@ -61,7 +61,9 @@ export function PartyLayerProvider({
 
     async function load() {
       try {
-        // Fetch registry wallets and discover native CIP-0103 providers in parallel
+        // Fetch registry wallets and discover native CIP-0103 providers in parallel.
+        // listWallets() is resilient — if registry is unreachable, it falls back
+        // to generating WalletInfo from registered adapters (Console, Loop, etc.)
         const [sessionData, registryWallets, rawDiscovered] = await Promise.all([
           client.getActiveSession(),
           client.listWallets(),

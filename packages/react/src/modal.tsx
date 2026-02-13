@@ -69,6 +69,7 @@ const KNOWN_WALLET_URLS: Record<string, string> = {
   loop: 'https://loop.5n.app',
   cantor8: 'https://cantor8.io',
   bron: 'https://bron.dev',
+  nightly: 'https://nightly.app',
 };
 
 function getWalletUrl(wallet: WalletInfo): string | null {

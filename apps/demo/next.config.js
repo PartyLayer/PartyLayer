@@ -12,6 +12,7 @@ const nextConfig = {
     '@partylayer/adapter-loop',
     '@partylayer/adapter-cantor8',
     '@partylayer/adapter-bron',
+    '@partylayer/adapter-nightly',
     '@partylayer/provider',
   ],
   // Ensure ESM packages work correctly
@@ -31,6 +32,7 @@ const nextConfig = {
       '@partylayer/adapter-loop': path.resolve(__dirname, '../../packages/adapters/loop'),
       '@partylayer/adapter-cantor8': path.resolve(__dirname, '../../packages/adapters/cantor8'),
       '@partylayer/adapter-bron': path.resolve(__dirname, '../../packages/adapters/bron'),
+      '@partylayer/adapter-nightly': path.resolve(__dirname, '../../packages/adapters/nightly'),
       '@partylayer/provider': path.resolve(__dirname, '../../packages/provider'),
     };
 
