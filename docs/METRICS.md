@@ -298,4 +298,3 @@ pnpm test
 
 - [PUBLIC_API_STABILITY.md](./PUBLIC_API_STABILITY.md) - API stability guarantees
 - [EVENT_SPEC.md](./EVENT_SPEC.md) - Event payload specifications
-- [APP_REWARDS_APPLICATION.md](./APP_REWARDS_APPLICATION.md) - App Rewards template

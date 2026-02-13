@@ -54,3 +54,11 @@ fixtures/registry/downgrade/
 # Internal documentation (not for public)
 PROJECT_OVERVIEW.md
 CHATGPT_BRIEF.md
+docs/PARTYLAYER-PRODUCT-OVERVIEW.md
+docs/APP_REWARDS_APPLICATION.md
+
+# Internal infrastructure
+apps/metrics-backend/
+
+# AI assistant config
+.claude/
