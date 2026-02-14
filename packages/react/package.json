@@ -1,6 +1,6 @@
 {
   "name": "@partylayer/react",
-  "version": "0.2.5",
+  "version": "0.2.6",
   "description": "React hooks and components for PartyLayer",
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",

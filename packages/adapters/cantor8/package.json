@@ -1,6 +1,6 @@
 {
   "name": "@partylayer/adapter-cantor8",
-  "version": "0.2.3",
+  "version": "0.2.4",
   "description": "Cantor8 (C8) Wallet adapter for PartyLayer",
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",

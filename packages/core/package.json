@@ -1,6 +1,6 @@
 {
   "name": "@partylayer/core",
-  "version": "0.2.3",
+  "version": "0.2.4",
   "description": "Core types, errors, and abstractions for PartyLayer",
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",

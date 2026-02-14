@@ -1,6 +1,6 @@
 {
   "name": "@partylayer/adapter-console",
-  "version": "0.2.3",
+  "version": "0.2.4",
   "description": "Console Wallet adapter for PartyLayer",
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",

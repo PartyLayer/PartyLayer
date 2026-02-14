@@ -1,5 +1,20 @@
 # @cantonconnect/sdk
 
+## 0.2.6
+
+### Patch Changes
+
+- Update repository URLs and metadata for public release. Add README documentation for all packages.
+- Updated dependencies
+  - @partylayer/core@0.2.4
+  - @partylayer/provider@0.1.1
+  - @partylayer/registry-client@0.2.4
+  - @partylayer/adapter-console@0.2.4
+  - @partylayer/adapter-loop@0.2.4
+  - @partylayer/adapter-bron@0.2.4
+  - @partylayer/adapter-cantor8@0.2.4
+  - @partylayer/adapter-nightly@0.2.4
+
 ## 0.2.4
 
 ### Patch Changes
