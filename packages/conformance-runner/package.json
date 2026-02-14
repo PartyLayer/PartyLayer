@@ -1,6 +1,6 @@
 {
   "name": "@partylayer/conformance-runner",
-  "version": "0.1.5",
+  "version": "0.1.6",
   "description": "CLI tool for running adapter conformance tests",
   "type": "module",
   "bin": {
@@ -20,6 +20,15 @@
     "conformance",
     "testing"
   ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/PartyLayer/PartyLayer.git",
+    "directory": "packages/conformance-runner"
+  },
+  "homepage": "https://github.com/PartyLayer/PartyLayer/tree/main/packages/conformance-runner",
+  "bugs": {
+    "url": "https://github.com/PartyLayer/PartyLayer/issues"
+  },
   "license": "MIT",
   "dependencies": {
     "@partylayer/core": "workspace:*",

@@ -1,5 +1,11 @@
 # @cantonconnect/adapter-starter
 
+## 0.1.6
+
+### Patch Changes
+
+- Add repository URLs and README documentation for registry-cli, adapter-starter, and conformance-runner.
+
 ## 0.1.5
 
 ### Patch Changes

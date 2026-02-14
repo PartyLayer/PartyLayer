@@ -1,6 +1,6 @@
 {
   "name": "@partylayer/adapter-starter",
-  "version": "0.1.5",
+  "version": "0.1.6",
   "description": "Starter template for building PartyLayer wallet adapters",
   "type": "module",
   "main": "./dist/index.js",
@@ -29,6 +29,15 @@
     "adapter",
     "template"
   ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/PartyLayer/PartyLayer.git",
+    "directory": "packages/adapter-starter"
+  },
+  "homepage": "https://github.com/PartyLayer/PartyLayer/tree/main/packages/adapter-starter",
+  "bugs": {
+    "url": "https://github.com/PartyLayer/PartyLayer/issues"
+  },
   "license": "MIT",
   "dependencies": {
     "@partylayer/core": "workspace:*"
