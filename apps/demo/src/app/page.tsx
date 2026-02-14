@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect, useCallback, type ReactNode } from 'react';
 import Link from 'next/link';
 import { PartyLayerKit, WalletModal, useSession, useDisconnect, truncatePartyId } from '@partylayer/react';
+import { useBreakpoint, responsive } from './hooks/useBreakpoint';
 
 /* ─── Design Tokens (mirrored from apps/marketing/src/design/tokens.ts) ── */
 
@@ -81,7 +82,7 @@ function GlobalStyles() {
       }
       html { scroll-behavior: smooth; }
 
-      /* Architecture Flow animations */
+      /* Architecture Showcase animations */
       @keyframes flowDash {
         to { stroke-dashoffset: -24; }
       }
@@ -96,15 +97,17 @@ function GlobalStyles() {
         100% { offset-distance: 100%; opacity: 0; }
       }
       @keyframes archFadeIn {
-        from { opacity: 0; transform: translateY(16px) scale(0.96); }
+        from { opacity: 0; transform: translateY(24px) scale(0.95); }
         to { opacity: 1; transform: translateY(0) scale(1); }
       }
-      .arch-node { animation: archFadeIn 600ms ${t.ease} both; }
-      .arch-node-d0 { animation-delay: 0ms; }
-      .arch-node-d1 { animation-delay: 150ms; }
-      .arch-node-d2 { animation-delay: 300ms; }
-      .arch-node-d3 { animation-delay: 450ms; }
-      .arch-node-d4 { animation-delay: 600ms; }
+      @keyframes archPathDraw {
+        from { stroke-dashoffset: 200; }
+        to { stroke-dashoffset: 0; }
+      }
+      @keyframes archDetailSlide {
+        from { opacity: 0; transform: translateY(-8px); max-height: 0; }
+        to { opacity: 1; transform: translateY(0); max-height: 400px; }
+      }
       .arch-glow { animation: nodeGlow 3s ease-in-out infinite; }
     `}</style>
   );
@@ -399,9 +402,11 @@ const navLinks = [
 ];
 
 function Nav({ onConnect }: { onConnect: () => void }) {
+  const bp = useBreakpoint();
   const session = useSession();
   const { disconnect } = useDisconnect();
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -437,17 +442,20 @@ function Nav({ onConnect }: { onConnect: () => void }) {
       }}>
         <Logo size="md" />
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: 32 }}>
-          {navLinks.map(link => (
-            <a key={link.href} href={link.href}
-              style={{ fontSize: 14, fontWeight: 500, color: t.slate600, textDecoration: 'none', transition: `color 150ms ${t.ease}` }}
-              onMouseOver={e => { (e.target as HTMLElement).style.color = t.fg; }}
-              onMouseOut={e => { (e.target as HTMLElement).style.color = t.slate600; }}
-            >
-              {link.label}
-            </a>
-          ))}
-        </div>
+        {/* Desktop/Tablet nav links */}
+        {bp !== 'mobile' && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: bp === 'tablet' ? 16 : 32 }}>
+            {navLinks.map(link => (
+              <a key={link.href} href={link.href}
+                style={{ fontSize: bp === 'tablet' ? 13 : 14, fontWeight: 500, color: t.slate600, textDecoration: 'none', transition: `color 150ms ${t.ease}` }}
+                onMouseOver={e => { (e.target as HTMLElement).style.color = t.fg; }}
+                onMouseOut={e => { (e.target as HTMLElement).style.color = t.slate600; }}
+              >
+                {link.label}
+              </a>
+            ))}
+          </div>
+        )}
 
         {isConnected ? (
           /* ── Connected: dropdown button ── */
@@ -517,21 +525,60 @@ function Nav({ onConnect }: { onConnect: () => void }) {
           <button onClick={onConnect}
             style={{
               display: 'inline-flex', alignItems: 'center', gap: 8,
-              padding: '10px 28px', borderRadius: t.radius.sm,
-              fontSize: 15, fontWeight: 600, color: t.fg, border: 'none', cursor: 'pointer',
+              padding: responsive(bp, '8px 16px', '8px 20px', '10px 28px'), borderRadius: t.radius.sm,
+              fontSize: bp === 'mobile' ? 13 : 15, fontWeight: 600, color: t.fg, border: 'none', cursor: 'pointer',
               background: t.brand500, boxShadow: t.shadow.button,
               fontFamily: t.font, transition: `all 150ms ${t.ease}`,
             }}
             onMouseOver={e => { e.currentTarget.style.background = t.brand600; e.currentTarget.style.boxShadow = t.shadow.buttonHover; e.currentTarget.style.transform = 'translateY(-1px)'; }}
             onMouseOut={e => { e.currentTarget.style.background = t.brand500; e.currentTarget.style.boxShadow = t.shadow.button; e.currentTarget.style.transform = 'none'; }}
           >
-            <svg width={18} height={18} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <svg width={bp === 'mobile' ? 16 : 18} height={bp === 'mobile' ? 16 : 18} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M21 12a2.25 2.25 0 00-2.25-2.25H15a3 3 0 11-6 0H5.25A2.25 2.25 0 003 12m18 0v6a2.25 2.25 0 01-2.25 2.25H5.25A2.25 2.25 0 013 18v-6m18 0V9M3 12V9m18 0a2.25 2.25 0 00-2.25-2.25H5.25A2.25 2.25 0 003 9m18 0V6a2.25 2.25 0 00-2.25-2.25H5.25A2.25 2.25 0 003 6v3" />
             </svg>
-            Connect Wallet
+            {bp !== 'mobile' && 'Connect Wallet'}
+            {bp === 'mobile' && 'Connect'}
+          </button>
+        )}
+
+        {/* Mobile hamburger */}
+        {bp === 'mobile' && (
+          <button onClick={() => setMobileMenuOpen(o => !o)} style={{
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            width: 36, height: 36, borderRadius: t.radius.sm,
+            border: `1px solid ${t.border}`, background: 'transparent', cursor: 'pointer',
+            order: -1, marginRight: 'auto', marginLeft: 12,
+          }}>
+            <svg width={18} height={18} fill="none" viewBox="0 0 24 24" stroke={t.slate600} strokeWidth={2} strokeLinecap="round">
+              {mobileMenuOpen
+                ? <><path d="M6 6l12 12" /><path d="M6 18L18 6" /></>
+                : <><path d="M4 6h16" /><path d="M4 12h16" /><path d="M4 18h16" /></>
+              }
+            </svg>
           </button>
         )}
       </nav>
+
+      {/* Mobile menu dropdown */}
+      {bp === 'mobile' && mobileMenuOpen && (
+        <div style={{
+          position: 'absolute', top: 64, left: 0, right: 0, zIndex: 39,
+          background: 'rgba(255,255,255,0.97)', backdropFilter: 'blur(16px)',
+          borderBottom: `1px solid ${t.border}`, boxShadow: t.shadow.modal,
+          padding: '8px 24px 16px', fontFamily: t.font,
+        }}>
+          {navLinks.map(link => (
+            <a key={link.href} href={link.href} onClick={() => setMobileMenuOpen(false)}
+              style={{
+                display: 'block', padding: '14px 0', fontSize: 15, fontWeight: 500,
+                color: t.slate600, textDecoration: 'none',
+                borderBottom: `1px solid ${t.border}`,
+              }}>
+              {link.label}
+            </a>
+          ))}
+        </div>
+      )}
     </header>
   );
 }
@@ -539,10 +586,17 @@ function Nav({ onConnect }: { onConnect: () => void }) {
 /* ─── Hero (from apps/marketing/src/components/sections/Hero.tsx) ──────── */
 
 function Hero({ onConnect }: { onConnect: () => void }) {
+  const bp = useBreakpoint();
   return (
-    <section style={{ position: 'relative', padding: '80px 0 96px', fontFamily: t.font }}>
+    <section style={{ position: 'relative', padding: responsive(bp, '48px 0 56px', '64px 0 72px', '80px 0 96px'), fontFamily: t.font }}>
       <div style={{ maxWidth: 1152, margin: '0 auto', padding: '0 24px' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 64, alignItems: 'center' }}>
+        <div style={{
+          display: bp === 'mobile' ? 'flex' : 'grid',
+          flexDirection: bp === 'mobile' ? 'column' : undefined,
+          gridTemplateColumns: bp !== 'mobile' ? '1fr 1fr' : undefined,
+          gap: responsive(bp, 32, 32, 64),
+          alignItems: 'center',
+        }}>
           {/* Text Content */}
           <div>
             {/* Badge */}
@@ -557,7 +611,7 @@ function Hero({ onConnect }: { onConnect: () => void }) {
 
             {/* Headline */}
             <h1 style={{
-              fontSize: '3.25rem', lineHeight: 1.1, letterSpacing: '-0.02em',
+              fontSize: responsive(bp, '1.75rem', '2.5rem', '3.25rem'), lineHeight: 1.1, letterSpacing: '-0.02em',
               fontWeight: 700, color: t.fg, marginBottom: 24,
               textWrap: 'balance',
             }}>
@@ -579,7 +633,7 @@ function Hero({ onConnect }: { onConnect: () => void }) {
             </p>
 
             {/* CTAs */}
-            <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+            <div style={{ display: 'flex', flexDirection: bp === 'mobile' ? 'column' : 'row', gap: 12, alignItems: bp === 'mobile' ? 'stretch' : 'center' }}>
               <Link href="/docs/introduction"
                 style={{
                   display: 'inline-flex', alignItems: 'center', gap: 8,
@@ -596,91 +650,10 @@ function Hero({ onConnect }: { onConnect: () => void }) {
               <CopyInstallButton />
             </div>
 
-            {/* Mini Architecture Flow */}
-            <div style={{ marginTop: 48 }}>
-              <svg viewBox="0 0 620 200" fill="none" style={{ width: '100%', maxWidth: 580, height: 'auto', display: 'block' }}>
-                <defs>
-                  <linearGradient id="heroLineGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-                    <stop offset="0%" stopColor="#818CF8" stopOpacity="0.4" />
-                    <stop offset="50%" stopColor={t.brand500} stopOpacity="0.6" />
-                    <stop offset="100%" stopColor={t.brand500} stopOpacity="0.4" />
-                  </linearGradient>
-                  <filter id="heroDotGlow">
-                    <feGaussianBlur stdDeviation="2.5" result="blur" />
-                    <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
-                  </filter>
-                  <filter id="heroNodeShadow" x="-10%" y="-10%" width="120%" height="120%">
-                    <feDropShadow dx="0" dy="1" stdDeviation="4" floodColor="#0F172A" floodOpacity="0.06" />
-                  </filter>
-                </defs>
-
-                {/* ── Paths: Apps → CIP-0103 ── */}
-                {[57, 143].map((ay, i) => {
-                  const d = `M130,${ay} C177,${ay} 177,100 224,100`;
-                  return (
-                    <g key={`left-${i}`}>
-                      <path d={d} stroke={t.border} strokeWidth={1.2} />
-                      <path d={d} stroke="url(#heroLineGrad)" strokeWidth={1.5} strokeDasharray="6 10" style={{ animation: 'flowDash 1.4s linear infinite' }} />
-                      <circle r={3} fill={t.brand500} filter="url(#heroDotGlow)"
-                        style={{ offsetPath: `path('${d}')`, animation: `dotTravel 2.8s ${i * 0.5}s ease-in-out infinite` } as React.CSSProperties} />
-                    </g>
-                  );
-                })}
-
-                {/* ── Path: CIP-0103 → PartyLayer ── */}
-                {(() => {
-                  const d = 'M388,100 L456,100';
-                  return (
-                    <g>
-                      <path d={d} stroke={t.border} strokeWidth={1.2} />
-                      <path d={d} stroke="url(#heroLineGrad)" strokeWidth={1.5} strokeDasharray="6 10" style={{ animation: 'flowDash 1.2s linear infinite' }} />
-                      <circle r={3} fill={t.brand500} filter="url(#heroDotGlow)"
-                        style={{ offsetPath: `path('${d}')`, animation: 'dotTravel 2s 0.2s ease-in-out infinite' } as React.CSSProperties} />
-                    </g>
-                  );
-                })()}
-
-                {/* ── App A node ── */}
-                <g className="arch-node arch-node-d0">
-                  <rect x={16} y={34} width={114} height={46} rx={12} fill={t.bg} stroke={t.border} strokeWidth={1} filter="url(#heroNodeShadow)" />
-                  <rect x={26} y={43} width={26} height={26} rx={7} fill="#EEF2FF" />
-                  <text x={39} y={61} fontSize={12} fill="#818CF8" textAnchor="middle" fontFamily={t.mono} fontWeight={700}>{'</>'}</text>
-                  <text x={72} y={62} fontSize={13} fontWeight={600} fill={t.fg} fontFamily={t.font}>App A</text>
-                </g>
-
-                {/* ── App B node ── */}
-                <g className="arch-node arch-node-d0">
-                  <rect x={16} y={120} width={114} height={46} rx={12} fill={t.bg} stroke={t.border} strokeWidth={1} filter="url(#heroNodeShadow)" />
-                  <rect x={26} y={129} width={26} height={26} rx={7} fill="#EEF2FF" />
-                  <text x={39} y={147} fontSize={12} fill="#818CF8" textAnchor="middle" fontFamily={t.mono} fontWeight={700}>{'</>'}</text>
-                  <text x={72} y={148} fontSize={13} fontWeight={600} fill={t.fg} fontFamily={t.font}>App B</text>
-                </g>
-
-                {/* ── CIP-0103 node (golden glow) ── */}
-                <g className="arch-node arch-node-d1">
-                  <rect x={224} y={58} width={164} height={84} rx={16} fill={t.brand500} fillOpacity={0.06} />
-                  <rect x={224} y={58} width={164} height={84} rx={16}
-                    fill={t.bg} stroke={t.brand500} strokeWidth={1.2} strokeOpacity={0.35}
-                    filter="url(#heroNodeShadow)" className="arch-glow"
-                    style={{ transformOrigin: '306px 100px' } as React.CSSProperties} />
-                  <rect x={256} y={72} width={100} height={26} rx={7} fill={t.brand50} />
-                  <text x={306} y={90} fontSize={14} fontWeight={700} fill={t.brand600} textAnchor="middle" fontFamily={t.font}>CIP-0103</text>
-                  <text x={306} y={120} fontSize={15} fontWeight={600} fill={t.fg} textAnchor="middle" fontFamily={t.font}>dApp API</text>
-                </g>
-
-                {/* ── PartyLayer node ── */}
-                <g className="arch-node arch-node-d2">
-                  <rect x={456} y={66} width={150} height={68} rx={16}
-                    fill={t.bg} stroke={t.border} strokeWidth={1} filter="url(#heroNodeShadow)" />
-                  <image href="/favicon-new.svg" x={475} y={86} width={28} height={28} />
-                  <text x={511} y={105} fontSize={14} fontWeight={600} fill={t.fg} fontFamily={t.font}>PartyLayer</text>
-                </g>
-              </svg>
-            </div>
           </div>
 
           {/* Device Preview */}
-          <div style={{ position: 'relative' }}>
+          <div style={{ position: 'relative', display: bp === 'mobile' ? 'none' : 'block' }}>
             <div style={{ position: 'relative', maxWidth: 448, marginLeft: 'auto' }}>
               {/* Device Frame */}
               <div style={{
@@ -782,6 +755,346 @@ function Hero({ onConnect }: { onConnect: () => void }) {
   );
 }
 
+/* ─── Architecture Showcase ────────────────────────────────────────────── */
+
+type ArchNodeId = 'dapp' | 'hooks' | 'sdk' | 'adapters' | 'wallets';
+
+const archNodes: { id: ArchNodeId; label: string; sub: string; icon: ReactNode; detail: ReactNode }[] = [
+  {
+    id: 'dapp', label: 'Your dApp', sub: '3 lines to integrate',
+    icon: (
+      <svg width={28} height={28} fill="none" viewBox="0 0 24 24" stroke="#818CF8" strokeWidth={1.5}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M17.25 6.75L22.5 12l-5.25 5.25m-10.5 0L1.5 12l5.25-5.25m7.5-3l-4.5 16.5" />
+      </svg>
+    ),
+    detail: (
+      <div>
+        <div style={{ fontSize: 13, fontWeight: 600, color: t.fg, marginBottom: 8 }}>Quick Integration</div>
+        <pre style={{
+          margin: 0, padding: 12, borderRadius: 8, background: '#0F172A', fontSize: 12,
+          fontFamily: t.mono, lineHeight: 1.6, overflowX: 'auto', color: '#CBD5E1',
+        }}>
+          <span style={{ color: '#C084FC' }}>import</span>{' { PartyLayerKit }'} <span style={{ color: '#C084FC' }}>from</span> <span style={{ color: '#4ADE80' }}>{`'@partylayer/react'`}</span>{'\n'}
+          {'\n'}
+          <span style={{ color: '#64748B' }}>{'// Wrap your app — done.'}</span>{'\n'}
+          {'<'}<span style={{ color: '#F87171' }}>PartyLayerKit</span> <span style={{ color: '#FDBA74' }}>network</span>{'='}<span style={{ color: '#4ADE80' }}>{`"mainnet"`}</span>{'>'}{'\n'}
+          {'  <'}<span style={{ color: '#F87171' }}>App</span>{' />'}{'\n'}
+          {'</'}<span style={{ color: '#F87171' }}>PartyLayerKit</span>{'>'}
+        </pre>
+      </div>
+    ),
+  },
+  {
+    id: 'hooks', label: 'React Hooks', sub: 'useConnect, useSession',
+    icon: (
+      <svg width={28} height={28} viewBox="0 0 24 24" fill="#60A5FA">
+        <path d="M12 13.5a1.5 1.5 0 100-3 1.5 1.5 0 000 3z" />
+        <path d="M12 6c3.17 0 6.07.72 8.18 2.04.37.23.7.48 1 .76C22.3 9.86 23 11 23 12s-.7 2.14-1.82 3.2c-.3.28-.63.53-1 .76C18.07 17.28 15.17 18 12 18s-6.07-.72-8.18-2.04c-.37-.23-.7-.48-1-.76C1.7 14.14 1 13 1 12s.7-2.14 1.82-3.2c.3-.28.63-.53 1-.76C5.93 6.72 8.83 6 12 6zm0 1.5c-2.89 0-5.5.62-7.32 1.76-.26.16-.5.34-.72.52C3.04 10.6 2.5 11.33 2.5 12s.54 1.4 1.46 2.22c.22.18.46.36.72.52C6.5 15.88 9.11 16.5 12 16.5s5.5-.62 7.32-1.76c.26-.16.5-.34.72-.52.92-.82 1.46-1.55 1.46-2.22s-.54-1.4-1.46-2.22a7.3 7.3 0 00-.72-.52C17.5 8.12 14.89 7.5 12 7.5z" />
+        <path d="M8.03 17.7c1.59 2.74 3.54 4.3 5.47 4.3.97 0 1.89-.4 2.7-1.12.54-.48 1.03-1.1 1.48-1.84.79-1.32 1.38-2.96 1.72-4.78.12-.65.2-1.32.25-2.01.07-.96.05-1.93-.06-2.87-.08-.72-.2-1.41-.37-2.06a12.3 12.3 0 00-.73-2.06c-.36-.78-.79-1.46-1.28-2.01-.74-.83-1.59-1.37-2.53-1.5-.12-.02-.24-.02-.36-.02-1.93 0-3.88 1.56-5.47 4.3-.92 1.58-1.65 3.47-2.08 5.5-.43 2.03-.53 3.97-.33 5.67.07.58.18 1.13.32 1.64.17.6.4 1.15.68 1.63.17.3.37.58.58.84zm1.3-.75c-.16-.23-.3-.48-.42-.75-.23-.52-.4-1.1-.51-1.73-.18-1.48-.1-3.23.27-5.03.39-1.84 1.06-3.57 1.89-5C12.04 1.94 13.6.5 14.5.5l.2.01c.55.08 1.07.37 1.54.85.39.44.73.98 1.03 1.63.24.51.45 1.07.62 1.68.14.52.25 1.08.32 1.67.1.81.12 1.66.06 2.51-.04.59-.12 1.19-.22 1.77-.31 1.63-.84 3.12-1.52 4.27-.37.62-.77 1.14-1.2 1.53-.6.53-1.24.78-1.83.78-1.3 0-2.86-1.44-4.36-4.51l-.32-.71z" />
+        <path d="M15.97 17.7c-1.59 2.74-3.54 4.3-5.47 4.3-.97 0-1.89-.4-2.7-1.12-.54-.48-1.03-1.1-1.48-1.84-.79-1.32-1.38-2.96-1.72-4.78a20.1 20.1 0 01-.25-2.01c-.07-.96-.05-1.93.06-2.87.08-.72.2-1.41.37-2.06.24-.82.57-1.52.73-2.06.36-.78.79-1.46 1.28-2.01.74-.83 1.59-1.37 2.53-1.5.12-.02.24-.02.36-.02 1.93 0 3.88 1.56 5.47 4.3.92 1.58 1.65 3.47 2.08 5.5.43 2.03.53 3.97.33 5.67-.07.58-.18 1.13-.32 1.64-.17.6-.4 1.15-.68 1.63-.17.3-.37.58-.58.84zm-1.3-.75c.16-.23.3-.48.42-.75.23-.52.4-1.1.51-1.73.18-1.48.1-3.23-.27-5.03-.39-1.84-1.06-3.57-1.89-5C11.96 1.94 10.4.5 9.5.5l-.2.01c-.55.08-1.07.37-1.54.85-.39.44-.73.98-1.03 1.63-.24.51-.45 1.07-.62 1.68-.14.52-.25 1.08-.32 1.67-.1.81-.12 1.66-.06 2.51.04.59.12 1.19.22 1.77.31 1.63.84 3.12 1.52 4.27.37.62.77 1.14 1.2 1.53.6.53 1.24.78 1.83.78 1.3 0 2.86-1.44 4.36-4.51l.32-.71z" />
+      </svg>
+    ),
+    detail: (
+      <div>
+        <div style={{ fontSize: 13, fontWeight: 600, color: t.fg, marginBottom: 8 }}>Available Hooks</div>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
+          {['useConnect', 'useSession', 'useDisconnect', 'useWallets', 'useSign', 'useProvider'].map(h => (
+            <div key={h} style={{
+              padding: '6px 10px', borderRadius: 6, background: '#EEF2FF',
+              fontFamily: t.mono, fontSize: 12, color: '#4338CA', fontWeight: 500,
+            }}>{h}()</div>
+          ))}
+        </div>
+      </div>
+    ),
+  },
+  {
+    id: 'sdk', label: 'PartyLayer SDK', sub: 'CIP-0103 Compliant',
+    icon: <img src="/favicon-new.svg" alt="PartyLayer" width={28} height={28} />,
+    detail: (
+      <div>
+        <div style={{ fontSize: 13, fontWeight: 600, color: t.fg, marginBottom: 8 }}>Core Capabilities</div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+          {[
+            { m: 'connect / disconnect', d: 'Session lifecycle management' },
+            { m: 'signMessage', d: 'Arbitrary message signing' },
+            { m: 'prepareExecute', d: 'Transaction preparation & execution' },
+            { m: 'CIP-0103 Bridge', d: 'Native provider passthrough' },
+          ].map(({ m, d }) => (
+            <div key={m}>
+              <code style={{ fontFamily: t.mono, fontSize: 12, color: t.brand600, fontWeight: 600 }}>{m}</code>
+              <div style={{ fontSize: 11, color: t.slate500, marginTop: 1 }}>{d}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+    ),
+  },
+  {
+    id: 'adapters', label: 'Adapter Layer', sub: 'Auto-detected',
+    icon: (
+      <svg width={28} height={28} fill="none" viewBox="0 0 24 24" stroke="#10B981" strokeWidth={1.5}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M10.343 3.94c.09-.542.56-.94 1.11-.94h1.093c.55 0 1.02.398 1.11.94l.149.894c.07.424.384.764.78.93s.844.126 1.2-.143l.72-.533a1.125 1.125 0 011.37.104l.774.773c.394.394.48.972.104 1.37l-.533.72c-.27.356-.32.804-.143 1.2.177.396.506.71.93.78l.894.149c.542.09.94.56.94 1.11v1.093c0 .55-.398 1.02-.94 1.11l-.894.149c-.424.07-.764.384-.93.78s-.126.844.143 1.2l.533.72a1.125 1.125 0 01-.104 1.37l-.774.773c-.394.394-.972.48-1.37.104l-.72-.533c-.356-.27-.804-.32-1.2-.143-.396.177-.71.506-.78.93l-.149.894c-.09.542-.56.94-1.11.94h-1.093c-.55 0-1.02-.398-1.11-.94l-.149-.894a1.13 1.13 0 00-.78-.93c-.396-.177-.844-.126-1.2.143l-.72.533a1.125 1.125 0 01-1.37-.104l-.774-.773a1.125 1.125 0 01-.104-1.37l.533-.72c.27-.356.32-.804.143-1.2a1.13 1.13 0 00-.93-.78l-.894-.149c-.542-.09-.94-.56-.94-1.11v-1.093c0-.55.398-1.02.94-1.11l.894-.149a1.13 1.13 0 00.93-.78c.177-.396.126-.844-.143-1.2l-.533-.72a1.125 1.125 0 01.104-1.37l.774-.773a1.125 1.125 0 011.37-.104l.72.533c.356.27.804.32 1.2.143.396-.177.71-.506.78-.93l.149-.894z" />
+        <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+      </svg>
+    ),
+    detail: (
+      <div>
+        <div style={{ fontSize: 13, fontWeight: 600, color: t.fg, marginBottom: 8 }}>Transport Types</div>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+          {[
+            { label: 'Injected', color: '#818CF8' },
+            { label: 'QR Code', color: '#F472B6' },
+            { label: 'Deep Link', color: '#34D399' },
+            { label: 'OAuth2', color: '#FB923C' },
+            { label: 'CIP-0103 Native', color: t.brand600 },
+          ].map(({ label, color }) => (
+            <span key={label} style={{
+              padding: '4px 10px', borderRadius: 6, fontSize: 12, fontWeight: 500,
+              background: `${color}14`, color, border: `1px solid ${color}30`,
+            }}>{label}</span>
+          ))}
+        </div>
+      </div>
+    ),
+  },
+  {
+    id: 'wallets', label: 'Wallets', sub: '5 wallets, 1 integration',
+    icon: (
+      <svg width={28} height={28} fill="none" viewBox="0 0 24 24" stroke="#F59E0B" strokeWidth={1.5}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M21 12a2.25 2.25 0 00-2.25-2.25H15a3 3 0 11-6 0H5.25A2.25 2.25 0 003 12m18 0v6a2.25 2.25 0 01-2.25 2.25H5.25A2.25 2.25 0 013 18v-6m18 0V9M3 12V9m18 0a2.25 2.25 0 00-2.25-2.25H5.25A2.25 2.25 0 003 9m18 0V6a2.25 2.25 0 00-2.25-2.25H5.25A2.25 2.25 0 003 6v3" />
+      </svg>
+    ),
+    detail: (
+      <div>
+        <div style={{ fontSize: 13, fontWeight: 600, color: t.fg, marginBottom: 8 }}>Supported Wallets</div>
+        <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+          {wallets.map(w => (
+            <div key={w.id} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <img src={w.logo} alt={w.name} width={24} height={24} style={{ borderRadius: 6 }} />
+              <span style={{ fontSize: 13, fontWeight: 500, color: t.fg }}>{w.name}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    ),
+  },
+];
+
+function ArchitectureShowcase() {
+  const bp = useBreakpoint();
+  const [activeNode, setActiveNode] = useState<ArchNodeId | null>(null);
+  const [hoveredNode, setHoveredNode] = useState<ArchNodeId | null>(null);
+  const [isVisible, setIsVisible] = useState(false);
+  const sectionRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const el = sectionRef.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => { if (entry.isIntersecting) { setIsVisible(true); observer.disconnect(); } },
+      { threshold: 0.15 },
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
+  const toggleNode = (id: ArchNodeId) => setActiveNode(prev => prev === id ? null : id);
+  const highlighted = hoveredNode || activeNode;
+
+  return (
+    <section ref={sectionRef} style={{ padding: responsive(bp, '56px 0 48px', '64px 0 56px', '80px 0 64px'), fontFamily: t.font }}>
+      <div style={{ maxWidth: 1152, margin: '0 auto', padding: '0 24px' }}>
+        {/* Header */}
+        <div style={{
+          textAlign: 'center', marginBottom: responsive(bp, 32, 40, 56),
+          opacity: isVisible ? 1 : 0, transform: isVisible ? 'none' : 'translateY(24px)',
+          transition: `all 800ms ${t.ease}`,
+        }}>
+          <div style={{
+            display: 'inline-flex', alignItems: 'center', gap: 6,
+            padding: '4px 14px', borderRadius: 9999, marginBottom: 16,
+            background: t.brand50, border: `1px solid ${t.brand100}`,
+            fontSize: 13, fontWeight: 600, color: t.brand600, letterSpacing: '0.02em',
+          }}>
+            Architecture
+          </div>
+          <h2 style={{
+            fontSize: responsive(bp, '1.75rem', '2rem', '2.5rem'), fontWeight: 700, color: t.fg,
+            lineHeight: 1.15, letterSpacing: '-0.02em', marginBottom: 12,
+          }}>
+            How PartyLayer Works
+          </h2>
+          <p style={{ fontSize: bp === 'mobile' ? 15 : 17, color: t.slate500, maxWidth: 560, margin: '0 auto', lineHeight: 1.6 }}>
+            From your first line of code to a connected wallet — the entire flow, abstracted.
+          </p>
+        </div>
+
+        {/* Flow Diagram */}
+        <div style={{ position: 'relative' }}>
+          {/* Horizontal connector line (desktop only) */}
+          {bp === 'desktop' && (
+            <div style={{
+              position: 'absolute', top: 52, left: '10%', right: '10%',
+              height: 1, background: t.slate300,
+              opacity: isVisible ? 1 : 0,
+              transition: `opacity 800ms ${t.ease} 300ms`,
+              zIndex: 0, overflow: 'hidden',
+            }}>
+              {isVisible && [0, 1, 2, 3].map(j => (
+                <div key={j} style={{
+                  position: 'absolute', top: -3, width: 7, height: 7,
+                  borderRadius: '50%', background: t.brand500,
+                  boxShadow: `0 0 8px ${t.brand500}`,
+                  animation: `dotFlow 3.5s ${j * 0.8}s ease-in-out infinite`,
+                }} />
+              ))}
+            </div>
+          )}
+
+          {/* Node Grid / Flex */}
+          <div style={{
+            display: bp === 'mobile' ? 'flex' : 'grid',
+            flexDirection: bp === 'mobile' ? 'column' : undefined,
+            alignItems: bp === 'mobile' ? 'center' : 'start',
+            gridTemplateColumns: bp === 'desktop' ? 'repeat(5, 1fr)' : bp === 'tablet' ? 'repeat(3, 1fr)' : undefined,
+            justifyItems: 'center',
+            gap: bp === 'tablet' ? 16 : 0,
+            position: 'relative', zIndex: 1,
+          }}>
+            {archNodes.map((node, i) => {
+              const isActive = activeNode === node.id;
+              const isHovered = hoveredNode === node.id;
+              const isHighlighted = highlighted === node.id || !highlighted;
+              const isSdk = node.id === 'sdk';
+              const delay = i * 120;
+
+              return (
+                <div key={node.id} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', position: 'relative', zIndex: isActive ? 10 : 1, minWidth: 0 }}>
+                  {/* Vertical connector (mobile only) */}
+                  {i > 0 && bp === 'mobile' && isVisible && (
+                    <div style={{
+                      width: 1, height: 28, background: t.slate300, margin: '0 auto 0',
+                      opacity: isVisible ? 1 : 0,
+                    }} />
+                  )}
+
+                  {/* Node Card */}
+                  <button
+                    onClick={() => toggleNode(node.id)}
+                    onMouseEnter={() => setHoveredNode(node.id)}
+                    onMouseLeave={() => setHoveredNode(null)}
+                    style={{
+                      display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10,
+                      marginTop: bp === 'desktop' ? (isSdk ? 0 : 8) : 0,
+                      padding: isSdk ? '24px 20px' : '20px 16px',
+                      borderRadius: isSdk ? t.radius.xl : t.radius.lg,
+                      border: `1px solid ${isActive || isHovered ? (isSdk ? t.brand500 : t.slate300) : t.border}`,
+                      background: isActive ? (isSdk ? t.brand50 : t.muted) : t.bg,
+                      cursor: 'pointer', fontFamily: t.font, width: '100%',
+                      maxWidth: bp === 'mobile' ? 280 : (isSdk ? 200 : 170),
+                      boxShadow: isActive || isHovered
+                        ? (isSdk ? `0 0 24px rgba(255,204,0,0.15), ${t.shadow.cardHover}` : t.shadow.cardHover)
+                        : t.shadow.card,
+                      transform: isVisible
+                        ? (isHovered ? 'translateY(-4px)' : 'none')
+                        : 'translateY(24px) scale(0.95)',
+                      opacity: isVisible ? (isHighlighted ? 1 : 0.5) : 0,
+                      transition: `all 500ms ${t.ease} ${delay}ms`,
+                      position: 'relative', overflow: 'visible',
+                    }}
+                  >
+                    {/* CIP badge for SDK */}
+                    {isSdk && (
+                      <div style={{
+                        position: 'absolute', top: -10, left: '50%', transform: 'translateX(-50%)',
+                        padding: '2px 10px', borderRadius: 9999,
+                        background: t.brand500, fontSize: 10, fontWeight: 700,
+                        color: t.fg, letterSpacing: '0.05em', whiteSpace: 'nowrap',
+                      }}>
+                        CIP-0103
+                      </div>
+                    )}
+
+                    {/* Icon */}
+                    <div style={{
+                      width: isSdk ? 56 : 48, height: isSdk ? 56 : 48,
+                      borderRadius: isSdk ? 16 : 12,
+                      background: isSdk ? t.brand50 : t.muted,
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      border: `1px solid ${isSdk ? t.brand100 : t.border}`,
+                    }}>
+                      {node.icon}
+                    </div>
+
+                    {/* Label */}
+                    <div style={{ textAlign: 'center' }}>
+                      <div style={{ fontSize: isSdk ? 16 : 14, fontWeight: 600, color: t.fg, lineHeight: 1.3 }}>
+                        {node.label}
+                      </div>
+                      <div style={{ fontSize: 12, color: t.slate500, marginTop: 2 }}>
+                        {node.sub}
+                      </div>
+                    </div>
+
+                    {/* Expand indicator */}
+                    <div style={{
+                      width: 20, height: 20, borderRadius: '50%',
+                      background: isActive ? t.brand500 : t.muted,
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      transition: `all 200ms ${t.ease}`,
+                      transform: isActive ? 'rotate(180deg)' : 'none',
+                    }}>
+                      <svg width={10} height={10} fill="none" viewBox="0 0 24 24"
+                        stroke={isActive ? t.fg : t.slate400} strokeWidth={2.5}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                      </svg>
+                    </div>
+                  </button>
+
+                  {/* Detail Panel — smooth expand/collapse */}
+                  <div style={{
+                    overflow: 'hidden',
+                    maxHeight: isActive ? 400 : 0,
+                    opacity: isActive ? 1 : 0,
+                    marginTop: isActive ? 12 : 0,
+                    transition: `max-height 350ms ${t.ease}, opacity 250ms ${t.ease}, margin-top 350ms ${t.ease}`,
+                    width: '100%',
+                    maxWidth: bp === 'mobile' ? 320 : undefined,
+                  }}>
+                    <div style={{
+                      padding: 16, borderRadius: t.radius.md,
+                      background: 'rgba(255,255,255,0.95)',
+                      backdropFilter: 'blur(12px)',
+                      border: `1px solid ${t.border}`,
+                      boxShadow: t.shadow.modal,
+                    }}>
+                      {node.detail}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Bottom flow label */}
+          <div style={{
+            display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 8,
+            marginTop: bp === 'mobile' ? 24 : 40, opacity: isVisible ? 1 : 0,
+            transition: `opacity 800ms ${t.ease} 800ms`,
+          }}>
+            <div style={{ width: 40, height: 1, background: t.slate300 }} />
+            <span style={{ fontSize: 13, color: t.slate400, fontWeight: 500 }}>
+              Click any node to explore
+            </span>
+            <div style={{ width: 40, height: 1, background: t.slate300 }} />
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 /* ─── ProofBar (from apps/marketing/src/components/sections/ProofBar.tsx) ─ */
 
 const proofItems = [
@@ -842,11 +1155,12 @@ const proofItems = [
 ];
 
 function ProofBar() {
+  const bp = useBreakpoint();
   return (
-    <section id="features" style={{ padding: '64px 0', borderTop: `1px solid ${t.border}`, fontFamily: t.font }}>
+    <section id="features" style={{ padding: responsive(bp, '48px 0', '56px 0', '64px 0'), borderTop: `1px solid ${t.border}`, fontFamily: t.font }}>
       <div style={{ maxWidth: 1152, margin: '0 auto', padding: '0 24px' }}>
         {/* Feature Cards */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 24 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: responsive(bp, '1fr', 'repeat(2, 1fr)', 'repeat(3, 1fr)'), gap: bp === 'mobile' ? 16 : 24 }}>
           {proofItems.map((item, i) => (
             <CardHover key={i} style={{ padding: 20 }}>
               <div style={{ display: 'flex', alignItems: 'flex-start', gap: 16 }}>
@@ -903,121 +1217,17 @@ function ProofBar() {
 
 /* ─── How It Works (from apps/marketing/src/components/sections/HowItWorks.tsx) */
 
-const steps = [
-  {
-    number: '01',
-    title: 'Install packages',
-    description: 'Add the SDK and React bindings to your project with npm or yarn.',
-    code: 'npm i @partylayer/sdk @partylayer/react',
-    icon: (
-      <svg width={24} height={24} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
-      </svg>
-    ),
-  },
-  {
-    number: '02',
-    title: 'Wrap with PartyLayerKit',
-    description: 'Zero-config wrapper handles client, adapters, wallet discovery, and theming automatically.',
-    code: '<PartyLayerKit network="devnet" appName="My dApp">',
-    icon: (
-      <svg width={24} height={24} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M17.25 6.75L22.5 12l-5.25 5.25m-10.5 0L1.5 12l5.25-5.25m7.5-3l-4.5 16.5" />
-      </svg>
-    ),
-  },
-  {
-    number: '03',
-    title: 'Add ConnectButton',
-    description: 'Drop in a RainbowKit-style button with wallet modal, themes, and session management.',
-    code: '<ConnectButton />',
-    icon: (
-      <svg width={24} height={24} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M21 12a2.25 2.25 0 00-2.25-2.25H15a3 3 0 11-6 0H5.25A2.25 2.25 0 003 12m18 0v6a2.25 2.25 0 01-2.25 2.25H5.25A2.25 2.25 0 013 18v-6m18 0V9M3 12V9m18 0a2.25 2.25 0 00-2.25-2.25H5.25A2.25 2.25 0 003 9m18 0V6a2.25 2.25 0 00-2.25-2.25H5.25A2.25 2.25 0 003 6v3" />
-      </svg>
-    ),
-  },
-];
-
-function HowItWorks() {
-  return (
-    <section style={{ padding: '80px 0', background: 'rgba(245,246,248,0.3)', fontFamily: t.font }}>
-      <div style={{ maxWidth: 1152, margin: '0 auto', padding: '0 24px' }}>
-        {/* Section Header */}
-        <div style={{ textAlign: 'center', marginBottom: 56 }}>
-          <h2 style={{ fontSize: '2rem', lineHeight: 1.2, letterSpacing: '-0.015em', fontWeight: 700, color: t.fg, marginBottom: 12 }}>
-            How it works
-          </h2>
-          <p style={{ fontSize: 16, lineHeight: 1.6, color: t.slate500, maxWidth: 480, margin: '0 auto' }}>
-            Get up and running in under 5 minutes with just three simple steps.
-          </p>
-        </div>
-
-        {/* Steps */}
-        <div style={{ position: 'relative' }}>
-          {/* Connection Line */}
-          <div style={{
-            position: 'absolute', top: '50%', left: 0, right: 0, height: 1,
-            background: t.border, transform: 'translateY(-50%)',
-          }} />
-
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 32 }}>
-            {steps.map(step => (
-              <div key={step.number} style={{ position: 'relative' }}>
-                <div
-                  style={{
-                    position: 'relative', background: t.bg, borderRadius: t.radius.lg,
-                    border: `1px solid ${t.border}`, padding: 24,
-                    transition: `all 150ms ${t.ease}`,
-                  }}
-                  onMouseOver={e => { e.currentTarget.style.boxShadow = t.shadow.cardHover; e.currentTarget.style.transform = 'translateY(-4px)'; }}
-                  onMouseOut={e => { e.currentTarget.style.boxShadow = 'none'; e.currentTarget.style.transform = 'none'; }}
-                >
-                  {/* Step Number Badge */}
-                  <div style={{
-                    position: 'absolute', top: -12, left: 24,
-                    padding: '2px 8px', background: t.brand500, borderRadius: 4,
-                    fontSize: 12, fontWeight: 700, color: t.fg,
-                  }}>
-                    {step.number}
-                  </div>
-
-                  {/* Icon */}
-                  <div style={{
-                    width: 48, height: 48, borderRadius: t.radius.md, marginBottom: 16,
-                    background: t.brand50, color: t.brand600,
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  }}>
-                    {step.icon}
-                  </div>
-
-                  {/* Content */}
-                  <h3 style={{ fontSize: 20, fontWeight: 600, lineHeight: 1.4, color: t.fg, margin: '0 0 8px' }}>{step.title}</h3>
-                  <p style={{ fontSize: 14, lineHeight: 1.5, color: t.slate500, marginBottom: 16, marginTop: 0 }}>{step.description}</p>
-
-                  {/* Code Preview */}
-                  <div style={{ background: t.slate900, borderRadius: t.radius.sm, padding: '8px 12px' }}>
-                    <code style={{ fontSize: 13, color: '#CBD5E1', fontFamily: t.mono }}>{step.code}</code>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-    </section>
-  );
-}
 
 /* ─── Wallet Grid (from apps/marketing/src/components/sections/WalletGrid.tsx) */
 
 function WalletGrid() {
+  const bp = useBreakpoint();
   return (
-    <section id="wallets" style={{ padding: '80px 0', borderTop: `1px solid ${t.border}`, fontFamily: t.font }}>
+    <section id="wallets" style={{ padding: responsive(bp, '56px 0', '64px 0', '80px 0'), borderTop: `1px solid ${t.border}`, fontFamily: t.font }}>
       <div style={{ maxWidth: 1152, margin: '0 auto', padding: '0 24px' }}>
         {/* Section Header */}
-        <div style={{ textAlign: 'center', marginBottom: 56 }}>
-          <h2 style={{ fontSize: '2rem', lineHeight: 1.2, letterSpacing: '-0.015em', fontWeight: 700, color: t.fg, marginBottom: 12 }}>
+        <div style={{ textAlign: 'center', marginBottom: responsive(bp, 32, 40, 56) }}>
+          <h2 style={{ fontSize: responsive(bp, '1.5rem', '1.75rem', '2rem'), lineHeight: 1.2, letterSpacing: '-0.015em', fontWeight: 700, color: t.fg, marginBottom: 12 }}>
             Supported wallets
           </h2>
           <p style={{ fontSize: 16, lineHeight: 1.6, color: t.slate500, maxWidth: 520, margin: '0 auto' }}>
@@ -1026,7 +1236,7 @@ function WalletGrid() {
         </div>
 
         {/* Wallet Cards */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 24 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: responsive(bp, '1fr', 'repeat(2, 1fr)', 'repeat(5, 1fr)'), gap: bp === 'mobile' ? 16 : 24 }}>
           {wallets.map(wallet => (
             <CardHover key={wallet.id} style={{ padding: 20, cursor: 'pointer' }}>
               {/* Logo */}
@@ -1130,6 +1340,7 @@ const accounts = await provider.request({ method: 'listAccounts' });`,
 ];
 
 function DeveloperQuickstart() {
+  const bp = useBreakpoint();
   const [activeTab, setActiveTab] = useState('install');
   const [copied, setCopied] = useState(false);
   const tab = codeTabs.find(c => c.id === activeTab)!;
@@ -1142,11 +1353,11 @@ function DeveloperQuickstart() {
   };
 
   return (
-    <section id="quickstart" style={{ padding: '80px 0', background: 'rgba(245,246,248,0.3)', borderTop: `1px solid ${t.border}`, fontFamily: t.font }}>
+    <section id="quickstart" style={{ padding: responsive(bp, '56px 0', '64px 0', '80px 0'), background: 'rgba(245,246,248,0.3)', borderTop: `1px solid ${t.border}`, fontFamily: t.font }}>
       <div style={{ maxWidth: 768, margin: '0 auto', padding: '0 24px' }}>
         {/* Section Header */}
-        <div style={{ textAlign: 'center', marginBottom: 40 }}>
-          <h2 style={{ fontSize: '2rem', lineHeight: 1.2, letterSpacing: '-0.015em', fontWeight: 700, color: t.fg, marginBottom: 12 }}>
+        <div style={{ textAlign: 'center', marginBottom: bp === 'mobile' ? 24 : 40 }}>
+          <h2 style={{ fontSize: responsive(bp, '1.5rem', '1.75rem', '2rem'), lineHeight: 1.2, letterSpacing: '-0.015em', fontWeight: 700, color: t.fg, marginBottom: 12 }}>
             Developer quickstart
           </h2>
           <p style={{ fontSize: 16, lineHeight: 1.6, color: t.slate500, maxWidth: 480, margin: '0 auto' }}>
@@ -1164,7 +1375,7 @@ function DeveloperQuickstart() {
             {codeTabs.map(ct => (
               <button key={ct.id} onClick={() => { setActiveTab(ct.id); setCopied(false); }}
                 style={{
-                  flex: 1, padding: '12px 16px', fontSize: 14, fontWeight: 500,
+                  flex: 1, padding: responsive(bp, '10px 8px', '12px 14px', '12px 16px'), fontSize: responsive(bp, 12, 13, 14), fontWeight: 500,
                   background: activeTab === ct.id ? t.muted : 'transparent',
                   color: activeTab === ct.id ? t.fg : t.slate500,
                   borderBottom: activeTab === ct.id ? `2px solid ${t.brand500}` : '2px solid transparent',
@@ -1211,11 +1422,11 @@ function DeveloperQuickstart() {
         </div>
 
         {/* Quick Links */}
-        <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: 16, marginTop: 32 }}>
+        <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: bp === 'mobile' ? 12 : 16, marginTop: bp === 'mobile' ? 24 : 32, flexDirection: bp === 'mobile' ? 'column' : 'row' }}>
           <Link href="/docs/introduction"
             style={{
-              display: 'inline-flex', alignItems: 'center', gap: 8,
-              padding: '10px 20px', borderRadius: t.radius.sm,
+              display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+              padding: responsive(bp, '10px 16px', '10px 20px', '10px 20px'), borderRadius: t.radius.sm,
               background: t.brand500, color: t.fg, fontWeight: 600, fontSize: 14, textDecoration: 'none',
               transition: `background 150ms ${t.ease}`,
             }}
@@ -1229,8 +1440,8 @@ function DeveloperQuickstart() {
           </Link>
           <Link href="/kit-demo"
             style={{
-              display: 'inline-flex', alignItems: 'center', gap: 8,
-              padding: '10px 20px', borderRadius: t.radius.sm,
+              display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+              padding: responsive(bp, '10px 16px', '10px 20px', '10px 20px'), borderRadius: t.radius.sm,
               border: `1px solid ${t.border}`, color: t.fg, fontWeight: 600, fontSize: 14, textDecoration: 'none',
               transition: `all 150ms ${t.ease}`,
             }}>
@@ -1248,12 +1459,13 @@ function DeveloperQuickstart() {
 /* ─── Demo CTA (replaces interactive Demo — links to /kit-demo) ────────── */
 
 function DemoCTA({ onConnect }: { onConnect: () => void }) {
+  const bp = useBreakpoint();
   return (
-    <section id="demo" style={{ padding: '80px 0', borderTop: `1px solid ${t.border}`, fontFamily: t.font }}>
+    <section id="demo" style={{ padding: responsive(bp, '56px 0', '64px 0', '80px 0'), borderTop: `1px solid ${t.border}`, fontFamily: t.font }}>
       <div style={{ maxWidth: 768, margin: '0 auto', padding: '0 24px' }}>
         {/* Section Header */}
-        <div style={{ textAlign: 'center', marginBottom: 40 }}>
-          <h2 style={{ fontSize: '2rem', lineHeight: 1.2, letterSpacing: '-0.015em', fontWeight: 700, color: t.fg, marginBottom: 12 }}>
+        <div style={{ textAlign: 'center', marginBottom: bp === 'mobile' ? 24 : 40 }}>
+          <h2 style={{ fontSize: responsive(bp, '1.5rem', '1.75rem', '2rem'), lineHeight: 1.2, letterSpacing: '-0.015em', fontWeight: 700, color: t.fg, marginBottom: 12 }}>
             Interactive demo
           </h2>
           <p style={{ fontSize: 16, lineHeight: 1.6, color: t.slate500, maxWidth: 480, margin: '0 auto' }}>
@@ -1266,10 +1478,10 @@ function DemoCTA({ onConnect }: { onConnect: () => void }) {
           background: t.bg, borderRadius: t.radius.lg, border: `1px solid ${t.border}`,
           boxShadow: t.shadow.card, overflow: 'hidden',
         }}>
-          <div style={{ padding: 32 }}>
+          <div style={{ padding: responsive(bp, 16, 24, 32) }}>
             <div style={{
               display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-              padding: 32, borderRadius: t.radius.lg, background: 'rgba(245,246,248,0.5)', border: `1px solid ${t.border}`,
+              padding: responsive(bp, 20, 28, 32), borderRadius: t.radius.lg, background: 'rgba(245,246,248,0.5)', border: `1px solid ${t.border}`,
             }}>
               {/* Icon */}
               <div style={{
@@ -1344,14 +1556,15 @@ const faqItems = [
 ];
 
 function FAQ() {
+  const bp = useBreakpoint();
   const [openIndex, setOpenIndex] = useState<number | null>(0);
 
   return (
-    <section id="faq" style={{ padding: '80px 0', borderTop: `1px solid ${t.border}`, fontFamily: t.font }}>
+    <section id="faq" style={{ padding: responsive(bp, '56px 0', '64px 0', '80px 0'), borderTop: `1px solid ${t.border}`, fontFamily: t.font }}>
       <div style={{ maxWidth: 720, margin: '0 auto', padding: '0 24px' }}>
         {/* Section Header */}
-        <div style={{ textAlign: 'center', marginBottom: 56 }}>
-          <h2 style={{ fontSize: '2rem', lineHeight: 1.2, letterSpacing: '-0.015em', fontWeight: 700, color: t.fg, marginBottom: 12 }}>
+        <div style={{ textAlign: 'center', marginBottom: bp === 'mobile' ? 32 : 56 }}>
+          <h2 style={{ fontSize: responsive(bp, '1.5rem', '1.75rem', '2rem'), lineHeight: 1.2, letterSpacing: '-0.015em', fontWeight: 700, color: t.fg, marginBottom: 12 }}>
             Frequently asked questions
           </h2>
           <p style={{ fontSize: 16, lineHeight: 1.6, color: t.slate500 }}>
@@ -1435,22 +1648,23 @@ const footerLinks = [
 ];
 
 function Footer() {
+  const bp = useBreakpoint();
   const year = new Date().getFullYear();
 
   return (
     <footer style={{ borderTop: `1px solid ${t.border}`, background: 'rgba(245,246,248,0.3)', fontFamily: t.font }}>
-      <div style={{ maxWidth: 1152, margin: '0 auto', padding: '48px 24px' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 32, alignItems: 'center' }}>
+      <div style={{ maxWidth: 1152, margin: '0 auto', padding: responsive(bp, '32px 24px', '40px 24px', '48px 24px') }}>
+        <div style={{ display: 'grid', gridTemplateColumns: bp === 'mobile' ? '1fr' : '1fr 1fr', gap: bp === 'mobile' ? 24 : 32, alignItems: bp === 'mobile' ? 'flex-start' : 'center' }}>
           {/* Branding */}
-          <div>
+          <div style={{ textAlign: bp === 'mobile' ? 'center' : 'left' }}>
             <Logo size="lg" />
-            <p style={{ marginTop: 16, fontSize: 16, lineHeight: 1.6, color: t.slate500, maxWidth: 360 }}>
+            <p style={{ marginTop: 16, fontSize: bp === 'mobile' ? 14 : 16, lineHeight: 1.6, color: t.slate500, maxWidth: 360, margin: bp === 'mobile' ? '16px auto 0' : undefined }}>
               One SDK for every Canton wallet. Open source, registry-backed, and built for developers.
             </p>
           </div>
 
           {/* Links */}
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px 24px', justifyContent: 'flex-end' }}>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px 24px', justifyContent: bp === 'mobile' ? 'center' : 'flex-end' }}>
             {footerLinks.map(link => (
               <a key={link.label} href={link.href} target="_blank" rel="noopener noreferrer"
                 style={{
@@ -1469,8 +1683,8 @@ function Footer() {
         </div>
 
         {/* Bottom Bar */}
-        <div style={{ marginTop: 40, paddingTop: 24, borderTop: `1px solid ${t.border}` }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 16 }}>
+        <div style={{ marginTop: bp === 'mobile' ? 24 : 40, paddingTop: bp === 'mobile' ? 20 : 24, borderTop: `1px solid ${t.border}` }}>
+          <div style={{ display: 'flex', flexDirection: bp === 'mobile' ? 'column' : 'row', justifyContent: bp === 'mobile' ? 'center' : 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 16 }}>
             <p style={{ fontSize: 14, color: t.slate400, margin: 0 }}>
               &copy; {year} PartyLayer. MIT License.
             </p>
@@ -1493,7 +1707,7 @@ function Footer() {
           </div>
 
           {/* Contact */}
-          <div style={{ marginTop: 16, textAlign: 'right' }}>
+          <div style={{ marginTop: 16, textAlign: bp === 'mobile' ? 'center' : 'right' }}>
             <a href="mailto:info@cayvox.com"
               style={{ fontSize: 14, color: t.slate400, textDecoration: 'none', transition: `color 150ms ${t.ease}` }}
               onMouseOver={e => { (e.target as HTMLElement).style.color = t.brand600; }}
@@ -1522,8 +1736,8 @@ function LandingContent() {
         <Nav onConnect={openModal} />
         <main>
           <Hero onConnect={openModal} />
+          <ArchitectureShowcase />
           <ProofBar />
-          <HowItWorks />
           <WalletGrid />
           <DeveloperQuickstart />
           <DemoCTA onConnect={openModal} />
@@ -1541,14 +1755,33 @@ function LandingContent() {
   );
 }
 
+/* ─── Loading Skeleton (shown during SSR + hydration) ─────────────────── */
+
+function LoadingSkeleton() {
+  return (
+    <div style={{
+      minHeight: '100vh', display: 'flex', flexDirection: 'column',
+      alignItems: 'center', justifyContent: 'center', gap: 16,
+      background: '#FFFFFF', fontFamily: t.font,
+    }}>
+      <img src="/favicon-new.svg" alt="" width={48} height={48} style={{ opacity: 0.7 }} />
+      <div style={{
+        width: 32, height: 32, border: `3px solid ${t.muted2}`,
+        borderTopColor: t.brand500, borderRadius: '50%',
+        animation: 'plSpin .7s linear infinite',
+      }} />
+      <style>{`@keyframes plSpin { to { transform: rotate(360deg); } }`}</style>
+    </div>
+  );
+}
+
 export default function Home() {
   const [mounted, setMounted] = useState(false);
   useEffect(() => { setMounted(true); }, []);
 
-  // Render nothing on server — PartyLayerKit needs browser APIs (window.canton.*).
-  // Without this guard, SSR output differs from client output, React hydration
-  // fails silently, and no event handlers get attached (buttons appear frozen).
-  if (!mounted) return null;
+  // Show loading skeleton until client-side JS hydrates.
+  // PartyLayerKit needs browser APIs (window.canton.*) so we can't render it on server.
+  if (!mounted) return <LoadingSkeleton />;
 
   return (
     <PartyLayerKit network="devnet" appName="PartyLayer" walletIcons={WALLET_LOGOS}>

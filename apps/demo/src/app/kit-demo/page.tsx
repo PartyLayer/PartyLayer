@@ -9,6 +9,7 @@ import {
   useSignMessage,
   usePartyLayer,
 } from '@partylayer/react';
+import { useBreakpoint, responsive } from '../hooks/useBreakpoint';
 
 // ─── Design Tokens (light + dark, matching marketing/landing page) ──────────
 
@@ -101,6 +102,7 @@ function getWalletLogo(walletId: string): string | null {
 // ─── Inner Content ──────────────────────────────────────────────────────────
 
 function DemoContent() {
+  const bp = useBreakpoint();
   const c = useTokens();
   const shadow = c.shadow;
   const session = useSession();
@@ -125,9 +127,9 @@ function DemoContent() {
       {/* Stats Bar */}
       <div style={{
         display: 'grid',
-        gridTemplateColumns: 'repeat(3, 1fr)',
-        gap: '16px',
-        marginBottom: '32px',
+        gridTemplateColumns: bp === 'mobile' ? '1fr' : 'repeat(3, 1fr)',
+        gap: bp === 'mobile' ? '12px' : '16px',
+        marginBottom: bp === 'mobile' ? '24px' : '32px',
       }}>
         <StatCard label="Total Wallets" value={isLoading ? '...' : String(wallets.length)} />
         <StatCard label="CIP-0103 Native" value={isLoading ? '...' : String(nativeWallets.length)} accent={c.brand600} />
@@ -151,7 +153,7 @@ function DemoContent() {
         </PLCardHeader>
         <div style={{ padding: '20px' }}>
           {session ? (
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: bp === 'mobile' ? '1fr' : '1fr 1fr', gap: bp === 'mobile' ? '12px' : '16px' }}>
               <InfoField label="Party ID" value={String(session.partyId)} mono />
               <InfoField label="Wallet" value={String(session.walletId)} />
               <InfoField label="Session ID" value={String(session.sessionId)} mono />
@@ -199,7 +201,7 @@ function DemoContent() {
               {nativeWallets.length > 0 && (
                 <div style={{ marginBottom: registryWallets.length > 0 ? '24px' : 0 }}>
                   <SectionLabel label="CIP-0103 Native" count={nativeWallets.length} />
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '12px' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: `repeat(auto-fill, minmax(${bp === 'mobile' ? '240px' : '280px'}, 1fr))`, gap: '12px' }}>
                     {nativeWallets.map((w) => (
                       <WalletCard
                         key={w.walletId}
@@ -217,7 +219,7 @@ function DemoContent() {
               {registryWallets.length > 0 && (
                 <div>
                   <SectionLabel label="Registry" count={registryWallets.length} />
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '12px' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: `repeat(auto-fill, minmax(${bp === 'mobile' ? '240px' : '280px'}, 1fr))`, gap: '12px' }}>
                     {registryWallets.map((w) => (
                       <WalletCard
                         key={w.walletId}
@@ -243,7 +245,7 @@ function DemoContent() {
 
       {/* Interactive Tests (only when connected) */}
       {session && (
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '24px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: bp === 'mobile' ? '1fr' : '1fr 1fr', gap: bp === 'mobile' ? '16px' : '20px', marginBottom: '24px' }}>
           {/* Sign Message */}
           <PLCard>
             <PLCardHeader>
@@ -646,6 +648,7 @@ function InfoField({ label, value, mono }: { label: string; value: string; mono?
 // ─── Code Block (matching marketing browser chrome pattern) ─────────────────
 
 function CodeBlock() {
+  const bp = useBreakpoint();
   const c = useTokens();
   const shadow = c.shadow;
   return (
@@ -686,9 +689,10 @@ function CodeBlock() {
       </div>
       {/* Code content — always dark for readability */}
       <div style={{
-        padding: '20px 24px',
+        padding: bp === 'mobile' ? '16px' : '20px 24px',
         fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace',
-        fontSize: '13px',
+        fontSize: bp === 'mobile' ? '12px' : '13px',
+        overflowX: 'auto',
         lineHeight: 1.8,
         backgroundColor: '#0F172A',
         color: '#e2e8f0',
@@ -722,10 +726,25 @@ export default function KitDemoPage() {
     return () => mq.removeEventListener('change', handler);
   }, [theme]);
 
+  const bp = useBreakpoint();
   const isDark = theme === 'dark' || (theme === 'auto' && systemDark);
   const c = isDark ? darkTokens : lightTokens;
 
-  if (!mounted) return null;
+  if (!mounted) return (
+    <div style={{
+      minHeight: '100vh', display: 'flex', flexDirection: 'column',
+      alignItems: 'center', justifyContent: 'center', gap: 16,
+      background: '#FFFFFF', fontFamily: font,
+    }}>
+      <img src="/favicon-new.svg" alt="" width={48} height={48} style={{ opacity: 0.7 }} />
+      <div style={{
+        width: 32, height: 32, border: '3px solid #EEF0F4',
+        borderTopColor: '#FFCC00', borderRadius: '50%',
+        animation: 'plSpin .7s linear infinite',
+      }} />
+      <style>{`@keyframes plSpin { to { transform: rotate(360deg); } }`}</style>
+    </div>
+  );
 
   return (
     <TokensContext.Provider value={c}>
@@ -752,8 +771,8 @@ export default function KitDemoPage() {
                   src="/partylayer.xyz.svg"
                   alt="PartyLayer"
                   style={{
-                    height: '96px',
-                    margin: '-35px 0 -35px -9px',
+                    height: bp === 'mobile' ? '72px' : '96px',
+                    margin: bp === 'mobile' ? '-25px 0 -25px -7px' : '-35px 0 -35px -9px',
                     filter: isDark ? 'invert(1)' : 'none',
                   }}
                   draggable={false}
@@ -773,12 +792,12 @@ export default function KitDemoPage() {
                       key={t}
                       onClick={() => setTheme(t)}
                       style={{
-                        padding: '6px 12px',
+                        padding: bp === 'mobile' ? '5px 8px' : '6px 12px',
                         border: 'none',
                         backgroundColor: theme === t ? c.brand50 : 'transparent',
                         color: theme === t ? c.brand600 : c.slate500,
                         cursor: 'pointer',
-                        fontSize: '12px',
+                        fontSize: bp === 'mobile' ? '11px' : '12px',
                         fontWeight: theme === t ? 600 : 400,
                         fontFamily: font,
                         transition: 'all 150ms',
@@ -794,7 +813,7 @@ export default function KitDemoPage() {
             </nav>
 
             {/* Hero Section */}
-            <section style={{ padding: '48px 0 40px' }}>
+            <section style={{ padding: responsive(bp, '32px 0 28px', '40px 0 36px', '48px 0 40px') }}>
               {/* Badge */}
               <div style={{
                 display: 'inline-flex',
@@ -818,7 +837,7 @@ export default function KitDemoPage() {
 
               <h1 style={{
                 margin: '0 0 12px',
-                fontSize: '2.5rem',
+                fontSize: responsive(bp, '1.75rem', '2rem', '2.5rem'),
                 fontWeight: 700,
                 lineHeight: 1.15,
                 letterSpacing: '-0.02em',
@@ -890,12 +909,14 @@ export default function KitDemoPage() {
 
             {/* Footer */}
             <footer style={{
-              padding: '24px 0',
-              marginTop: '40px',
+              padding: bp === 'mobile' ? '20px 0' : '24px 0',
+              marginTop: bp === 'mobile' ? '24px' : '40px',
               borderTop: `1px solid ${c.border}`,
               display: 'flex',
-              justifyContent: 'space-between',
+              flexDirection: bp === 'mobile' ? 'column' : 'row',
+              justifyContent: bp === 'mobile' ? 'center' : 'space-between',
               alignItems: 'center',
+              gap: bp === 'mobile' ? '8px' : undefined,
             }}>
               <span style={{ fontSize: '13px', color: c.slate400 }}>
                 PartyLayer SDK — Canton Network
