@@ -1,4 +1,17 @@
-# PartyLayer Adapter Starter
+# @partylayer/adapter-starter
+
+<div align="center">
+
+**Starter template for building PartyLayer wallet adapters**
+
+[![npm version](https://img.shields.io/npm/v/@partylayer/adapter-starter.svg?style=flat-square)](https://www.npmjs.com/package/@partylayer/adapter-starter)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=flat-square)](https://opensource.org/licenses/MIT)
+
+</div>
+
+---
+
+## Overview
 
 A starter template for building wallet adapters for PartyLayer SDK.
 

@@ -1,5 +1,11 @@
 # @cantonconnect/adapter-starter
 
+## 0.1.7
+
+### Patch Changes
+
+- Standardize README format with badges and consistent heading.
+
 ## 0.1.6
 
 ### Patch Changes
