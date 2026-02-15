@@ -3,8 +3,11 @@ import Script from 'next/script';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'PartyLayer Demo',
-  description: 'Demo dApp for PartyLayer SDK',
+  title: 'PartyLayer',
+  description: 'One SDK for every Canton wallet',
+  icons: {
+    icon: '/favicon-new.svg',
+  },
 };
 
 export default function RootLayout({
