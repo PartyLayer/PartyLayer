@@ -1,5 +1,13 @@
 # @cantonconnect/conformance-runner
 
+## 0.1.7
+
+### Patch Changes
+
+- Updated dependencies
+  - @partylayer/core@0.2.6
+  - @partylayer/provider@0.1.3
+
 ## 0.1.6
 
 ### Patch Changes

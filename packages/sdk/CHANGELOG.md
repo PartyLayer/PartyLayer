@@ -1,5 +1,20 @@
 # @cantonconnect/sdk
 
+## 0.2.8
+
+### Patch Changes
+
+- fix: resolve workspace:\* protocol in published packages and add ledgerApi support
+- Updated dependencies
+  - @partylayer/core@0.2.6
+  - @partylayer/provider@0.1.3
+  - @partylayer/registry-client@0.2.6
+  - @partylayer/adapter-console@0.2.5
+  - @partylayer/adapter-loop@0.2.5
+  - @partylayer/adapter-cantor8@0.2.5
+  - @partylayer/adapter-nightly@0.2.5
+  - @partylayer/adapter-bron@0.2.5
+
 ## 0.2.6
 
 ### Patch Changes

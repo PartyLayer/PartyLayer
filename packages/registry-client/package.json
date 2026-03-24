@@ -1,6 +1,6 @@
 {
   "name": "@partylayer/registry-client",
-  "version": "0.2.5",
+  "version": "0.2.6",
   "description": "Wallet registry client for PartyLayer",
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",
