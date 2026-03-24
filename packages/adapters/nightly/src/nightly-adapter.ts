@@ -20,6 +20,8 @@ import type {
   SignedMessage,
   SignedTransaction,
   TxReceipt,
+  LedgerApiParams,
+  LedgerApiResult,
   Session,
   PersistedSession,
   CapabilityKey,
@@ -129,6 +131,7 @@ export class NightlyAdapter implements WalletAdapter {
       'restore',
       'signMessage',
       'submitTransaction',
+      'ledgerApi',
       'events',
       'injected',
     ];
@@ -388,6 +391,81 @@ export class NightlyAdapter implements WalletAdapter {
       throw mapUnknownErrorToPartyLayerError(err, {
         walletId: this.walletId,
         phase: 'submitTransaction',
+        transport: 'injected',
+        details: { sessionId: session.sessionId },
+      });
+    }
+  }
+
+  /**
+   * Proxy a Ledger API request through the Nightly Wallet.
+   *
+   * Nightly's canton provider may expose ledgerApi or a generic request()
+   * method. We check at runtime — the interface is cast to include these
+   * optional methods that may be present in newer wallet versions.
+   */
+  async ledgerApi(
+    ctx: AdapterContext,
+    session: Session,
+    params: LedgerApiParams,
+  ): Promise<LedgerApiResult> {
+    try {
+      const provider = window.nightly?.canton as unknown as
+        | (NightlyCantonProvider & {
+            ledgerApi?: (p: { requestMethod: string; resource: string; body?: string }) => Promise<unknown>;
+            request?: (args: { method: string; params?: unknown }) => Promise<unknown>;
+          })
+        | undefined;
+
+      if (!provider) {
+        throw new Error('Not connected to Nightly Wallet');
+      }
+
+      ctx.logger.debug('Proxying ledger API request via Nightly Wallet', {
+        sessionId: session.sessionId,
+        requestMethod: params.requestMethod,
+        resource: params.resource,
+      });
+
+      if (typeof provider.ledgerApi === 'function') {
+        const result = await provider.ledgerApi({
+          requestMethod: params.requestMethod,
+          resource: params.resource,
+          body: params.body,
+        });
+        const response = result as { response?: string } | string;
+        return {
+          response: typeof response === 'string'
+            ? response
+            : (response?.response ?? JSON.stringify(response)),
+        };
+      }
+
+      if (typeof provider.request === 'function') {
+        const result = await provider.request({
+          method: 'ledgerApi',
+          params: {
+            requestMethod: params.requestMethod,
+            resource: params.resource,
+            body: params.body,
+          },
+        });
+        const response = result as { response?: string } | string;
+        return {
+          response: typeof response === 'string'
+            ? response
+            : (response?.response ?? JSON.stringify(response)),
+        };
+      }
+
+      throw new CapabilityNotSupportedError(
+        this.walletId,
+        'ledgerApi — update Nightly Wallet to a version that supports CIP-0103 ledgerApi',
+      );
+    } catch (err) {
+      throw mapUnknownErrorToPartyLayerError(err, {
+        walletId: this.walletId,
+        phase: 'ledgerApi',
         transport: 'injected',
         details: { sessionId: session.sessionId },
       });

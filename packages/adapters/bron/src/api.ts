@@ -209,6 +209,39 @@ export class BronApiClient {
   }
 
   /**
+   * Proxy a Canton Ledger API request through the Bron remote signer.
+   *
+   * Bron acts as an authenticated HTTP proxy — it forwards the request
+   * to the Canton Ledger API on behalf of the connected party and returns
+   * the raw JSON response.
+   */
+  async proxyLedgerApi(request: {
+    requestMethod: string;
+    resource: string;
+    body?: string;
+    sessionId: string;
+  }): Promise<{ response: string }> {
+    if (this.config.baseUrl.includes('mock') || this.config.baseUrl.includes('dev')) {
+      return { response: JSON.stringify({ activeContracts: [], nextPageToken: null }) };
+    }
+
+    const headers = await this.getHeaders();
+    const response = await fetch(`${this.config.baseUrl}/ledger-proxy`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(request),
+    });
+
+    if (!response.ok) {
+      const error = await response.text();
+      throw new Error(`Ledger API proxy failed: ${error}`);
+    }
+
+    const data = (await response.json()) as { response: string };
+    return { response: data.response };
+  }
+
+  /**
    * Poll request status until complete
    */
   async pollRequestStatus(
