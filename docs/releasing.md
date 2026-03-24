@@ -84,7 +84,12 @@ Create a PR with the version bump. After review and merge:
 pnpm release
 ```
 
-This publishes packages to npm (requires authentication).
+This builds all packages and publishes to npm (requires authentication).
+
+> **Important:** Always use `pnpm release`, never `npm run release` or `yarn release`.
+> pnpm automatically resolves `workspace:*` dependencies to their actual semver versions
+> at publish time. Using npm or yarn will publish unresolved `workspace:*` references,
+> which causes `EUNSUPPORTEDPROTOCOL` errors for consumers.
 
 ## Registry Updates
 
