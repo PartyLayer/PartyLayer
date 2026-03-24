@@ -24,7 +24,7 @@
     "verify:e2e": "tsx scripts/verify/e2e.ts",
     "changeset": "changeset",
     "version-packages": "changeset version",
-    "release": "changeset publish"
+    "release": "pnpm build && changeset publish"
   },
   "keywords": [
     "canton",
