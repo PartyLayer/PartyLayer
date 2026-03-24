@@ -84,6 +84,8 @@ const SIDEBAR_NAV = [
     items: [
       { label: 'Error Handling', href: '/docs/error-handling' },
       { label: 'TypeScript Types', href: '/docs/typescript' },
+      { label: 'Wallet Balances', href: '/docs/wallet-balances' },
+      { label: 'Token Transfers', href: '/docs/token-transfers' },
       { label: 'Advanced', href: '/docs/advanced' },
     ],
   },
