@@ -1,5 +1,11 @@
 # @cantonconnect/core
 
+## 0.2.6
+
+### Patch Changes
+
+- fix: resolve workspace:\* protocol in published packages and add ledgerApi support
+
 ## 0.2.4
 
 ### Patch Changes

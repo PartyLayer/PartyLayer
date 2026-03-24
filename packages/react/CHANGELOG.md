@@ -1,5 +1,14 @@
 # @cantonconnect/react
 
+## 0.2.8
+
+### Patch Changes
+
+- fix: resolve workspace:\* protocol in published packages and add ledgerApi support
+- Updated dependencies
+  - @partylayer/sdk@0.2.8
+  - @partylayer/registry-client@0.2.6
+
 ## 0.2.6
 
 ### Patch Changes
