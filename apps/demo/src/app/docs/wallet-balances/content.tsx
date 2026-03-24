@@ -23,7 +23,7 @@ export default function WalletBalancesContent() {
       <H2 id="prerequisites">Prerequisites</H2>
       <UL>
         <LI>Wallet connected — see <a href="/docs/quick-start" style={{ color: '#E6B800' }}>Quick Start</a></LI>
-        <LI><Code>{'ledgerApi'}</Code> capability supported by the connected wallet (Console, Loop, and Cantor8 all support this)</LI>
+        <LI><Code>{'ledgerApi'}</Code> capability supported by the connected wallet (Console, Loop, Nightly, and Bron all support this)</LI>
       </UL>
 
       <H2 id="react">React</H2>
@@ -41,9 +41,9 @@ function TokenBalance({ templateId }: { templateId: string }) {
     if (!session) return;
 
     client.ledgerApi({
-      method: 'POST',
-      path: '/v2/state/acs',
-      body: {
+      requestMethod: 'POST',
+      resource: '/v2/state/acs',
+      body: JSON.stringify({
         filter: {
           filtersByParty: {
             [session.partyId]: {
@@ -53,9 +53,10 @@ function TokenBalance({ templateId }: { templateId: string }) {
             },
           },
         },
-      },
+      }),
     }).then((result) => {
-      const total = (result.activeContracts ?? []).reduce(
+      const { activeContracts = [] } = JSON.parse(result.response);
+      const total = activeContracts.reduce(
         (sum: number, c: any) =>
           sum + parseFloat(c.payload?.amount?.initialAmount ?? '0'),
         0
@@ -92,9 +93,9 @@ function MultiTokenBalances() {
       TOKEN_TEMPLATES.map((templateId) =>
         client
           .ledgerApi({
-            method: 'POST',
-            path: '/v2/state/acs',
-            body: {
+            requestMethod: 'POST',
+            resource: '/v2/state/acs',
+            body: JSON.stringify({
               filter: {
                 filtersByParty: {
                   [session.partyId]: {
@@ -102,16 +103,19 @@ function MultiTokenBalances() {
                   },
                 },
               },
-            },
+            }),
           })
-          .then((result) => ({
-            templateId,
-            total: (result.activeContracts ?? []).reduce(
-              (sum: number, c: any) =>
-                sum + parseFloat(c.payload?.amount?.initialAmount ?? '0'),
-              0
-            ),
-          }))
+          .then((result) => {
+            const { activeContracts = [] } = JSON.parse(result.response);
+            return {
+              templateId,
+              total: activeContracts.reduce(
+                (sum: number, c: any) =>
+                  sum + parseFloat(c.payload?.amount?.initialAmount ?? '0'),
+                0
+              ),
+            };
+          })
       )
     ).then((results) => {
       setBalances(
@@ -145,9 +149,9 @@ const session = await client.connect();
 
 async function getBalance(templateId: string): Promise<number> {
   const result = await client.ledgerApi({
-    method: 'POST',
-    path: '/v2/state/acs',
-    body: {
+    requestMethod: 'POST',
+    resource: '/v2/state/acs',
+    body: JSON.stringify({
       filter: {
         filtersByParty: {
           [session.partyId]: {
@@ -157,10 +161,11 @@ async function getBalance(templateId: string): Promise<number> {
           },
         },
       },
-    },
+    }),
   });
 
-  return (result.activeContracts ?? []).reduce(
+  const { activeContracts = [] } = JSON.parse(result.response);
+  return activeContracts.reduce(
     (sum: number, c: any) =>
       sum + parseFloat(c.payload?.amount?.initialAmount ?? '0'),
     0
@@ -173,11 +178,12 @@ console.log('Balance:', balance);`}</CodeBlock>
       <H3>All holdings (unfiltered)</H3>
       <P>Fetch every active contract for the connected party, regardless of token type:</P>
       <CodeBlock language="typescript">{`const result = await client.ledgerApi({
-  method: 'GET',
-  path: '/v2/state/acs/active-contracts',
+  requestMethod: 'GET',
+  resource: '/v2/state/acs/active-contracts',
 });
 
-console.log(result.activeContracts);`}</CodeBlock>
+const { activeContracts } = JSON.parse(result.response);
+console.log(activeContracts);`}</CodeBlock>
 
       <H2 id="notes">Notes</H2>
 
@@ -188,19 +194,26 @@ console.log(result.activeContracts);`}</CodeBlock>
         your Daml source or deployed package to find the exact values for your tokens.
       </P>
 
-      <H3>ledgerApi availability</H3>
+      <H3>Response parsing</H3>
       <P>
-        <Code>{'ledgerApi'}</Code> is only available on the native{' '}
-        <Code>{'PartyLayerProvider'}</Code> path. Calling it on the legacy bridge path throws
-        error <Code>{'4200'}</Code>. See{' '}
-        <a href="/docs/cip-0103" style={{ color: '#E6B800' }}>CIP-0103 Provider</a> for details.
+        <Code>{'ledgerApi'}</Code> returns <Code>{'{ response: string }'}</Code> — a raw JSON
+        string from the Canton Ledger API. Always parse it with{' '}
+        <Code>{'JSON.parse(result.response)'}</Code> before accessing fields like{' '}
+        <Code>{'activeContracts'}</Code>.
+      </P>
+
+      <H3>Wallet support</H3>
+      <P>
+        Console, Loop, Nightly, and Bron all support <Code>{'ledgerApi'}</Code>. Cantor8 (mobile
+        deep link) does not — calling <Code>{'ledgerApi'}</Code> with a Cantor8 session throws{' '}
+        <Code>{'CapabilityNotSupportedError'}</Code>.
       </P>
 
       <H3>Paginated results</H3>
       <P>
         The ACS endpoint may paginate for parties with many contracts. Check{' '}
-        <Code>{'result.nextPageToken'}</Code> and pass it as <Code>{'pageToken'}</Code> in
-        subsequent requests to retrieve all pages.
+        <Code>{'nextPageToken'}</Code> in the parsed response and pass it as{' '}
+        <Code>{'pageToken'}</Code> in subsequent requests to retrieve all pages.
       </P>
 
       <PrevNext />

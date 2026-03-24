@@ -19,6 +19,8 @@ import type {
   SignedMessage,
   SignedTransaction,
   TxReceipt,
+  LedgerApiParams,
+  LedgerApiResult,
   Session,
   PersistedSession,
   CapabilityKey,
@@ -58,6 +60,7 @@ export class LoopAdapter implements WalletAdapter {
       'disconnect',
       'signMessage',
       'submitTransaction',
+      'ledgerApi',
       'events',
       'popup',
     ];
@@ -379,6 +382,78 @@ export class LoopAdapter implements WalletAdapter {
         details: {
           sessionId: session.sessionId,
         },
+      });
+    }
+  }
+
+  /**
+   * Proxy a Ledger API request through the Loop Wallet.
+   *
+   * Loop SDK may expose ledgerApi on the LoopProvider or via a generic
+   * request() method. We check at runtime to handle SDK versions gracefully.
+   */
+  async ledgerApi(
+    ctx: AdapterContext,
+    session: Session,
+    params: LedgerApiParams,
+  ): Promise<LedgerApiResult> {
+    try {
+      if (!this.currentProvider) {
+        throw new Error('Not connected to Loop Wallet');
+      }
+
+      ctx.logger.debug('Proxying ledger API request via Loop Wallet', {
+        sessionId: session.sessionId,
+        requestMethod: params.requestMethod,
+        resource: params.resource,
+      });
+
+      const provider = this.currentProvider as unknown as {
+        ledgerApi?: (method: string, resource: string, body?: string) => Promise<unknown>;
+        request?: (args: { method: string; params?: unknown }) => Promise<unknown>;
+      };
+
+      if (typeof provider.ledgerApi === 'function') {
+        const result = await provider.ledgerApi(
+          params.requestMethod,
+          params.resource,
+          params.body,
+        );
+        const response = result as { response?: string } | string;
+        return {
+          response: typeof response === 'string'
+            ? response
+            : (response?.response ?? JSON.stringify(response)),
+        };
+      }
+
+      if (typeof provider.request === 'function') {
+        const result = await provider.request({
+          method: 'ledgerApi',
+          params: {
+            requestMethod: params.requestMethod,
+            resource: params.resource,
+            body: params.body,
+          },
+        });
+        const response = result as { response?: string } | string;
+        return {
+          response: typeof response === 'string'
+            ? response
+            : (response?.response ?? JSON.stringify(response)),
+        };
+      }
+
+      throw new CapabilityNotSupportedError(
+        this.walletId,
+        'ledgerApi — update Loop SDK to a version that supports CIP-0103 ledgerApi',
+      );
+    } catch (err) {
+      throw mapUnknownErrorToPartyLayerError(err, {
+        walletId: this.walletId,
+        phase: 'ledgerApi',
+        transport: 'popup',
+        details: { sessionId: session.sessionId },
       });
     }
   }
