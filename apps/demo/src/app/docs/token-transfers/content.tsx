@@ -71,12 +71,10 @@ function TransferButton({ receiverPartyId }: { receiverPartyId: string }) {
       readAs: [],
     };
 
-    const signed = await signTransaction({ transaction: payload });
+    const signed = await signTransaction({ tx: payload });
     if (!signed) return;
 
-    const receipt = await submitTransaction({
-      signedTransaction: signed.signedTransaction,
-    });
+    const receipt = await submitTransaction({ signedTx: signed.signedTx });
 
     console.log('Transfer submitted:', receipt?.transactionHash);
   };
@@ -149,12 +147,10 @@ const payload = {
 };
 
 // Step 1 — Sign (wallet prompts user for approval)
-const signed = await client.signTransaction({ transaction: payload });
+const signed = await client.signTransaction({ tx: payload });
 
 // Step 2 — Submit
-const receipt = await client.submitTransaction({
-  signedTransaction: signed.signedTransaction,
-});
+const receipt = await client.submitTransaction({ signedTx: signed.signedTx });
 
 // receipt: { transactionHash, submittedAt, commandId, updateId }
 console.log('Transaction hash:', receipt.transactionHash);
@@ -168,19 +164,13 @@ client.on('tx:status', (event) => {
       <H3>Submit directly via ledgerApi</H3>
       <P>
         Skip the separate sign step and submit in one call. Use this when the wallet handles
-        signing internally.
+        signing internally (Console, Loop, Nightly, or Bron).
       </P>
       <CodeBlock language="typescript">{`const result = await client.ledgerApi({
-  method: 'POST',
-  path: '/v2/commands/submit-and-wait',
-  body: payload,
+  requestMethod: 'POST',
+  resource: '/v2/commands/submit-and-wait',
+  body: JSON.stringify(payload),
 });`}</CodeBlock>
-
-      <Callout type="warning">
-        <Code>{'ledgerApi'}</Code> is only available on the native{' '}
-        <Code>{'PartyLayerProvider'}</Code> path. It throws error <Code>{'4200'}</Code> on the
-        legacy bridge path. When in doubt, use the sign + submit approach above.
-      </Callout>
 
       <H2 id="error-handling">Error Handling</H2>
       <CodeBlock language="typescript">{`import {
@@ -190,10 +180,8 @@ client.on('tx:status', (event) => {
 } from '@partylayer/sdk';
 
 try {
-  const signed = await client.signTransaction({ transaction: payload });
-  const receipt = await client.submitTransaction({
-    signedTransaction: signed.signedTransaction,
-  });
+  const signed = await client.signTransaction({ tx: payload });
+  const receipt = await client.submitTransaction({ signedTx: signed.signedTx });
 } catch (err) {
   if (err instanceof UserRejectedError) {
     // User declined in the wallet — safe to retry
@@ -201,8 +189,8 @@ try {
     await client.connect();
     // Retry transfer
   } else if (err instanceof CapabilityNotSupportedError) {
-    // Wallet does not support signTransaction
-    // Try ledgerApi approach or prompt user to switch wallets
+    // Wallet does not support signTransaction (e.g. Loop, Nightly)
+    // Use submitTransaction directly instead
   }
 }`}</CodeBlock>
       <P>

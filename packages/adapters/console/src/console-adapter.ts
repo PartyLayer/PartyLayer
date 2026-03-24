@@ -19,6 +19,8 @@ import type {
   SignedMessage,
   SignedTransaction,
   TxReceipt,
+  LedgerApiParams,
+  LedgerApiResult,
   Session,
   PersistedSession,
   CapabilityKey,
@@ -30,6 +32,7 @@ import {
   toTransactionHash,
   toSignature,
   WalletNotInstalledError,
+  CapabilityNotSupportedError,
   mapUnknownErrorToPartyLayerError,
 } from '@partylayer/core';
 import { consoleWallet } from '@console-wallet/dapp-sdk';
@@ -53,6 +56,7 @@ export class ConsoleAdapter implements WalletAdapter {
       'signMessage',
       'signTransaction',
       'submitTransaction',
+      'ledgerApi',
       'events',
       'injected',
     ];
@@ -344,6 +348,76 @@ export class ConsoleAdapter implements WalletAdapter {
       throw mapUnknownErrorToPartyLayerError(err, {
         walletId: this.walletId,
         phase: 'submitTransaction',
+        transport: 'injected',
+        details: { sessionId: session.sessionId },
+      });
+    }
+  }
+
+  /**
+   * Proxy a Ledger API request through the Console Wallet extension.
+   *
+   * Console Wallet is CIP-0103 compliant and exposes ledgerApi via its SDK.
+   * We check for the method at runtime to handle different SDK versions gracefully.
+   */
+  async ledgerApi(
+    ctx: AdapterContext,
+    session: Session,
+    params: LedgerApiParams,
+  ): Promise<LedgerApiResult> {
+    try {
+      ctx.logger.debug('Proxying ledger API request via Console Wallet', {
+        sessionId: session.sessionId,
+        requestMethod: params.requestMethod,
+        resource: params.resource,
+      });
+
+      // The Console Wallet SDK may expose ledgerApi directly or via a generic
+      // request() method (CIP-0103 standard).
+      const wallet = consoleWallet as unknown as {
+        ledgerApi?: (p: { requestMethod: string; resource: string; body?: string }) => Promise<unknown>;
+        request?: (args: { method: string; params?: unknown }) => Promise<unknown>;
+      };
+
+      if (typeof wallet.ledgerApi === 'function') {
+        const result = await wallet.ledgerApi({
+          requestMethod: params.requestMethod,
+          resource: params.resource,
+          body: params.body,
+        });
+        const response = result as { response?: string } | string;
+        return {
+          response: typeof response === 'string'
+            ? response
+            : (response?.response ?? JSON.stringify(response)),
+        };
+      }
+
+      if (typeof wallet.request === 'function') {
+        const result = await wallet.request({
+          method: 'ledgerApi',
+          params: {
+            requestMethod: params.requestMethod,
+            resource: params.resource,
+            body: params.body,
+          },
+        });
+        const response = result as { response?: string } | string;
+        return {
+          response: typeof response === 'string'
+            ? response
+            : (response?.response ?? JSON.stringify(response)),
+        };
+      }
+
+      throw new CapabilityNotSupportedError(
+        this.walletId,
+        'ledgerApi — update Console Wallet extension to a version that supports CIP-0103 ledgerApi',
+      );
+    } catch (err) {
+      throw mapUnknownErrorToPartyLayerError(err, {
+        walletId: this.walletId,
+        phase: 'ledgerApi',
         transport: 'injected',
         details: { sessionId: session.sessionId },
       });
