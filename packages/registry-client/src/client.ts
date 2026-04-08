@@ -310,7 +310,6 @@ export class RegistryClient {
       }
     } else {
       // Dev mode: skip signature fetch entirely, create dummy signature
-      console.log('[RegistryClient] Dev mode: skipping signature fetch (no public keys configured)');
       signature = { algorithm: 'ed25519', signature: '', keyFingerprint: '', signedAt: new Date().toISOString() };
     }
 
@@ -376,12 +375,6 @@ export class RegistryClient {
     const refreshPromise = (async () => {
       try {
         const { registry, etag } = await this.fetchFromNetwork();
-
-        console.log('[RegistryClient] Successfully fetched registry:', {
-          channel: registry.metadata.channel,
-          sequence: registry.metadata.sequence,
-          walletCount: registry.wallets.length,
-        });
 
         // Update cache
         const cached: CachedRegistry = {
