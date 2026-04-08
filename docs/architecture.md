@@ -146,7 +146,7 @@ React hooks, components, and theming for easy integration.
 
 **Components:**
 - `PartyLayerKit`: Zero-config wrapper (creates client, registers adapters, discovers wallets, provides theme)
-- `ConnectButton`: RainbowKit-style connect button with wallet modal and connected dropdown
+- `ConnectButton`: Polished connect button with wallet modal and connected dropdown
 - `WalletModal`: Multi-state wallet selection modal (list, connecting, success, error, not-installed views)
 - `PartyLayerProvider`: Lower-level context provider for advanced use cases
 - `ThemeProvider`: Theme context provider (light/dark/auto)

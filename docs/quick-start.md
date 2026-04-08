@@ -36,7 +36,7 @@ function App() {
 - Auto-discovers native CIP-0103 wallets (`window.canton.*`)
 - Provides theming (light/dark/auto)
 
-`ConnectButton` is a RainbowKit-style button with:
+`ConnectButton` is a polished button with:
 - Wallet selection modal
 - Connecting/success/error states
 - Connected dropdown with party ID and disconnect

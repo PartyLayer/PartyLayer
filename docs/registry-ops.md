@@ -243,5 +243,4 @@ This prints file locations to serve via CDN.
 
 ## See Also
 
-- [Phase 4 Summary](./PHASE4_SUMMARY.md) - Operational runbook
 - [Release Process](./releasing.md) - Package versioning and publishing

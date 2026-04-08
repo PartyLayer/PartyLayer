@@ -199,7 +199,7 @@ function App() {
 }
 ```
 
-`ConnectButton` renders a RainbowKit-style button that handles the entire connect flow: wallet selection modal, connection, success/error states, and a connected dropdown with disconnect.
+`ConnectButton` renders a polished button that handles the entire connect flow: wallet selection modal, connection, success/error states, and a connected dropdown with disconnect.
 
 ### React Hooks
 
@@ -669,7 +669,7 @@ console.log(formatCIP0103Report(report));
 ### Prerequisites
 
 - Node.js 18+
-- pnpm 8+
+- pnpm 9+
 
 ### Setup
 

@@ -199,7 +199,7 @@ import { PartyLayerKit } from '@partylayer/react';
 
 ### ConnectButton
 
-RainbowKit-style connect button with wallet modal and connected state dropdown.
+Polished connect button with wallet modal and connected state dropdown.
 
 ```tsx
 import { ConnectButton } from '@partylayer/react';

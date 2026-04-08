@@ -32,7 +32,7 @@ By participating in this project, you agree to maintain a respectful and inclusi
 ### Prerequisites
 
 - **Node.js 18+** - [Download](https://nodejs.org/)
-- **pnpm 8+** - Install with `npm install -g pnpm`
+- **pnpm 9+** - Install with `npm install -g pnpm`
 - **Git** - [Download](https://git-scm.com/)
 
 ### Fork and Clone

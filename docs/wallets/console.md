@@ -6,50 +6,59 @@
 
 ## Overview
 
-Console Wallet is the official wallet for Canton Network provided by Digital Asset. The adapter integrates with Console Wallet's browser extension.
+Console Wallet is the official wallet for Canton Network provided by Digital Asset. The adapter supports both the browser extension (via postMessage) and mobile wallet connect (via QR code / deep link relay).
 
-## Installation
+## Connection Modes
 
-Console Wallet must be installed as a browser extension. The adapter detects it via `window.consoleWallet`.
+The Console adapter supports three connection modes:
 
-### Install Steps
+| Mode | Transport | Use Case |
+|------|-----------|----------|
+| `combined` (default) | Extension preferred, QR/deep link fallback | Best for most dApps |
+| `local` | Browser extension only | When mobile support is not needed |
+| `remote` | QR code / deep link only | Mobile-first experiences |
 
-1. Install Console Wallet browser extension
-2. Create an account and set up your party
-3. The adapter will automatically detect the extension
+### Combined Mode (Default)
 
-## Usage
+The default mode. Tries the browser extension first; if not detected, falls back to QR code / deep link for mobile wallet connection.
 
 ```typescript
-import { createPartyLayer } from '@partylayer/sdk';
 import { ConsoleAdapter } from '@partylayer/adapter-console';
 
-const client = createPartyLayer({
-  registryUrl: '...',
-  network: 'devnet',
-  app: { name: 'My dApp' },
-});
+// Combined mode is the default — no config needed
+const adapter = new ConsoleAdapter();
+```
 
-// Register adapter (in production, auto-registered via registry)
-client.registerAdapter(new ConsoleAdapter());
+### Local Mode (Extension Only)
 
-// Connect
-const session = await client.connect({ walletId: 'console' });
+Restricts to the browser extension. Fails if the extension is not installed.
+
+```typescript
+const adapter = new ConsoleAdapter({ target: 'local' });
+```
+
+### Remote Mode (Mobile Only)
+
+Forces QR code / deep link flow. No extension detection.
+
+```typescript
+const adapter = new ConsoleAdapter({ target: 'remote' });
 ```
 
 ## Capabilities
 
 Console Wallet supports:
-- ✅ Connect/Disconnect
-- ✅ Sign Message
-- ✅ Sign Transaction
-- ✅ Submit Transaction
-- ✅ Events
-- ✅ Injected (browser extension)
+- Connect/Disconnect
+- Sign Message
+- Sign Transaction
+- Submit Transaction
+- Ledger API proxy (CIP-0103)
+- Events
+- Session restore (extension and remote)
+- QR code / deep link mobile connect
 
 ## Limitations
 
-- **Session Restoration**: Console Wallet sessions are ephemeral and cannot be restored. Users must reconnect after page refresh.
 - **Network Switching**: Not supported. Requires reconnection.
 - **Multi-Party**: Not supported.
 
@@ -57,15 +66,15 @@ Console Wallet supports:
 
 ### WALLET_NOT_INSTALLED
 
-**Cause**: Console Wallet extension not detected.
+**Cause**: Console Wallet extension not detected (in `local` mode).
 
-**Solution**: Install Console Wallet browser extension.
+**Solution**: Install Console Wallet browser extension, or use `combined` mode for automatic QR fallback.
 
 ### USER_REJECTED
 
 **Cause**: User rejected connection or signing request.
 
-**Solution**: User action required - no programmatic fix.
+**Solution**: User action required — no programmatic fix.
 
 ### ORIGIN_NOT_ALLOWED
 
@@ -80,11 +89,12 @@ Console Wallet supports:
 1. Ensure Console Wallet extension is installed and enabled
 2. Refresh the page
 3. Check browser console for extension errors
+4. Use `combined` mode — the adapter will fall back to QR code
 
 ### Connection Fails
 
 1. Check that Console Wallet is unlocked
-2. Verify network matches (devnet/mainnet/local)
+2. Verify network matches (devnet/testnet/mainnet)
 3. Check browser console for detailed error messages
 
 ### Signing Fails
