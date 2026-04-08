@@ -3,6 +3,7 @@
  *
  * Premium quality wallet selection experience:
  *   - Multi-state flow: idle -> connecting -> success -> error
+ *   - RainbowKit-style dual-transport connect (extension + QR/mobile)
  *   - Smooth backdrop blur + scale animations
  *   - Dynamic wallet icons with graceful fallback
  *   - CIP-0103 native wallet priority display
@@ -30,10 +31,34 @@ export interface WalletModalProps {
 
 type ModalView = 'list' | 'connecting' | 'success' | 'error' | 'not-installed';
 
+/**
+ * Sub-view for the connecting state when a wallet supports dual transport
+ * (extension + mobile). Follows the RainbowKit/WalletConnect industry pattern.
+ */
+type ConnectPhase =
+  | 'default'           // Standard connecting (non-dual-transport wallets)
+  | 'extension'         // Waiting for extension approval
+  | 'extension-timeout' // Extension timed out, offer retry + mobile fallback
+  | 'qr';              // Showing QR code for mobile wallet scanning
+
+/** Timeout for extension connection before showing fallback (ms) */
+const EXTENSION_TIMEOUT_MS = 15_000;
+
+/** ID of the DOM element injected by Console SDK for QR code display */
+const SDK_QR_CONTAINER_ID = 'console-wallet-connect-placeholder';
+
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
 function isNativeWallet(wallet: WalletInfo): boolean {
   return wallet.metadata?.source === 'native-cip0103';
+}
+
+/** Check if a wallet supports both browser extension and mobile transports */
+function isDualTransportWallet(wallet: WalletInfo): boolean {
+  const caps = wallet.capabilities;
+  const hasExtension = caps.includes('injected');
+  const hasMobile = caps.includes('deeplink') || caps.includes('remoteSigner');
+  return hasExtension && hasMobile;
 }
 
 function getErrorMessage(error: Error): string {
@@ -94,6 +119,51 @@ function getWalletTransportLabel(wallet: WalletInfo): string {
   if (hasDeeplink) return 'Mobile wallet';
   if (hasRemoteSigner) return 'Enterprise';
   return wallet.capabilities.slice(0, 3).join(', ');
+}
+
+/**
+ * Extract the QR code SVG from the Console SDK's injected DOM container
+ * and hide the SDK's container so we can display the QR in our own modal.
+ */
+function extractSdkQrCode(): { svgHtml: string; deepLinkUrl: string | null } | null {
+  const container = document.getElementById(SDK_QR_CONTAINER_ID);
+  if (!container) return null;
+
+  // Extract SVG
+  const svg = container.querySelector('svg');
+  if (!svg) return null;
+
+  // Extract deep link URL from any button/anchor with consolewallet.io
+  let deepLinkUrl: string | null = null;
+  const links = Array.from(container.querySelectorAll('a, button'));
+  for (let i = 0; i < links.length; i++) {
+    const el = links[i];
+    const href = (el as HTMLAnchorElement).href || el.getAttribute('data-href') || '';
+    if (href.includes('consolewallet.io/wallet-connect')) {
+      deepLinkUrl = href;
+      break;
+    }
+  }
+  // Fallback: look for child anchors with consolewallet href
+  if (!deepLinkUrl) {
+    const anchors = container.querySelectorAll('a[href*="consolewallet"]');
+    if (anchors.length > 0) {
+      deepLinkUrl = (anchors[0] as HTMLAnchorElement).href;
+    }
+  }
+
+  // Hide the SDK's container
+  container.style.display = 'none';
+
+  return { svgHtml: svg.outerHTML, deepLinkUrl };
+}
+
+/** Cleanup: remove SDK's injected QR container if present */
+function removeSdkQrContainer() {
+  const container = document.getElementById(SDK_QR_CONTAINER_ID);
+  if (container) {
+    container.style.display = 'none';
+  }
 }
 
 // ─── SVG Icons ───────────────────────────────────────────────────────────────
@@ -165,6 +235,46 @@ function ExternalLinkIcon({ size = 12, color = 'currentColor' }: { size?: number
       <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
       <polyline points="15 3 21 3 21 9" />
       <line x1="10" y1="14" x2="21" y2="3" />
+    </svg>
+  );
+}
+
+function QrCodeIcon({ size = 20, color = 'currentColor' }: { size?: number; color?: string }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="2" y="2" width="8" height="8" rx="1" />
+      <rect x="14" y="2" width="8" height="8" rx="1" />
+      <rect x="2" y="14" width="8" height="8" rx="1" />
+      <rect x="14" y="14" width="4" height="4" rx="0.5" />
+      <line x1="22" y1="14" x2="22" y2="18" />
+      <line x1="18" y1="22" x2="22" y2="22" />
+    </svg>
+  );
+}
+
+function SmartphoneIcon({ size = 16, color = 'currentColor' }: { size?: number; color?: string }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="5" y="2" width="14" height="20" rx="2" ry="2" />
+      <line x1="12" y1="18" x2="12.01" y2="18" />
+    </svg>
+  );
+}
+
+function RefreshIcon({ size = 14, color = 'currentColor' }: { size?: number; color?: string }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <polyline points="23 4 23 10 17 10" />
+      <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" />
+    </svg>
+  );
+}
+
+function ClockIcon({ size = 16, color = 'currentColor' }: { size?: number; color?: string }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="12" r="10" />
+      <polyline points="12 6 12 12 16 14" />
     </svg>
   );
 }
@@ -246,7 +356,27 @@ export function WalletModal({
   const [selectedWallet, setSelectedWallet] = useState<WalletInfo | null>(null);
   const [closing, setClosing] = useState(false);
   const [connectError, setConnectError] = useState<Error | null>(null);
+
+  // Dual-transport connect state (RainbowKit-style flow)
+  const [connectPhase, setConnectPhase] = useState<ConnectPhase>('default');
+  const [qrSvgHtml, setQrSvgHtml] = useState<string | null>(null);
+  const [deepLinkUrl, setDeepLinkUrl] = useState<string | null>(null);
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const observerRef = useRef<MutationObserver | null>(null);
   const modalRef = useRef<HTMLDivElement>(null);
+
+  // Cleanup MutationObserver and timeout
+  const cleanupConnectResources = useCallback(() => {
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+      timeoutRef.current = null;
+    }
+    if (observerRef.current) {
+      observerRef.current.disconnect();
+      observerRef.current = null;
+    }
+    removeSdkQrContainer();
+  }, []);
 
   // Reset state when modal opens
   useEffect(() => {
@@ -254,8 +384,15 @@ export function WalletModal({
       setView('list');
       setSelectedWallet(null);
       setClosing(false);
+      setConnectPhase('default');
+      setQrSvgHtml(null);
+      setDeepLinkUrl(null);
+      cleanupConnectResources();
     }
-  }, [isOpen]);
+  }, [isOpen, cleanupConnectResources]);
+
+  // Cleanup on unmount
+  useEffect(() => cleanupConnectResources, [cleanupConnectResources]);
 
   // Handle ESC key
   useEffect(() => {
@@ -271,37 +408,101 @@ export function WalletModal({
   useEffect(() => {
     if (error && view === 'connecting') {
       setConnectError(error);
+      cleanupConnectResources();
       const code = 'code' in error ? (error as { code: string }).code : '';
-      if (code === 'WALLET_NOT_INSTALLED') {
+      if (code === 'WALLET_NOT_INSTALLED' && !isDualTransportWallet(selectedWallet!)) {
+        // For dual-transport wallets, don't show "not installed" — show QR fallback instead
         setView('not-installed');
+      } else if (code === 'WALLET_NOT_INSTALLED' && isDualTransportWallet(selectedWallet!)) {
+        // Extension not found for dual-transport → switch to QR phase
+        setConnectPhase('qr');
+        setConnectError(null);
       } else {
         setView('error');
       }
     }
-  }, [error, view]);
+  }, [error, view, selectedWallet, cleanupConnectResources]);
 
   const handleClose = useCallback(() => {
-    // Reset connecting state so cursor/button don't stay in loading mode
+    cleanupConnectResources();
     resetConnect();
     setView('list');
     setSelectedWallet(null);
     setConnectError(null);
+    setConnectPhase('default');
+    setQrSvgHtml(null);
+    setDeepLinkUrl(null);
     setClosing(true);
     setTimeout(() => {
       setClosing(false);
       onClose();
     }, 150);
-  }, [onClose, resetConnect]);
+  }, [onClose, resetConnect, cleanupConnectResources]);
+
+  /**
+   * Start a MutationObserver that watches for the Console SDK's QR code
+   * DOM injection. When detected, extracts the QR SVG and transitions
+   * the modal to the QR view.
+   */
+  const startQrObserver = useCallback(() => {
+    // Check if QR is already in DOM (SDK might have injected before observer started)
+    const existing = extractSdkQrCode();
+    if (existing) {
+      setQrSvgHtml(existing.svgHtml);
+      setDeepLinkUrl(existing.deepLinkUrl);
+      setConnectPhase('qr');
+      return;
+    }
+
+    const observer = new MutationObserver(() => {
+      const result = extractSdkQrCode();
+      if (result) {
+        setQrSvgHtml(result.svgHtml);
+        setDeepLinkUrl(result.deepLinkUrl);
+        setConnectPhase('qr');
+        observer.disconnect();
+        observerRef.current = null;
+      }
+    });
+
+    observer.observe(document.body, { childList: true, subtree: true });
+    observerRef.current = observer;
+  }, []);
 
   const handleWalletClick = useCallback(async (wallet: WalletInfo) => {
     setSelectedWallet(wallet);
     setConnectError(null);
     setView('connecting');
+    setQrSvgHtml(null);
+    setDeepLinkUrl(null);
+
+    const isDual = isDualTransportWallet(wallet);
+
+    if (isDual) {
+      // Dual-transport wallet: start extension flow with timeout + QR observer
+      setConnectPhase('extension');
+
+      // Watch for SDK's QR DOM injection (signals extension not found)
+      startQrObserver();
+
+      // Start timeout for extension flow
+      timeoutRef.current = setTimeout(() => {
+        // Only trigger timeout if we're still in extension phase
+        setConnectPhase((current) => {
+          if (current === 'extension') return 'extension-timeout';
+          return current;
+        });
+      }, EXTENSION_TIMEOUT_MS);
+    } else {
+      setConnectPhase('default');
+    }
 
     const session = await connect({
       walletId: wallet.walletId,
       preferInstalled: true,
     });
+
+    cleanupConnectResources();
 
     if (session) {
       setView('success');
@@ -312,7 +513,7 @@ export function WalletModal({
     }
     // If session is null, the useConnect hook's error state will trigger
     // the useEffect above to route to the appropriate error view
-  }, [connect, onConnect, onClose]);
+  }, [connect, onConnect, onClose, startQrObserver, cleanupConnectResources]);
 
   const handleRetry = useCallback(() => {
     if (selectedWallet) {
@@ -320,10 +521,46 @@ export function WalletModal({
     }
   }, [selectedWallet, handleWalletClick]);
 
+  const handleSwitchToMobile = useCallback(() => {
+    // Cancel current connect and restart with QR flow
+    resetConnect();
+    setConnectPhase('qr');
+    setConnectError(null);
+
+    if (!selectedWallet) return;
+
+    // Start observer before connecting (SDK will inject QR)
+    startQrObserver();
+
+    // Reconnect — the adapter in combined mode will show QR if extension is unresponsive
+    // We start a fresh connect; the observer will capture the QR
+    (async () => {
+      const session = await connect({
+        walletId: selectedWallet.walletId,
+        preferInstalled: false,
+      });
+
+      cleanupConnectResources();
+
+      if (session) {
+        setView('success');
+        setTimeout(() => {
+          onConnect(session.sessionId);
+          onClose();
+        }, 800);
+      }
+    })();
+  }, [selectedWallet, connect, resetConnect, onConnect, onClose, startQrObserver, cleanupConnectResources]);
+
   const handleBackToList = useCallback(() => {
+    cleanupConnectResources();
+    resetConnect();
     setView('list');
     setSelectedWallet(null);
-  }, []);
+    setConnectPhase('default');
+    setQrSvgHtml(null);
+    setDeepLinkUrl(null);
+  }, [resetConnect, cleanupConnectResources]);
 
   if (!isOpen && !closing) return null;
 
@@ -394,6 +631,70 @@ export function WalletModal({
 
   const closeBtnStyle: React.CSSProperties = { ...closeBtnBase, width: '32px' };
   const hoverBg = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(15,23,42,0.06)';
+
+  const primaryBtnStyle: React.CSSProperties = {
+    padding: '10px 20px',
+    border: 'none',
+    borderRadius: '10px',
+    backgroundColor: theme.colors.primary,
+    color: '#0B0F1A',
+    cursor: 'pointer',
+    fontSize: '14px',
+    fontWeight: 600,
+    fontFamily: theme.fontFamily,
+    transition: 'all 150ms cubic-bezier(0.2, 0.8, 0.2, 1)',
+  };
+
+  const ghostBtnStyle: React.CSSProperties = {
+    padding: '10px 20px',
+    border: `1px solid ${theme.colors.border}`,
+    borderRadius: '10px',
+    backgroundColor: 'transparent',
+    color: theme.colors.textSecondary,
+    cursor: 'pointer',
+    fontSize: '14px',
+    fontWeight: 500,
+    fontFamily: theme.fontFamily,
+    transition: 'all 150ms',
+  };
+
+  const linkStyle: React.CSSProperties = {
+    fontSize: '12px',
+    color: theme.colors.textSecondary,
+    cursor: 'pointer',
+    border: 'none',
+    background: 'none',
+    fontFamily: theme.fontFamily,
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: '4px',
+    transition: 'color 150ms',
+  };
+
+  // ─── Back + Close Header ─────────────────────────────────────────────
+
+  const renderSubHeader = (backAction: () => void) => (
+    <div style={headerStyle}>
+      <button
+        onClick={backAction}
+        style={{ ...closeBtnBase, width: 'auto', padding: '0 10px', gap: '4px' }}
+        onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = hoverBg; }}
+        onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = theme.colors.surface; }}
+      >
+        <BackIcon size={14} color={theme.colors.textSecondary} />
+        <span style={{ fontSize: '12px', color: theme.colors.textSecondary, fontWeight: 500 }}>Back</span>
+      </button>
+      <button
+        onClick={handleClose}
+        style={closeBtnStyle}
+        onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = hoverBg; }}
+        onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = theme.colors.surface; }}
+        aria-label="Close"
+      >
+        <CloseIcon size={16} color={theme.colors.textSecondary} />
+      </button>
+    </div>
+  );
 
   // ─── Wallet Card Renderer ──────────────────────────────────────────
 
@@ -652,32 +953,28 @@ export function WalletModal({
     </>
   );
 
+  // ─── Connecting View ───────────────────────────────────────────────
+
   const renderConnectingView = () => {
+    if (!selectedWallet) return null;
+
+    // Route to the appropriate sub-view based on connect phase
+    if (connectPhase === 'extension') return renderExtensionPhase();
+    if (connectPhase === 'extension-timeout') return renderTimeoutPhase();
+    if (connectPhase === 'qr') return renderQrPhase();
+
+    // Default: standard connecting view for non-dual-transport wallets
+    return renderDefaultConnecting();
+  };
+
+  /** Standard connecting spinner (for wallets without dual transport) */
+  const renderDefaultConnecting = () => {
     if (!selectedWallet) return null;
     const iconUrl = resolveWalletIcon(selectedWallet.walletId, walletIcons, selectedWallet.icons?.sm);
 
     return (
       <>
-        <div style={headerStyle}>
-          <button
-            onClick={handleBackToList}
-            style={{ ...closeBtnBase, width: 'auto', padding: '0 10px', gap: '4px' }}
-            onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = hoverBg; }}
-            onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = theme.colors.surface; }}
-          >
-            <BackIcon size={14} color={theme.colors.textSecondary} />
-            <span style={{ fontSize: '12px', color: theme.colors.textSecondary, fontWeight: 500 }}>Back</span>
-          </button>
-          <button
-            onClick={handleClose}
-            style={closeBtnStyle}
-            onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = hoverBg; }}
-            onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = theme.colors.surface; }}
-            aria-label="Close"
-          >
-            <CloseIcon size={16} color={theme.colors.textSecondary} />
-          </button>
-        </div>
+        {renderSubHeader(handleBackToList)}
 
         <div style={{ padding: '24px 32px 40px', textAlign: 'center' }}>
           {/* Animated ring around icon */}
@@ -725,18 +1022,7 @@ export function WalletModal({
 
           <button
             onClick={handleBackToList}
-            style={{
-              padding: '10px 24px',
-              border: `1px solid ${theme.colors.border}`,
-              borderRadius: '10px',
-              backgroundColor: 'transparent',
-              color: theme.colors.textSecondary,
-              cursor: 'pointer',
-              fontSize: '14px',
-              fontWeight: 500,
-              fontFamily: theme.fontFamily,
-              transition: 'all 150ms',
-            }}
+            style={ghostBtnStyle}
             onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = theme.colors.surface; }}
             onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; }}
           >
@@ -746,6 +1032,304 @@ export function WalletModal({
       </>
     );
   };
+
+  /**
+   * Extension connect phase: waiting for user to approve in browser extension.
+   * Shows spinner with "Confirm in your wallet extension" message and
+   * a fallback link to switch to mobile QR flow.
+   */
+  const renderExtensionPhase = () => {
+    if (!selectedWallet) return null;
+    const iconUrl = resolveWalletIcon(selectedWallet.walletId, walletIcons, selectedWallet.icons?.sm);
+
+    return (
+      <>
+        {renderSubHeader(handleBackToList)}
+
+        <div style={{ padding: '24px 32px 36px', textAlign: 'center' }}>
+          {/* Animated ring around icon */}
+          <div style={{
+            position: 'relative',
+            width: '80px',
+            height: '80px',
+            margin: '0 auto 24px',
+          }}>
+            <div style={{
+              position: 'absolute',
+              inset: '-6px',
+              borderRadius: '18px',
+              border: `3px solid ${theme.colors.border}`,
+              borderTopColor: theme.colors.primary,
+              animation: 'partylayer-spin 1.2s linear infinite',
+            }} />
+            <div style={{
+              position: 'relative',
+              width: '80px',
+              height: '80px',
+              borderRadius: '16px',
+              overflow: 'hidden',
+            }}>
+              <ModalWalletIcon wallet={selectedWallet} size={80} iconUrl={iconUrl} />
+            </div>
+          </div>
+
+          <div style={{
+            fontSize: '17px',
+            fontWeight: 600,
+            color: theme.colors.text,
+            marginBottom: '8px',
+          }}>
+            Opening {selectedWallet.name}...
+          </div>
+          <div style={{
+            fontSize: '14px',
+            color: theme.colors.textSecondary,
+            lineHeight: 1.5,
+            marginBottom: '28px',
+          }}>
+            Confirm the connection in your wallet extension
+          </div>
+
+          <button
+            onClick={handleBackToList}
+            style={ghostBtnStyle}
+            onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = theme.colors.surface; }}
+            onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; }}
+          >
+            Cancel
+          </button>
+
+          {/* Mobile fallback link */}
+          <div style={{ marginTop: '20px' }}>
+            <button
+              onClick={handleSwitchToMobile}
+              style={linkStyle}
+              onMouseEnter={(e) => { e.currentTarget.style.color = theme.colors.text; }}
+              onMouseLeave={(e) => { e.currentTarget.style.color = theme.colors.textSecondary; }}
+            >
+              <SmartphoneIcon size={12} color="currentColor" />
+              Can&apos;t connect? Try mobile
+              <ArrowIcon size={10} color="currentColor" />
+            </button>
+          </div>
+        </div>
+      </>
+    );
+  };
+
+  /**
+   * Timeout phase: extension didn't respond within EXTENSION_TIMEOUT_MS.
+   * Shows timeout message with retry + mobile fallback buttons.
+   */
+  const renderTimeoutPhase = () => {
+    if (!selectedWallet) return null;
+    const iconUrl = resolveWalletIcon(selectedWallet.walletId, walletIcons, selectedWallet.icons?.sm);
+
+    return (
+      <>
+        {renderSubHeader(handleBackToList)}
+
+        <div style={{ padding: '16px 32px 36px', textAlign: 'center' }}>
+          <div style={{
+            position: 'relative',
+            width: '64px',
+            height: '64px',
+            margin: '0 auto 20px',
+          }}>
+            <div style={{ width: '64px', height: '64px', borderRadius: '14px', overflow: 'hidden', opacity: 0.7 }}>
+              <ModalWalletIcon wallet={selectedWallet} size={64} iconUrl={iconUrl} />
+            </div>
+            <div style={{
+              position: 'absolute',
+              bottom: '-4px',
+              right: '-4px',
+              width: '24px',
+              height: '24px',
+              borderRadius: '50%',
+              backgroundColor: theme.colors.warning,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              border: `3px solid ${theme.colors.background}`,
+            }}>
+              <ClockIcon size={11} color="#FFFFFF" />
+            </div>
+          </div>
+
+          <div style={{
+            fontSize: '17px',
+            fontWeight: 600,
+            color: theme.colors.text,
+            marginBottom: '8px',
+          }}>
+            Connection timed out
+          </div>
+          <div style={{
+            fontSize: '13px',
+            color: theme.colors.textSecondary,
+            lineHeight: 1.6,
+            maxWidth: '300px',
+            margin: '0 auto 24px',
+          }}>
+            The wallet extension didn&apos;t respond. You can try again or connect via mobile.
+          </div>
+
+          <div style={{ display: 'flex', gap: '10px', justifyContent: 'center' }}>
+            <button
+              onClick={handleRetry}
+              style={primaryBtnStyle}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = theme.colors.primaryHover;
+                e.currentTarget.style.transform = 'translateY(-1px)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = theme.colors.primary;
+                e.currentTarget.style.transform = 'translateY(0)';
+              }}
+            >
+              <RefreshIcon size={13} color="#0B0F1A" />
+              {' '}Try Again
+            </button>
+
+            <button
+              onClick={handleSwitchToMobile}
+              style={ghostBtnStyle}
+              onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = theme.colors.surface; }}
+              onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; }}
+            >
+              <QrCodeIcon size={14} color="currentColor" />
+              {' '}Connect via Mobile
+            </button>
+          </div>
+        </div>
+      </>
+    );
+  };
+
+  /**
+   * QR code phase: shows the QR code for mobile wallet scanning.
+   * QR SVG is extracted from the Console SDK's injected DOM.
+   * Also shows deep link button for mobile browsers and install link.
+   */
+  const renderQrPhase = () => {
+    if (!selectedWallet) return null;
+    const iconUrl = resolveWalletIcon(selectedWallet.walletId, walletIcons, selectedWallet.icons?.sm);
+    const installUrl = getWalletUrl(selectedWallet);
+
+    return (
+      <>
+        {renderSubHeader(handleBackToList)}
+
+        <div style={{ padding: '0 32px 32px', textAlign: 'center' }}>
+          {/* Wallet name + icon row */}
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '10px',
+            marginBottom: '20px',
+          }}>
+            <ModalWalletIcon wallet={selectedWallet} size={28} iconUrl={iconUrl} />
+            <span style={{ fontSize: '16px', fontWeight: 600, color: theme.colors.text }}>
+              {selectedWallet.name}
+            </span>
+          </div>
+
+          {/* QR Code container */}
+          <div style={{
+            width: '260px',
+            height: '260px',
+            margin: '0 auto 16px',
+            borderRadius: '16px',
+            backgroundColor: '#FFFFFF',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '16px',
+            border: `1px solid ${theme.colors.border}`,
+          }}>
+            {qrSvgHtml ? (
+              <div
+                dangerouslySetInnerHTML={{ __html: qrSvgHtml }}
+                style={{
+                  width: '100%',
+                  height: '100%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              />
+            ) : (
+              /* Loading state while waiting for SDK to generate QR */
+              <div style={{ textAlign: 'center' }}>
+                <div style={{
+                  width: '32px',
+                  height: '32px',
+                  border: `3px solid ${theme.colors.border}`,
+                  borderTop: `3px solid ${theme.colors.primary}`,
+                  borderRadius: '50%',
+                  animation: 'partylayer-spin 0.8s linear infinite',
+                  margin: '0 auto 12px',
+                }} />
+                <div style={{ fontSize: '13px', color: theme.colors.textSecondary }}>
+                  Generating QR code...
+                </div>
+              </div>
+            )}
+          </div>
+
+          <div style={{
+            fontSize: '13px',
+            color: theme.colors.textSecondary,
+            marginBottom: '20px',
+          }}>
+            Scan with {selectedWallet.name} mobile app
+          </div>
+
+          {/* Deep link button for mobile browsers */}
+          {deepLinkUrl && (
+            <a
+              href={deepLinkUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '8px',
+                ...primaryBtnStyle,
+                textDecoration: 'none',
+                marginBottom: '12px',
+              }}
+            >
+              <SmartphoneIcon size={14} color="#0B0F1A" />
+              Open in {selectedWallet.name}
+            </a>
+          )}
+
+          {/* Install extension link */}
+          {installUrl && (
+            <div style={{ marginTop: '4px' }}>
+              <a
+                href={installUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{
+                  ...linkStyle,
+                  textDecoration: 'none',
+                }}
+              >
+                <DownloadIcon size={11} color="currentColor" />
+                Install browser extension
+                <ExternalLinkIcon size={10} color="currentColor" />
+              </a>
+            </div>
+          )}
+        </div>
+      </>
+    );
+  };
+
+  // ─── Success View ──────────────────────────────────────────────────
 
   const renderSuccessView = () => {
     if (!selectedWallet) return null;
@@ -813,26 +1397,15 @@ export function WalletModal({
     );
   };
 
+  // ─── Error View ────────────────────────────────────────────────────
+
   const renderErrorView = () => {
     if (!selectedWallet) return null;
     const iconUrl = resolveWalletIcon(selectedWallet.walletId, walletIcons, selectedWallet.icons?.sm);
 
     return (
       <>
-        <div style={headerStyle}>
-          <button
-            onClick={handleBackToList}
-            style={{ ...closeBtnBase, width: 'auto', padding: '0 10px', gap: '4px' }}
-            onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = hoverBg; }}
-            onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = theme.colors.surface; }}
-          >
-            <BackIcon size={14} color={theme.colors.textSecondary} />
-            <span style={{ fontSize: '12px', color: theme.colors.textSecondary, fontWeight: 500 }}>Back</span>
-          </button>
-          <button onClick={handleClose} style={closeBtnStyle} aria-label="Close">
-            <CloseIcon size={16} color={theme.colors.textSecondary} />
-          </button>
-        </div>
+        {renderSubHeader(handleBackToList)}
 
         <div style={{ padding: '16px 32px 32px', textAlign: 'center' }}>
           <div style={{
@@ -886,18 +1459,7 @@ export function WalletModal({
           <div style={{ display: 'flex', gap: '10px', justifyContent: 'center' }}>
             <button
               onClick={handleRetry}
-              style={{
-                padding: '10px 20px',
-                border: 'none',
-                borderRadius: '10px',
-                backgroundColor: theme.colors.primary,
-                color: '#0B0F1A',
-                cursor: 'pointer',
-                fontSize: '14px',
-                fontWeight: 600,
-                fontFamily: theme.fontFamily,
-                transition: 'all 150ms cubic-bezier(0.2, 0.8, 0.2, 1)',
-              }}
+              style={primaryBtnStyle}
               onMouseEnter={(e) => {
                 e.currentTarget.style.backgroundColor = theme.colors.primaryHover;
                 e.currentTarget.style.transform = 'translateY(-1px)';
@@ -911,18 +1473,7 @@ export function WalletModal({
             </button>
             <button
               onClick={handleBackToList}
-              style={{
-                padding: '10px 20px',
-                border: `1px solid ${theme.colors.border}`,
-                borderRadius: '10px',
-                backgroundColor: 'transparent',
-                color: theme.colors.textSecondary,
-                cursor: 'pointer',
-                fontSize: '14px',
-                fontWeight: 500,
-                fontFamily: theme.fontFamily,
-                transition: 'all 150ms',
-              }}
+              style={ghostBtnStyle}
               onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = theme.colors.surface; }}
               onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; }}
             >
@@ -934,6 +1485,8 @@ export function WalletModal({
     );
   };
 
+  // ─── Not Installed View ────────────────────────────────────────────
+
   const renderNotInstalledView = () => {
     if (!selectedWallet) return null;
     const iconUrl = resolveWalletIcon(selectedWallet.walletId, walletIcons, selectedWallet.icons?.sm);
@@ -941,20 +1494,7 @@ export function WalletModal({
 
     return (
       <>
-        <div style={headerStyle}>
-          <button
-            onClick={handleBackToList}
-            style={{ ...closeBtnBase, width: 'auto', padding: '0 10px', gap: '4px' }}
-            onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = hoverBg; }}
-            onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = theme.colors.surface; }}
-          >
-            <BackIcon size={14} color={theme.colors.textSecondary} />
-            <span style={{ fontSize: '12px', color: theme.colors.textSecondary, fontWeight: 500 }}>Back</span>
-          </button>
-          <button onClick={handleClose} style={closeBtnStyle} aria-label="Close">
-            <CloseIcon size={16} color={theme.colors.textSecondary} />
-          </button>
-        </div>
+        {renderSubHeader(handleBackToList)}
 
         <div style={{ padding: '16px 32px 36px', textAlign: 'center' }}>
           {/* Wallet icon with download badge */}
@@ -1049,18 +1589,7 @@ export function WalletModal({
             <div style={{ display: 'flex', gap: '10px' }}>
               <button
                 onClick={handleRetry}
-                style={{
-                  padding: '10px 20px',
-                  border: `1px solid ${theme.colors.border}`,
-                  borderRadius: '10px',
-                  backgroundColor: 'transparent',
-                  color: theme.colors.textSecondary,
-                  cursor: 'pointer',
-                  fontSize: '13px',
-                  fontWeight: 500,
-                  fontFamily: theme.fontFamily,
-                  transition: 'all 150ms',
-                }}
+                style={{ ...ghostBtnStyle, fontSize: '13px' }}
                 onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = theme.colors.surface; }}
                 onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; }}
               >
@@ -1068,18 +1597,7 @@ export function WalletModal({
               </button>
               <button
                 onClick={handleBackToList}
-                style={{
-                  padding: '10px 20px',
-                  border: `1px solid ${theme.colors.border}`,
-                  borderRadius: '10px',
-                  backgroundColor: 'transparent',
-                  color: theme.colors.textSecondary,
-                  cursor: 'pointer',
-                  fontSize: '13px',
-                  fontWeight: 500,
-                  fontFamily: theme.fontFamily,
-                  transition: 'all 150ms',
-                }}
+                style={{ ...ghostBtnStyle, fontSize: '13px' }}
                 onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = theme.colors.surface; }}
                 onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; }}
               >
@@ -1126,6 +1644,10 @@ export function WalletModal({
           0% { transform: scale(0.9); opacity: 0; }
           50% { transform: scale(1.02); }
           100% { transform: scale(1); opacity: 1; }
+        }
+        /* Hide Console SDK's injected QR modal — we render our own */
+        #${SDK_QR_CONTAINER_ID} {
+          display: none !important;
         }
       `}</style>
     </div>
