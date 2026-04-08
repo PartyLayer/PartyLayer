@@ -224,8 +224,7 @@ export function DemoApp() {
       <WalletModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
-        onConnect={(sessionId) => {
-          console.log('Connected:', sessionId);
+        onConnect={() => {
           setIsModalOpen(false);
         }}
       />
