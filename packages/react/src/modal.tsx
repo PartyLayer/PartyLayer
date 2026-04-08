@@ -84,10 +84,15 @@ function getWalletUrl(wallet: WalletInfo): string | null {
 
 function getWalletTransportLabel(wallet: WalletInfo): string {
   if (isNativeWallet(wallet)) return 'Ready';
-  if (wallet.capabilities.includes('injected')) return 'Browser Extension';
+  const hasInjected = wallet.capabilities.includes('injected');
+  const hasDeeplink = wallet.capabilities.includes('deeplink');
+  const hasRemoteSigner = wallet.capabilities.includes('remoteSigner');
+  // Wallets with both injected and deeplink/remote support (e.g. Console combined mode)
+  if (hasInjected && (hasDeeplink || hasRemoteSigner)) return 'Extension + Mobile';
+  if (hasInjected) return 'Browser Extension';
   if (wallet.capabilities.includes('popup')) return 'Scan to connect';
-  if (wallet.capabilities.includes('deeplink')) return 'Mobile wallet';
-  if (wallet.capabilities.includes('remoteSigner')) return 'Enterprise';
+  if (hasDeeplink) return 'Mobile wallet';
+  if (hasRemoteSigner) return 'Enterprise';
   return wallet.capabilities.slice(0, 3).join(', ');
 }
 
@@ -260,7 +265,6 @@ export function WalletModal({
     };
     document.addEventListener('keydown', handler);
     return () => document.removeEventListener('keydown', handler);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen]);
 
   // Transition to error/not-installed view when connect fails

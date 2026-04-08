@@ -8,6 +8,7 @@ import type {
   WalletAdapter,
   AdapterContext,
   CapabilityKey,
+  Session,
 } from '@partylayer/core';
 import {
   CapabilityNotSupportedError,
@@ -151,7 +152,7 @@ export async function runConformanceTests(
     // If signMessage not in capabilities, calling it should throw CapabilityNotSupportedError
     if (typeof adapter.signMessage === 'function') {
       try {
-        await adapter.signMessage(context, {} as any, { message: 'test' });
+        await adapter.signMessage(context, {} as unknown as Session, { message: 'test' });
         results.push({
           name: 'signMessage throws CapabilityNotSupportedError when not supported',
           passed: false,

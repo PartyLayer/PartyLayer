@@ -119,7 +119,7 @@ The SDK ships with 5 wallet adapters. Four are auto-registered via `getBuiltinAd
 
 | Adapter | Wallet | Transport | Auto-registered |
 |---------|--------|-----------|-----------------|
-| `ConsoleAdapter` | Console Wallet | PostMessage (injected) | Yes |
+| `ConsoleAdapter` | Console Wallet | PostMessage / QR / Deep Link | Yes |
 | `LoopAdapter` | 5N Loop | QR Code / Popup | Yes |
 | `Cantor8Adapter` | Cantor8 | Deep Link | Yes |
 | `NightlyAdapter` | Nightly | Injected (`window.nightly.canton`) | Yes |

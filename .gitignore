@@ -6,6 +6,8 @@ node_modules/
 # Build outputs
 dist/
 build/
+.next/
+.turbo/
 *.tsbuildinfo
 
 # Environment
@@ -55,6 +57,7 @@ fixtures/registry/downgrade/
 PROJECT_OVERVIEW.md
 CHATGPT_BRIEF.md
 docs/PARTYLAYER-PRODUCT-OVERVIEW.md
+MOBILE_INTEGRATION_NOTES.md
 
 # Internal infrastructure
 apps/metrics-backend/

@@ -39,7 +39,7 @@
     "url": "https://github.com/PartyLayer/PartyLayer/issues"
   },
   "dependencies": {
-    "@console-wallet/dapp-sdk": "^2.0.0",
+    "@console-wallet/dapp-sdk": "^2.1.5",
     "@partylayer/core": "workspace:*"
   },
   "devDependencies": {
