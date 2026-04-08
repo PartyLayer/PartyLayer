@@ -265,7 +265,6 @@ export function WalletModal({
     };
     document.addEventListener('keydown', handler);
     return () => document.removeEventListener('keydown', handler);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen]);
 
   // Transition to error/not-installed view when connect fails
