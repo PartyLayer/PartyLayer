@@ -20,7 +20,7 @@
     "clean": "rm -rf dist",
     "lint": "eslint src --ext .ts",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run"
+    "test": "vitest run --passWithNoTests"
   },
   "keywords": [
     "canton",

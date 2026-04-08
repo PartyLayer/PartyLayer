@@ -106,7 +106,6 @@ export function PartyLayerKit({
       adapters: adaptersRef.current,
     });
   // Only re-create client when these primitive values change
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [network, appName, registryUrl, channel]);
 
   // Cleanup on unmount or when client is re-created
