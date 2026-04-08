@@ -50,6 +50,8 @@ export interface RegistryWalletEntry {
     transactionStatus: boolean;
     switchNetwork: boolean;
     multiParty: boolean;
+    mobileConnect?: boolean;
+    remoteSigner?: boolean;
   };
   /** Adapter configuration */
   adapter: {
@@ -66,6 +68,10 @@ export interface RegistryWalletEntry {
     scriptTag?: string;
     /** Check if wallet is installed via browser extension */
     extensionId?: string;
+    /** Deep link URL for mobile wallet connect */
+    deeplink?: string;
+    /** OAuth-based authentication */
+    oauth?: boolean;
   };
   /** SDK version compatibility */
   sdkVersion?: string;
@@ -218,6 +224,17 @@ export function registryEntryToWalletInfo(
   }
   if (entry.capabilities.transactionStatus) {
     capabilities.push('events');
+  }
+
+  // Transport capabilities — inferred from installation hints and capability flags
+  if (entry.installation?.windowProperty) {
+    capabilities.push('injected');
+  }
+  if (entry.installation?.deeplink || entry.capabilities.mobileConnect) {
+    capabilities.push('deeplink');
+  }
+  if (entry.capabilities.remoteSigner) {
+    capabilities.push('remoteSigner');
   }
 
   return {
