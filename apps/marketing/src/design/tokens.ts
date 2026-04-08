@@ -71,7 +71,7 @@ export const wallets = [
     id: 'console',
     name: 'Console Wallet',
     description: 'Official Console Wallet for Canton Network',
-    transport: 'Deep link',
+    transport: 'Extension + Mobile',
     logo: '/wallets/console.png',
     homepage: 'https://console.digitalasset.com',
   },

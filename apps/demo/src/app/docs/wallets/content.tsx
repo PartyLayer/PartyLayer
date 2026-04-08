@@ -30,7 +30,7 @@ export default function WalletsPage() {
           </thead>
           <tbody>
             {[
-              { name: 'Console Wallet', transport: 'PostMessage', detection: 'Browser extension', auto: 'Yes' },
+              { name: 'Console Wallet', transport: 'PostMessage / QR / Deep Link', detection: 'Extension + mobile', auto: 'Yes' },
               { name: '5N Loop', transport: 'QR Code / Popup', detection: 'Mobile / Web app', auto: 'Yes' },
               { name: 'Cantor8 (C8)', transport: 'Deep Link', detection: 'Browser extension', auto: 'Yes' },
               { name: 'Nightly', transport: 'Injected', detection: 'window.nightly.canton', auto: 'Yes' },
