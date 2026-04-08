@@ -3,4 +3,5 @@
  * Console Wallet adapter for PartyLayer
  */
 
-export * from './console-adapter';
+export { ConsoleAdapter } from './console-adapter';
+export type { ConsoleAdapterConfig, ConsoleConnectionTarget } from './console-adapter';
