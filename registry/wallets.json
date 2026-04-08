@@ -10,7 +10,7 @@
     {
       "id": "console",
       "name": "Console Wallet",
-      "description": "Official Console Wallet for Canton Network",
+      "description": "Official Console Wallet for Canton Network (browser extension + mobile)",
       "homepage": "https://console.digitalasset.com",
       "icon": "https://console.digitalasset.com/icon.png",
       "supportedNetworks": ["devnet", "testnet", "mainnet"],
@@ -20,15 +20,18 @@
         "submitTransaction": true,
         "transactionStatus": true,
         "switchNetwork": false,
-        "multiParty": false
+        "multiParty": false,
+        "mobileConnect": true,
+        "remoteSigner": true
       },
       "adapter": {
         "type": "@partylayer/adapter-console"
       },
       "installation": {
-        "windowProperty": "consoleWallet"
+        "windowProperty": "consoleWallet",
+        "deeplink": "https://consolewallet.io/wallet-connect"
       },
-      "sdkVersion": ">=0.1.0"
+      "sdkVersion": ">=0.2.5"
     },
     {
       "id": "loop",
