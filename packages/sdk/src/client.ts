@@ -315,7 +315,8 @@ export class PartyLayerClient {
       const timeoutMs = options?.timeoutMs || 120000;
       const connectPromise = adapter.connect(ctx, {
         timeoutMs,
-        partyId: undefined, // TODO: support party selection
+        partyId: undefined,
+        preferInstalled: options?.preferInstalled,
       });
 
       const timeoutPromise = new Promise<never>((_, reject) => {

@@ -247,6 +247,8 @@ export interface WalletAdapter {
     opts?: {
       timeoutMs?: number;
       partyId?: PartyId;
+      /** When false, prefer remote/mobile transport over installed extension */
+      preferInstalled?: boolean;
     }
   ): Promise<AdapterConnectResult>;
 

@@ -8,7 +8,12 @@
  * Connection modes:
  * - 'local'    — Browser extension only (postMessage transport)
  * - 'remote'   — Mobile wallet only (QR code / deep link via relay server)
- * - 'combined' — Auto-detects: tries extension first, falls back to mobile
+ * - 'combined' — Auto-detects: extension if installed, otherwise QR/deep link
+ *
+ * Note: In 'combined' mode, the adapter resolves to 'local' or 'remote'
+ * explicitly rather than passing 'combined' to the SDK, because the SDK's
+ * combined mode shows its own connector-selection UI which conflicts with
+ * PartyLayer's modal.
  *
  * Reference: https://www.npmjs.com/package/@console-wallet/dapp-sdk
  * Wallet Integration Guide: https://docs.digitalasset.com/integrate/devnet/index.html
@@ -187,12 +192,18 @@ export class ConsoleAdapter implements WalletAdapter {
    */
   async connect(
     ctx: AdapterContext,
-    _opts?: { timeoutMs?: number; partyId?: PartyId },
+    _opts?: { timeoutMs?: number; partyId?: PartyId; preferInstalled?: boolean },
   ): Promise<AdapterConnectResult> {
     const transportLabel = resolveTransportLabel(this.target, null);
 
     try {
-      // For 'local' mode, verify extension is present before attempting connect
+      // Resolve the effective SDK target.
+      // We never pass 'combined' to the SDK because its combined mode shows
+      // a connector-selection UI inside #console-wallet-connect-placeholder
+      // which conflicts with our modal. Instead, we detect the extension
+      // ourselves and pick 'local' or 'remote' explicitly.
+      let effectiveTarget: 'local' | 'remote';
+
       if (this.target === 'local') {
         const availability =
           await consoleWallet.checkExtensionAvailability();
@@ -202,17 +213,25 @@ export class ConsoleAdapter implements WalletAdapter {
             'Console Wallet extension not detected. Install from https://consolewallet.io',
           );
         }
-      }
-
-      // Determine active transport before connect for combined mode
-      let extensionAvailable = false;
-      if (this.target === 'combined') {
-        try {
-          const availability =
-            await consoleWallet.checkExtensionAvailability();
-          extensionAvailable = availability.status === 'installed';
-        } catch {
-          extensionAvailable = false;
+        effectiveTarget = 'local';
+      } else if (this.target === 'remote') {
+        effectiveTarget = 'remote';
+      } else {
+        // Combined: detect extension and pick the right path.
+        // If preferInstalled is explicitly false (e.g. "Try mobile" fallback),
+        // force remote mode regardless of extension availability.
+        if (_opts?.preferInstalled === false) {
+          effectiveTarget = 'remote';
+        } else {
+          let extensionAvailable = false;
+          try {
+            const availability =
+              await consoleWallet.checkExtensionAvailability();
+            extensionAvailable = availability.status === 'installed';
+          } catch {
+            extensionAvailable = false;
+          }
+          effectiveTarget = extensionAvailable ? 'local' : 'remote';
         }
       }
 
@@ -221,13 +240,14 @@ export class ConsoleAdapter implements WalletAdapter {
         origin: ctx.origin,
         network: ctx.network,
         target: this.target,
+        effectiveTarget,
       });
 
-      // Connect — SDK handles transport selection based on target
+      // Connect with the resolved target — always 'local' or 'remote', never 'combined'
       const connectResult = await consoleWallet.connect({
         name: ctx.appName,
         icon: ctx.origin ? `${ctx.origin}/favicon.ico` : undefined,
-        target: this.target,
+        target: effectiveTarget,
       });
 
       ctx.logger.debug('Console Wallet connect result', connectResult);
@@ -238,15 +258,8 @@ export class ConsoleAdapter implements WalletAdapter {
         );
       }
 
-      // Determine which transport was actually used
-      if (this.target === 'local') {
-        this.activeTransport = 'injected';
-      } else if (this.target === 'remote') {
-        this.activeTransport = 'remote';
-      } else {
-        // Combined: if extension was available, SDK uses it; otherwise remote
-        this.activeTransport = extensionAvailable ? 'injected' : 'remote';
-      }
+      // Transport is known from the effective target
+      this.activeTransport = effectiveTarget === 'local' ? 'injected' : 'remote';
 
       ctx.logger.debug('Console Wallet active transport', {
         target: this.target,
