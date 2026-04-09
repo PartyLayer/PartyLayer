@@ -199,7 +199,7 @@ export class ConsoleAdapter implements WalletAdapter {
         if (availability.status !== 'installed') {
           throw new WalletNotInstalledError(
             this.walletId,
-            'Console Wallet extension not detected. Install from https://console.digitalasset.com',
+            'Console Wallet extension not detected. Install from https://consolewallet.io',
           );
         }
       }
@@ -653,7 +653,7 @@ export class ConsoleAdapter implements WalletAdapter {
       return {
         installed: false,
         reason:
-          'Console Wallet extension not detected. Install from https://console.digitalasset.com',
+          'Console Wallet extension not detected. Install from https://consolewallet.io',
       };
     } catch {
       // checkExtensionAvailability may timeout if extension is not present

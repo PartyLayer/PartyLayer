@@ -12,8 +12,8 @@
       "id": "console",
       "name": "Console Wallet",
       "description": "Official Console Wallet for Canton Network",
-      "homepage": "https://console.digitalasset.com",
-      "icon": "https://console.digitalasset.com/icon.png",
+      "homepage": "https://consolewallet.io",
+      "icon": "https://consolewallet.io/icon.png",
       "supportedNetworks": ["devnet", "testnet", "mainnet"],
       "capabilities": {
         "signMessage": true,

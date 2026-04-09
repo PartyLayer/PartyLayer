@@ -90,7 +90,7 @@ function nameToGradient(name: string): string {
 
 /** Known wallet install/website URLs as fallback */
 const KNOWN_WALLET_URLS: Record<string, string> = {
-  console: 'https://console.digitalasset.com',
+  console: 'https://consolewallet.io',
   loop: 'https://loop.5n.app',
   cantor8: 'https://cantor8.io',
   bron: 'https://bron.dev',
@@ -152,9 +152,6 @@ function extractSdkQrCode(): { svgHtml: string; deepLinkUrl: string | null } | n
     }
   }
 
-  // Hide the SDK's container
-  container.style.display = 'none';
-
   return { svgHtml: svg.outerHTML, deepLinkUrl };
 }
 
@@ -162,7 +159,7 @@ function extractSdkQrCode(): { svgHtml: string; deepLinkUrl: string | null } | n
 function removeSdkQrContainer() {
   const container = document.getElementById(SDK_QR_CONTAINER_ID);
   if (container) {
-    container.style.display = 'none';
+    container.remove();
   }
 }
 
@@ -1645,9 +1642,16 @@ export function WalletModal({
           50% { transform: scale(1.02); }
           100% { transform: scale(1); opacity: 1; }
         }
-        /* Hide Console SDK's injected QR modal — we render our own */
+        /* Hide Console SDK's injected QR/connector modal — we extract its
+           content and render in our own modal. Using off-screen positioning
+           instead of display:none so the SDK can fully render its DOM
+           (QR SVG, connector buttons) before we extract them. */
         #${SDK_QR_CONTAINER_ID} {
-          display: none !important;
+          opacity: 0 !important;
+          pointer-events: none !important;
+          position: fixed !important;
+          top: -9999px !important;
+          left: -9999px !important;
         }
       `}</style>
     </div>

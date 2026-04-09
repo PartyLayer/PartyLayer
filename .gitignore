@@ -64,3 +64,4 @@ apps/metrics-backend/
 
 # AI assistant config
 .claude/
+.vercel/

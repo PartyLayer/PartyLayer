@@ -283,7 +283,7 @@ The wallet registry is a versioned JSON document:
       "id": "console",
       "name": "Console Wallet",
       "description": "Official Console Wallet",
-      "homepage": "https://console.digitalasset.com",
+      "homepage": "https://consolewallet.io",
       "icon": "https://...",
       "supportedNetworks": ["mainnet", "devnet", "local"],
       "capabilities": {

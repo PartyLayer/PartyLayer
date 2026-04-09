@@ -73,7 +73,7 @@ export const wallets = [
     description: 'Official Console Wallet for Canton Network',
     transport: 'Extension + Mobile',
     logo: '/wallets/console.png',
-    homepage: 'https://console.digitalasset.com',
+    homepage: 'https://consolewallet.io',
   },
   {
     id: 'loop',
