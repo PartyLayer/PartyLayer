@@ -20,6 +20,15 @@ export default function WalletBalancesContent() {
         active holding contracts they own for that token template.
       </Callout>
 
+      <Callout type="tip">
+        See the full working example in{' '}
+        <a href="https://github.com/anthropics/PartyLayer/tree/main/examples/wallet-balance-loop" style={{ color: '#E6B800' }}>
+          examples/wallet-balance-loop/
+        </a>{' '}
+        — a minimal Vite + React + TypeScript app that connects Loop wallet, queries
+        balance, and displays the result.
+      </Callout>
+
       <H2 id="prerequisites">Prerequisites</H2>
       <UL>
         <LI>Wallet connected — see <a href="/docs/quick-start" style={{ color: '#E6B800' }}>Quick Start</a></LI>
@@ -252,11 +261,21 @@ console.log(activeContracts);`}</CodeBlock>
         <Code>{'Module.Name'}</Code> is the fully qualified Daml module and{' '}
         <Code>{'EntityName'}</Code> is the template name within that module.
       </P>
+
+      <Callout type="note">
+        <Strong>Loop wallet requires fully-qualified template IDs.</Strong> The Loop SDK
+        expects the Daml package name prefix (e.g.,{' '}
+        <Code>{'#splice-amulet:Splice.Amulet:Amulet'}</Code>), not the short Canton
+        format (<Code>{'Splice.Amulet:Amulet'}</Code>). Console and Nightly wallets accept
+        both formats. If you get errors querying with Loop, check that your template IDs
+        include the <Code>{'#package-name:'}</Code> prefix.
+      </Callout>
+
       <P>Common examples on the Canton Network:</P>
       <UL>
-        <LI><Code>{'Splice.Amulet:Amulet'}</Code> — the native Splice Amulet token</LI>
-        <LI><Code>{'Splice.Amulet:LockedAmulet'}</Code> — locked (vesting) Amulet holdings</LI>
-        <LI><Code>{'Splice.AmuletRules:AmuletRules'}</Code> — Amulet governance rules contract</LI>
+        <LI><Code>{'#splice-amulet:Splice.Amulet:Amulet'}</Code> — the native Splice Amulet token (Loop format)</LI>
+        <LI><Code>{'#splice-amulet:Splice.Amulet:LockedAmulet'}</Code> — locked (vesting) Amulet holdings (Loop format)</LI>
+        <LI><Code>{'Splice.Amulet:Amulet'}</Code> — short format (Console / Nightly only)</LI>
       </UL>
       <P>
         To find template IDs for your project, check your Daml source files (<Code>{'.daml'}</Code>),
@@ -274,12 +293,18 @@ console.log(activeContracts);`}</CodeBlock>
       <H3>Wallet support</H3>
       <P>
         Console, Nightly, and Bron provide full <Code>{'ledgerApi'}</Code> proxy access to all
-        Canton Ledger API endpoints. Loop supports the <Code>{'POST /v2/state/acs'}</Code> and{' '}
-        <Code>{'POST /v2/commands/submit[-and-wait]'}</Code> endpoints via its native SDK methods —
-        this covers wallet balance queries and command submission. Cantor8 (mobile deep link) does
-        not support <Code>{'ledgerApi'}</Code> — calling it with a Cantor8 session throws{' '}
-        <Code>{'CapabilityNotSupportedError'}</Code>.
+        Canton Ledger API endpoints. Loop supports <Code>{'POST /v2/state/acs'}</Code> (filtered
+        queries) and <Code>{'POST /v2/commands/submit[-and-wait]'}</Code> via its native SDK
+        methods — this covers wallet balance queries and command submission. Cantor8 (mobile
+        deep link) does not support <Code>{'ledgerApi'}</Code> — calling it with a Cantor8
+        session throws <Code>{'CapabilityNotSupportedError'}</Code>.
       </P>
+      <Callout type="note">
+        <Strong>Loop limitations:</Strong> The <Code>{'GET /v2/state/acs/active-contracts'}</Code>{' '}
+        unfiltered endpoint may not be supported by Loop{"'"}s backend. Always provide a{' '}
+        <Code>{'templateId'}</Code> or <Code>{'interfaceId'}</Code> filter when using Loop wallet.
+        Use the fully-qualified template ID format with the <Code>{'#package-name:'}</Code> prefix.
+      </Callout>
 
       <H3>Paginated results</H3>
       <P>

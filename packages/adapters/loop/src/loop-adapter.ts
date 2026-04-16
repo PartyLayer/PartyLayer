@@ -481,6 +481,10 @@ export class LoopAdapter implements WalletAdapter {
    * The Canton Ledger API ACS request body contains a filter with template IDs.
    * We extract the first templateId from the filter and pass it to the Loop SDK.
    * The response is wrapped to match the Canton Ledger API shape.
+   *
+   * Important: Loop SDK expects fully-qualified Daml template IDs that include
+   * the package name prefix (e.g., '#splice-amulet:Splice.Amulet:Amulet'),
+   * not the short Canton Ledger API format ('Splice.Amulet:Amulet').
    */
   private async handleAcsQuery(body?: string): Promise<LedgerApiResult> {
     const provider = this.currentProvider!;
@@ -528,13 +532,35 @@ export class LoopAdapter implements WalletAdapter {
       }
     }
 
-    const result = await provider.getActiveContracts({
-      templateId,
-      interfaceId,
-    });
+    // Call Loop SDK's getActiveContracts() with descriptive error context
+    let result: unknown;
+    try {
+      result = await provider.getActiveContracts({
+        templateId,
+        interfaceId,
+      });
+    } catch (err) {
+      const filterDesc = templateId
+        ? `templateId="${templateId}"`
+        : interfaceId
+          ? `interfaceId="${interfaceId}"`
+          : 'no filter (unfiltered query)';
+      const hint = !templateId && !interfaceId
+        ? ' Loop wallet may not support unfiltered ACS queries — try providing a templateId or interfaceId.'
+        : templateId && !templateId.startsWith('#')
+          ? ` Loop wallet expects fully-qualified Daml template IDs with a package name prefix`
+            + ` (e.g., '#splice-amulet:Splice.Amulet:Amulet'), not the short Canton format`
+            + ` ('Splice.Amulet:Amulet').`
+          : '';
+      throw new Error(
+        `Loop getActiveContracts() failed for ${filterDesc}.${hint}`
+        + ` Original error: ${err instanceof Error ? err.message : String(err)}`,
+      );
+    }
 
-    // Wrap the Loop SDK response in Canton Ledger API ACS response shape
-    const contracts = Array.isArray(result) ? result : [];
+    // Normalize the Loop SDK response — it may be a plain array or an
+    // object with a known contracts key.
+    const contracts = extractContracts(result);
     const acsResponse = {
       activeContracts: contracts,
       workflowId: '',
@@ -573,4 +599,29 @@ export class LoopAdapter implements WalletAdapter {
     if (network === 'devnet' || network === 'testnet') return 'devnet';
     return 'mainnet';
   }
+}
+
+/**
+ * Extract a contracts array from the Loop SDK response.
+ *
+ * The SDK's getActiveContracts() may return:
+ *   - A plain array of contract objects (most common)
+ *   - An object with a known key containing the array
+ *
+ * This helper normalizes all shapes to a flat array.
+ */
+function extractContracts(result: unknown): unknown[] {
+  if (Array.isArray(result)) {
+    return result;
+  }
+  if (result && typeof result === 'object') {
+    const obj = result as Record<string, unknown>;
+    // Try common response wrapper keys
+    for (const key of ['active_contracts', 'activeContracts', 'contracts', 'result']) {
+      if (Array.isArray(obj[key])) {
+        return obj[key] as unknown[];
+      }
+    }
+  }
+  return [];
 }

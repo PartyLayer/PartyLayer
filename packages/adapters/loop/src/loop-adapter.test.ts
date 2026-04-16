@@ -226,6 +226,169 @@ describe('LoopAdapter', () => {
         });
       });
 
+      // ── ACS error handling ────────────────────────────────────────
+
+      it('should include templateId in error when filtered query fails', async () => {
+        mockProvider.getActiveContracts.mockRejectedValue(
+          new Error('Failed to get active contracts.'),
+        );
+
+        await expect(
+          adapter.ledgerApi(ctx, createMockSession(), {
+            requestMethod: 'POST',
+            resource: '/v2/state/acs',
+            body: JSON.stringify({
+              filter: {
+                filtersByParty: {
+                  'party::test': {
+                    inclusive: {
+                      templateFilters: [{ templateId: 'Splice.Amulet:Amulet' }],
+                    },
+                  },
+                },
+              },
+            }),
+          }),
+        ).rejects.toThrow(/templateId="Splice\.Amulet:Amulet"/);
+      });
+
+      it('should hint about package prefix when short-form templateId fails', async () => {
+        mockProvider.getActiveContracts.mockRejectedValue(
+          new Error('Failed to get active contracts.'),
+        );
+
+        await expect(
+          adapter.ledgerApi(ctx, createMockSession(), {
+            requestMethod: 'POST',
+            resource: '/v2/state/acs',
+            body: JSON.stringify({
+              filter: {
+                filtersByParty: {
+                  'party::test': {
+                    inclusive: {
+                      templateFilters: [{ templateId: 'Splice.Amulet:Amulet' }],
+                    },
+                  },
+                },
+              },
+            }),
+          }),
+        ).rejects.toThrow(/fully-qualified Daml template IDs/);
+      });
+
+      it('should not hint about package prefix when templateId already has # prefix', async () => {
+        mockProvider.getActiveContracts.mockRejectedValue(
+          new Error('Failed to get active contracts.'),
+        );
+
+        try {
+          await adapter.ledgerApi(ctx, createMockSession(), {
+            requestMethod: 'POST',
+            resource: '/v2/state/acs',
+            body: JSON.stringify({
+              filter: {
+                filtersByParty: {
+                  'party::test': {
+                    inclusive: {
+                      templateFilters: [{ templateId: '#splice-amulet:Splice.Amulet:Amulet' }],
+                    },
+                  },
+                },
+              },
+            }),
+          });
+        } catch (err: unknown) {
+          const msg = (err as Error).message;
+          expect(msg).toContain('#splice-amulet:Splice.Amulet:Amulet');
+          expect(msg).not.toContain('fully-qualified Daml template IDs');
+        }
+      });
+
+      it('should hint about unfiltered queries when no filter fails', async () => {
+        mockProvider.getActiveContracts.mockRejectedValue(
+          new Error('Failed to get active contracts.'),
+        );
+
+        await expect(
+          adapter.ledgerApi(ctx, createMockSession(), {
+            requestMethod: 'GET',
+            resource: '/v2/state/acs/active-contracts',
+          }),
+        ).rejects.toThrow(/unfiltered query/);
+      });
+
+      it('should include original error message in ACS errors', async () => {
+        mockProvider.getActiveContracts.mockRejectedValue(
+          new Error('Failed to get active contracts.'),
+        );
+
+        await expect(
+          adapter.ledgerApi(ctx, createMockSession(), {
+            requestMethod: 'GET',
+            resource: '/v2/state/acs/active-contracts',
+          }),
+        ).rejects.toThrow(/Failed to get active contracts\./);
+      });
+
+      // ── ACS response normalization ────────────────────────────────
+
+      it('should normalize object response with active_contracts key', async () => {
+        mockProvider.getActiveContracts.mockResolvedValue({
+          active_contracts: [{ contractId: 'c1' }, { contractId: 'c2' }],
+        });
+
+        const result = await adapter.ledgerApi(ctx, createMockSession(), {
+          requestMethod: 'POST',
+          resource: '/v2/state/acs',
+          body: JSON.stringify({ templateId: 'test' }),
+        });
+
+        const parsed = JSON.parse(result.response);
+        expect(parsed.activeContracts).toHaveLength(2);
+        expect(parsed.activeContracts[0].contractId).toBe('c1');
+      });
+
+      it('should normalize object response with activeContracts key', async () => {
+        mockProvider.getActiveContracts.mockResolvedValue({
+          activeContracts: [{ contractId: 'c1' }],
+        });
+
+        const result = await adapter.ledgerApi(ctx, createMockSession(), {
+          requestMethod: 'POST',
+          resource: '/v2/state/acs',
+          body: JSON.stringify({ templateId: 'test' }),
+        });
+
+        const parsed = JSON.parse(result.response);
+        expect(parsed.activeContracts).toHaveLength(1);
+      });
+
+      it('should return empty array for unexpected response shape', async () => {
+        mockProvider.getActiveContracts.mockResolvedValue({ foo: 'bar' });
+
+        const result = await adapter.ledgerApi(ctx, createMockSession(), {
+          requestMethod: 'POST',
+          resource: '/v2/state/acs',
+          body: JSON.stringify({ templateId: 'test' }),
+        });
+
+        const parsed = JSON.parse(result.response);
+        expect(parsed.activeContracts).toEqual([]);
+      });
+
+      it('should return empty array for null/undefined response', async () => {
+        mockProvider.getActiveContracts.mockResolvedValue(null);
+
+        const result = await adapter.ledgerApi(ctx, createMockSession(), {
+          requestMethod: 'POST',
+          resource: '/v2/state/acs',
+          body: JSON.stringify({ templateId: 'test' }),
+        });
+
+        const parsed = JSON.parse(result.response);
+        expect(parsed.activeContracts).toEqual([]);
+      });
+
       // ── Command submission ────────────────────────────────────────
 
       it('should handle POST /v2/commands/submit', async () => {
