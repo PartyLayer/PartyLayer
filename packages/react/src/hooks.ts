@@ -11,6 +11,8 @@ import type {
   SignMessageParams,
   SignTransactionParams,
   SubmitTransactionParams,
+  LedgerApiParams,
+  LedgerApiResult,
   ConnectOptions,
   RegistryStatus,
 } from '@partylayer/sdk';
@@ -245,4 +247,33 @@ export function useSubmitTransaction() {
   );
 
   return { submitTransaction, isSubmitting, error };
+}
+
+/**
+ * Hook to call the Ledger API through the connected wallet
+ */
+export function useLedgerApi() {
+  const client = usePartyLayer();
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<Error | null>(null);
+
+  const ledgerApi = useCallback(
+    async (params: LedgerApiParams): Promise<LedgerApiResult | null> => {
+      setIsLoading(true);
+      setError(null);
+
+      try {
+        return await client.ledgerApi(params);
+      } catch (err) {
+        const error = err instanceof Error ? err : new Error('Ledger API call failed');
+        setError(error);
+        return null;
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [client]
+  );
+
+  return { ledgerApi, isLoading, error };
 }

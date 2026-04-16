@@ -74,6 +74,8 @@ export type {
   SignMessageParams,
   SignTransactionParams,
   SubmitTransactionParams,
+  LedgerApiParams,
+  LedgerApiResult,
 } from '@partylayer/core';
 
 // Re-export registry status type
