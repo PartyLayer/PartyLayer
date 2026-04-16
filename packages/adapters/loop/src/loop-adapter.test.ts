@@ -166,6 +166,25 @@ describe('LoopAdapter', () => {
         expect(mockProvider.getActiveContracts).toHaveBeenCalled();
       });
 
+      it('should handle GET /v2/state/acs/active-contracts (unfiltered)', async () => {
+        mockProvider.getActiveContracts.mockResolvedValue([
+          { contractId: 'c1', payload: {} },
+          { contractId: 'c2', payload: {} },
+        ]);
+
+        const result = await adapter.ledgerApi(ctx, createMockSession(), {
+          requestMethod: 'GET',
+          resource: '/v2/state/acs/active-contracts',
+        });
+
+        expect(mockProvider.getActiveContracts).toHaveBeenCalledWith({
+          templateId: undefined,
+          interfaceId: undefined,
+        });
+        const parsed = JSON.parse(result.response);
+        expect(parsed.activeContracts).toHaveLength(2);
+      });
+
       it('should handle ACS query without body', async () => {
         mockProvider.getActiveContracts.mockResolvedValue([]);
 

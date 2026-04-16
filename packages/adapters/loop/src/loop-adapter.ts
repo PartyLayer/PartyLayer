@@ -396,6 +396,7 @@ export class LoopAdapter implements WalletAdapter {
    * Supported endpoints:
    * - POST /v2/state/acs — via getActiveContracts()
    * - POST /v2/state/active-contracts — alias for /v2/state/acs
+   * - GET  /v2/state/acs/active-contracts — unfiltered, via getActiveContracts()
    * - POST /v2/commands/submit — via submitTransaction()
    * - POST /v2/commands/submit-and-wait — via submitAndWaitForTransaction()
    * - POST /v2/commands/submit-and-wait-for-transaction — alias
@@ -434,8 +435,8 @@ export class LoopAdapter implements WalletAdapter {
       throw new CapabilityNotSupportedError(
         this.walletId,
         `ledgerApi endpoint "${route}" is not supported by Loop wallet. ` +
-          'Supported: POST /v2/state/acs, POST /v2/commands/submit, ' +
-          'POST /v2/commands/submit-and-wait. ' +
+          'Supported: POST /v2/state/acs, GET /v2/state/acs/active-contracts, ' +
+          'POST /v2/commands/submit, POST /v2/commands/submit-and-wait. ' +
           'For full Ledger API access, use Console or Nightly wallet.',
       );
     } catch (err) {
@@ -450,10 +451,19 @@ export class LoopAdapter implements WalletAdapter {
 
   /** Check if the request targets the ACS query endpoint */
   private isAcsRoute(method: string, resource: string): boolean {
-    if (method.toUpperCase() !== 'POST') return false;
+    const m = method.toUpperCase();
     const normalized = resource.replace(/\/+$/, '');
-    return normalized === '/v2/state/acs'
-      || normalized === '/v2/state/active-contracts';
+    // POST /v2/state/acs — filtered query (Canton Ledger API standard)
+    // POST /v2/state/active-contracts — alias
+    // GET  /v2/state/acs/active-contracts — unfiltered fetch of all contracts
+    if (m === 'POST') {
+      return normalized === '/v2/state/acs'
+        || normalized === '/v2/state/active-contracts';
+    }
+    if (m === 'GET') {
+      return normalized === '/v2/state/acs/active-contracts';
+    }
+    return false;
   }
 
   /** Check if the request targets a command submission endpoint */
