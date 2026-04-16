@@ -3,7 +3,7 @@
 import { useDocs } from '../layout';
 
 export default function QuickStartPage() {
-  const { H1, H2, P, Code, CodeBlock, Callout, PrevNext, A, OL, LI, Strong } = useDocs();
+  const { H1, H2, P, Code, CodeBlock, Callout, PrevNext, A, OL, LI, Strong, TabGroup } = useDocs();
 
   return (
     <>
@@ -14,6 +14,10 @@ export default function QuickStartPage() {
       </P>
 
       <H2 id="step-1">Step 1: Install</H2>
+      <P>
+        Add the PartyLayer packages to your existing React project. If you{"'"}re starting fresh with
+        Vite, run <Code>{'npm create vite@latest my-dapp -- --template react-ts'}</Code> first.
+      </P>
       <CodeBlock language="bash">{`npm install @partylayer/sdk @partylayer/react`}</CodeBlock>
 
       <H2 id="step-2">Step 2: Wrap Your App</H2>
@@ -21,7 +25,12 @@ export default function QuickStartPage() {
         Add <Code>{'PartyLayerKit'}</Code> at the root of your component tree.
         It handles wallet discovery, session management, and theming automatically.
       </P>
-      <CodeBlock language="tsx" title="app/providers.tsx">{`import { PartyLayerKit } from '@partylayer/react';
+      <TabGroup tabs={[
+        {
+          label: 'Next.js',
+          language: 'tsx',
+          content: `// app/providers.tsx
+import { PartyLayerKit } from '@partylayer/react';
 
 export function Providers({ children }: { children: React.ReactNode }) {
   return (
@@ -29,7 +38,26 @@ export function Providers({ children }: { children: React.ReactNode }) {
       {children}
     </PartyLayerKit>
   );
-}`}</CodeBlock>
+}`,
+        },
+        {
+          label: 'Vite + React',
+          language: 'tsx',
+          content: `// src/main.tsx
+import { StrictMode } from 'react';
+import { createRoot } from 'react-dom/client';
+import { PartyLayerKit } from '@partylayer/react';
+import App from './App';
+
+createRoot(document.getElementById('root')!).render(
+  <StrictMode>
+    <PartyLayerKit network="mainnet" appName="My dApp">
+      <App />
+    </PartyLayerKit>
+  </StrictMode>,
+);`,
+        },
+      ]} />
 
       <Callout type="tip">
         <Code>{'PartyLayerKit'}</Code> automatically registers all built-in wallet adapters
@@ -41,7 +69,12 @@ export function Providers({ children }: { children: React.ReactNode }) {
         Drop <Code>{'ConnectButton'}</Code> anywhere in your app. It renders a connect button when
         disconnected and shows the connected address with a disconnect dropdown when connected.
       </P>
-      <CodeBlock language="tsx" title="app/page.tsx">{`import { ConnectButton } from '@partylayer/react';
+      <TabGroup tabs={[
+        {
+          label: 'Next.js',
+          language: 'tsx',
+          content: `// app/page.tsx
+import { ConnectButton } from '@partylayer/react';
 
 export default function Home() {
   return (
@@ -50,7 +83,24 @@ export default function Home() {
       <ConnectButton />
     </div>
   );
-}`}</CodeBlock>
+}`,
+        },
+        {
+          label: 'Vite + React',
+          language: 'tsx',
+          content: `// src/App.tsx
+import { ConnectButton } from '@partylayer/react';
+
+export default function App() {
+  return (
+    <div>
+      <h1>My Canton dApp</h1>
+      <ConnectButton />
+    </div>
+  );
+}`,
+        },
+      ]} />
 
       <P>
         That{"'"}s it! Your app now has a complete wallet connection flow with a polished modal,
@@ -59,7 +109,12 @@ export default function Home() {
 
       <H2 id="complete-example">Complete Example</H2>
       <P>Here{"'"}s the full setup in a single file:</P>
-      <CodeBlock language="tsx" title="app/layout.tsx">{`import { PartyLayerKit, ConnectButton } from '@partylayer/react';
+      <TabGroup tabs={[
+        {
+          label: 'Next.js',
+          language: 'tsx',
+          content: `// app/layout.tsx
+import { PartyLayerKit, ConnectButton } from '@partylayer/react';
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -75,7 +130,39 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </body>
     </html>
   );
-}`}</CodeBlock>
+}`,
+        },
+        {
+          label: 'Vite + React',
+          language: 'tsx',
+          content: `// src/main.tsx
+import { StrictMode } from 'react';
+import { createRoot } from 'react-dom/client';
+import { PartyLayerKit, ConnectButton } from '@partylayer/react';
+
+function App() {
+  return (
+    <>
+      <nav>
+        <h1>My dApp</h1>
+        <ConnectButton />
+      </nav>
+      <main>
+        <p>Your app content here</p>
+      </main>
+    </>
+  );
+}
+
+createRoot(document.getElementById('root')!).render(
+  <StrictMode>
+    <PartyLayerKit network="mainnet" appName="My dApp">
+      <App />
+    </PartyLayerKit>
+  </StrictMode>,
+);`,
+        },
+      ]} />
 
       <H2 id="whats-happening">What{"'"}s Happening Under the Hood?</H2>
       <P>When <Code>{'PartyLayerKit'}</Code> mounts, it:</P>
