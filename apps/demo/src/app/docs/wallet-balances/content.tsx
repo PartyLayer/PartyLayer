@@ -72,6 +72,65 @@ function TokenBalance({ templateId }: { templateId: string }) {
 // Usage
 <TokenBalance templateId="Splice.Amulet:Amulet" />`}</CodeBlock>
 
+      <Callout type="tip">
+        <Strong>Prefer the dedicated hook:</Strong> The <Code>{'useLedgerApi'}</Code> hook provides
+        built-in <Code>{'isLoading'}</Code> and <Code>{'error'}</Code> state, saving you from managing
+        them manually. See <a href="/docs/hooks#use-ledger-api" style={{ color: '#E6B800' }}>React Hooks &rarr; useLedgerApi</a> for
+        full documentation.
+      </Callout>
+
+      <H3>Single token balance with useLedgerApi</H3>
+      <CodeBlock language="tsx">{`import { useState } from 'react';
+import { useSession, useLedgerApi } from '@partylayer/react';
+
+function TokenBalance({ templateId }: { templateId: string }) {
+  const session = useSession();
+  const { ledgerApi, isLoading, error } = useLedgerApi();
+  const [balance, setBalance] = useState<number | null>(null);
+
+  const fetchBalance = async () => {
+    if (!session) return;
+
+    const result = await ledgerApi({
+      requestMethod: 'POST',
+      resource: '/v2/state/acs',
+      body: JSON.stringify({
+        filter: {
+          filtersByParty: {
+            [session.partyId]: {
+              inclusive: {
+                templateFilters: [{ templateId }],
+              },
+            },
+          },
+        },
+      }),
+    });
+
+    if (result) {
+      const { activeContracts = [] } = JSON.parse(result.response);
+      const total = activeContracts.reduce(
+        (sum: number, c: any) =>
+          sum + parseFloat(c.payload?.amount?.initialAmount ?? '0'),
+        0
+      );
+      setBalance(total);
+    }
+  };
+
+  if (!session) return null;
+
+  return (
+    <div>
+      <button onClick={fetchBalance} disabled={isLoading}>
+        {isLoading ? 'Loading…' : 'Fetch Balance'}
+      </button>
+      {error && <p>Error: {error.message}</p>}
+      {balance !== null && <span>Balance: {balance}</span>}
+    </div>
+  );
+}`}</CodeBlock>
+
       <H3>Multiple tokens in parallel</H3>
       <CodeBlock language="tsx">{`import { useState, useEffect } from 'react';
 import { useSession, usePartyLayer } from '@partylayer/react';
