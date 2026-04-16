@@ -387,10 +387,21 @@ export class LoopAdapter implements WalletAdapter {
   }
 
   /**
-   * Proxy a Ledger API request through the Loop Wallet.
+   * Ledger API endpoints that Loop SDK can fulfill via native methods.
    *
-   * Loop SDK may expose ledgerApi on the LoopProvider or via a generic
-   * request() method. We check at runtime to handle SDK versions gracefully.
+   * Loop SDK does not expose a generic Ledger API proxy. Instead, it
+   * provides purpose-built methods (getActiveContracts, getHolding,
+   * submitTransaction, etc.) that we map to Canton Ledger API endpoints.
+   *
+   * Supported endpoints:
+   * - POST /v2/state/acs — via getActiveContracts()
+   * - POST /v2/state/active-contracts — alias for /v2/state/acs
+   * - POST /v2/commands/submit — via submitTransaction()
+   * - POST /v2/commands/submit-and-wait — via submitAndWaitForTransaction()
+   * - POST /v2/commands/submit-and-wait-for-transaction — alias
+   *
+   * Unsupported endpoints throw CapabilityNotSupportedError with a
+   * message listing the supported routes.
    */
   async ledgerApi(
     ctx: AdapterContext,
@@ -402,51 +413,30 @@ export class LoopAdapter implements WalletAdapter {
         throw new Error('Not connected to Loop Wallet');
       }
 
-      ctx.logger.debug('Proxying ledger API request via Loop Wallet', {
+      const { requestMethod, resource, body } = params;
+      const route = `${requestMethod.toUpperCase()} ${resource}`;
+
+      ctx.logger.debug('Loop ledgerApi request', {
         sessionId: session.sessionId,
-        requestMethod: params.requestMethod,
-        resource: params.resource,
+        route,
       });
 
-      const provider = this.currentProvider as unknown as {
-        ledgerApi?: (method: string, resource: string, body?: string) => Promise<unknown>;
-        request?: (args: { method: string; params?: unknown }) => Promise<unknown>;
-      };
-
-      if (typeof provider.ledgerApi === 'function') {
-        const result = await provider.ledgerApi(
-          params.requestMethod,
-          params.resource,
-          params.body,
-        );
-        const response = result as { response?: string } | string;
-        return {
-          response: typeof response === 'string'
-            ? response
-            : (response?.response ?? JSON.stringify(response)),
-        };
+      // Route to the appropriate Loop SDK method
+      if (this.isAcsRoute(requestMethod, resource)) {
+        return this.handleAcsQuery(body);
       }
 
-      if (typeof provider.request === 'function') {
-        const result = await provider.request({
-          method: 'ledgerApi',
-          params: {
-            requestMethod: params.requestMethod,
-            resource: params.resource,
-            body: params.body,
-          },
-        });
-        const response = result as { response?: string } | string;
-        return {
-          response: typeof response === 'string'
-            ? response
-            : (response?.response ?? JSON.stringify(response)),
-        };
+      if (this.isSubmitRoute(requestMethod, resource)) {
+        return this.handleSubmitCommand(resource, body);
       }
 
+      // Unsupported endpoint
       throw new CapabilityNotSupportedError(
         this.walletId,
-        'ledgerApi — update Loop SDK to a version that supports CIP-0103 ledgerApi',
+        `ledgerApi endpoint "${route}" is not supported by Loop wallet. ` +
+          'Supported: POST /v2/state/acs, POST /v2/commands/submit, ' +
+          'POST /v2/commands/submit-and-wait. ' +
+          'For full Ledger API access, use Console or Nightly wallet.',
       );
     } catch (err) {
       throw mapUnknownErrorToPartyLayerError(err, {
@@ -456,6 +446,113 @@ export class LoopAdapter implements WalletAdapter {
         details: { sessionId: session.sessionId },
       });
     }
+  }
+
+  /** Check if the request targets the ACS query endpoint */
+  private isAcsRoute(method: string, resource: string): boolean {
+    if (method.toUpperCase() !== 'POST') return false;
+    const normalized = resource.replace(/\/+$/, '');
+    return normalized === '/v2/state/acs'
+      || normalized === '/v2/state/active-contracts';
+  }
+
+  /** Check if the request targets a command submission endpoint */
+  private isSubmitRoute(method: string, resource: string): boolean {
+    if (method.toUpperCase() !== 'POST') return false;
+    const normalized = resource.replace(/\/+$/, '');
+    return normalized === '/v2/commands/submit'
+      || normalized === '/v2/commands/submit-and-wait'
+      || normalized === '/v2/commands/submit-and-wait-for-transaction';
+  }
+
+  /**
+   * Handle POST /v2/state/acs via Loop SDK's getActiveContracts().
+   *
+   * The Canton Ledger API ACS request body contains a filter with template IDs.
+   * We extract the first templateId from the filter and pass it to the Loop SDK.
+   * The response is wrapped to match the Canton Ledger API shape.
+   */
+  private async handleAcsQuery(body?: string): Promise<LedgerApiResult> {
+    const provider = this.currentProvider!;
+
+    // Parse the request body to extract template filter
+    let templateId: string | undefined;
+    let interfaceId: string | undefined;
+
+    if (body) {
+      try {
+        const parsed = JSON.parse(body) as {
+          filter?: {
+            filtersByParty?: Record<string, {
+              inclusive?: {
+                templateFilters?: Array<{ templateId?: string; interfaceId?: string }>;
+              };
+            }>;
+          };
+          templateId?: string;
+          interfaceId?: string;
+        };
+
+        // Extract from Canton Ledger API filter format
+        if (parsed.filter?.filtersByParty) {
+          const partyFilters = Object.values(parsed.filter.filtersByParty);
+          for (const pf of partyFilters) {
+            const templates = pf.inclusive?.templateFilters;
+            if (templates && templates.length > 0) {
+              templateId = templates[0].templateId;
+              interfaceId = templates[0].interfaceId;
+              break;
+            }
+          }
+        }
+
+        // Also accept direct templateId/interfaceId (simplified format)
+        if (!templateId && parsed.templateId) {
+          templateId = parsed.templateId;
+        }
+        if (!interfaceId && parsed.interfaceId) {
+          interfaceId = parsed.interfaceId;
+        }
+      } catch {
+        // If body is not valid JSON, call without filters
+      }
+    }
+
+    const result = await provider.getActiveContracts({
+      templateId,
+      interfaceId,
+    });
+
+    // Wrap the Loop SDK response in Canton Ledger API ACS response shape
+    const contracts = Array.isArray(result) ? result : [];
+    const acsResponse = {
+      activeContracts: contracts,
+      workflowId: '',
+    };
+
+    return { response: JSON.stringify(acsResponse) };
+  }
+
+  /**
+   * Handle POST /v2/commands/submit[-and-wait] via Loop SDK's
+   * submitTransaction() or submitAndWaitForTransaction().
+   */
+  private async handleSubmitCommand(resource: string, body?: string): Promise<LedgerApiResult> {
+    const provider = this.currentProvider!;
+
+    if (!body) {
+      throw new Error('Command submission requires a request body');
+    }
+
+    const payload = JSON.parse(body) as Record<string, unknown>;
+    const normalized = resource.replace(/\/+$/, '');
+    const waitForResult = normalized.includes('wait');
+
+    const result = waitForResult
+      ? await provider.submitAndWaitForTransaction(payload)
+      : await provider.submitTransaction(payload);
+
+    return { response: JSON.stringify(result) };
   }
 
   /**

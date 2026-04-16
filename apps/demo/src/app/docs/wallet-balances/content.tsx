@@ -204,8 +204,11 @@ console.log(activeContracts);`}</CodeBlock>
 
       <H3>Wallet support</H3>
       <P>
-        Console, Loop, Nightly, and Bron all support <Code>{'ledgerApi'}</Code>. Cantor8 (mobile
-        deep link) does not — calling <Code>{'ledgerApi'}</Code> with a Cantor8 session throws{' '}
+        Console, Nightly, and Bron provide full <Code>{'ledgerApi'}</Code> proxy access to all
+        Canton Ledger API endpoints. Loop supports the <Code>{'POST /v2/state/acs'}</Code> and{' '}
+        <Code>{'POST /v2/commands/submit[-and-wait]'}</Code> endpoints via its native SDK methods —
+        this covers wallet balance queries and command submission. Cantor8 (mobile deep link) does
+        not support <Code>{'ledgerApi'}</Code> — calling it with a Cantor8 session throws{' '}
         <Code>{'CapabilityNotSupportedError'}</Code>.
       </P>
 

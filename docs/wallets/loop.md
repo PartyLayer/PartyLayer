@@ -26,7 +26,7 @@ import { loop } from '@fivenorth/loop-sdk';
 ### Option 2: Script Tag
 
 ```html
-<script src="https://unpkg.com/@fivenorth/loop-sdk@0.8.0/dist"></script>
+<script src="https://unpkg.com/@fivenorth/loop-sdk@0.10.0/dist"></script>
 ```
 
 ## Usage
@@ -59,13 +59,28 @@ const session = await client.connect({ walletId: 'loop' });
 ## Capabilities
 
 Loop Wallet supports:
-- ✅ Connect/Disconnect
-- ✅ Sign Message
-- ✅ Submit Transaction (signs and submits in one call)
-- ✅ Events
-- ✅ Popup (QR code flow)
+- Connect/Disconnect
+- Sign Message
+- Submit Transaction (signs and submits in one call)
+- Ledger API (partial — ACS queries and command submission)
+- Events
+- Popup (QR code flow)
 
-**Note**: Loop SDK combines signing and submission. `signTransaction()` is not supported - use `submitTransaction()` instead.
+**Note**: Loop SDK combines signing and submission. `signTransaction()` is not supported — use `submitTransaction()` instead.
+
+### Ledger API Support
+
+Loop supports a subset of Canton Ledger API endpoints via its native SDK methods:
+
+| Endpoint | Supported | Loop SDK Method |
+|---|---|---|
+| `POST /v2/state/acs` | Yes | `getActiveContracts()` |
+| `POST /v2/state/active-contracts` | Yes | `getActiveContracts()` |
+| `POST /v2/commands/submit` | Yes | `submitTransaction()` |
+| `POST /v2/commands/submit-and-wait` | Yes | `submitAndWaitForTransaction()` |
+| Other endpoints | No | Throws `CapabilityNotSupportedError` |
+
+This covers the most common use cases: querying token balances (ACS) and submitting commands. For full Ledger API access (events, packages, parties, etc.), use Console, Nightly, or Bron wallet.
 
 ## Limitations
 
