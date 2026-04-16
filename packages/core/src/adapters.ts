@@ -85,7 +85,7 @@ export interface SubmitTransactionParams {
 export interface LedgerApiParams {
   /** HTTP method for the JSON Ledger API */
   requestMethod: 'GET' | 'POST' | 'PUT' | 'DELETE';
-  /** Resource path (e.g., "/v1/state/acs") */
+  /** Resource path (e.g., "/v2/state/acs") */
   resource: string;
   /** Optional JSON body */
   body?: string;
