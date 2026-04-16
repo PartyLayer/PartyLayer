@@ -189,9 +189,19 @@ console.log(activeContracts);`}</CodeBlock>
 
       <H3>Template ID format</H3>
       <P>
-        Template IDs follow the pattern <Code>{'Module.Name:EntityName'}</Code> — for example,{' '}
-        <Code>{'Splice.Amulet:Amulet'}</Code>. These are defined in your Daml project. Check
-        your Daml source or deployed package to find the exact values for your tokens.
+        Template IDs follow the pattern <Code>{'Module.Name:EntityName'}</Code> where{' '}
+        <Code>{'Module.Name'}</Code> is the fully qualified Daml module and{' '}
+        <Code>{'EntityName'}</Code> is the template name within that module.
+      </P>
+      <P>Common examples on the Canton Network:</P>
+      <UL>
+        <LI><Code>{'Splice.Amulet:Amulet'}</Code> — the native Splice Amulet token</LI>
+        <LI><Code>{'Splice.Amulet:LockedAmulet'}</Code> — locked (vesting) Amulet holdings</LI>
+        <LI><Code>{'Splice.AmuletRules:AmuletRules'}</Code> — Amulet governance rules contract</LI>
+      </UL>
+      <P>
+        To find template IDs for your project, check your Daml source files (<Code>{'.daml'}</Code>),
+        your deployed package metadata, or the Canton Network ecosystem documentation.
       </P>
 
       <H3>Response parsing</H3>
@@ -218,6 +228,39 @@ console.log(activeContracts);`}</CodeBlock>
         <Code>{'nextPageToken'}</Code> in the parsed response and pass it as{' '}
         <Code>{'pageToken'}</Code> in subsequent requests to retrieve all pages.
       </P>
+      <CodeBlock language="typescript">{`async function getAllContracts(
+  client: PartyLayerClient,
+  partyId: string,
+  templateId: string,
+): Promise<any[]> {
+  const allContracts: any[] = [];
+  let pageToken: string | undefined;
+
+  do {
+    const result = await client.ledgerApi({
+      requestMethod: 'POST',
+      resource: '/v2/state/acs',
+      body: JSON.stringify({
+        filter: {
+          filtersByParty: {
+            [partyId]: {
+              inclusive: {
+                templateFilters: [{ templateId }],
+              },
+            },
+          },
+        },
+        pageToken,
+      }),
+    });
+
+    const parsed = JSON.parse(result.response);
+    allContracts.push(...(parsed.activeContracts ?? []));
+    pageToken = parsed.nextPageToken;
+  } while (pageToken);
+
+  return allContracts;
+}`}</CodeBlock>
 
       <PrevNext />
     </>

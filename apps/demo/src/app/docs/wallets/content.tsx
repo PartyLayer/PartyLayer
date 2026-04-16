@@ -3,7 +3,7 @@
 import { useDocs } from '../layout';
 
 export default function WalletsPage() {
-  const { H1, H2, H3, P, Code, CodeBlock, PropsTable, Callout, PrevNext, Strong } = useDocs();
+  const { H1, H2, H3, P, Code, CodeBlock, PropsTable, Callout, PrevNext, Strong, UL, LI } = useDocs();
 
   return (
     <>
@@ -51,6 +51,71 @@ export default function WalletsPage() {
         All wallets except <Strong>Bron</Strong> are auto-registered when using <Code>{'PartyLayerKit'}</Code>.
         Bron requires explicit configuration because it needs an OAuth client ID.
       </Callout>
+
+      <H2 id="capability-matrix">Capability Matrix</H2>
+      <P>
+        Not every wallet supports every operation. Check this matrix before building features
+        that depend on specific capabilities.
+      </P>
+
+      <div style={{ overflowX: 'auto', marginBottom: 24 }}>
+        <table style={{
+          width: '100%', borderCollapse: 'collapse', fontSize: 14,
+          fontFamily: 'ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Roboto, sans-serif',
+          border: '1px solid rgba(15,23,42,0.10)', borderRadius: 10, overflow: 'hidden',
+        }}>
+          <thead>
+            <tr style={{ background: '#F5F6F8' }}>
+              {['Wallet', 'connect', 'signMessage', 'signTransaction', 'submitTransaction', 'ledgerApi', 'restore'].map(h => (
+                <th key={h} style={{ textAlign: 'left', padding: '10px 14px', fontWeight: 600, color: '#0B0F1A', borderBottom: '1px solid rgba(15,23,42,0.10)', fontSize: 13 }}>{h}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {[
+              { name: 'Console', connect: true, signMessage: true, signTransaction: true, submitTransaction: true, ledgerApi: 'full', restore: true },
+              { name: '5N Loop', connect: true, signMessage: true, signTransaction: false, submitTransaction: true, ledgerApi: 'limited', restore: true },
+              { name: 'Cantor8', connect: true, signMessage: false, signTransaction: false, submitTransaction: false, ledgerApi: 'none', restore: false },
+              { name: 'Nightly', connect: true, signMessage: true, signTransaction: true, submitTransaction: true, ledgerApi: 'full', restore: true },
+              { name: 'Bron', connect: true, signMessage: true, signTransaction: true, submitTransaction: true, ledgerApi: 'full', restore: true },
+            ].map(w => (
+              <tr key={w.name} style={{ borderBottom: '1px solid rgba(15,23,42,0.10)' }}>
+                <td style={{ padding: '10px 14px', fontWeight: 500, color: '#0B0F1A' }}>{w.name}</td>
+                {['connect', 'signMessage', 'signTransaction', 'submitTransaction'].map(cap => {
+                  const val = w[cap as keyof typeof w] as boolean;
+                  return (
+                    <td key={cap} style={{ padding: '10px 14px', textAlign: 'center' }}>
+                      {val ? <span title="Supported" style={{ color: '#166534' }}>{'supported'}</span> : <span title="Not supported" style={{ color: '#991B1B' }}>{'none'}</span>}
+                    </td>
+                  );
+                })}
+                <td style={{ padding: '10px 14px', textAlign: 'center' }}>
+                  {w.ledgerApi === 'full' && <span style={{ color: '#166534' }}>{'full'}</span>}
+                  {w.ledgerApi === 'limited' && <span style={{ color: '#92400E' }}>{'limited'}</span>}
+                  {w.ledgerApi === 'none' && <span style={{ color: '#991B1B' }}>{'none'}</span>}
+                </td>
+                <td style={{ padding: '10px 14px', textAlign: 'center' }}>
+                  {w.restore ? <span style={{ color: '#166534' }}>{'supported'}</span> : <span style={{ color: '#991B1B' }}>{'none'}</span>}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      <H3 id="capability-notes">Capability Notes</H3>
+      <UL>
+        <LI><Strong>Loop — signTransaction:</Strong> Loop SDK combines signing and submission into a single step.
+          Use <Code>{'submitTransaction'}</Code> directly instead of the separate sign-then-submit pattern.</LI>
+        <LI><Strong>Loop — ledgerApi (limited):</Strong> Supports <Code>{'POST /v2/state/acs'}</Code>,{' '}
+          <Code>{'GET /v2/state/acs/active-contracts'}</Code>, <Code>{'POST /v2/commands/submit'}</Code>,{' '}
+          and <Code>{'POST /v2/commands/submit-and-wait'}</Code>. Other endpoints are not available —
+          for full Ledger API access, use Console, Nightly, or Bron.</LI>
+        <LI><Strong>Cantor8:</Strong> Mobile-only deep link transport. Only supports basic connection — no
+          signing, submission, or ledgerApi methods are available.</LI>
+        <LI><Strong>Bron:</Strong> Enterprise wallet with full capabilities. Requires explicit OAuth configuration
+          via <Code>{'BronAdapter'}</Code> with a <Code>{'clientId'}</Code>.</LI>
+      </UL>
 
       <H2 id="adding-bron">Adding Bron (Enterprise)</H2>
       <CodeBlock language="tsx">{`import { PartyLayerKit } from '@partylayer/react';

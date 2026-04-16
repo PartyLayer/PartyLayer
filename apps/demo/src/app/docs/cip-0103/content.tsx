@@ -103,8 +103,19 @@ export default function CIP0103Page() {
       <CodeBlock language="typescript">{`const result = await provider.request<CIP0103LedgerApiResponse>({
   method: 'ledgerApi',
   params: {
-    requestMethod: 'GET',
-    resource: '/v1/parties',
+    requestMethod: 'POST',
+    resource: '/v2/state/acs',
+    body: JSON.stringify({
+      filter: {
+        filtersByParty: {
+          [partyId]: {
+            inclusive: {
+              templateFilters: [{ templateId: 'Splice.Amulet:Amulet' }],
+            },
+          },
+        },
+      },
+    }),
   },
 });`}</CodeBlock>
 

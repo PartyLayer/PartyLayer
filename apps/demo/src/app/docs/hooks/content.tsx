@@ -9,7 +9,7 @@ export default function HooksPage() {
     <>
       <H1>React Hooks</H1>
       <P>
-        PartyLayer provides 11 React hooks for accessing wallet state, performing operations,
+        PartyLayer provides 12 React hooks for accessing wallet state, performing operations,
         and managing sessions. All hooks must be used within a <Code>{'PartyLayerKit'}</Code> or
         {' '}<Code>{'PartyLayerProvider'}</Code>.
       </P>
@@ -237,6 +237,56 @@ function SubmitTx() {
 }`}</CodeBlock>
       <P>
         <Strong>Return type:</Strong> <Code>{'{ submitTransaction: (params) => Promise<TxReceipt | null>, isSubmitting: boolean, error: Error | null }'}</Code>
+      </P>
+
+      <HR />
+
+      <H3 id="use-ledger-api">useLedgerApi</H3>
+      <P>Call the Canton Ledger API through the connected wallet.</P>
+      <CodeBlock language="tsx">{`import { useLedgerApi, useSession } from '@partylayer/react';
+
+function BalanceQuery() {
+  const session = useSession();
+  const { ledgerApi, isLoading, error } = useLedgerApi();
+
+  const fetchBalance = async () => {
+    if (!session) return;
+
+    const result = await ledgerApi({
+      requestMethod: 'POST',
+      resource: '/v2/state/acs',
+      body: JSON.stringify({
+        filter: {
+          filtersByParty: {
+            [session.partyId]: {
+              inclusive: {
+                templateFilters: [{ templateId: 'Splice.Amulet:Amulet' }],
+              },
+            },
+          },
+        },
+      }),
+    });
+
+    if (result) {
+      const { activeContracts = [] } = JSON.parse(result.response);
+      console.log('Contracts:', activeContracts.length);
+    }
+  };
+
+  return (
+    <button onClick={fetchBalance} disabled={isLoading}>
+      {isLoading ? 'Loading...' : 'Fetch Balance'}
+    </button>
+  );
+}`}</CodeBlock>
+      <P>
+        <Strong>Return type:</Strong> <Code>{'{ ledgerApi: (params) => Promise<LedgerApiResult | null>, isLoading: boolean, error: Error | null }'}</Code>
+      </P>
+      <P>
+        Requires a wallet with <Code>{'ledgerApi'}</Code> capability — see{' '}
+        <A href="/docs/wallets#capability-matrix">Capability Matrix</A>. Throws{' '}
+        <Code>{'CapabilityNotSupportedError'}</Code> for wallets that don{"'"}t support it (e.g. Cantor8).
       </P>
 
       {/* ── Utility Hooks ── */}

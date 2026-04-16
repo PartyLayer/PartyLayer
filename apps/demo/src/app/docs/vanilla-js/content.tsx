@@ -3,7 +3,7 @@
 import { useDocs } from '../layout';
 
 export default function VanillaJsPage() {
-  const { H1, H2, H3, P, Code, CodeBlock, PropsTable, Callout, PrevNext, A, HR } = useDocs();
+  const { H1, H2, H3, P, Code, CodeBlock, PropsTable, Callout, PrevNext, A, HR, Strong } = useDocs();
 
   return (
     <>
@@ -136,6 +136,52 @@ console.log('Signed TX:', signed.signedTx);`}</CodeBlock>
 console.log('TX Hash:', receipt.transactionHash);
 console.log('Command ID:', receipt.commandId);
 console.log('Submitted at:', new Date(receipt.submittedAt));`}</CodeBlock>
+
+      <H2 id="ledger-api">Ledger API</H2>
+      <P>
+        Proxy requests to the Canton Ledger API through the connected wallet. Returns raw JSON
+        responses that must be parsed with <Code>{'JSON.parse()'}</Code>.
+      </P>
+      <CodeBlock language="typescript">{`// Query active contracts (wallet balances)
+const result = await client.ledgerApi({
+  requestMethod: 'POST',
+  resource: '/v2/state/acs',
+  body: JSON.stringify({
+    filter: {
+      filtersByParty: {
+        [session.partyId]: {
+          inclusive: {
+            templateFilters: [{ templateId: 'Splice.Amulet:Amulet' }],
+          },
+        },
+      },
+    },
+  }),
+});
+
+const { activeContracts = [] } = JSON.parse(result.response);
+console.log('Contracts found:', activeContracts.length);
+
+// Submit a command directly
+const submitResult = await client.ledgerApi({
+  requestMethod: 'POST',
+  resource: '/v2/commands/submit-and-wait',
+  body: JSON.stringify(commandPayload),
+});`}</CodeBlock>
+      <P>
+        <Strong>Params:</Strong> <Code>{'{ requestMethod: "GET" | "POST" | "PUT" | "DELETE", resource: string, body?: string }'}</Code>
+      </P>
+      <P>
+        <Strong>Returns:</Strong> <Code>{'{ response: string }'}</Code> — raw JSON from the Canton Ledger API.
+      </P>
+      <Callout type="note">
+        Not all wallets support <Code>{'ledgerApi'}</Code>. Cantor8 does not support it at all.
+        Loop supports a limited set of endpoints (ACS queries and command submission).
+        See <A href="/docs/wallets#capability-matrix">Capability Matrix</A> and{' '}
+        <A href="/docs/wallet-balances">Wallet Balances</A> for details.
+      </Callout>
+
+      <HR />
 
       <H2 id="events">Events</H2>
       <P>

@@ -24,8 +24,17 @@ export default function TokenTransfersContent() {
       <UL>
         <LI>Wallet connected — see <a href="/docs/quick-start" style={{ color: '#E6B800' }}>Quick Start</a></LI>
         <LI>The Daml template ID and contract ID of the holding to spend</LI>
-        <LI><Code>{'signTransaction'}</Code> and <Code>{'submitTransaction'}</Code> capabilities (supported by all built-in wallets)</LI>
+        <LI><Code>{'submitTransaction'}</Code> capability (supported by all built-in wallets except Cantor8)</LI>
       </UL>
+
+      <Callout type="warning">
+        <Strong>Loop wallet</Strong> combines signing and submission into a single step — calling{' '}
+        <Code>{'signTransaction()'}</Code> separately will throw <Code>{'CapabilityNotSupportedError'}</Code>.
+        Use <Code>{'submitTransaction()'}</Code> directly instead, or use the{' '}
+        <Code>{'ledgerApi'}</Code> approach with <Code>{'POST /v2/commands/submit-and-wait'}</Code>.
+        See the <a href="#vanilla-js" style={{ color: '#E6B800' }}>Vanilla JS</a> section below for
+        the direct submission pattern.
+      </Callout>
 
       <H2 id="react">React</H2>
 
@@ -189,8 +198,8 @@ try {
     await client.connect();
     // Retry transfer
   } else if (err instanceof CapabilityNotSupportedError) {
-    // Wallet does not support signTransaction (e.g. Loop, Nightly)
-    // Use submitTransaction directly instead
+    // Wallet does not support signTransaction separately (e.g. Loop)
+    // Use submitTransaction or ledgerApi(/v2/commands/submit-and-wait) instead
   }
 }`}</CodeBlock>
       <P>
