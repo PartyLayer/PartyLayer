@@ -1,6 +1,6 @@
 {
   "name": "@partylayer/provider",
-  "version": "0.1.5",
+  "version": "0.1.6",
   "description": "CIP-0103 native Provider implementation for PartyLayer",
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",

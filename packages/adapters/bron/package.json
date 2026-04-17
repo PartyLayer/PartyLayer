@@ -1,6 +1,6 @@
 {
   "name": "@partylayer/adapter-bron",
-  "version": "0.2.7",
+  "version": "0.2.8",
   "description": "Bron Wallet adapter for PartyLayer",
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",
