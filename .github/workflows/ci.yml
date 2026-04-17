@@ -25,6 +25,9 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Check workspace protocols
+        run: pnpm run lint:workspace-protocol
+
       - name: Build
         run: pnpm build
 

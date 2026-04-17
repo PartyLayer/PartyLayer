@@ -19,6 +19,7 @@
     "clean": "pnpm -r clean && rm -rf node_modules",
     "dev": "pnpm --filter demo dev",
     "typecheck": "pnpm -r typecheck",
+    "lint:workspace-protocol": "node scripts/check-workspace-protocol.mjs",
     "registry:sign": "tsx scripts/registry/sign.ts",
     "registry:verify": "tsx scripts/registry/verify.ts",
     "verify:e2e": "tsx scripts/verify/e2e.ts",

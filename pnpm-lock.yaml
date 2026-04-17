@@ -55,25 +55,25 @@ importers:
   apps/demo:
     dependencies:
       '@partylayer/adapter-bron':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/adapters/bron
       '@partylayer/adapter-cantor8':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/adapters/cantor8
       '@partylayer/adapter-console':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/adapters/console
       '@partylayer/adapter-loop':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/adapters/loop
       '@partylayer/provider':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/provider
       '@partylayer/react':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/react
       '@partylayer/sdk':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/sdk
       next:
         specifier: ^14.0.0
@@ -172,10 +172,10 @@ importers:
   examples/test-dapp:
     dependencies:
       '@partylayer/react':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/react
       '@partylayer/sdk':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/sdk
       react:
         specifier: ^18.2.0
@@ -218,10 +218,10 @@ importers:
   examples/wallet-balance-loop:
     dependencies:
       '@partylayer/react':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/react
       '@partylayer/sdk':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../packages/sdk
       react:
         specifier: ^18.2.0
@@ -249,7 +249,7 @@ importers:
   packages/adapter-starter:
     dependencies:
       '@partylayer/core':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../core
     devDependencies:
       '@types/node':
@@ -262,7 +262,7 @@ importers:
   packages/adapters/bron:
     dependencies:
       '@partylayer/core':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../core
     devDependencies:
       '@types/node':
@@ -275,7 +275,7 @@ importers:
   packages/adapters/cantor8:
     dependencies:
       '@partylayer/core':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../core
     devDependencies:
       '@types/node':
@@ -291,7 +291,7 @@ importers:
         specifier: ^2.1.5
         version: 2.1.5
       '@partylayer/core':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../core
     devDependencies:
       '@types/node':
@@ -310,7 +310,7 @@ importers:
         specifier: ^0.10.0
         version: 0.10.0(typescript@5.9.3)
       '@partylayer/core':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../core
     devDependencies:
       '@types/node':
@@ -326,7 +326,7 @@ importers:
   packages/adapters/nightly:
     dependencies:
       '@partylayer/core':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../../core
     devDependencies:
       '@types/node':
@@ -342,10 +342,10 @@ importers:
   packages/conformance-runner:
     dependencies:
       '@partylayer/core':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../core
       '@partylayer/provider':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../provider
       commander:
         specifier: ^14.0.2
@@ -373,7 +373,7 @@ importers:
   packages/provider:
     dependencies:
       '@partylayer/core':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../core
     devDependencies:
       '@vitest/ui':
@@ -392,10 +392,10 @@ importers:
   packages/react:
     dependencies:
       '@partylayer/registry-client':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../registry-client
       '@partylayer/sdk':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../sdk
       react:
         specifier: '>=18.0.0'
@@ -414,7 +414,7 @@ importers:
   packages/registry-cli:
     dependencies:
       '@partylayer/registry-client':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../registry-client
       commander:
         specifier: ^14.0.2
@@ -433,7 +433,7 @@ importers:
   packages/registry-client:
     dependencies:
       '@partylayer/core':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../core
     devDependencies:
       '@types/node':
@@ -449,28 +449,28 @@ importers:
   packages/sdk:
     dependencies:
       '@partylayer/adapter-bron':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../adapters/bron
       '@partylayer/adapter-cantor8':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../adapters/cantor8
       '@partylayer/adapter-console':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../adapters/console
       '@partylayer/adapter-loop':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../adapters/loop
       '@partylayer/adapter-nightly':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../adapters/nightly
       '@partylayer/core':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../core
       '@partylayer/provider':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../provider
       '@partylayer/registry-client':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../registry-client
     devDependencies:
       '@types/node':

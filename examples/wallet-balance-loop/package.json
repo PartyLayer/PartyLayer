@@ -9,8 +9,8 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@partylayer/sdk": "workspace:*",
-    "@partylayer/react": "workspace:*",
+    "@partylayer/sdk": "workspace:^",
+    "@partylayer/react": "workspace:^",
     "react": "^18.2.0",
     "react-dom": "^18.2.0"
   },

@@ -13,7 +13,7 @@
   },
   "dependencies": {
     "commander": "^14.0.2",
-    "@partylayer/registry-client": "workspace:*"
+    "@partylayer/registry-client": "workspace:^"
   },
   "devDependencies": {
     "@types/node": "^20.11.0",

@@ -31,8 +31,8 @@
   },
   "license": "MIT",
   "dependencies": {
-    "@partylayer/core": "workspace:*",
-    "@partylayer/provider": "workspace:*",
+    "@partylayer/core": "workspace:^",
+    "@partylayer/provider": "workspace:^",
     "commander": "^14.0.2"
   },
   "devDependencies": {

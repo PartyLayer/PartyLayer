@@ -40,7 +40,7 @@
   },
   "dependencies": {
     "@fivenorth/loop-sdk": "^0.10.0",
-    "@partylayer/core": "workspace:*"
+    "@partylayer/core": "workspace:^"
   },
   "devDependencies": {
     "@types/node": "^20.11.0",

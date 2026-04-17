@@ -40,7 +40,7 @@
   },
   "dependencies": {
     "@console-wallet/dapp-sdk": "^2.1.5",
-    "@partylayer/core": "workspace:*"
+    "@partylayer/core": "workspace:^"
   },
   "devDependencies": {
     "@types/node": "^20.11.0",
