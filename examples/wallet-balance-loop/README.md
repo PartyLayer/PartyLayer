@@ -2,12 +2,13 @@
 
 Minimal Vite + React + TypeScript app that connects a Loop wallet and queries token balance via the PartyLayer SDK.
 
-## Quick start
+This example can be cloned and run **standalone** — it installs PartyLayer from npm.
+
+## Setup
 
 ```bash
-# From the repo root
-pnpm install
-pnpm --filter wallet-balance-loop-example dev
+npm install
+npm run dev
 ```
 
 Open http://localhost:5174 in your browser.
