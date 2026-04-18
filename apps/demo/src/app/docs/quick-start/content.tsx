@@ -27,20 +27,6 @@ export default function QuickStartPage() {
       </P>
       <TabGroup tabs={[
         {
-          label: 'Next.js',
-          language: 'tsx',
-          content: `// app/providers.tsx
-import { PartyLayerKit } from '@partylayer/react';
-
-export function Providers({ children }: { children: React.ReactNode }) {
-  return (
-    <PartyLayerKit network="mainnet" appName="My dApp">
-      {children}
-    </PartyLayerKit>
-  );
-}`,
-        },
-        {
           label: 'Vite + React',
           language: 'tsx',
           content: `// src/main.tsx
@@ -57,6 +43,22 @@ createRoot(document.getElementById('root')!).render(
   </StrictMode>,
 );`,
         },
+        {
+          label: 'Next.js',
+          language: 'tsx',
+          content: `// app/providers.tsx
+'use client';
+
+import { PartyLayerKit } from '@partylayer/react';
+
+export function Providers({ children }: { children: React.ReactNode }) {
+  return (
+    <PartyLayerKit network="mainnet" appName="My dApp">
+      {children}
+    </PartyLayerKit>
+  );
+}`,
+        },
       ]} />
 
       <Callout type="tip">
@@ -71,12 +73,12 @@ createRoot(document.getElementById('root')!).render(
       </P>
       <TabGroup tabs={[
         {
-          label: 'Next.js',
+          label: 'Vite + React',
           language: 'tsx',
-          content: `// app/page.tsx
+          content: `// src/App.tsx
 import { ConnectButton } from '@partylayer/react';
 
-export default function Home() {
+export default function App() {
   return (
     <div>
       <h1>My Canton dApp</h1>
@@ -86,12 +88,12 @@ export default function Home() {
 }`,
         },
         {
-          label: 'Vite + React',
+          label: 'Next.js',
           language: 'tsx',
-          content: `// src/App.tsx
+          content: `// app/page.tsx
 import { ConnectButton } from '@partylayer/react';
 
-export default function App() {
+export default function Home() {
   return (
     <div>
       <h1>My Canton dApp</h1>
@@ -110,28 +112,6 @@ export default function App() {
       <H2 id="complete-example">Complete Example</H2>
       <P>Here{"'"}s the full setup in a single file:</P>
       <TabGroup tabs={[
-        {
-          label: 'Next.js',
-          language: 'tsx',
-          content: `// app/layout.tsx
-import { PartyLayerKit, ConnectButton } from '@partylayer/react';
-
-export default function RootLayout({ children }: { children: React.ReactNode }) {
-  return (
-    <html lang="en">
-      <body>
-        <PartyLayerKit network="mainnet" appName="My dApp">
-          <nav>
-            <h1>My dApp</h1>
-            <ConnectButton />
-          </nav>
-          {children}
-        </PartyLayerKit>
-      </body>
-    </html>
-  );
-}`,
-        },
         {
           label: 'Vite + React',
           language: 'tsx',
@@ -161,6 +141,28 @@ createRoot(document.getElementById('root')!).render(
     </PartyLayerKit>
   </StrictMode>,
 );`,
+        },
+        {
+          label: 'Next.js',
+          language: 'tsx',
+          content: `// app/layout.tsx
+import { PartyLayerKit, ConnectButton } from '@partylayer/react';
+
+export default function RootLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <html lang="en">
+      <body>
+        <PartyLayerKit network="mainnet" appName="My dApp">
+          <nav>
+            <h1>My dApp</h1>
+            <ConnectButton />
+          </nav>
+          {children}
+        </PartyLayerKit>
+      </body>
+    </html>
+  );
+}`,
         },
       ]} />
 
