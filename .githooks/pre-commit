@@ -1,0 +1,28 @@
+#!/bin/sh
+# Prevent committing with a local-hostname email like 'anil@Anls-MacBook-Pro.local'.
+# Blocks any committer/author email ending in '.local' or containing 'MacBook-Pro'.
+#
+# Enable locally with:
+#   git config core.hooksPath .githooks
+
+email_author=$(git var GIT_AUTHOR_IDENT | sed -n 's/.*<\(.*\)>.*/\1/p')
+email_committer=$(git var GIT_COMMITTER_IDENT | sed -n 's/.*<\(.*\)>.*/\1/p')
+
+check() {
+  local role="$1"
+  local email="$2"
+  case "$email" in
+    *.local|*MacBook-Pro*|*@localhost)
+      echo "pre-commit: refusing to commit with $role email '$email'" >&2
+      echo "  This looks like a local hostname and would leak your machine name on GitHub." >&2
+      echo "  Fix with:" >&2
+      echo "    git config --global user.email \"<your-preferred-email>\"" >&2
+      echo "    git config --global user.name  \"<your-name>\"" >&2
+      exit 1
+      ;;
+  esac
+}
+
+check "author" "$email_author"
+check "committer" "$email_committer"
+exit 0

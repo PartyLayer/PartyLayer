@@ -61,6 +61,18 @@ git remote add upstream https://github.com/PartyLayer/PartyLayer.git
 pnpm install
 ```
 
+### Enable Git Hooks
+
+Point git at the repository's hooks directory so the `pre-commit` check runs
+before every commit. It blocks commits made with a local-hostname email like
+`user@MacBook-Pro.local`, which would leak machine names on public commits.
+
+```bash
+git config core.hooksPath .githooks
+```
+
+You only need to do this once per clone.
+
 ### Build All Packages
 
 ```bash
