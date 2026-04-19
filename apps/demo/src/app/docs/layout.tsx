@@ -254,6 +254,14 @@ export default function DocsLayout({ children }: { children: ReactNode }) {
   const router = useRouter();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
+  // Platform shortcut marker — start with 'Ctrl+' so SSR and first client render
+  // match, then upgrade to '⌘' on Mac after mount. Prevents React hydration #425.
+  const [shortcutPrefix, setShortcutPrefix] = useState<'⌘' | 'Ctrl+'>('Ctrl+');
+  useEffect(() => {
+    if (typeof navigator !== 'undefined' && /Mac/i.test(navigator.userAgent)) {
+      setShortcutPrefix('⌘');
+    }
+  }, []);
 
   /* Cmd+K / Ctrl+K shortcut */
   useEffect(() => {
@@ -503,7 +511,7 @@ export default function DocsLayout({ children }: { children: ReactNode }) {
                 padding: '2px 6px', borderRadius: 4, border: `1px solid ${t.border}`,
                 background: t.bg, lineHeight: 1, flexShrink: 0,
               }}>
-                {typeof navigator !== 'undefined' && /Mac/i.test(navigator.userAgent) ? '⌘' : 'Ctrl+'}K
+                {shortcutPrefix}K
               </kbd>
             </button>
 
