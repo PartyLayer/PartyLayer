@@ -58,6 +58,7 @@ export class LoopAdapter implements WalletAdapter {
     return [
       'connect',
       'disconnect',
+      'restore',
       'signMessage',
       'submitTransaction',
       'ledgerApi',

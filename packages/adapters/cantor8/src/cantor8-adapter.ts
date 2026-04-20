@@ -73,10 +73,10 @@ export class Cantor8Adapter implements WalletAdapter {
     return [
       'connect',
       'disconnect',
+      'restore',
       'deeplink',
       'signMessage',
       'signTransaction',
-      // restore depends on sessionToken support
     ];
   }
 

@@ -95,11 +95,11 @@ export class BronAdapter implements WalletAdapter {
     return [
       'connect',
       'disconnect',
+      'restore',
       'remoteSigner',
       'signMessage',
       'signTransaction',
       'ledgerApi',
-      // restore depends on session persistence
     ];
   }
 

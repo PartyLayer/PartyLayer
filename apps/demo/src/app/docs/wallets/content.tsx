@@ -75,7 +75,7 @@ export default function WalletsPage() {
             {[
               { name: 'Console', connect: true, signMessage: true, signTransaction: true, submitTransaction: true, ledgerApi: 'full', restore: true },
               { name: '5N Loop', connect: true, signMessage: true, signTransaction: false, submitTransaction: true, ledgerApi: 'limited', restore: true },
-              { name: 'Cantor8', connect: true, signMessage: false, signTransaction: false, submitTransaction: false, ledgerApi: 'none', restore: false },
+              { name: 'Cantor8', connect: true, signMessage: true, signTransaction: true, submitTransaction: false, ledgerApi: 'none', restore: true },
               { name: 'Nightly', connect: true, signMessage: true, signTransaction: true, submitTransaction: true, ledgerApi: 'full', restore: true },
               { name: 'Bron', connect: true, signMessage: true, signTransaction: true, submitTransaction: true, ledgerApi: 'full', restore: true },
             ].map(w => (
@@ -111,10 +111,18 @@ export default function WalletsPage() {
           <Code>{'GET /v2/state/acs/active-contracts'}</Code>, <Code>{'POST /v2/commands/submit'}</Code>,{' '}
           and <Code>{'POST /v2/commands/submit-and-wait'}</Code>. Other endpoints are not available —
           for full Ledger API access, use Console, Nightly, or Bron.</LI>
-        <LI><Strong>Cantor8:</Strong> Mobile-only deep link transport. Only supports basic connection — no
-          signing, submission, or ledgerApi methods are available.</LI>
+        <LI><Strong>Cantor8:</Strong> Mobile-only deep link transport. Supports <Code>{'signMessage'}</Code>{' '}
+          and <Code>{'signTransaction'}</Code> via the deep link flow, but does not expose{' '}
+          <Code>{'submitTransaction'}</Code> or <Code>{'ledgerApi'}</Code>.</LI>
         <LI><Strong>Bron:</Strong> Enterprise wallet with full capabilities. Requires explicit OAuth configuration
           via <Code>{'BronAdapter'}</Code> with a <Code>{'clientId'}</Code>.</LI>
+        <LI><Strong>Session restore (all five wallets):</Strong> every adapter declares the{' '}
+          <Code>{'restore'}</Code> capability and implements a matching{' '}
+          <Code>{'restore()'}</Code> method. On page reload, the SDK decrypts the persisted
+          session and hands it to the adapter, which re-establishes the provider if it can.
+          See <a href="/docs/advanced#session-persistence" style={{ color: '#E6B800' }}>
+            Advanced → Session Persistence
+          </a> for per-wallet behavior and edge cases.</LI>
       </UL>
 
       <H2 id="adding-bron">Adding Bron (Enterprise)</H2>

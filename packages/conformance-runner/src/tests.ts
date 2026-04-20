@@ -190,6 +190,44 @@ export async function runConformanceTests(
     }
   }
 
+  // Test 5b: restore capability <-> method symmetry.
+  //
+  // We had a real bug where 3 of 5 adapters implemented restore() but did
+  // not declare the 'restore' capability in getCapabilities(). The SDK
+  // checks method presence at runtime so session persistence still worked,
+  // but `wallet.capabilities.includes('restore')` returned false, which
+  // misleads docs consumers and anyone programmatically inspecting caps.
+  //
+  // Enforce both directions:
+  //   - declared-but-missing: capability listed, no method → broken promise
+  //   - implemented-but-undeclared: method exists, capability missing →
+  //     silent drift that hides a feature from consumers
+  {
+    const hasRestoreMethod = typeof adapter.restore === 'function';
+    const declaresRestore = capabilities.includes('restore');
+    if (declaresRestore && !hasRestoreMethod) {
+      results.push({
+        name: 'restore capability declared but method missing',
+        passed: false,
+        error: `${adapter.name}: declares 'restore' capability but does not implement restore()`,
+      });
+    } else if (hasRestoreMethod && !declaresRestore) {
+      results.push({
+        name: 'restore method implemented but capability not declared',
+        passed: false,
+        error:
+          `${adapter.name}: implements restore() but getCapabilities() does not include 'restore'. ` +
+          `Add 'restore' to the returned array so consumers can discover the feature.`,
+      });
+    } else {
+      results.push({
+        name: 'restore capability / method symmetry',
+        passed: true,
+        details: { hasRestoreMethod, declaresRestore },
+      });
+    }
+  }
+
   // Test 6: Error mapping
   // Verify adapter uses mapUnknownErrorToPartyLayerError
   // (This is a code inspection test - hard to test at runtime)

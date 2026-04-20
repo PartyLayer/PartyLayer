@@ -65,6 +65,7 @@ describe('LoopAdapter', () => {
       const caps = adapter.getCapabilities();
       expect(caps).toContain('connect');
       expect(caps).toContain('disconnect');
+      expect(caps).toContain('restore');
       expect(caps).toContain('signMessage');
       expect(caps).toContain('submitTransaction');
       expect(caps).toContain('ledgerApi');
