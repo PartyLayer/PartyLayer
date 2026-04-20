@@ -60,6 +60,16 @@ import type {
 } from '@partylayer/core';
 
 /**
+ * Storage key used for the active session.
+ *
+ * SDK tracks a single active session at a time, so persist/restore/remove
+ * all target the same key. Prior to this fix, persist wrote to
+ * `session_<sessionId>` while restore read from `active_session`, which
+ * meant sessions never survived a page reload.
+ */
+const SESSION_STORAGE_KEY = 'active_session';
+
+/**
  * PartyLayer Client
  * 
  * Main client interface for dApps to interact with Canton wallets.
@@ -669,18 +679,21 @@ export class PartyLayerClient {
     try {
       const data = JSON.stringify(session);
       const encrypted = await this.crypto.encrypt(data, this.origin);
-      await this.storage.set(`session_${session.sessionId}`, encrypted);
+      await this.storage.set(SESSION_STORAGE_KEY, encrypted);
     } catch (err) {
       this.logger.warn('Failed to persist session', err);
     }
   }
 
   /**
-   * Remove session from storage
+   * Remove session from storage.
+   *
+   * Accepts a sessionId for call-site symmetry, but since the SDK tracks one
+   * active session we always remove the single SESSION_STORAGE_KEY.
    */
-  private async removeSession(sessionId: SessionId): Promise<void> {
+  private async removeSession(_sessionId: SessionId): Promise<void> {
     try {
-      await this.storage.remove(`session_${sessionId}`);
+      await this.storage.remove(SESSION_STORAGE_KEY);
     } catch (err) {
       this.logger.warn('Failed to remove session', err);
     }
@@ -692,9 +705,9 @@ export class PartyLayerClient {
   private async restoreSession(): Promise<Session | null> {
     // Track restore attempt
     this.telemetry?.increment?.(METRICS.RESTORE_ATTEMPTS);
-    
+
     try {
-      const encrypted = await this.storage.get('active_session');
+      const encrypted = await this.storage.get(SESSION_STORAGE_KEY);
       if (!encrypted) {
         return null;
       }

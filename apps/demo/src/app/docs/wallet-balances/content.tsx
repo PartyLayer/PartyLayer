@@ -35,6 +35,16 @@ export default function WalletBalancesContent() {
         <LI><Code>{'ledgerApi'}</Code> capability supported by the connected wallet (Console, Loop, Nightly, and Bron all support this)</LI>
       </UL>
 
+      <Callout type="note">
+        <Strong>Session persistence:</Strong> After a page reload the SDK automatically
+        restores the active session from storage. Your component may mount with{' '}
+        <Code>{'session === null'}</Code> for a moment while the restore runs — always
+        guard with <Code>{'if (!session) return null'}</Code> or render a{' '}
+        <Code>{'<ConnectButton />'}</Code> fallback. See{' '}
+        <a href="/docs/advanced#session-persistence" style={{ color: '#E6B800' }}>Advanced → Session Persistence</a>{' '}
+        for per-wallet behavior.
+      </Callout>
+
       <H2 id="react">React</H2>
 
       <H3>Single token balance</H3>

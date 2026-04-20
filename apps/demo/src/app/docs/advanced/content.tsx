@@ -74,11 +74,43 @@ const client = createPartyLayer({
 
       <H3>How It Works</H3>
       <UL>
-        <LI>Sessions are stored encrypted in <Code>{'localStorage'}</Code></LI>
+        <LI>Sessions are stored encrypted in <Code>{'localStorage'}</Code> under the key <Code>{'partylayer_active_session'}</Code></LI>
         <LI>Sessions are bound to the dApp <Strong>origin</Strong> — a session from <Code>{'app-a.com'}</Code> cannot be restored on <Code>{'app-b.com'}</Code></LI>
         <LI>Expired sessions (past <Code>{'expiresAt'}</Code>) are automatically pruned</LI>
         <LI>On mount, <Code>{'PartyLayerKit'}</Code> attempts to restore the last session via the adapter{"'"}s <Code>{'restore()'}</Code> method</LI>
       </UL>
+
+      <H3>Per-Wallet Restore Support</H3>
+      <P>
+        Each adapter implements its own <Code>{'restore()'}</Code> method. Behavior after a page
+        reload depends on the wallet:
+      </P>
+      <UL>
+        <LI><Strong>Console</Strong> — checks extension availability + <Code>{'isConnected()'}</Code> state; restores if the wallet reports a live session</LI>
+        <LI><Strong>Loop</Strong> — calls <Code>{'loop.init()'}</Code> with a 5s auto-connect timeout; restores if the Loop auth token is still valid</LI>
+        <LI><Strong>Nightly</Strong> — checks <Code>{'window.nightly.canton'}</Code> provider is connected; restores if so</LI>
+        <LI><Strong>Cantor8</Strong> — restores if the stored session token hasn{"'"}t expired (pure metadata-based)</LI>
+        <LI><Strong>Bron</Strong> — requires a live OAuth access token; user must be signed in to Bron{"'"}s auth provider</LI>
+      </UL>
+
+      <H3>Handling Null Session</H3>
+      <P>
+        Restore is asynchronous. Your component may mount with{' '}
+        <Code>{'session === null'}</Code> for a tick while restore runs, OR the user may have
+        cleared their storage. Always guard:
+      </P>
+      <CodeBlock language="tsx">{`import { useSession, ConnectButton } from '@partylayer/react';
+
+function App() {
+  const session = useSession();
+
+  if (!session) {
+    // Either no prior session, restore failed, or still restoring.
+    return <ConnectButton />;
+  }
+
+  return <YourConnectedUI session={session} />;
+}`}</CodeBlock>
 
       <H3>Custom Storage</H3>
       <P>Provide a custom storage adapter for non-browser environments:</P>
