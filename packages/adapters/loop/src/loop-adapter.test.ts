@@ -432,6 +432,121 @@ describe('LoopAdapter', () => {
         expect(mockProvider.submitAndWaitForTransaction).toHaveBeenCalled();
       });
 
+      // ── Transaction submit defensive handling ────────────────────
+
+      it('should throw helpful error when body is empty string', async () => {
+        await expect(
+          adapter.ledgerApi(ctx, createMockSession(), {
+            requestMethod: 'POST',
+            resource: '/v2/commands/submit-and-wait',
+            body: '',
+          }),
+        ).rejects.toThrow(/Command submission requires a request body/);
+      });
+
+      it('should throw helpful error when body is whitespace-only (was: Unexpected end of JSON input)', async () => {
+        await expect(
+          adapter.ledgerApi(ctx, createMockSession(), {
+            requestMethod: 'POST',
+            resource: '/v2/commands/submit-and-wait',
+            body: '   ',
+          }),
+        ).rejects.toThrow(/Command submission requires a request body/);
+      });
+
+      it('should throw helpful error when body is malformed JSON', async () => {
+        await expect(
+          adapter.ledgerApi(ctx, createMockSession(), {
+            requestMethod: 'POST',
+            resource: '/v2/commands/submit-and-wait',
+            body: '{invalid',
+          }),
+        ).rejects.toThrow(/not valid JSON/);
+      });
+
+      it('should throw helpful error when Loop returns undefined (ledgerApi path)', async () => {
+        mockProvider.submitAndWaitForTransaction.mockResolvedValue(undefined);
+        await expect(
+          adapter.ledgerApi(ctx, createMockSession(), {
+            requestMethod: 'POST',
+            resource: '/v2/commands/submit-and-wait',
+            body: JSON.stringify({ commands: [{}] }),
+          }),
+        ).rejects.toThrow(/empty response/);
+      });
+
+      it('should throw helpful error when Loop returns null (ledgerApi path)', async () => {
+        mockProvider.submitAndWaitForTransaction.mockResolvedValue(null);
+        await expect(
+          adapter.ledgerApi(ctx, createMockSession(), {
+            requestMethod: 'POST',
+            resource: '/v2/commands/submit-and-wait',
+            body: JSON.stringify({ commands: [{}] }),
+          }),
+        ).rejects.toThrow(/empty response/);
+      });
+
+      it('should hint about #package prefix when Loop rejects a short-form templateId', async () => {
+        mockProvider.submitAndWaitForTransaction.mockRejectedValue(
+          new Error('wallet server error'),
+        );
+        await expect(
+          adapter.ledgerApi(ctx, createMockSession(), {
+            requestMethod: 'POST',
+            resource: '/v2/commands/submit-and-wait',
+            body: JSON.stringify({
+              commands: [{ exerciseCommand: { templateId: 'Splice.Amulet:Amulet' } }],
+            }),
+          }),
+        ).rejects.toThrow(/short Canton form|#splice-amulet/);
+      });
+
+      it('should NOT show template-ID hint when templateId is already fully qualified', async () => {
+        mockProvider.submitAndWaitForTransaction.mockRejectedValue(
+          new Error('wallet server error'),
+        );
+        try {
+          await adapter.ledgerApi(ctx, createMockSession(), {
+            requestMethod: 'POST',
+            resource: '/v2/commands/submit-and-wait',
+            body: JSON.stringify({
+              commands: [
+                { exerciseCommand: { templateId: '#splice-amulet:Splice.Amulet:Amulet' } },
+              ],
+            }),
+          });
+        } catch (err: unknown) {
+          const msg = (err as Error).message;
+          expect(msg).not.toMatch(/short Canton form/);
+        }
+      });
+
+      it('direct submitTransaction: throws helpful error when Loop returns undefined', async () => {
+        mockProvider.submitTransaction.mockResolvedValue(undefined);
+        await expect(
+          adapter.submitTransaction(ctx, createMockSession(), { signedTx: { commands: [{}] } }),
+        ).rejects.toThrow(/unexpected response shape/);
+      });
+
+      it('direct submitTransaction: throws helpful error when Loop returns empty object', async () => {
+        mockProvider.submitTransaction.mockResolvedValue({});
+        await expect(
+          adapter.submitTransaction(ctx, createMockSession(), { signedTx: { commands: [{}] } }),
+        ).rejects.toThrow(/unexpected response shape/);
+      });
+
+      it('direct submitTransaction: succeeds with full { command_id, submission_id } shape', async () => {
+        mockProvider.submitTransaction.mockResolvedValue({
+          command_id: 'cmd-42',
+          submission_id: 'sub-42',
+        });
+        const receipt = await adapter.submitTransaction(ctx, createMockSession(), {
+          signedTx: { commands: [{}] },
+        });
+        expect(receipt.commandId).toBe('cmd-42');
+        expect(receipt.updateId).toBe('sub-42');
+      });
+
       // ── Unsupported endpoints ─────────────────────────────────────
 
       it('should throw for GET /v2/parties', async () => {

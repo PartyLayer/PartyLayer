@@ -369,11 +369,31 @@ export class LoopAdapter implements WalletAdapter {
         },
       );
 
+      // Loop SDK resolves with whatever the wallet server sent back in
+      // the response payload. On success it's `{ command_id, submission_id }`,
+      // but empty or rejected responses can come through as undefined / {}.
+      // Guard before dereferencing so consumers don't see an opaque
+      // "Cannot read properties of undefined" or "Unexpected end of JSON
+      // input" — give them an actionable error instead.
+      const r = result as { command_id?: string; submission_id?: string } | null | undefined;
+      if (!r || typeof r.command_id !== 'string') {
+        // Do not use words like "rejected"/"denied"/"cancelled" here — the
+        // core error mapper auto-classifies those as UserRejectedError and
+        // replaces the message, which would hide the actionable hint below.
+        throw new Error(
+          `Loop Wallet submitTransaction returned an unexpected response shape. `
+          + `Expected { command_id, submission_id } but received ${safePreview(r)}. `
+          + `Likely the popup closed before confirmation or the wallet server returned an error payload. `
+          + `Ensure the Daml template ID uses the fully-qualified package-prefixed form `
+          + `(e.g. '#splice-amulet:Splice.Amulet:Amulet') — Loop does not accept the short Canton form.`,
+        );
+      }
+
       return {
-        transactionHash: toTransactionHash(result.command_id),
+        transactionHash: toTransactionHash(r.command_id),
         submittedAt: Date.now(),
-        commandId: result.command_id,
-        updateId: result.submission_id,
+        commandId: r.command_id,
+        updateId: r.submission_id ?? r.command_id,
       };
     } catch (err) {
       throw mapUnknownErrorToPartyLayerError(err, {
@@ -577,19 +597,90 @@ export class LoopAdapter implements WalletAdapter {
   private async handleSubmitCommand(resource: string, body?: string): Promise<LedgerApiResult> {
     const provider = this.currentProvider!;
 
-    if (!body) {
-      throw new Error('Command submission requires a request body');
+    // Validate body. Empty or whitespace-only body used to hit JSON.parse
+    // directly and produce "Unexpected end of JSON input" with no context.
+    if (!body || body.trim().length === 0) {
+      throw new Error(
+        `Command submission requires a request body with at least a 'commands' field. `
+        + `Example: { commands: [...], commandId, actAs, readAs }.`,
+      );
     }
 
-    const payload = JSON.parse(body) as Record<string, unknown>;
+    let payload: Record<string, unknown>;
+    try {
+      payload = JSON.parse(body) as Record<string, unknown>;
+    } catch (err) {
+      const preview = body.length > 120 ? body.slice(0, 120) + '...' : body;
+      throw new Error(
+        `Command submission body is not valid JSON: ${(err as Error).message}. `
+        + `Received body (first 120 chars): ${JSON.stringify(preview)}. `
+        + `Use JSON.stringify(payload) when calling ledgerApi.`,
+      );
+    }
+
     const normalized = resource.replace(/\/+$/, '');
     const waitForResult = normalized.includes('wait');
 
-    const result = waitForResult
-      ? await provider.submitAndWaitForTransaction(payload)
-      : await provider.submitTransaction(payload);
+    let result: unknown;
+    try {
+      result = waitForResult
+        ? await provider.submitAndWaitForTransaction(payload)
+        : await provider.submitTransaction(payload);
+    } catch (err) {
+      const message = (err as Error)?.message || 'Loop SDK submission failed without an error message';
+      const hint = this.templateIdHint(payload);
+      throw new Error(
+        `Loop Wallet ${waitForResult ? 'submitAndWaitForTransaction' : 'submitTransaction'} failed: ${message}.${hint} `
+        + `Original error preserved as cause.`,
+        { cause: err as Error },
+      );
+    }
+
+    // Loop resolves sendRequest with response.payload — which can be
+    // undefined / null when the wallet sends a malformed or empty
+    // TRANSACTION_COMPLETED frame. JSON.stringify(undefined) returns the
+    // VALUE undefined (not "undefined"), so a naive `response: JSON.stringify(result)`
+    // leaves the response key missing from the returned object. Downstream
+    // consumers then do JSON.parse(result.response) which blows up with
+    // "Unexpected token u" / "Unexpected end of JSON input". Normalize.
+    if (result === undefined || result === null) {
+      const hint = this.templateIdHint(payload);
+      // Avoid "rejected"/"denied"/"cancelled" here so the core error
+      // mapper doesn't classify this as UserRejectedError and drop the hint.
+      throw new Error(
+        `Loop Wallet ${waitForResult ? 'submitAndWaitForTransaction' : 'submitTransaction'} `
+        + `resolved with an empty response. The popup may have closed before confirmation, or the wallet server `
+        + `returned an unexpected frame.${hint}`,
+      );
+    }
 
     return { response: JSON.stringify(result) };
+  }
+
+  /**
+   * Build a hint string if the developer passed a short-form Canton
+   * template ID. Loop's wallet server requires the fully-qualified
+   * '#package-name:Module:Entity' form (same as ACS queries).
+   */
+  private templateIdHint(payload: Record<string, unknown>): string {
+    try {
+      const commands = payload.commands;
+      if (!Array.isArray(commands)) return '';
+      for (const cmd of commands as Array<Record<string, unknown>>) {
+        const exercise = (cmd?.exerciseCommand || cmd?.exercise) as Record<string, unknown> | undefined;
+        const create = (cmd?.createCommand || cmd?.create) as Record<string, unknown> | undefined;
+        const raw = (exercise?.templateId ?? create?.templateId) as string | undefined;
+        if (typeof raw === 'string' && raw.length > 0 && !raw.startsWith('#')) {
+          return (
+            ` The command uses templateId="${raw}" which is the short Canton form; Loop requires `
+            + `the fully-qualified Daml form (e.g. '#splice-amulet:Splice.Amulet:Amulet').`
+          );
+        }
+      }
+    } catch {
+      // best-effort; never throw from a hint helper
+    }
+    return '';
   }
 
   /**
@@ -611,6 +702,23 @@ export class LoopAdapter implements WalletAdapter {
  *
  * This helper normalizes all shapes to a flat array.
  */
+/**
+ * Format an unknown value into a short human-readable preview for
+ * inclusion in error messages. Keeps output small so long payloads
+ * don't flood the console.
+ */
+function safePreview(value: unknown): string {
+  if (value === undefined) return 'undefined';
+  if (value === null) return 'null';
+  try {
+    const s = JSON.stringify(value);
+    if (typeof s !== 'string') return String(value);
+    return s.length > 200 ? s.slice(0, 200) + '...' : s;
+  } catch {
+    return String(value);
+  }
+}
+
 function extractContracts(result: unknown): unknown[] {
   if (Array.isArray(result)) {
     return result;

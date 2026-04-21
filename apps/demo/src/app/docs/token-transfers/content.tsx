@@ -54,7 +54,7 @@ function TransferButton({ receiverPartyId }: { receiverPartyId: string }) {
       commands: [
         {
           exerciseCommand: {
-            templateId: 'Splice.Amulet:Amulet',
+            templateId: '#splice-amulet:Splice.Amulet:Amulet',
             contractId: '<holding-contract-id>',
             choice: 'Amulet_Transfer',
             choiceArgument: {
@@ -129,7 +129,7 @@ const payload = {
   commands: [
     {
       exerciseCommand: {
-        templateId: 'Splice.Amulet:Amulet',
+        templateId: '#splice-amulet:Splice.Amulet:Amulet',
         contractId: '<holding-contract-id>',
         choice: 'Amulet_Transfer',
         choiceArgument: {
@@ -211,9 +211,28 @@ try {
 
       <H3>Payload structure</H3>
       <P>
-        The examples above use <Code>{'Splice.Amulet:Amulet'}</Code> as the template. Replace{' '}
+        The examples above use <Code>{'#splice-amulet:Splice.Amulet:Amulet'}</Code> as the template. Replace{' '}
         <Code>{'templateId'}</Code>, <Code>{'contractId'}</Code>, <Code>{'choice'}</Code>, and{' '}
         <Code>{'choiceArgument'}</Code> with the values from your own Daml templates.
+      </P>
+
+      <Callout type="note">
+        <Strong>Template ID format (Loop wallet):</Strong> Loop requires the
+        fully-qualified Daml form with the package-name prefix —
+        {' '}<Code>{'#splice-amulet:Splice.Amulet:Amulet'}</Code>, not the short Canton form
+        {' '}<Code>{'Splice.Amulet:Amulet'}</Code>. If you submit with the short form Loop responds
+        with an opaque error; our adapter surfaces this as a clear message pointing at this fix.
+        Same rule as the balance query ACS filter — see{' '}
+        <a href="/docs/wallet-balances#notes" style={{ color: '#E6B800' }}>Wallet Balances → Template ID format</a>.
+      </Callout>
+
+      <H3>Error handling &amp; empty responses</H3>
+      <P>
+        If the Loop popup closes before you confirm, or the wallet server sends back an empty
+        frame, <Code>{'ledgerApi'}</Code> throws an <Code>{'Error'}</Code> whose message
+        starts with <Code>{'Loop Wallet submitAndWaitForTransaction resolved with an empty response'}</Code>.
+        Retry the transfer and re-confirm in the wallet; if it keeps failing, double-check the
+        template ID and the <Code>{'actAs'}</Code> party matches the signing session.
       </P>
 
       <H3>commandId uniqueness</H3>
