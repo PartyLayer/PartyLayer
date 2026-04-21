@@ -1,6 +1,6 @@
 {
   "name": "@partylayer/adapter-loop",
-  "version": "0.3.4",
+  "version": "0.3.5",
   "description": "5N Loop Wallet adapter for PartyLayer",
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",
