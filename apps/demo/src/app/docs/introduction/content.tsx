@@ -14,6 +14,12 @@ export default function IntroductionPage() {
         so you can focus on building your application, not wrestling with wallet APIs.
       </P>
 
+      <P>
+        Transfers follow Canton{"'"}s Token Standard (<Strong>CIP-56</Strong>) — the current
+        protocol for Amulet and other token transfers. See the{' '}
+        <A href="/docs/token-transfers">Token Transfers</A> guide for the full flow.
+      </P>
+
       <Callout type="tip" title="Zero-Config React">
         With <Code>{'PartyLayerKit'}</Code> and <Code>{'ConnectButton'}</Code>, you can add full
         wallet connectivity to a React app in under 10 lines of code.
