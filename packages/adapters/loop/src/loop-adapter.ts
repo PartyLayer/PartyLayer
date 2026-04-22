@@ -659,17 +659,44 @@ export class LoopAdapter implements WalletAdapter {
 
   /**
    * Build a hint string if the developer passed a short-form Canton
-   * template ID. Loop's wallet server requires the fully-qualified
-   * '#package-name:Module:Entity' form (same as ACS queries).
+   * template ID OR used the legacy pre-Token-Standard Amulet_Transfer
+   * choice. Both patterns produce "Execute Unknown on Unknown" in Loop's
+   * UI because Canton moved transfers to CIP-56 TransferFactory in 2025/2026.
    */
   private templateIdHint(payload: Record<string, unknown>): string {
     try {
       const commands = payload.commands;
       if (!Array.isArray(commands)) return '';
       for (const cmd of commands as Array<Record<string, unknown>>) {
-        const exercise = (cmd?.exerciseCommand || cmd?.exercise) as Record<string, unknown> | undefined;
-        const create = (cmd?.createCommand || cmd?.create) as Record<string, unknown> | undefined;
+        // v2 JSON Ledger API uses PascalCase ExerciseCommand; legacy shape used lowercase.
+        // Interface exercises still go through ExerciseCommand with the interfaceId
+        // in the templateId field — we don't need to distinguish, just inspect.
+        const exercise = ((cmd?.ExerciseCommand || cmd?.exerciseCommand || cmd?.exercise) as
+          | Record<string, unknown>
+          | undefined);
+        const create = ((cmd?.CreateCommand || cmd?.createCommand || cmd?.create) as
+          | Record<string, unknown>
+          | undefined);
         const raw = (exercise?.templateId ?? create?.templateId) as string | undefined;
+        const choice = exercise?.choice as string | undefined;
+
+        // CIP-56 migration hint: Amulet_Transfer exercised directly on the
+        // Amulet template is the legacy path and is rejected by Canton today.
+        if (
+          choice === 'Amulet_Transfer'
+          && typeof raw === 'string'
+          && raw.includes('Splice.Amulet:Amulet')
+        ) {
+          return (
+            ` The command exercises 'Amulet_Transfer' directly on the Amulet template — that's the `
+            + `legacy (pre-CIP-56) path and Canton no longer accepts it, which is why Loop's UI shows `
+            + `"Execute Unknown on Unknown". Use the Token Standard flow: exercise `
+            + `'TransferFactory_Transfer' by interface on a TransferFactory contract `
+            + `(interfaceId '#splice-api-token-transfer-instruction-v1:Splice.Api.Token.TransferInstructionV1:TransferFactory'). `
+            + `See https://partylayer.xyz/docs/token-transfers for the canonical flow.`
+          );
+        }
+
         if (typeof raw === 'string' && raw.length > 0 && !raw.startsWith('#')) {
           return (
             ` The command uses templateId="${raw}" which is the short Canton form; Loop requires `

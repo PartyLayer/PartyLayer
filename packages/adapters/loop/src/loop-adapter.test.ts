@@ -521,6 +521,57 @@ describe('LoopAdapter', () => {
         }
       });
 
+      it('should hint about Token Standard when Amulet_Transfer used on legacy Amulet template', async () => {
+        mockProvider.submitAndWaitForTransaction.mockRejectedValue(
+          new Error('Execute Unknown on Unknown'),
+        );
+        await expect(
+          adapter.ledgerApi(ctx, createMockSession(), {
+            requestMethod: 'POST',
+            resource: '/v2/commands/submit-and-wait',
+            body: JSON.stringify({
+              commands: [
+                {
+                  ExerciseCommand: {
+                    templateId: '#splice-amulet:Splice.Amulet:Amulet',
+                    contractId: 'placeholder',
+                    choice: 'Amulet_Transfer',
+                    choiceArgument: {},
+                  },
+                },
+              ],
+            }),
+          }),
+        ).rejects.toThrow(/TransferFactory_Transfer|CIP-56|Token Standard|token-transfers/);
+      });
+
+      it('should NOT show Amulet_Transfer hint when choice is TransferFactory_Transfer', async () => {
+        mockProvider.submitAndWaitForTransaction.mockRejectedValue(new Error('some error'));
+        try {
+          await adapter.ledgerApi(ctx, createMockSession(), {
+            requestMethod: 'POST',
+            resource: '/v2/commands/submit-and-wait',
+            body: JSON.stringify({
+              commands: [
+                {
+                  ExerciseCommand: {
+                    templateId:
+                      '#splice-api-token-transfer-instruction-v1:Splice.Api.Token.TransferInstructionV1:TransferFactory',
+                    contractId: 'cid',
+                    choice: 'TransferFactory_Transfer',
+                    choiceArgument: {},
+                  },
+                },
+              ],
+            }),
+          });
+        } catch (err: unknown) {
+          const msg = (err as Error).message;
+          expect(msg).not.toMatch(/legacy \(pre-CIP-56\)/);
+          expect(msg).not.toMatch(/short Canton form/);
+        }
+      });
+
       it('direct submitTransaction: throws helpful error when Loop returns undefined', async () => {
         mockProvider.submitTransaction.mockResolvedValue(undefined);
         await expect(
