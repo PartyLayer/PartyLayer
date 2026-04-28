@@ -31,6 +31,8 @@ import {
   type CapabilityKey,
   type Session,
 } from '@partylayer/core';
+// CapabilityNotSupportedError is referenced by Groups 10 + 11 + helper tests
+// (signTransaction stub assertions, mapSigilryError 4200 case).
 
 import {
   FOREIGN_KERNEL_ID,
@@ -864,53 +866,12 @@ describe('SendAdapter: error handling edges', () => {
   });
 });
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Group 12 — Conformance gates (mirrors packages/sdk/adapter-conformance.test)
-// ─────────────────────────────────────────────────────────────────────────────
-
-describe('SendAdapter: conformance gates', () => {
-  const adapter = new SendAdapter();
-
-  it('walletId is a non-empty string', () => {
-    expect(typeof adapter.walletId).toBe('string');
-    expect(String(adapter.walletId).length).toBeGreaterThan(0);
-  });
-
-  it('name is a non-empty string', () => {
-    expect(typeof adapter.name).toBe('string');
-    expect(adapter.name.length).toBeGreaterThan(0);
-  });
-
-  it('getCapabilities() returns an array', () => {
-    expect(Array.isArray(adapter.getCapabilities())).toBe(true);
-  });
-
-  it('detectInstalled() returns a valid AdapterDetectResult', async () => {
-    installEmptyWindow();
-    try {
-      const detect = await adapter.detectInstalled();
-      expect(typeof detect.installed).toBe('boolean');
-      if (!detect.installed) expect(typeof detect.reason).toBe('string');
-    } finally {
-      uninstallMockCanton();
-    }
-  });
-
-  it('restore capability ↔ method symmetry holds', () => {
-    const declares = adapter.getCapabilities().includes('restore');
-    const implements_ = typeof adapter.restore === 'function';
-    expect(declares).toBe(implements_);
-  });
-
-  it('signTransaction is not declared and the stub method throws CapabilityNotSupportedError', async () => {
-    expect(adapter.getCapabilities()).not.toContain('signTransaction');
-    const ctx = createMockContext();
-    const session = createMockSession();
-    await expect(
-      adapter.signTransaction(ctx, session, { tx: {} }),
-    ).rejects.toBeInstanceOf(CapabilityNotSupportedError);
-  });
-});
+// Group 12 (in-package conformance mirror) was removed in Prompt 4 once the
+// SDK-level cross-adapter conformance suite at
+// packages/sdk/src/adapter-conformance.test.ts started exercising Send. The
+// gates it covered (walletId/name strings, capabilities array, restore
+// symmetry, signTransaction-as-stub) are validated alongside the other 5
+// adapters there. Send-specific behaviour stays in Groups 1-11 above.
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Pure helpers (templateIdHint / mapSigilryError) — no provider needed
