@@ -1,11 +1,26 @@
 /**
  * Native CIP-0103 Adapter
  *
- * Wraps a discovered CIP-0103 Provider into the PartyLayer WalletAdapter interface.
- * This allows native CIP-0103 wallets (injected at window.canton.* etc.) to be used
- * through the standard SDK connect flow alongside registry-based adapters.
+ * Wraps a discovered CIP-0103 Provider into the PartyLayer WalletAdapter
+ * interface. Used when a provider injected at `window.canton.*` does NOT
+ * match any registry entry — i.e. an unknown CIP-0103 wallet that the
+ * picker should still surface (with generic branding) so the user can
+ * connect.
+ *
+ * For *known* CIP-0103 wallets — entries in the registry whose
+ * `providerDetection` matches the active provider — we DO NOT create a
+ * synthetic adapter. The registry's own adapter (e.g. `SendAdapter`) is
+ * already registered via `getBuiltinAdapters()` and carries wallet-
+ * specific behaviour (kernel.id guard, template-id hint, error mapping).
+ * The picker promotes the registry's WalletInfo into the "CIP-0103
+ * Native" section instead — see `context.tsx` for the merge logic.
  */
 
+import {
+  deriveGenericWalletName,
+  findMatchingWalletInfo,
+  type Cip0103StatusForDetection,
+} from '@partylayer/sdk';
 import type {
   WalletId,
   PartyId,
@@ -31,13 +46,27 @@ import type {
   DiscoveredProvider,
 } from '@partylayer/sdk';
 
+// ─── Types ──────────────────────────────────────────────────────────────────
+
+/**
+ * A `DiscoveredProvider` augmented with the runtime `status` we fetched
+ * during enrichment, plus an optional reference to the registry entry
+ * whose `providerDetection` rules matched it.
+ *
+ * `matchedWallet` undefined → unknown CIP-0103 wallet (render generic).
+ * `matchedWallet` set       → known wallet (registry entry handles the
+ *                             rendering + connect flow; no synthetic).
+ */
+export interface EnrichedProvider extends DiscoveredProvider {
+  status?: Cip0103StatusForDetection;
+  matchedWallet?: WalletInfo;
+}
+
 // ─── Adapter ────────────────────────────────────────────────────────────────
 
 /**
  * A WalletAdapter that delegates to a native CIP-0103 Provider.
- *
- * Created dynamically when a CIP-0103 provider is discovered at runtime.
- * Routes all SDK operations through the provider's `request()` method.
+ * Used only for unknown CIP-0103 wallets — see file header.
  */
 export class NativeCIP0103Adapter implements WalletAdapter {
   readonly walletId: WalletId;
@@ -195,21 +224,38 @@ export function createNativeAdapter(
   );
 }
 
+const GENERIC_CIP0103_ICON = '/wallets/canton-generic.svg';
+
 /**
- * Create a synthetic WalletInfo for a discovered native CIP-0103 provider.
+ * Create a synthetic WalletInfo for an unknown CIP-0103 provider — i.e.
+ * one whose runtime status did NOT match any registry entry. The picker
+ * still surfaces it (decision: "show all wallets"), with a name derived
+ * from `kernel.userUrl` and a generic Canton-themed icon.
+ *
+ * For known wallets (registry-matched), don't call this — promote the
+ * registry's WalletInfo to native instead. See `promoteRegistryToNative`.
  */
 export function createSyntheticWalletInfo(
-  discovered: DiscoveredProvider,
+  discovered: EnrichedProvider,
   network: string,
 ): WalletInfo {
   const walletId = `cip0103:${discovered.id}` as WalletId;
-  const name = discovered.name || formatProviderId(discovered.id);
+  const status = discovered.status;
+  const name =
+    discovered.name && !looksLikeKernelId(discovered.name)
+      ? discovered.name
+      : deriveGenericWalletName(status);
+
+  const userUrl = status?.kernel?.userUrl;
+  const description = userUrl
+    ? `Unrecognised CIP-0103 wallet at ${userUrl}`
+    : 'Unrecognised CIP-0103 wallet';
 
   return {
     walletId,
     name,
-    website: '',
-    icons: {},
+    website: userUrl ?? '',
+    icons: { sm: GENERIC_CIP0103_ICON, md: GENERIC_CIP0103_ICON, lg: GENERIC_CIP0103_ICON },
     capabilities: [
       'connect',
       'disconnect',
@@ -221,28 +267,73 @@ export function createSyntheticWalletInfo(
     adapter: { packageName: 'native-cip0103', versionRange: '*' },
     docs: [],
     networks: [network],
-    channel: 'stable' as const,
-    metadata: { source: 'native-cip0103' },
+    channel: 'beta',
+    metadata: {
+      source: 'native-cip0103',
+      generic: 'true',
+      description,
+      ...(status?.kernel?.id ? { kernelId: status.kernel.id } : {}),
+      ...(userUrl ? { userUrl } : {}),
+    },
   };
 }
 
 /**
- * Try to enrich a discovered provider with status information (name, etc.)
+ * Promote a registry-matched WalletInfo into the "CIP-0103 Native"
+ * section of the picker. We do this by stamping `metadata.source =
+ * 'native-cip0103'` so the existing modal predicate (`isNativeWallet`)
+ * renders it under the native header — without losing the wallet's
+ * registry branding (name, icon, description) or its real adapter.
+ */
+export function promoteRegistryToNative(
+  wallet: WalletInfo,
+  status?: Cip0103StatusForDetection,
+): WalletInfo {
+  return {
+    ...wallet,
+    metadata: {
+      ...(wallet.metadata ?? {}),
+      source: 'native-cip0103',
+      ...(status?.kernel?.id ? { kernelId: status.kernel.id } : {}),
+    },
+  };
+}
+
+// ─── Discovery enrichment ───────────────────────────────────────────────────
+
+/**
+ * Try to enrich a discovered provider with status information AND
+ * resolve a matching registry entry.
+ *
+ * Best-effort: if `status` fails the provider is returned untouched.
+ * Registry matching only runs when status was successfully fetched; an
+ * unmatched provider remains a candidate for synthetic generic
+ * rendering.
  */
 export async function enrichProviderInfo(
   discovered: DiscoveredProvider,
-): Promise<DiscoveredProvider> {
+  registry?: readonly WalletInfo[],
+): Promise<EnrichedProvider> {
+  const next: EnrichedProvider = { ...discovered };
   try {
     const status = await discovered.provider.request<CIP0103StatusEvent>({
       method: 'status',
     });
-    return {
-      ...discovered,
-      name: discovered.name || status.provider?.id || discovered.id,
-    };
+    next.status = status as Cip0103StatusForDetection;
+    if (!next.name && status.provider?.id) {
+      next.name = status.provider.id;
+    }
+    if (registry && registry.length > 0) {
+      const matched = findMatchingWalletInfo(next.status, registry);
+      if (matched) {
+        next.matchedWallet = matched;
+      }
+    }
   } catch {
-    return discovered;
+    // Status request can fail in many normal cases (popup not yet open,
+    // wallet locked, etc.). Leave the discovered provider as-is.
   }
+  return next;
 }
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
@@ -255,4 +346,14 @@ function formatProviderId(id: string): string {
     .split('.')
     .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
     .join(' ');
+}
+
+/**
+ * Heuristic: a 32-character lowercase-alpha string is almost certainly a
+ * Chrome extension id, not a human-facing display name. Catches the
+ * pre-Prompt-6 bug where the modal showed `ldmohiccoioolen…` as the
+ * wallet's name.
+ */
+function looksLikeKernelId(value: string): boolean {
+  return /^[a-z]{30,}$/.test(value);
 }

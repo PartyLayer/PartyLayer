@@ -16,6 +16,7 @@ import {
   createNativeAdapter,
   createSyntheticWalletInfo,
   enrichProviderInfo,
+  promoteRegistryToNative,
 } from './native-cip0103-adapter';
 
 interface PartyLayerContextValue {
@@ -72,31 +73,54 @@ export function PartyLayerProvider({
 
         if (!mounted) return;
 
-        // Enrich discovered providers with status info (name, etc.)
+        // Enrich each discovered provider with its status response AND a
+        // registry match (when the provider's runtime identity satisfies
+        // any registry entry's `providerDetection` rules). This drives both
+        // "what wallet is this?" and "what should we display?" from the
+        // single source of truth — the registry — without hardcoded IDs.
         const discovered = await Promise.all(
-          rawDiscovered.map((d) => enrichProviderInfo(d)),
+          rawDiscovered.map((d) => enrichProviderInfo(d, registryWallets)),
         );
 
         if (!mounted) return;
 
-        // Register native adapters with the client and create synthetic WalletInfo
-        const nativeWallets: WalletInfo[] = [];
-        const registryWalletIds = new Set(registryWallets.map((w) => String(w.walletId)));
-
+        // 1. Promote each registry entry whose providerDetection matched
+        //    a discovered provider into the "CIP-0103 Native" section.
+        //    Branding stays from the registry; the wallet's REAL adapter
+        //    (e.g. SendAdapter, already registered via getBuiltinAdapters)
+        //    keeps handling connect / sign / submit — preserving wallet-
+        //    specific guards like the kernel.id check and template-id hint.
+        const matchedRegistryIds = new Set<string>();
         for (const dp of discovered) {
-          const adapterId = `cip0103:${dp.id}`;
-          // Skip if there's already a registry wallet that covers this provider
-          if (registryWalletIds.has(adapterId)) continue;
+          if (dp.matchedWallet) matchedRegistryIds.add(String(dp.matchedWallet.walletId));
+        }
+        const promotedRegistryWallets = registryWallets.map((w) => {
+          if (!matchedRegistryIds.has(String(w.walletId))) return w;
+          const dp = discovered.find(
+            (d) => d.matchedWallet && String(d.matchedWallet.walletId) === String(w.walletId),
+          );
+          return promoteRegistryToNative(w, dp?.status);
+        });
 
+        // 2. For every discovered provider that did NOT match a registry
+        //    entry — i.e. an unknown CIP-0103 wallet — register a generic
+        //    NativeCIP0103Adapter and synthesise a WalletInfo with derived
+        //    name + canton-generic.svg. The picker still surfaces it
+        //    ("show all wallets" architectural rule), just with neutral
+        //    branding instead of the unrecognised raw kernel.id.
+        const genericNativeWallets: WalletInfo[] = [];
+        for (const dp of discovered) {
+          if (dp.matchedWallet) continue; // covered by promoted registry entry
           const adapter = createNativeAdapter(dp);
           client.registerAdapter(adapter);
-
-          const walletInfo = createSyntheticWalletInfo(dp, network);
-          nativeWallets.push(walletInfo);
+          genericNativeWallets.push(createSyntheticWalletInfo(dp, network));
         }
 
-        // Merge: native (detected) wallets first, then registry wallets
-        const mergedWallets = [...nativeWallets, ...registryWallets];
+        // 3. Merge: generic-native first, then promoted+registry. The modal
+        //    splits sections by `metadata.source === 'native-cip0103'`, so
+        //    promoted registry entries land in the NATIVE header and the
+        //    rest of the registry stays under AVAILABLE.
+        const mergedWallets = [...genericNativeWallets, ...promotedRegistryWallets];
 
         setSession(sessionData);
         setWallets(mergedWallets);
@@ -119,17 +143,31 @@ export function PartyLayerProvider({
       if (!mounted) return;
       try {
         const newDiscovered = await Promise.resolve(discoverInjectedProviders());
+        if (!mounted || newDiscovered.length === 0) return;
+
+        // Use a snapshot of the current wallet list as the registry hint.
+        // For Send-class late injections this normally lands on the second
+        // tick after the primary `load()` call has already populated the
+        // promoted registry entries. Anything still unmatched falls back
+        // to a generic-native synthesis.
+        let snapshot: WalletInfo[] = [];
+        setWallets((prev) => {
+          snapshot = prev;
+          return prev;
+        });
+
         const enriched = await Promise.all(
-          newDiscovered.map((d) => enrichProviderInfo(d)),
+          newDiscovered.map((d) => enrichProviderInfo(d, snapshot)),
         );
 
         if (!mounted) return;
 
-        setWallets((prev) => {
-          const existingIds = new Set(prev.map((w) => String(w.walletId)));
+        setWallets((current) => {
+          const existingIds = new Set(current.map((w) => String(w.walletId)));
           const newNativeWallets: WalletInfo[] = [];
 
           for (const dp of enriched) {
+            if (dp.matchedWallet) continue; // already represented by a promoted registry entry
             const adapterId = `cip0103:${dp.id}`;
             if (existingIds.has(adapterId)) continue;
 
@@ -138,9 +176,8 @@ export function PartyLayerProvider({
             newNativeWallets.push(createSyntheticWalletInfo(dp, network));
           }
 
-          if (newNativeWallets.length === 0) return prev;
-          // Prepend newly found native wallets (before registry ones)
-          return [...newNativeWallets, ...prev];
+          if (newNativeWallets.length === 0) return current;
+          return [...newNativeWallets, ...current];
         });
       } catch {
         /* ignore re-discovery failures */
