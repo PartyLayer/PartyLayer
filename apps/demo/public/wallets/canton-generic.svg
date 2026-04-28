@@ -1,0 +1,15 @@
+<svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Generic CIP-0103 Canton wallet">
+  <rect width="48" height="48" rx="12" fill="url(#canton-grad)"/>
+  <g transform="translate(24, 24)" stroke="rgba(255,255,255,0.95)" stroke-width="1.6" fill="none" stroke-linecap="round">
+    <circle r="11" />
+    <circle r="7" stroke-opacity="0.55" />
+    <path d="M-9.5 0 L9.5 0" stroke-opacity="0.75" />
+    <path d="M0 -9.5 L0 9.5" stroke-opacity="0.75" />
+  </g>
+  <defs>
+    <linearGradient id="canton-grad" x1="0" y1="0" x2="48" y2="48" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#6366F1"/>
+      <stop offset="1" stop-color="#0EA5E9"/>
+    </linearGradient>
+  </defs>
+</svg>
