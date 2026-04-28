@@ -96,7 +96,7 @@ interface SendRpcErrorLike {
   data?: unknown;
 }
 
-function isSendRpcError(err: unknown): err is SendRpcErrorLike {
+export function isSendRpcError(err: unknown): err is SendRpcErrorLike {
   if (!err || typeof err !== 'object') return false;
   const candidate = err as { code?: unknown; message?: unknown };
   return typeof candidate.code === 'number' && typeof candidate.message === 'string';

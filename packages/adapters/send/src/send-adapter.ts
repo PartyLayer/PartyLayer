@@ -18,6 +18,7 @@
 
 import {
   CapabilityNotSupportedError,
+  TransportError,
   toPartyId,
   toSignature,
   toTransactionHash,
@@ -47,6 +48,7 @@ import {
 } from './constants';
 import {
   SendNotInstalledError,
+  isSendRpcError,
   mapSigilryError,
   safePreview,
   templateIdHint,
@@ -280,7 +282,7 @@ export class SendAdapter implements WalletAdapter {
         throw new Error(
           'Send returned an unexpected shape from prepareExecuteAndWait. ' +
             `Expected { tx: { commandId, status:'executed', payload: { updateId, completionOffset } } } ` +
-            `but received ${safePreview(tx)}.${templateIdHint(payload)}`,
+            `but received ${safePreview(tx)}.`,
         );
       }
 
@@ -292,11 +294,28 @@ export class SendAdapter implements WalletAdapter {
       };
     } catch (err) {
       const baseHint = templateIdHint(payload);
-      const enriched =
-        err instanceof Error && baseHint
-          ? Object.assign(new Error(err.message + baseHint), { name: err.name, cause: err })
-          : err;
-      throw mapSigilryError(enriched, {
+      // For structured Sigilry RPC errors (e.g. user pressed cancel in
+      // the passkey popup → code 4001) we want the canonical mapping
+      // (`UserRejectedError`). For everything else, if we have a payload
+      // hint, attach it directly via TransportError so the keyword-based
+      // fallback in `mapUnknownErrorToPartyLayerError` doesn't replace
+      // the message with a generic `User rejected …` string and lose
+      // the actionable text.
+      if (baseHint && !isSendRpcError(err)) {
+        const baseMessage = err instanceof Error ? err.message : String(err);
+        throw new TransportError(
+          baseMessage + baseHint,
+          err instanceof Error ? err : undefined,
+          {
+            walletId: this.walletId,
+            phase: 'submitTransaction',
+            transport: 'injected',
+            sessionId: session.sessionId,
+            commandId: payload?.commandId,
+          },
+        );
+      }
+      throw mapSigilryError(err, {
         walletId: this.walletId,
         phase: 'submitTransaction',
         transport: 'injected',
