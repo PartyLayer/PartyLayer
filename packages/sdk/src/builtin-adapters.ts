@@ -10,6 +10,7 @@ import { ConsoleAdapter } from '@partylayer/adapter-console';
 import { LoopAdapter } from '@partylayer/adapter-loop';
 import { Cantor8Adapter } from '@partylayer/adapter-cantor8';
 import { NightlyAdapter } from '@partylayer/adapter-nightly';
+import { SendAdapter } from '@partylayer/adapter-send';
 
 // Note: BronAdapter requires OAuth config and is not included by default.
 // Import it separately: import { BronAdapter } from '@partylayer/adapter-bron';
@@ -25,6 +26,9 @@ import { NightlyAdapter } from '@partylayer/adapter-nightly';
  * - LoopAdapter: 5N Loop mobile/web wallet
  * - Cantor8Adapter: Cantor8 wallet with deep link transport
  * - NightlyAdapter: Nightly multichain wallet with Canton support
+ * - SendAdapter: Send Canton Wallet (passkey / WebAuthn-PRF, beta) — also
+ *     injects at `window.canton`; the adapter's kernel.id guard keeps it
+ *     and Console-spec wallets from claiming each other's provider.
  *
  * Note: ConsoleAdapter defaults to 'combined' mode which supports both browser
  * extension and mobile wallet connect (QR code / deep link). To restrict to
@@ -39,13 +43,14 @@ export function getBuiltinAdapters(): WalletAdapter[] {
     new LoopAdapter(),      // 5N Loop - QR code / popup
     new Cantor8Adapter(),   // Cantor8 - deep link transport
     new NightlyAdapter(),   // Nightly - multichain wallet (injected)
+    new SendAdapter(),      // Send - passkey-based, kernel.id-guarded window.canton
   ];
 }
 
 /**
  * Built-in adapter classes (for advanced usage)
  */
-export { ConsoleAdapter, LoopAdapter, Cantor8Adapter, NightlyAdapter };
+export { ConsoleAdapter, LoopAdapter, Cantor8Adapter, NightlyAdapter, SendAdapter };
 
 /**
  * Re-export Console adapter types for convenience

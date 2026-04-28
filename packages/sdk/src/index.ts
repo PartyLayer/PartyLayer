@@ -89,6 +89,7 @@ export {
   Cantor8Adapter,
   NightlyAdapter,
   BronAdapter,
+  SendAdapter,
   getBuiltinAdapters,
 } from './builtin-adapters';
 

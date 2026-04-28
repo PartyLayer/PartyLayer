@@ -18,5 +18,9 @@ export default defineConfig({
     '@partylayer/registry-client',
     '@partylayer/adapter-console',
     '@partylayer/adapter-loop',
+    '@partylayer/adapter-cantor8',
+    '@partylayer/adapter-bron',
+    '@partylayer/adapter-nightly',
+    '@partylayer/adapter-send',
   ],
 });

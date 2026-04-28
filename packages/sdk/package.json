@@ -47,6 +47,7 @@
     "@partylayer/adapter-cantor8": "workspace:^",
     "@partylayer/adapter-bron": "workspace:^",
     "@partylayer/adapter-nightly": "workspace:^",
+    "@partylayer/adapter-send": "workspace:^",
     "@partylayer/provider": "workspace:^"
   },
   "devDependencies": {

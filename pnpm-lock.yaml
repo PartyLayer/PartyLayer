@@ -479,6 +479,9 @@ importers:
       '@partylayer/adapter-nightly':
         specifier: workspace:^
         version: link:../adapters/nightly
+      '@partylayer/adapter-send':
+        specifier: workspace:^
+        version: link:../adapters/send
       '@partylayer/core':
         specifier: workspace:^
         version: link:../core
