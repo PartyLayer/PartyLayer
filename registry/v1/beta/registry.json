@@ -147,7 +147,15 @@
         "extensionId": "ldmohiccoioolenadmogclhoklmanpgi"
       },
       "sdkVersion": ">=0.3.6",
-      "beta": true
+      "beta": true,
+      "providerDetection": {
+        "transport": "window.canton",
+        "matchers": [
+          { "field": "kernel.url", "match": "domain", "value": "cantonwallet.com" },
+          { "field": "kernel.userUrl", "match": "domain", "value": "cantonwallet.com" },
+          { "field": "kernel.id", "match": "exact", "values": ["ldmohiccoioolenadmogclhoklmanpgi"] }
+        ]
+      }
     }
   ]
 }
