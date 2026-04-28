@@ -191,8 +191,10 @@ await loop.wallet.transfer(
   { message: 'Payment for invoice #42', executionMode: 'wait' },
 );`}</CodeBlock>
       <Callout type="tip">
-        This path works only with Loop. For Console / Nightly / Bron, use the Token Standard
-        command flow above — those wallets do not expose a high-level transfer helper.
+        This path works only with Loop. For Console / Nightly / Bron / Send, use the Token Standard
+        command flow above — those wallets do not expose a high-level transfer helper. Send fuses the
+        prepare-sign-submit steps into <Code>{'prepareExecuteAndWait'}</Code> internally, so the
+        Token Standard command flow is the canonical path there.
       </Callout>
 
       <H2 id="recipient-accept">Recipient accepts the instruction</H2>
