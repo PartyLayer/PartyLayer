@@ -66,6 +66,47 @@ export interface AdapterMetadata {
 }
 
 /**
+ * Provider matcher: a single rule used by `ProviderDetection.matchers`.
+ *
+ * Three match modes are defined; OR-combined inside a `ProviderDetection`.
+ * Exact and prefix work on string fields directly; domain interprets the
+ * field as a URL and tests its hostname against the registrable domain
+ * (with subdomain support).
+ */
+export type ProviderMatcher =
+  | {
+      field: 'kernel.url' | 'kernel.userUrl';
+      match: 'domain';
+      /** Hostname or registrable domain. Subdomains are accepted. */
+      value: string;
+    }
+  | {
+      field: 'kernel.id' | 'kernel.url' | 'kernel.userUrl' | 'kernel.clientType';
+      match: 'exact';
+      /** One or more exact values; ANY match returns true. */
+      values: string[];
+    }
+  | {
+      field: 'kernel.id' | 'kernel.url' | 'kernel.userUrl';
+      match: 'prefix';
+      value: string;
+    };
+
+/**
+ * Standards-first runtime detection of a CIP-0103 wallet.
+ *
+ * The registry stores these rules so that any current or future wallet
+ * implementing `window.canton` can be identified without code changes —
+ * a registry JSON update is enough.
+ */
+export interface ProviderDetection {
+  /** Transport mechanism. Currently only 'window.canton' is supported. */
+  transport: 'window.canton';
+  /** OR-list of matchers. Provider matches if ANY matcher returns true. */
+  matchers: ProviderMatcher[];
+}
+
+/**
  * Wallet information from registry
  */
 export interface WalletInfo {
@@ -99,6 +140,14 @@ export interface WalletInfo {
   channel: 'stable' | 'beta';
   /** Additional metadata (e.g., originAllowlist) */
   metadata?: Record<string, string>;
+  /**
+   * Optional CIP-0103 runtime detection rules. When present, the picker can
+   * decide whether this wallet is the currently-injected `window.canton`
+   * provider and route it into the "CIP-0103 Native" section without any
+   * hardcoded wallet IDs. Wallets that aren't CIP-0103-injected (e.g. Bron,
+   * Cantor8 deeplink) leave this unset.
+   */
+  providerDetection?: ProviderDetection;
 }
 
 /**

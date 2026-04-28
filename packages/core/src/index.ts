@@ -7,6 +7,7 @@ export * from './types';
 export * from './errors';
 export * from './adapters';
 export * from './session';
+export * from './detection';
 export * from './transport/types';
 export * from './metrics';
 export * from './metrics-payload';
