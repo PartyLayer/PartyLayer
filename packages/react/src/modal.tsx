@@ -95,6 +95,7 @@ const KNOWN_WALLET_URLS: Record<string, string> = {
   cantor8: 'https://cantor8.io',
   bron: 'https://bron.dev',
   nightly: 'https://nightly.app',
+  send: 'https://cantonwallet.com',
 };
 
 function getWalletUrl(wallet: WalletInfo): string | null {
@@ -761,6 +762,21 @@ export function WalletModal({
                 lineHeight: '14px',
               }}>
                 CIP-0103
+              </span>
+            )}
+            {wallet.metadata?.beta === 'true' && (
+              <span style={{
+                fontSize: '10px',
+                padding: '2px 6px',
+                background: isDark ? 'rgba(245,158,11,0.18)' : 'rgba(245,158,11,0.12)',
+                color: isDark ? '#fbbf24' : '#b45309',
+                border: `1px solid ${isDark ? 'rgba(245,158,11,0.35)' : 'rgba(245,158,11,0.25)'}`,
+                borderRadius: '5px',
+                fontWeight: 600,
+                letterSpacing: '0.3px',
+                lineHeight: '14px',
+              }}>
+                Beta
               </span>
             )}
           </div>
