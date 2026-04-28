@@ -1,14 +1,36 @@
+import type { ProviderDetection } from '@partylayer/core';
+
 /**
  * Chrome Web Store extension ID for Send Canton Wallet.
  *
- * Send exposes this as `status.kernel.id`. Because the Splice wallet kernel
- * spec parks the provider at the bare `window.canton` global, more than one
- * extension can — in principle — claim that slot. The kernel.id is what
- * lets us prove we are talking to Send rather than (e.g.) a Console-spec
- * wallet that follows the same protocol. Chrome guarantees extension IDs
- * are globally unique, so this string is safe to hard-code.
+ * Kept as a public export for diagnostics and back-compat (downstream
+ * consumers still import this constant), but it is **not** the primary
+ * detection signal anymore. Detection is registry-driven via
+ * `SEND_BUILTIN_DETECTION` below; the kernel.id is one of three matchers
+ * (the URL-domain matchers carry stable identity, including for
+ * developer-mode builds whose kernel.id varies per install).
  */
 export const SEND_KERNEL_ID = 'ldmohiccoioolenadmogclhoklmanpgi';
+
+/**
+ * Built-in fallback detection patterns, mirroring the canonical Send
+ * registry entry's `providerDetection`. Used when no registry entry is
+ * injected at adapter construction time so adapter-only installs (no
+ * registry fetch yet, or registry fetch failed) still recognise Send.
+ *
+ * If Send's identity signals change in the future, update both this
+ * constant AND the registry entry — the registry is canonical, this is
+ * the defensive mirror. The parity is verified by a test in
+ * `send-adapter.test.ts`.
+ */
+export const SEND_BUILTIN_DETECTION: ProviderDetection = {
+  transport: 'window.canton',
+  matchers: [
+    { field: 'kernel.url', match: 'domain', value: 'cantonwallet.com' },
+    { field: 'kernel.userUrl', match: 'domain', value: 'cantonwallet.com' },
+    { field: 'kernel.id', match: 'exact', values: [SEND_KERNEL_ID] },
+  ],
+};
 
 /**
  * Network IDs Send currently supports. Send is mainnet-only as of v0.2.0.
