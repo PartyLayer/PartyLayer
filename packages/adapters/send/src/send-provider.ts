@@ -1,17 +1,21 @@
 /**
  * Typed wrapper around the `window.canton` provider exposed by Send.
  *
- * Every public method (except `isInstalled` / `isPotentiallyAvailable` /
- * `getKernelId` itself) goes through `guardedRequest`, which verifies the
- * provider's `kernel.id` matches Send's Chrome extension ID before
- * forwarding the call. This keeps the Send adapter from claiming a
- * foreign provider — if a Console-spec wallet (or any other splice-
- * wallet-kernel-compatible extension) is the one currently sitting at
- * `window.canton`, every Send call resolves to a `SendKernelMismatchError`
- * which the SDK treats as "Send is not installed."
+ * Detection is **registry-driven** via `matchesProviderDetection`. The
+ * adapter accepts an optional `ProviderDetection` rule set at construction
+ * (sourced from the registry's `providerDetection` field for the Send
+ * entry); when omitted, it falls back to `SEND_BUILTIN_DETECTION` which
+ * mirrors the canonical registry rule. Every public RPC method goes
+ * through `guardedRequest`, which checks the live `status` response
+ * against those rules before forwarding the call. The result: if a
+ * non-Send wallet is sitting at `window.canton`, every Send call resolves
+ * to a `SendKernelMismatchError` (treated by the SDK as "Send is not
+ * installed"), and Send only ever acts on its own provider.
  */
 
-import { SEND_KERNEL_ID } from './constants';
+import { matchesProviderDetection, type ProviderDetection } from '@partylayer/core';
+
+import { SEND_BUILTIN_DETECTION } from './constants';
 import { SendKernelMismatchError, SendNotInstalledError } from './errors';
 import type {
   SendAccount,
@@ -30,18 +34,28 @@ import type {
 } from './types';
 
 export class SendProvider {
-  private cachedKernelId: string | null = null;
+  private readonly detection: ProviderDetection;
+  private cachedStatus: SendStatusResponse | null = null;
 
   /**
-   * True only when `window.canton` is present AND its `kernel.id` matches
-   * Send. Performs an actual `status` round-trip on first call and caches
-   * the result for subsequent ones.
+   * @param detection Optional. Used to match the running `window.canton`
+   *   provider against Send's identity. When omitted, falls back to
+   *   `SEND_BUILTIN_DETECTION` (canonical registry rule mirror).
+   */
+  constructor(detection?: ProviderDetection) {
+    this.detection = detection ?? SEND_BUILTIN_DETECTION;
+  }
+
+  /**
+   * True when `window.canton` is present AND its self-reported status
+   * matches Send's detection rules. Performs an actual `status` round-trip
+   * on first call and caches the response for subsequent ones.
    */
   async isInstalled(): Promise<boolean> {
     if (typeof window === 'undefined' || !window.canton) return false;
     try {
-      const kernelId = await this.getKernelId();
-      return kernelId === SEND_KERNEL_ID;
+      const status = await this.fetchStatus();
+      return matchesProviderDetection(status, this.detection);
     } catch {
       return false;
     }
@@ -49,7 +63,7 @@ export class SendProvider {
 
   /**
    * Synchronous best-effort presence check. Used for fast picker rendering
-   * before any async kernel introspection. May report `true` for a
+   * before any async status introspection. May report `true` for a
    * non-Send provider — callers must follow up with `isInstalled()` (or
    * any guarded request) before assuming Send is wired in.
    */
@@ -58,31 +72,53 @@ export class SendProvider {
   }
 
   /**
-   * Read `kernel.id` from the running provider. Bypasses the kernel guard
-   * so it can be used to populate the cache.
+   * Read the cached `kernel.id` from the running provider, fetching status
+   * on demand. Diagnostic helper kept public for back-compat — detection
+   * itself no longer hinges on this single field.
    */
   async getKernelId(): Promise<string> {
-    if (this.cachedKernelId) return this.cachedKernelId;
-    const status = (await this.rawRequest({ method: 'status' })) as SendStatusResponse;
+    const status = await this.fetchStatus();
     const id = status?.kernel?.id;
     if (typeof id !== 'string' || id.length === 0) {
       throw new SendNotInstalledError(
         'window.canton.status() did not return a kernel.id — provider is malformed.',
       );
     }
-    this.cachedKernelId = id;
-    return this.cachedKernelId;
+    return id;
   }
 
   /**
-   * Reset the cached kernel id. Useful in tests, or after a wallet
-   * extension is uninstalled / reinstalled mid-session.
+   * Read the latest cached status object. Resolves the underlying RPC on
+   * demand if no cached value is present.
    */
-  resetKernelCache(): void {
-    this.cachedKernelId = null;
+  async getStatus(): Promise<SendStatusResponse> {
+    return this.fetchStatus();
   }
 
-  /** Internal — bypasses the kernel guard. Used only by `getKernelId`. */
+  /**
+   * Reset the cached status (e.g. after the user uninstalls and reinstalls
+   * the extension, or you suspect kernel identity changed mid-session).
+   * Kept under both names to avoid breaking existing test imports.
+   */
+  resetKernelCache(): void {
+    this.cachedStatus = null;
+  }
+  resetStatusCache(): void {
+    this.cachedStatus = null;
+  }
+
+  private async fetchStatus(): Promise<SendStatusResponse> {
+    if (this.cachedStatus) return this.cachedStatus;
+    if (typeof window === 'undefined' || !window.canton) {
+      throw new SendNotInstalledError();
+    }
+    const provider = window.canton as SendCantonProvider;
+    const status = (await provider.request({ method: 'status' })) as SendStatusResponse;
+    this.cachedStatus = status;
+    return status;
+  }
+
+  /** Internal — bypasses the detection guard. */
   private async rawRequest(args: { method: SendRpcMethod; params?: unknown }): Promise<unknown> {
     if (typeof window === 'undefined' || !window.canton) {
       throw new SendNotInstalledError();
@@ -91,13 +127,14 @@ export class SendProvider {
     return provider.request(args as SendRpcRequest<SendRpcMethod>);
   }
 
-  /** Public dispatch — guards every call with a kernel.id check. */
+  /** Public dispatch — guards every call with a registry-driven detection check. */
   private async guardedRequest<M extends SendRpcMethod>(
     args: SendRpcRequest<M>,
   ): Promise<SendRpcResult<M>> {
-    const kernelId = await this.getKernelId();
-    if (kernelId !== SEND_KERNEL_ID) {
-      throw new SendKernelMismatchError(kernelId);
+    const status = await this.fetchStatus();
+    if (!matchesProviderDetection(status, this.detection)) {
+      const observedId = status?.kernel?.id ?? '<unknown>';
+      throw new SendKernelMismatchError(observedId);
     }
     return this.rawRequest(args) as Promise<SendRpcResult<M>>;
   }

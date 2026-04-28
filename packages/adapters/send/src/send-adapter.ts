@@ -23,6 +23,7 @@ import {
   toSignature,
   toTransactionHash,
   toWalletId,
+  type ProviderDetection,
   type AdapterConnectResult,
   type AdapterContext,
   type AdapterDetectResult,
@@ -81,8 +82,18 @@ export class SendAdapter implements WalletAdapter {
 
   private readonly provider: SendProvider;
 
-  constructor(provider?: SendProvider) {
-    this.provider = provider ?? new SendProvider();
+  /**
+   * @param options.detection Optional. When supplied, the adapter uses
+   *   these matcher rules to decide whether the running `window.canton`
+   *   belongs to Send. Inject this from the registry entry's
+   *   `providerDetection` field for canonical behaviour. Omitting it
+   *   falls back to the built-in pattern that mirrors the canonical
+   *   registry rule (parity is verified by tests).
+   * @param options.provider Optional. Pre-built provider instance, used
+   *   primarily by tests; takes precedence over `options.detection`.
+   */
+  constructor(options?: { detection?: ProviderDetection; provider?: SendProvider }) {
+    this.provider = options?.provider ?? new SendProvider(options?.detection);
   }
 
   getCapabilities(): CapabilityKey[] {
