@@ -1,0 +1,11 @@
+<svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Send wallet (placeholder)">
+  <rect width="48" height="48" rx="12" fill="url(#send-grad)"/>
+  <path d="M14 17.5l9.6-3.4 9.6 3.4-9.6 16.4-9.6-16.4z" fill="#FFFFFF" fill-opacity="0.95"/>
+  <path d="M23.6 14.1L23.6 33.9" stroke="#0EA5A4" stroke-width="0.9" stroke-opacity="0.55"/>
+  <defs>
+    <linearGradient id="send-grad" x1="0" y1="0" x2="48" y2="48" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#14B8A6"/>
+      <stop offset="1" stop-color="#0F766E"/>
+    </linearGradient>
+  </defs>
+</svg>

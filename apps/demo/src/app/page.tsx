@@ -47,6 +47,7 @@ const wallets = [
   { id: 'cantor8', name: 'Cantor8 (C8)', desc: 'Cantor8 Wallet for Canton Network', transport: 'Deep Link', logo: '/wallets/cantor8.png' },
   { id: 'nightly', name: 'Nightly', desc: 'Multichain wallet with native Canton support', transport: 'Injected', logo: '/wallets/nightly.svg' },
   { id: 'bron', name: 'Bron', desc: 'Enterprise wallet for Canton Network', transport: 'OAuth2 / API', logo: '/wallets/bron.png' },
+  { id: 'send', name: 'Send', desc: 'Passkey-based Canton wallet (mainnet, beta)', transport: 'Injected (window.canton)', logo: '/wallets/send.svg' },
 ];
 
 /* ─── Global Styles (keyframes for pulse animation) ───────────────────── */
@@ -397,6 +398,7 @@ const WALLET_LOGOS: Record<string, string> = {
   cantor8: '/wallets/cantor8.png',
   bron: '/wallets/bron.png',
   nightly: '/wallets/nightly.svg',
+  send: '/wallets/send.svg',
 };
 
 /* ─── Nav (from apps/marketing/src/components/Nav.tsx) ─────────────────── */
