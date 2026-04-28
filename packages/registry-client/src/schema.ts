@@ -13,7 +13,12 @@
  * - Wallet Integration Guide: https://docs.digitalasset.com/integrate/devnet/index.html
  */
 
-import type { WalletInfo, NetworkId, CapabilityKey } from '@partylayer/core';
+import type {
+  CapabilityKey,
+  NetworkId,
+  ProviderDetection,
+  WalletInfo,
+} from '@partylayer/core';
 import { toWalletId } from '@partylayer/core';
 
 /**
@@ -87,6 +92,14 @@ export interface RegistryWalletEntry {
    * flag defaults to `false`.
    */
   beta?: boolean;
+  /**
+   * Optional CIP-0103 runtime detection rules. When present, the SDK +
+   * picker can match the currently-injected `window.canton` provider to
+   * this entry and surface it in the "CIP-0103 Native" section with full
+   * branding. Lets us add new CIP-0103 wallets to the ecosystem with a
+   * registry JSON update — no SDK code change required.
+   */
+  providerDetection?: ProviderDetection;
 }
 
 /**
@@ -286,6 +299,9 @@ export function registryEntryToWalletInfo(
           },
         }
       : {}),
+    // CIP-0103 runtime-detection rules pass through verbatim when present;
+    // see WalletInfo.providerDetection for how the picker uses them.
+    ...(entry.providerDetection ? { providerDetection: entry.providerDetection } : {}),
   };
 }
 
