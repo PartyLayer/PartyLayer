@@ -60,15 +60,38 @@ export const REAL_PRIMARY_ACCOUNT: SendAccount = {
 export const REAL_LIST_ACCOUNTS: SendAccount[] = [REAL_PRIMARY_ACCOUNT];
 
 /**
- * A plausible-but-foreign extension id used in kernel-guard tests.
- * Not a real published extension — chosen to be syntactically valid
- * (32 lowercase letters) and clearly distinct from Send's id.
+ * A plausible-but-foreign extension id. Used in build-specific tests
+ * (where Send is installed in developer mode, so kernel.id varies but
+ * URL signals stay stable — registry detection MUST still match Send).
  */
-export const FOREIGN_KERNEL_ID = 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa';
+export const FOREIGN_KERNEL_ID = 'lpnfhpbpmlobjlgkdmnjieeihjmihhjd';
 
-export const FOREIGN_STATUS: SendStatusResponse = {
+/**
+ * Status that LOOKS like Send except for a non-canonical kernel.id —
+ * mirrors the developer-mode Send install. URL-based matchers still
+ * fire, so detection should pass.
+ */
+export const BUILD_SPECIFIC_STATUS: SendStatusResponse = {
   ...REAL_STATUS,
   kernel: { ...REAL_STATUS.kernel, id: FOREIGN_KERNEL_ID },
+};
+
+/** @deprecated Pre-Prompt-6 alias. New code should use {@link BUILD_SPECIFIC_STATUS}. */
+export const FOREIGN_STATUS: SendStatusResponse = BUILD_SPECIFIC_STATUS;
+
+/**
+ * A truly foreign provider — different kernel.id AND different URL
+ * domain. This is what a Console-class wallet at `window.canton` would
+ * look like, and the case where Send adapter MUST refuse to act.
+ */
+export const FULLY_FOREIGN_STATUS: SendStatusResponse = {
+  ...REAL_STATUS,
+  kernel: {
+    ...REAL_STATUS.kernel,
+    id: 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+    url: 'https://api.other-wallet.example.com',
+    userUrl: 'https://other-wallet.example.com',
+  },
 };
 
 // ── RPC error helpers ──────────────────────────────────────────────────────

@@ -35,8 +35,9 @@ import {
 // (signTransaction stub assertions, mapSigilryError 4200 case).
 
 import {
+  BUILD_SPECIFIC_STATUS,
   FOREIGN_KERNEL_ID,
-  FOREIGN_STATUS,
+  FULLY_FOREIGN_STATUS,
   REAL_LIST_ACCOUNTS,
   REAL_PRIMARY_ACCOUNT,
   REAL_STATUS,
@@ -45,7 +46,7 @@ import {
   rpcError,
   uninstallMockCanton,
 } from './__mocks__/window-canton';
-import { SEND_KERNEL_ID, SEND_SIGNING_METHOD } from './constants';
+import { SEND_BUILTIN_DETECTION, SEND_KERNEL_ID, SEND_SIGNING_METHOD } from './constants';
 import {
   SendKernelMismatchError,
   SendNotInstalledError,
@@ -104,10 +105,19 @@ const baseSubmitPayload: SendPrepareSubmissionRequest = {
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Group 1 — Kernel.id guard (THE MOST IMPORTANT GROUP)
+// Group 1 — Provider-detection guard (registry-driven, multi-signal)
 // ─────────────────────────────────────────────────────────────────────────────
+//
+// As of Prompt 6 the adapter no longer keys identity on `kernel.id` alone.
+// Detection is driven by a `ProviderDetection` rule set (URL domain matchers
+// for stable identity, kernel.id whitelist as a fallback). Tests cover:
+//   - Stable identity via URL domain (production install)
+//   - Build-specific kernel.id with stable URL (developer-mode install)
+//   - Truly foreign provider with mismatched URL and id (Console-class)
+//   - Constructor-injected detection from registry entry
+//   - Parity between built-in detection and the canonical registry rule
 
-describe('SendAdapter: kernel.id guard', () => {
+describe('SendAdapter: provider-detection guard', () => {
   let adapter: SendAdapter;
   let ctx: AdapterContext;
 
@@ -117,21 +127,37 @@ describe('SendAdapter: kernel.id guard', () => {
   });
   afterEach(() => uninstallMockCanton());
 
-  it('isInstalled() returns true when window.canton exists AND kernel.id matches', async () => {
+  it('isInstalled() is true when kernel.url + kernel.id both match canonical Send', async () => {
     installMockCanton();
     await expect(adapter.detectInstalled()).resolves.toMatchObject({ installed: true });
   });
 
-  it('isInstalled() returns false when window.canton is undefined', async () => {
-    installEmptyWindow();
-    await expect(adapter.detectInstalled()).resolves.toMatchObject({
-      installed: false,
-    });
+  it('isInstalled() is true when only kernel.url matches (build-specific kernel.id)', async () => {
+    // Developer-mode Send install: kernel.id varies per build but URLs stay
+    // anchored to cantonwallet.com. URL-domain matchers must be enough.
+    installMockCanton({ status: BUILD_SPECIFIC_STATUS });
+    const detect = await adapter.detectInstalled();
+    expect(detect.installed).toBe(true);
   });
 
-  it('isInstalled() returns false when window itself is undefined (Node env)', async () => {
+  it('isInstalled() is true when only kernel.id matches (URLs absent or stale)', async () => {
+    installMockCanton({
+      status: {
+        ...REAL_STATUS,
+        kernel: { ...REAL_STATUS.kernel, url: '', userUrl: '' },
+      },
+    });
+    const detect = await adapter.detectInstalled();
+    expect(detect.installed).toBe(true);
+  });
+
+  it('isInstalled() is false when window.canton is undefined', async () => {
+    installEmptyWindow();
+    await expect(adapter.detectInstalled()).resolves.toMatchObject({ installed: false });
+  });
+
+  it('isInstalled() is false in non-browser environment (no window)', async () => {
     vi.unstubAllGlobals();
-    // No vi.stubGlobal call — globalThis.window remains undefined
     expect(typeof (globalThis as { window?: unknown }).window).toBe('undefined');
     await expect(adapter.detectInstalled()).resolves.toMatchObject({
       installed: false,
@@ -139,20 +165,20 @@ describe('SendAdapter: kernel.id guard', () => {
     });
   });
 
-  it('isInstalled() returns false when window.canton exists but kernel.id is foreign', async () => {
-    installMockCanton({ kernelId: FOREIGN_KERNEL_ID, status: FOREIGN_STATUS });
+  it('isInstalled() is false when kernel.id AND kernel.url are foreign (Console-class collision)', async () => {
+    installMockCanton({ status: FULLY_FOREIGN_STATUS });
     const detect = await adapter.detectInstalled();
     expect(detect.installed).toBe(false);
-    expect(detect.reason).toMatch(/kernel\.id does not match Send/);
+    expect(detect.reason).toMatch(/kernel\.id does not match Send|other Canton wallet/i);
   });
 
-  it('connect() throws SendKernelMismatchError when kernel.id is foreign', async () => {
-    installMockCanton({ kernelId: FOREIGN_KERNEL_ID, status: FOREIGN_STATUS });
+  it('connect() throws SendKernelMismatchError when the active provider is fully foreign', async () => {
+    installMockCanton({ status: FULLY_FOREIGN_STATUS });
     await expect(adapter.connect(ctx)).rejects.toBeInstanceOf(SendKernelMismatchError);
   });
 
-  it('signMessage() / submitTransaction() / ledgerApi() all throw on foreign kernel', async () => {
-    installMockCanton({ kernelId: FOREIGN_KERNEL_ID, status: FOREIGN_STATUS });
+  it('signMessage / submitTransaction / ledgerApi all throw on a fully foreign provider', async () => {
+    installMockCanton({ status: FULLY_FOREIGN_STATUS });
     const session = createMockSession();
     await expect(
       adapter.signMessage(ctx, session, { message: 'hi' }),
@@ -166,6 +192,44 @@ describe('SendAdapter: kernel.id guard', () => {
         resource: '/v2/state/ledger-end',
       }),
     ).rejects.toBeInstanceOf(SendKernelMismatchError);
+  });
+
+  it('constructor accepts injected ProviderDetection from registry (overrides built-in)', async () => {
+    // A custom rule that ONLY matches kernel.id values registry has whitelisted.
+    // Build-specific status (URL still cantonwallet.com but non-canonical id) must
+    // FAIL detection under this rule — proving the injected detection actually
+    // takes effect.
+    const restrictiveDetection = {
+      transport: 'window.canton' as const,
+      matchers: [
+        { field: 'kernel.id' as const, match: 'exact' as const, values: [SEND_KERNEL_ID] },
+      ],
+    };
+    const restricted = new SendAdapter({ detection: restrictiveDetection });
+    installMockCanton({ status: BUILD_SPECIFIC_STATUS });
+    await expect(restricted.detectInstalled()).resolves.toMatchObject({
+      installed: false,
+    });
+  });
+
+  it('built-in detection mirrors the canonical registry rule (parity guard)', () => {
+    // If you change SEND_BUILTIN_DETECTION, the canonical registry entry
+    // (registry/v1/{stable,beta}/registry.json) MUST change with it. This
+    // test pins the shape so future drift trips a build break, not a
+    // production "not installed" surprise.
+    expect(SEND_BUILTIN_DETECTION.transport).toBe('window.canton');
+    expect(SEND_BUILTIN_DETECTION.matchers).toEqual([
+      { field: 'kernel.url', match: 'domain', value: 'cantonwallet.com' },
+      { field: 'kernel.userUrl', match: 'domain', value: 'cantonwallet.com' },
+      { field: 'kernel.id', match: 'exact', values: [SEND_KERNEL_ID] },
+    ]);
+  });
+
+  it('FOREIGN_KERNEL_ID is preserved as developer-mode marker (not as a synonym for fully foreign)', () => {
+    // Belt-and-braces: confirm the legacy alias still resolves to a Send-shaped
+    // status (URLs are cantonwallet.com), not a stranger.
+    expect(BUILD_SPECIFIC_STATUS.kernel.id).toBe(FOREIGN_KERNEL_ID);
+    expect(BUILD_SPECIFIC_STATUS.kernel.url).toMatch(/cantonwallet\.com/);
   });
 });
 
