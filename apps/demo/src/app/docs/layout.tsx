@@ -76,6 +76,7 @@ const SIDEBAR_NAV = [
       { label: 'React Hooks', href: '/docs/hooks' },
       { label: 'Vanilla JS', href: '/docs/vanilla-js' },
       { label: 'Wallets & Adapters', href: '/docs/wallets' },
+      { label: 'Send (Beta)', href: '/docs/wallets/send' },
       { label: 'CIP-0103 Provider', href: '/docs/cip-0103' },
     ],
   },
@@ -156,6 +157,11 @@ const SEARCH_INDEX: SearchEntry[] = [
   { title: 'Custom Adapter', section: 'Wallets & Adapters', href: '/docs/wallets#custom-adapter', keywords: ['custom', 'adapter', 'WalletAdapter', 'interface', 'implement'] },
   { title: 'WalletAdapter Interface', section: 'Wallets & Adapters', href: '/docs/wallets#adapter-interface', keywords: ['interface', 'detectInstalled', 'connect', 'signMessage', 'ledgerApi'] },
   { title: 'getBuiltinAdapters', section: 'Wallets & Adapters', href: '/docs/wallets#builtin-adapters-function', keywords: ['builtin', 'adapters', 'default', 'ConsoleAdapter'] },
+  { title: 'Send Wallet (Beta)', href: '/docs/wallets/send', keywords: ['send', 'sigilry', 'passkey', 'webauthn', 'cantonwallet', 'beta', 'mainnet'] },
+  { title: 'How Send Differs', section: 'Send (Beta)', href: '/docs/wallets/send#how-send-differs', keywords: ['send', 'differences', 'kernel.id', 'passkey', 'webauthn-prf'] },
+  { title: 'Send Connection Flow', section: 'Send (Beta)', href: '/docs/wallets/send#connection-flow', keywords: ['send', 'connect', 'passkey', 'touch id', 'face id'] },
+  { title: 'Send Token Transfers', section: 'Send (Beta)', href: '/docs/wallets/send#token-transfers', keywords: ['send', 'transfer', 'cip-56', 'prepareExecuteAndWait', 'TransferFactory'] },
+  { title: 'Send Troubleshooting', section: 'Send (Beta)', href: '/docs/wallets/send#troubleshooting', keywords: ['send', 'troubleshoot', 'kernel.id mismatch', 'auth failed', 'oauth'] },
 
   // CIP-0103
   { title: 'CIP-0103 Provider', href: '/docs/cip-0103', keywords: ['cip-0103', 'canton', 'standard', 'provider', 'dApp'] },
