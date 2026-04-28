@@ -35,6 +35,7 @@ export default function WalletsPage() {
               { name: 'Cantor8 (C8)', transport: 'Deep Link', detection: 'Browser extension', auto: 'Yes' },
               { name: 'Nightly', transport: 'Injected', detection: 'window.nightly.canton', auto: 'Yes' },
               { name: 'Bron', transport: 'OAuth', detection: 'Enterprise config', auto: 'No' },
+              { name: 'Send (beta)', transport: 'Injected', detection: 'window.canton (kernel.id guard)', auto: 'Yes' },
             ].map(w => (
               <tr key={w.name} style={{ borderBottom: '1px solid rgba(15,23,42,0.10)' }}>
                 <td style={{ padding: '10px 14px', fontWeight: 500, color: '#0B0F1A' }}>{w.name}</td>
@@ -78,6 +79,7 @@ export default function WalletsPage() {
               { name: 'Cantor8', connect: true, signMessage: true, signTransaction: true, submitTransaction: false, ledgerApi: 'none', restore: true },
               { name: 'Nightly', connect: true, signMessage: true, signTransaction: false, submitTransaction: true, ledgerApi: 'full', restore: true },
               { name: 'Bron', connect: true, signMessage: true, signTransaction: true, submitTransaction: false, ledgerApi: 'full', restore: true },
+              { name: 'Send (beta)', connect: true, signMessage: true, signTransaction: false, submitTransaction: true, ledgerApi: 'full', restore: true },
             ].map(w => (
               <tr key={w.name} style={{ borderBottom: '1px solid rgba(15,23,42,0.10)' }}>
                 <td style={{ padding: '10px 14px', fontWeight: 500, color: '#0B0F1A' }}>{w.name}</td>
@@ -105,10 +107,17 @@ export default function WalletsPage() {
 
       <H3 id="capability-notes">Capability Notes</H3>
       <UL>
-        <LI><Strong>Loop / Nightly — signTransaction:</Strong> both combine signing and submission into a single step.
-          Use <Code>{'submitTransaction'}</Code> directly instead of the separate sign-then-submit pattern.
-          Calling <Code>{'signTransaction'}</Code> on either wallet throws{' '}
-          <Code>{'CapabilityNotSupportedError'}</Code> pointing you at this fix.</LI>
+        <LI><Strong>Loop / Nightly / Send — signTransaction:</Strong> these wallets combine signing
+          and submission into a single step. Use <Code>{'submitTransaction'}</Code> directly instead
+          of the separate sign-then-submit pattern. Calling <Code>{'signTransaction'}</Code> on any of
+          them throws <Code>{'CapabilityNotSupportedError'}</Code> pointing you at this fix.</LI>
+        <LI><Strong>Send — passkey signing &amp; namespace guard:</Strong> Send injects at the bare{' '}
+          <Code>{'window.canton'}</Code> slot (the same slot any splice-wallet-kernel-compatible
+          extension would use). The Send adapter verifies the running provider{"'"}s{' '}
+          <Code>{'kernel.id'}</Code> before forwarding any RPC, so installing Send next to a
+          Console-class wallet never claims the wrong provider. Send is currently <Strong>mainnet-only</Strong>{' '}
+          and signs every transaction via WebAuthn-PRF (Touch ID / Face ID), so the user sees a
+          passkey prompt rather than an extension popup.</LI>
         <LI><Strong>Loop — ledgerApi (limited):</Strong> Supports <Code>{'POST /v2/state/acs'}</Code>,{' '}
           <Code>{'GET /v2/state/acs/active-contracts'}</Code>, <Code>{'POST /v2/commands/submit'}</Code>,{' '}
           and <Code>{'POST /v2/commands/submit-and-wait'}</Code>. Other endpoints are not available —
