@@ -30,6 +30,7 @@ import { ConsoleAdapter } from '@partylayer/adapter-console';
 import { LoopAdapter } from '@partylayer/adapter-loop';
 import { Cantor8Adapter } from '@partylayer/adapter-cantor8';
 import { NightlyAdapter } from '@partylayer/adapter-nightly';
+import { SendAdapter } from '@partylayer/adapter-send';
 import type { WalletAdapter, CapabilityKey } from '@partylayer/core';
 
 // Capabilities whose declaration must round-trip with method presence.
@@ -61,6 +62,7 @@ const adapters: Array<{ name: string; adapter: WalletAdapter }> = [
   { name: 'Loop', adapter: new LoopAdapter() },
   { name: 'Cantor8', adapter: new Cantor8Adapter() },
   { name: 'Nightly', adapter: new NightlyAdapter() },
+  { name: 'Send', adapter: new SendAdapter() },
   // Bron requires OAuth config so we construct it with a minimal stub.
   // It exercises the same capability declaration surface we care about.
 ];
