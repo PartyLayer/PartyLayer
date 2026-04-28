@@ -40,6 +40,7 @@ PartyLayer is a production-grade SDK that enables decentralized applications (dA
 | **Cantor8 (C8)** | Browser Extension | Deep Link | ✅ Yes | Ready |
 | **Nightly** | Multichain Wallet | Injected | ✅ Yes | Ready |
 | **Bron** | Enterprise | OAuth2 / API | ⚙️ Requires config | Ready |
+| **Send** | Browser Extension (passkey) | Injected (`window.canton`) | ✅ Yes | Beta |
 
 > **Note**: Bron is an enterprise wallet that requires OAuth configuration. See [Using Bron](#using-bron-enterprise-wallet) for setup instructions.
 >
