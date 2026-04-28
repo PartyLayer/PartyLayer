@@ -2,9 +2,9 @@
   "metadata": {
     "registryVersion": "1.0.0",
     "schemaVersion": "1.0.0",
-    "publishedAt": "2026-01-29T00:00:00Z",
+    "publishedAt": "2026-04-23T00:00:00Z",
     "channel": "stable",
-    "sequence": 3,
+    "sequence": 4,
     "publisher": "PartyLayer"
   },
   "wallets": [
@@ -126,6 +126,31 @@
         "windowProperty": "nightly"
       },
       "sdkVersion": ">=0.1.0"
+    },
+    {
+      "id": "send",
+      "name": "Send",
+      "description": "Passkey-based Canton wallet by Send Foundation. Currently mainnet-only.",
+      "homepage": "https://cantonwallet.com",
+      "icon": "https://registry.partylayer.xyz/wallets/send.svg",
+      "supportedNetworks": ["mainnet"],
+      "capabilities": {
+        "signMessage": true,
+        "signTransaction": false,
+        "submitTransaction": true,
+        "transactionStatus": true,
+        "switchNetwork": false,
+        "multiParty": false
+      },
+      "adapter": {
+        "type": "@partylayer/adapter-send"
+      },
+      "installation": {
+        "windowProperty": "canton",
+        "extensionId": "ldmohiccoioolenadmogclhoklmanpgi"
+      },
+      "sdkVersion": ">=0.3.6",
+      "beta": true
     }
   ]
 }

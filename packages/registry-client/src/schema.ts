@@ -79,6 +79,14 @@ export interface RegistryWalletEntry {
   version?: string;
   /** Origin allowlist (optional - if present, only these origins can connect) */
   originAllowlist?: string[];
+  /**
+   * Marks the entry as beta even when it ships in the `stable` registry
+   * channel. UIs (modal, picker, capability matrix) can use this flag to
+   * surface a "Beta" badge regardless of which channel file the entry
+   * lives in. Optional and additive — older registries omit it and the
+   * flag defaults to `false`.
+   */
+  beta?: boolean;
 }
 
 /**
@@ -263,9 +271,20 @@ export function registryEntryToWalletInfo(
     minSdkVersion: entry.sdkVersion,
     networks: entry.supportedNetworks,
     channel,
-    // Store origin allowlist in metadata for SDK enforcement
-    ...(entry.originAllowlist
-      ? { metadata: { originAllowlist: JSON.stringify(entry.originAllowlist) } }
+    // Adapter metadata is exposed to the picker via WalletInfo.metadata
+    // (typed `Record<string, string>`). Two flags routed through here today:
+    //   - originAllowlist: SDK-side origin enforcement
+    //   - beta:            UI badge ("Beta" tag in modal + capability matrix)
+    // Both are optional — only emitted when the registry entry sets them.
+    ...((entry.originAllowlist || entry.beta)
+      ? {
+          metadata: {
+            ...(entry.originAllowlist
+              ? { originAllowlist: JSON.stringify(entry.originAllowlist) }
+              : {}),
+            ...(entry.beta ? { beta: 'true' } : {}),
+          },
+        }
       : {}),
   };
 }
