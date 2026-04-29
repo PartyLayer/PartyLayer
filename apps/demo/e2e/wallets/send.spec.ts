@@ -99,10 +99,7 @@ test.describe('Send adapter — DOM-level smoke (registry-driven detection)', ()
 
     test('Send appears in picker by name (NOT raw kernel.id) with Beta badge', async ({ page }) => {
       await openWalletModal(page);
-      const modal = page
-        .getByRole('dialog')
-        .or(page.locator('[style*="position: fixed"]'))
-        .first();
+      const modal = page.getByRole('dialog');
       await expect(modal.getByText(/^Send$/)).toBeVisible({ timeout: 5000 });
       // The pre-Prompt-6 bug rendered the raw extension id — verify it does NOT appear.
       await expect(modal.getByText(SEND_KERNEL_ID)).toHaveCount(0);
@@ -111,10 +108,7 @@ test.describe('Send adapter — DOM-level smoke (registry-driven detection)', ()
 
     test('all six wallets still visible in picker', async ({ page }) => {
       await openWalletModal(page);
-      const modal = page
-        .getByRole('dialog')
-        .or(page.locator('[style*="position: fixed"]'))
-        .first();
+      const modal = page.getByRole('dialog');
       const expected = [/^Console/i, /^5N Loop/i, /^Cantor8/i, /^Bron/i, /^Nightly/i, /^Send$/];
       for (const rx of expected) {
         await expect(modal.getByText(rx).first()).toBeVisible({ timeout: 5000 });
@@ -129,10 +123,7 @@ test.describe('Send adapter — DOM-level smoke (registry-driven detection)', ()
 
     test('URL-domain matchers still identify it as Send (not raw kernel.id)', async ({ page }) => {
       await openWalletModal(page);
-      const modal = page
-        .getByRole('dialog')
-        .or(page.locator('[style*="position: fixed"]'))
-        .first();
+      const modal = page.getByRole('dialog');
       await expect(modal.getByText(/^Send$/)).toBeVisible({ timeout: 5000 });
       await expect(modal.getByText(BUILD_SPECIFIC_KERNEL_ID)).toHaveCount(0);
     });
@@ -147,10 +138,7 @@ test.describe('Send adapter — DOM-level smoke (registry-driven detection)', ()
       page,
     }) => {
       await openWalletModal(page);
-      const modal = page
-        .getByRole('dialog')
-        .or(page.locator('[style*="position: fixed"]'))
-        .first();
+      const modal = page.getByRole('dialog');
       // The five non-Send registry wallets and the Send entry are still listed
       // — Send under AVAILABLE (no native injection matched it). The foreign
       // provider surfaces with its derived hostname rather than the raw id.
