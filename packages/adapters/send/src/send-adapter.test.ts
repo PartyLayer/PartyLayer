@@ -48,9 +48,11 @@ import {
 } from './__mocks__/window-canton';
 import { SEND_BUILTIN_DETECTION, SEND_KERNEL_ID, SEND_SIGNING_METHOD } from './constants';
 import {
+  SendAuthTimeoutError,
   SendKernelMismatchError,
   SendNotInstalledError,
   SendRpcErrorCode,
+  detectSendAuthTimeout,
   mapSigilryError,
   templateIdHint,
 } from './errors';
@@ -988,6 +990,105 @@ describe('helpers: templateIdHint', () => {
         ],
       }),
     ).toBe('');
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Send auth timeout — typed error class + detector + mapping integration
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe('SendAuthTimeoutError', () => {
+  it('default message references retry + cantonwallet.com help URL', () => {
+    const err = new SendAuthTimeoutError();
+    expect(err.name).toBe('SendAuthTimeoutError');
+    expect(err.message).toMatch(/timed out/i);
+    expect(err.message).toMatch(/cantonwallet\.com/);
+    expect(err.details).toMatchObject({
+      cause: 'send-auth-timeout',
+      retry: true,
+      helpUrl: 'https://cantonwallet.com',
+    });
+  });
+
+  it('preserves a custom upstream message and surfaces it in details', () => {
+    const err = new SendAuthTimeoutError('Authentication timed out (req=abc)');
+    expect(err.message).toContain('Authentication timed out');
+    expect(err.details).toMatchObject({
+      cause: 'send-auth-timeout',
+      originalMessage: 'Authentication timed out (req=abc)',
+    });
+  });
+
+  it('subclasses PartyLayerError so existing instanceof / code branches still work', () => {
+    const err = new SendAuthTimeoutError();
+    expect(err).toBeInstanceOf(PartyLayerError);
+    expect((err as PartyLayerError).code).toBe('WALLET_NOT_INSTALLED');
+  });
+});
+
+describe('detectSendAuthTimeout', () => {
+  it('matches the canonical "Authentication timed out" wording', () => {
+    expect(detectSendAuthTimeout(new Error('Authentication timed out'))).toBe(true);
+  });
+
+  it('matches the alternate "Cannot reach authentication server" wording', () => {
+    expect(detectSendAuthTimeout(new Error('Cannot reach authentication server'))).toBe(true);
+  });
+
+  it('matches when the auth.cantonwallet.com domain leaks into the error', () => {
+    expect(
+      detectSendAuthTimeout(new Error('fetch failed: https://auth.cantonwallet.com/oauth/token')),
+    ).toBe(true);
+  });
+
+  it('is case-insensitive', () => {
+    expect(detectSendAuthTimeout(new Error('AUTHENTICATION TIMED OUT'))).toBe(true);
+  });
+
+  it('returns false for unrelated errors', () => {
+    expect(detectSendAuthTimeout(new Error('User rejected the request'))).toBe(false);
+    expect(detectSendAuthTimeout(new Error('Network is offline'))).toBe(false);
+  });
+
+  it('handles non-Error inputs without throwing', () => {
+    expect(detectSendAuthTimeout(null)).toBe(false);
+    expect(detectSendAuthTimeout(undefined)).toBe(false);
+    expect(detectSendAuthTimeout('Authentication timed out')).toBe(false);
+    expect(detectSendAuthTimeout({})).toBe(false);
+    expect(detectSendAuthTimeout({ message: 42 })).toBe(false);
+  });
+});
+
+describe('mapSigilryError + auth-timeout integration', () => {
+  const ctx = {
+    walletId: 'send',
+    phase: 'connect' as const,
+    transport: 'injected' as const,
+  };
+
+  it('routes Send auth-timeout errors to SendAuthTimeoutError', () => {
+    const mapped = mapSigilryError(new Error('Authentication timed out'), ctx);
+    expect(mapped).toBeInstanceOf(SendAuthTimeoutError);
+    expect((mapped as SendAuthTimeoutError).details).toMatchObject({
+      cause: 'send-auth-timeout',
+      retry: true,
+    });
+  });
+
+  it('does NOT regress existing 4001 USER_REJECTED mapping (regression guard)', () => {
+    const mapped = mapSigilryError(rpcError(SendRpcErrorCode.USER_REJECTED, 'declined'), ctx);
+    expect(mapped).toBeInstanceOf(UserRejectedError);
+  });
+
+  it('does NOT regress existing TransportError mapping for unrelated 4900 (regression guard)', () => {
+    const mapped = mapSigilryError(rpcError(SendRpcErrorCode.DISCONNECTED, 'gone'), ctx);
+    expect(mapped).toBeInstanceOf(TransportError);
+    expect((mapped as TransportError).details).toMatchObject({ rpcCode: 4900 });
+  });
+
+  it('does NOT misclassify a generic "rejected" error as auth-timeout', () => {
+    const mapped = mapSigilryError(new Error('User rejected the request'), ctx);
+    expect(mapped).not.toBeInstanceOf(SendAuthTimeoutError);
   });
 });
 
