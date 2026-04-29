@@ -23,7 +23,7 @@ test.describe('PartyLayer Demo Smoke Tests', () => {
     await page.goto('/');
     
     // Click connect button
-    const connectButton = page.getByRole('button', { name: /Connect Wallet/i });
+    const connectButton = page.getByRole('button', { name: /Connect Wallet/i }).first();
     await expect(connectButton).toBeVisible();
     await connectButton.click();
     
@@ -35,7 +35,7 @@ test.describe('PartyLayer Demo Smoke Tests', () => {
     await page.goto('/');
     
     // Open modal to see registry status
-    await page.getByRole('button', { name: /Connect Wallet/i }).click();
+    await page.getByRole('button', { name: /Connect Wallet/i }).first().click();
     
     // Check for registry status indicators (channel, verified, etc.)
     // These are shown in the modal header
@@ -53,7 +53,7 @@ test.describe('PartyLayer Demo Smoke Tests', () => {
     await page.goto('/');
     
     // Open modal
-    await page.getByRole('button', { name: /Connect Wallet/i }).click();
+    await page.getByRole('button', { name: /Connect Wallet/i }).first().click();
     
     // Wait for modal to appear
     const modal = page.locator('text=/Select a Wallet/i');
@@ -69,7 +69,7 @@ test.describe('PartyLayer Demo Smoke Tests', () => {
     await page.goto('/');
     
     // Open modal
-    await page.getByRole('button', { name: /Connect Wallet/i }).click();
+    await page.getByRole('button', { name: /Connect Wallet/i }).first().click();
     
     // Wait for wallets to load
     await page.waitForTimeout(1000);
