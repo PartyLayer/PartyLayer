@@ -90,6 +90,58 @@ export class SendKernelMismatchError extends WalletNotInstalledError {
   }
 }
 
+/**
+ * Send's authentication backend (auth.cantonwallet.com) timed out or was
+ * otherwise unreachable. This is an external, intermittent issue on
+ * Send's side — not a PartyLayer issue, not a wallet-not-installed
+ * issue, and not a user rejection. Surfaced as a typed error so the UI
+ * can offer a "Try again" affordance + link to Send's status page.
+ *
+ * Subclasses `WalletNotInstalledError` to reuse the existing core error
+ * code (`'WALLET_NOT_INSTALLED'`) without expanding the canonical
+ * `ErrorCode` union — but the class identity (`name`) plus
+ * `details.cause = 'send-auth-timeout'` give consumers enough signal to
+ * route the retry UX without a code-level change.
+ */
+export class SendAuthTimeoutError extends WalletNotInstalledError {
+  constructor(originalMessage?: string) {
+    super(
+      WALLET_ID,
+      originalMessage ??
+        'Send authentication timed out. Please try again. ' +
+          'If the problem persists, see https://cantonwallet.com',
+    );
+    this.name = 'SendAuthTimeoutError';
+    (this as { details?: Record<string, unknown> }).details = {
+      ...((this as { details?: Record<string, unknown> }).details ?? {}),
+      cause: 'send-auth-timeout',
+      retry: true,
+      helpUrl: 'https://cantonwallet.com',
+      ...(originalMessage ? { originalMessage } : {}),
+    };
+  }
+}
+
+/**
+ * Recognise Send-side authentication-timeout signatures in arbitrary
+ * error payloads. Covers the wording variants Send Foundation surfaces
+ * today (the wallet UI itself uses both "Authentication timed out" and
+ * "Cannot reach authentication server"; the underlying domain
+ * `auth.cantonwallet.com` shows up in stack traces / fetch errors when
+ * the network is at fault).
+ */
+export function detectSendAuthTimeout(err: unknown): boolean {
+  if (!err || typeof err !== 'object') return false;
+  const raw = (err as { message?: unknown }).message;
+  if (typeof raw !== 'string' || raw.length === 0) return false;
+  const msg = raw.toLowerCase();
+  return (
+    msg.includes('authentication timed out') ||
+    msg.includes('cannot reach authentication server') ||
+    msg.includes('auth.cantonwallet.com')
+  );
+}
+
 interface SendRpcErrorLike {
   code: number;
   message: string;
@@ -116,6 +168,15 @@ export function mapSigilryError(
   context: ErrorMappingContext,
 ): PartyLayerError {
   if (err instanceof PartyLayerError) return err;
+
+  // Send-side auth-timeout takes priority over the generic RPC-code path
+  // because the wallet sometimes wraps the timeout into a generic message
+  // without a structured error code. Surfacing it as a typed error lets
+  // the modal render a retry affordance.
+  if (detectSendAuthTimeout(err)) {
+    const original = err instanceof Error ? err.message : undefined;
+    return new SendAuthTimeoutError(original);
+  }
 
   if (isSendRpcError(err)) {
     const code = err.code;

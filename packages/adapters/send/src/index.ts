@@ -6,9 +6,11 @@
 export { SendAdapter } from './send-adapter';
 export { SendProvider } from './send-provider';
 export {
+  SendAuthTimeoutError,
   SendKernelMismatchError,
   SendNotInstalledError,
   SendRpcErrorCode,
+  detectSendAuthTimeout,
   mapSigilryError,
   safePreview,
   templateIdHint,
