@@ -7,7 +7,12 @@
 import { test, expect } from '@playwright/test';
 
 test.describe('Session Restore', () => {
-  test('session persists after page refresh', async ({ page, context }) => {
+  // FIXME: Depends on ?mockWallets=1 SDK switch which is not yet implemented.
+  // The SDK has no URL-param-based mechanism to inject mock wallet providers
+  // for E2E testing. Re-enable when that infrastructure ships (similar in
+  // shape to apps/demo/src/lib/canton-demo-adapter.ts but for cantor8/bron/loop).
+  // Tracked: see /tmp/mock-mode-investigation.md
+  test.fixme('session persists after page refresh', async ({ page, context }) => {
     // Set mock mode
     await page.goto('http://localhost:3000?mockWallets=1');
 
