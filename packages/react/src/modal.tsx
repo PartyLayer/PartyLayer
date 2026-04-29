@@ -51,25 +51,17 @@ const SDK_QR_CONTAINER_ID = 'console-wallet-connect-placeholder';
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
 /**
- * Predicate for the canonical "CIP-0103 NATIVE" section. A wallet
- * appears here when it's been canonically marked CIP-0103 native via
- * the registry (`cip0103.native: true`) OR when it's a synthesised
- * generic entry for an unrecognised injected provider.
+ * Predicate for the canonical "CIP-0103 NATIVE" section.
+ *
+ * Pure registry decision (Prompt 7.6 simplification): a wallet is
+ * native iff its registry entry has `cip0103.native === true`. No more
+ * runtime detection, no more synthetic generic entries, no more
+ * `metadata.source === 'native-cip0103'` runtime promotion. The picker
+ * is now a static directory; transport-specific install probing happens
+ * at connect time inside each adapter.
  */
 function isNativeWallet(wallet: WalletInfo): boolean {
-  if (isCip0103Native(wallet)) return true;
-  return wallet.metadata?.generic === 'true' && wallet.metadata?.source === 'native-cip0103';
-}
-
-/**
- * Readiness indicator for a NATIVE-section wallet. The runtime flag
- * `metadata.source === 'native-cip0103'` is set by `context.tsx` only
- * when the wallet's `providerDetection` matched the actively-injected
- * `window.canton`, so it doubles as the "Ready vs Not installed" signal
- * for the canonical native list.
- */
-function isWalletReady(wallet: WalletInfo): boolean {
-  return wallet.metadata?.source === 'native-cip0103';
+  return isCip0103Native(wallet);
 }
 
 /**
@@ -145,11 +137,13 @@ function getWalletUrl(wallet: WalletInfo): string | null {
 }
 
 function getWalletTransportLabel(wallet: WalletInfo): string {
-  if (isNativeWallet(wallet)) return 'Ready';
+  // Prompt 7.6: no longer short-circuits to "Ready" for native wallets.
+  // Every wallet now reports its static transport family — derived purely
+  // from the registry's capabilities array — so the picker reads as a
+  // directory, not a status board.
   const hasInjected = wallet.capabilities.includes('injected');
   const hasDeeplink = wallet.capabilities.includes('deeplink');
   const hasRemoteSigner = wallet.capabilities.includes('remoteSigner');
-  // Wallets with both injected and deeplink/remote support (e.g. Console combined mode)
   if (hasInjected && (hasDeeplink || hasRemoteSigner)) return 'Extension + Mobile';
   if (hasInjected) return 'Browser Extension';
   if (wallet.capabilities.includes('popup')) return 'Scan to connect';
@@ -734,7 +728,6 @@ export function WalletModal({
 
   const renderWalletItem = (wallet: WalletInfo) => {
     const isNative = isNativeWallet(wallet);
-    const ready = isNative && isWalletReady(wallet);
     const iconUrl = resolveWalletIcon(wallet.walletId, walletIcons, wallet.icons?.sm);
 
     return (
@@ -825,41 +818,24 @@ export function WalletModal({
               </span>
             )}
           </div>
+          {/*
+            Prompt 7.6: status indicators removed entirely. The picker is
+            now a registry-driven static directory — install / connect
+            state is decided by the adapter at click-time, not pre-shown
+            in the row. The transport-label line stays (it's static
+            registry-derived metadata: "Browser Extension" / "Mobile
+            wallet" / "Enterprise" etc.) so users still get a hint of
+            HOW the wallet connects.
+          */}
           <div style={{
             fontSize: '12px',
-            color: ready
-              ? theme.colors.success
-              : isNative
-                ? theme.colors.textSecondary
-                : theme.colors.textSecondary,
+            color: theme.colors.textSecondary,
             marginTop: '2px',
             whiteSpace: 'nowrap',
             overflow: 'hidden',
             textOverflow: 'ellipsis',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '4px',
           }}>
-            {isNative && (
-              <span
-                style={{
-                  width: '5px',
-                  height: '5px',
-                  borderRadius: '50%',
-                  backgroundColor: ready
-                    ? theme.colors.success
-                    : isDark
-                      ? 'rgba(148,163,184,0.6)'
-                      : 'rgba(100,116,139,0.6)',
-                  flexShrink: 0,
-                }}
-              />
-            )}
-            {isNative
-              ? ready
-                ? 'Ready'
-                : 'Not installed'
-              : getWalletTransportLabel(wallet)}
+            {getWalletTransportLabel(wallet)}
           </div>
         </div>
 
@@ -941,6 +917,10 @@ export function WalletModal({
         overflowY: 'auto',
       }}>
         {isLoading ? (
+          // Prompt 7.6: spinner now only covers the registry HTTP fetch
+          // (which can briefly delay the very first modal open). All
+          // runtime detection that previously contributed to this loading
+          // window has been removed.
           <div style={{ padding: '40px 0', textAlign: 'center' }}>
             <div style={{
               width: '32px',
@@ -952,7 +932,7 @@ export function WalletModal({
               margin: '0 auto 16px',
             }} />
             <div style={{ fontSize: '14px', color: theme.colors.textSecondary }}>
-              Discovering wallets...
+              Loading wallets...
             </div>
           </div>
         ) : wallets.length === 0 ? (
