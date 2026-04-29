@@ -28,7 +28,7 @@ test.describe('PartyLayer Demo Smoke Tests', () => {
     await connectButton.click();
     
     // Check modal is visible
-    await expect(page.getByRole('heading', { name: /Connect Wallet/i })).toBeVisible();
+    await expect(page.getByRole('dialog').getByRole('heading', { name: /Connect Wallet/i })).toBeVisible();
   });
 
   test('registry status indicator is present', async ({ page }) => {
