@@ -1812,7 +1812,7 @@ export default function Home() {
   if (!mounted) return <LoadingSkeleton />;
 
   return (
-    <PartyLayerKit network="devnet" appName="PartyLayer" walletIcons={WALLET_LOGOS} adapters={buildDemoAdapters()}>
+    <PartyLayerKit network="devnet" appName="PartyLayer" walletIcons={WALLET_LOGOS} adapters={buildDemoAdapters()} registryUrl="/registry">
       <LandingContent />
     </PartyLayerKit>
   );
