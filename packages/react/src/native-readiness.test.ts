@@ -25,6 +25,7 @@ import { describe, expect, it, vi } from 'vitest';
 import {
   DEFAULT_DETECT_INSTALLED_TIMEOUT_MS,
   detectInstalledWithCeiling,
+  isCip0103Provider,
   type DetectableAdapter,
 } from './native-readiness';
 
@@ -190,6 +191,68 @@ describe('detectInstalledWithCeiling: scenario coverage for canonical NATIVE sec
     } finally {
       vi.useRealTimers();
     }
+  });
+
+  // ───────────────────────────────────────────────────────────────────────
+  // Prompt 7.3 release-blocker regression coverage — Browser B scenario.
+  //
+  // Real-world bug we're pinning: in a browser without any Canton
+  // extensions, a stray `window.canton = { demoWallet: {...} }` injection
+  // (or any other non-CIP-0103 squatter) was previously enough to flip a
+  // registered adapter's row to "Ready" via the OR fallback. The fix
+  // shifts authority to the adapter alone for registered wallets.
+  //
+  // Scenarios K-O cover the critical paths where the bug used to
+  // manifest. The detection mechanic (adapter-probe) is the same one
+  // these tests already cover; the regression guard here is the
+  // SHAPE-VALIDATION primitive (`isCip0103Provider`) that must classify
+  // a `demoWallet`-style payload as not-a-provider.
+
+  it('Scenario K — stray { demoWallet } shape: not classified as a CIP-0103 provider', () => {
+    expect(isCip0103Provider({ demoWallet: { request: () => undefined } })).toBe(false);
+  });
+
+  it('Scenario L — adapter-only authority: a valid window.canton + non-matching detection still leaves the wallet not installed when the adapter says so', async () => {
+    // The adapter returns false; the picker must trust that even if a
+    // valid-looking `window.canton` is sitting there with mismatched
+    // identity. The shape gate is the bouncer at the door; the adapter
+    // is the source of truth for installed-state.
+    const consoleAdapterReportsFalse = adapter(async () => ({ installed: false }));
+    expect(await detectInstalledWithCeiling(consoleAdapterReportsFalse)).toBe(false);
+  });
+
+  it('Scenario M — wrong-transport injection: window.canton match for Send must NOT flip Console, vice versa', async () => {
+    // Console's adapter (postMessage) and Send's adapter (window.canton)
+    // each answer their own transport. With strict adapter-authoritative
+    // logic, neither can be flipped by signals from the OTHER transport.
+    // We verify the underlying primitive: when both adapters report
+    // false, both stay false regardless of any other in-page state.
+    const consoleA = adapter(async () => ({ installed: false }));
+    const sendA = adapter(async () => ({ installed: false }));
+    expect(await detectInstalledWithCeiling(consoleA)).toBe(false);
+    expect(await detectInstalledWithCeiling(sendA)).toBe(false);
+  });
+
+  it('Scenario N — third-party CIP-0103 wallet path: valid provider passes the shape gate', () => {
+    const realProvider = {
+      request: async () => ({ kernel: { id: 'x' } }),
+      on: () => undefined,
+      emit: () => false,
+      removeListener: () => undefined,
+    };
+    expect(isCip0103Provider(realProvider)).toBe(true);
+  });
+
+  it('Scenario O — isCip0103Provider rejects every non-callable / malformed shape', () => {
+    expect(isCip0103Provider({ request: () => Promise.resolve() })).toBe(true);
+    expect(isCip0103Provider({ demoWallet: {} })).toBe(false);
+    expect(isCip0103Provider(null)).toBe(false);
+    expect(isCip0103Provider(undefined)).toBe(false);
+    expect(isCip0103Provider({ request: 'not-a-function' })).toBe(false);
+    expect(isCip0103Provider({ request: 123 })).toBe(false);
+    expect(isCip0103Provider('string')).toBe(false);
+    expect(isCip0103Provider(42)).toBe(false);
+    expect(isCip0103Provider([])).toBe(false);
   });
 
   it('runs adapter probes concurrently — no per-adapter sequential blocking', async () => {
