@@ -95,6 +95,68 @@ describe('Adapter conformance: capability ↔ method symmetry', () => {
   }
 });
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Detection truthfulness (negative path) — Prompt 7.5 regression suite.
+//
+// The Browser-B bug class (false-positive "Ready" indicator in the picker)
+// surfaces when an adapter's detectInstalled() returns true even though
+// its primary medium — extension / postMessage handshake / window.canton
+// injection — is absent. This block pins the truthful contract: every
+// adapter that has an install state MUST report installed:false when its
+// transport is absent. Adapters that are install-less by design (Loop,
+// Cantor8, Bron) are documented here with skip() rather than tested,
+// because their `installed:true` reflects "no install needed", not a
+// false claim about a missing extension.
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe('Adapter conformance: detection truthfulness (negative path)', () => {
+  it('Console (combined target): installed=false when extension absent', async () => {
+    const adapter = new ConsoleAdapter();
+    // No window.canton, no extension postMessage handshake → must say
+    // not installed. Connect-time QR fallback is unaffected.
+    const result = await adapter.detectInstalled();
+    expect(result.installed).toBe(false);
+  });
+
+  it('Send: installed=false when window.canton injection missing', async () => {
+    // Send adapter requires window.canton + matching providerDetection.
+    // In Node (no window) the early-exit branch returns false; in a
+    // browser without the extension the kernel-id guard returns false.
+    const { SendAdapter } = await import('@partylayer/adapter-send');
+    const adapter = new SendAdapter();
+    const result = await adapter.detectInstalled();
+    expect(result.installed).toBe(false);
+  });
+
+  it('Nightly: installed=false when window.nightly.canton missing', async () => {
+    const adapter = new NightlyAdapter();
+    const result = await adapter.detectInstalled();
+    expect(result.installed).toBe(false);
+  });
+
+  // The next three are documented-as-skipped to make the design intent
+  // explicit. If any of these adapters acquires an install state in the
+  // future, un-skip the corresponding test.
+  it.skip('Loop: install-less by design — QR / popup, no extension to detect', () => {
+    /* Loop is a web/mobile wallet; every browser environment can reach it
+       via QR or popup. detectInstalled returning true reflects "available
+       transport", not a false claim about a missing extension. */
+  });
+
+  it.skip('Cantor8: install-less by design — mobile deep-link, no extension', () => {
+    /* Cantor8 returns installed:true only when the user agent string
+       indicates a mobile device (where the deep-link can be intercepted).
+       Desktop browsers correctly receive false. There is no extension to
+       detect either way. */
+  });
+
+  it.skip('Bron: install-less by design — OAuth-based remote signer', () => {
+    /* Bron is an enterprise remote signer reached via OAuth2 + REST API.
+       There is no client-side install state; reachability is governed by
+       OAuth configuration, which the adapter does not own. */
+  });
+});
+
 // Bron requires OAuth + API config, test separately with inline stub config.
 describe('Adapter conformance: Bron capability ↔ method symmetry', () => {
   it('instantiates with stub config and passes capability symmetry', async () => {
