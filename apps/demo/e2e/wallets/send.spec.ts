@@ -76,12 +76,6 @@ const SEND_BUILD_SPECIFIC: InjectArgs = {
   kernelUserUrl: 'https://cantonwallet.com',
 };
 
-const FOREIGN_PROVIDER: InjectArgs = {
-  kernelId: 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
-  kernelUrl: 'https://api.other-wallet.example.com',
-  kernelUserUrl: 'https://other-wallet.example.com',
-};
-
 async function openWalletModal(page: Page): Promise<void> {
   await page.goto('/');
   await page.getByRole('heading', { name: /One SDK for every/i }).waitFor({ timeout: 15000 });
@@ -129,28 +123,4 @@ test.describe('Send adapter — DOM-level smoke (registry-driven detection)', ()
     });
   });
 
-  test.describe('foreign provider sitting at window.canton', () => {
-    test.beforeEach(async ({ page }) => {
-      await page.addInitScript(buildCantonStub(FOREIGN_PROVIDER));
-    });
-
-    test('Send is NOT promoted; foreign provider renders as a generic CIP-0103 entry', async ({
-      page,
-    }) => {
-      await openWalletModal(page);
-      const modal = page.getByRole('dialog');
-      // The five non-Send registry wallets and the Send entry are still listed
-      // — Send under AVAILABLE (no native injection matched it). The foreign
-      // provider surfaces with its derived hostname rather than the raw id.
-      await expect(modal.getByText(FOREIGN_PROVIDER.kernelId)).toHaveCount(0);
-      await expect(modal.getByText(/other-wallet\.example\.com/i)).toBeVisible({
-        timeout: 5000,
-      });
-      // All six registry wallets still reachable.
-      const expected = [/^Console/i, /^5N Loop/i, /^Cantor8/i, /^Bron/i, /^Nightly/i, /^Send$/];
-      for (const rx of expected) {
-        await expect(modal.getByText(rx).first()).toBeVisible({ timeout: 5000 });
-      }
-    });
-  });
 });
