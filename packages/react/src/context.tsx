@@ -85,16 +85,17 @@ export function PartyLayerProvider({
 
         if (!mounted) return;
 
-        // 1a. Adapter-aware readiness for canonical CIP-0103 wallets.
+        // 1a. Adapter-AUTHORITATIVE readiness for registered CIP-0103
+        //     wallets.
         //
-        //     The Prompt-6 detection model only checked `providerDetection`
-        //     against `window.canton`. That works for Send (which IS the
-        //     window.canton injector) but always reports Console as "not
-        //     installed" because Console uses postMessage, not
-        //     window.canton. The fix: ask each adapter its own
-        //     `detectInstalled()` — every adapter already knows its own
-        //     transport. The 2.5 s timeout per probe protects the picker
-        //     from slow / buggy adapters.
+        //     Each adapter knows its own transport (Console: postMessage;
+        //     Send: window.canton; future wallets: HTTP / deeplink / etc.).
+        //     If we have an adapter registered for a wallet, ITS answer
+        //     is the only one that matters — `providerDetection` cannot
+        //     override it. The pre-7.3 OR fallback let Send's
+        //     window.canton presence (or any stray injection) flip
+        //     Console's row to Ready in browsers without the Console
+        //     extension; this strict path closes that class of bug.
         const cip0103Wallets = registryWallets.filter((w) => isCip0103Native(w));
         const adapterReadiness = await Promise.all(
           cip0103Wallets.map(async (entry) => {
@@ -111,18 +112,23 @@ export function PartyLayerProvider({
           adapterReadiness.filter((r) => r.installed).map((r) => r.walletId),
         );
 
-        // 1b. providerDetection match (unchanged from Prompt 6/7) covers
-        //     wallets whose runtime identity is signalled via window.canton
-        //     — primarily Send, plus any future third-party CIP-0103 wallet
-        //     in the registry whose adapter isn't (yet) registered with
-        //     this client. EITHER signal flips the wallet to "ready".
+        // 1b. providerDetection match — fallback ONLY for entries that
+        //     don't have a registered adapter on this client. Covers
+        //     future third-party CIP-0103 wallets shipped via registry
+        //     entry alone (no SDK release required for them to surface
+        //     in the picker). Doesn't apply to Console / Send / any
+        //     other built-in: their adapters are registered, and the
+        //     adapter-authoritative path above wins.
         const matchedRegistryIds = new Set<string>();
         for (const dp of discovered) {
           if (dp.matchedWallet) matchedRegistryIds.add(String(dp.matchedWallet.walletId));
         }
         const promotedRegistryWallets = registryWallets.map((w) => {
           const id = String(w.walletId);
-          const ready = installedByAdapterIds.has(id) || matchedRegistryIds.has(id);
+          const adapter = client.getAdapter(id);
+          const ready = adapter
+            ? installedByAdapterIds.has(id)
+            : matchedRegistryIds.has(id);
           if (!ready) return w;
           const dp = discovered.find(
             (d) => d.matchedWallet && String(d.matchedWallet.walletId) === id,
