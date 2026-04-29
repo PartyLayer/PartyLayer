@@ -28,7 +28,7 @@ test.describe('PartyLayer Demo Smoke Tests', () => {
     await connectButton.click();
     
     // Check modal is visible
-    await expect(page.getByRole('heading', { name: /Select a Wallet/i })).toBeVisible();
+    await expect(page.getByRole('heading', { name: /Connect Wallet/i })).toBeVisible();
   });
 
   test('registry status indicator is present', async ({ page }) => {
@@ -56,12 +56,12 @@ test.describe('PartyLayer Demo Smoke Tests', () => {
     await page.getByRole('button', { name: /Connect Wallet/i }).first().click();
     
     // Wait for modal to appear
-    const modal = page.locator('text=/Select a Wallet/i');
+    const modal = page.getByRole('dialog');
     await expect(modal).toBeVisible({ timeout: 5000 });
     
     // Check for either wallets or "No wallets" or "Loading" message
     // The modal should show some content
-    const modalContent = page.locator('text=/Loading|No wallets|Console|Loop|Select a Wallet/i');
+    const modalContent = page.locator('text=/Loading|No wallets|Console|Loop|Connect Wallet/i');
     await expect(modalContent.first()).toBeVisible({ timeout: 5000 });
   });
 

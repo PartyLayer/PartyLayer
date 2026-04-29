@@ -86,7 +86,7 @@ async function openWalletModal(page: Page): Promise<void> {
   await page.goto('/');
   await page.getByRole('heading', { name: /One SDK for every/i }).waitFor({ timeout: 15000 });
   await page.getByRole('button', { name: /Connect Wallet/i }).click();
-  await expect(page.getByRole('heading', { name: /Select a Wallet/i })).toBeVisible({
+  await expect(page.getByRole('heading', { name: /Connect Wallet/i })).toBeVisible({
     timeout: 5000,
   });
 }
