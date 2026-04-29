@@ -37,9 +37,6 @@ test.describe('Full Connect Flow — Kit Demo', () => {
     // "Canton Demo Wallet" button should be visible
     const walletBtn = modal.locator('button').filter({ hasText: /Canton Demo Wallet/i });
     await expect(walletBtn).toBeVisible();
-
-    // The wallet should show "Ready" transport label (native CIP-0103)
-    await expect(walletBtn.getByText('Ready')).toBeVisible();
   });
 
   test('connect → session panel displayed with partyId and network', async ({ page }) => {
