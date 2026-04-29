@@ -155,13 +155,32 @@ export class PartyLayerClient {
 
   /**
    * Register a wallet adapter
-   * 
+   *
    * @internal
    * This is used internally by the SDK to register adapters.
    * In production, adapters would be auto-registered via registry.
    */
   registerAdapter(adapter: WalletAdapter): void {
     this.adapters.set(adapter.walletId, adapter);
+  }
+
+  /**
+   * Look up a registered adapter by wallet id.
+   *
+   * Returns the adapter instance when one is registered for the given
+   * `walletId`, or `undefined` otherwise. Intended for UI integrations
+   * that need to call `adapter.detectInstalled()` directly to render a
+   * per-wallet readiness indicator (instead of duplicating
+   * transport-specific install detection logic in the picker). The
+   * returned adapter is the same instance used internally for connect /
+   * sign / submit flows; do not mutate it.
+   *
+   * Accepts both raw string ids and the branded `WalletId` form so
+   * consumers can pass `walletInfo.walletId` or a string literal
+   * interchangeably.
+   */
+  getAdapter(walletId: string | WalletId): WalletAdapter | undefined {
+    return this.adapters.get(walletId as WalletId);
   }
 
   /**
