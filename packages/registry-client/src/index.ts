@@ -15,9 +15,11 @@ export {
   findMatchingWallet,
   findMatchingWalletInfo,
   deriveGenericWalletName,
+  isCip0103Native,
 } from '@partylayer/core';
 export type {
   Cip0103StatusForDetection,
+  Cip0103Support,
   ProviderDetection,
   ProviderMatcher,
   WalletInfo,

@@ -15,6 +15,7 @@
 
 import type {
   CapabilityKey,
+  Cip0103Support,
   NetworkId,
   ProviderDetection,
   WalletInfo,
@@ -100,6 +101,15 @@ export interface RegistryWalletEntry {
    * registry JSON update — no SDK code change required.
    */
   providerDetection?: ProviderDetection;
+  /**
+   * Canonical CIP-0103 support marker. When `cip0103.native === true`
+   * the picker always renders this entry in the "CIP-0103 NATIVE"
+   * section, regardless of install state. The accompanying `evidence`
+   * field is intended to be a public URL that justifies the claim
+   * (npm package readme, blog post, etc.) and may be surfaced by UIs as
+   * a tooltip / "verified" link.
+   */
+  cip0103?: Cip0103Support;
 }
 
 /**
@@ -302,6 +312,8 @@ export function registryEntryToWalletInfo(
     // CIP-0103 runtime-detection rules pass through verbatim when present;
     // see WalletInfo.providerDetection for how the picker uses them.
     ...(entry.providerDetection ? { providerDetection: entry.providerDetection } : {}),
+    // Canonical CIP-0103 support marker.
+    ...(entry.cip0103 ? { cip0103: entry.cip0103 } : {}),
   };
 }
 
