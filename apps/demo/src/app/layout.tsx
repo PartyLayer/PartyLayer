@@ -129,13 +129,25 @@ export default function RootLayout({
           dangerouslySetInnerHTML={{ __html: JSON.stringify(softwareJsonLd) }}
         />
         {/*
-          CIP-0103 test wallet — injected before React hydrates.
-          Simulates a real wallet extension injecting at window.canton.*
+          CIP-0103 test wallet — injected BEFORE React hydrates so it
+          mimics a real browser extension's content-script timing.
+          Used by:
+            • E2E suite (apps/demo/e2e/helpers.ts → "Canton Demo Wallet")
+            • Local dev visitors who don't have a real Canton extension
+              installed and want to exercise the connect flow
+
+          DEV-ONLY: the script is omitted from production builds so we
+          never inject a synthetic wallet into real users' window.canton
+          namespace. Production visitors see ONLY their installed
+          extensions (or none, with proper Install CTAs). Verified in
+          packages/react/src/native-readiness.test.ts (scenario K).
         */}
-        <Script
-          src="/mock-cip0103-wallet.js"
-          strategy="beforeInteractive"
-        />
+        {process.env.NODE_ENV !== 'production' && (
+          <Script
+            src="/mock-cip0103-wallet.js"
+            strategy="beforeInteractive"
+          />
+        )}
         {children}
       </body>
     </html>
