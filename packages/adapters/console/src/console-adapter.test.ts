@@ -268,13 +268,17 @@ describe('ConsoleAdapter', () => {
     );
 
     it.skipIf(!isBrowser)(
-      'remote: should always return installed=true',
+      'remote: should return installed=false (no local install to detect)',
       async () => {
+        // Detection contract: detectInstalled() answers "is the local
+        // install present?", not "is the wallet reachable?". 'remote'
+        // target has no local install — the connect() flow handles QR /
+        // deep-link reachability when invoked.
         const adapter = new ConsoleAdapter({ target: 'remote' });
         const result = await adapter.detectInstalled();
-        expect(result.installed).toBe(true);
-        expect(result.reason).toContain('QR code');
-        // Should NOT call checkExtensionAvailability
+        expect(result.installed).toBe(false);
+        expect(result.reason).toMatch(/no local install|connect/i);
+        // remote target shouldn't probe the extension at detection time
         expect(
           mockConsoleWallet.checkExtensionAvailability,
         ).not.toHaveBeenCalled();
@@ -282,16 +286,20 @@ describe('ConsoleAdapter', () => {
     );
 
     it.skipIf(!isBrowser)(
-      'combined: should return installed=true even without extension',
+      'combined: should return installed=false when extension is absent',
       async () => {
+        // Truthful detection: combined mode's primary medium is the
+        // extension. When absent, detectInstalled reports false even
+        // though connect() can fall back to QR. Anchors the green-dot /
+        // grey-dot UX semantics in the picker.
         mockConsoleWallet.checkExtensionAvailability.mockResolvedValue({
           status: 'notInstalled',
         });
 
         const adapter = new ConsoleAdapter({ target: 'combined' });
         const result = await adapter.detectInstalled();
-        expect(result.installed).toBe(true);
-        expect(result.reason).toContain('QR code');
+        expect(result.installed).toBe(false);
+        expect(result.reason).toMatch(/extension/i);
       },
     );
 
