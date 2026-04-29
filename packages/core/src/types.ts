@@ -107,6 +107,27 @@ export interface ProviderDetection {
 }
 
 /**
+ * Canonical CIP-0103 support marker.
+ *
+ * When `native: true`, the wallet is treated as a first-class CIP-0103
+ * provider in the picker — it always appears in the "CIP-0103 NATIVE"
+ * section regardless of install state, with a per-wallet readiness
+ * indicator that reflects whether the wallet's `providerDetection` rules
+ * matched the currently-injected `window.canton` provider.
+ *
+ * The field is optional; wallets that don't claim CIP-0103 support omit
+ * it and continue to appear in the "AVAILABLE" section as before.
+ */
+export interface Cip0103Support {
+  /** True if this wallet has confirmed CIP-0103 dApp API support. */
+  native: boolean;
+  /** Public evidence link (npm package, blog post, official statement). */
+  evidence?: string;
+  /** ISO date when CIP-0103 support was confirmed (informational). */
+  since?: string;
+}
+
+/**
  * Wallet information from registry
  */
 export interface WalletInfo {
@@ -148,6 +169,21 @@ export interface WalletInfo {
    * Cantor8 deeplink) leave this unset.
    */
   providerDetection?: ProviderDetection;
+  /**
+   * Canonical CIP-0103 support marker. When set with `native: true`, the
+   * picker always lists the wallet in the "CIP-0103 NATIVE" section
+   * regardless of install state.
+   */
+  cip0103?: Cip0103Support;
+}
+
+/**
+ * Returns true if the wallet has been canonically marked as CIP-0103
+ * native via its registry entry. The check is structural so it works on
+ * both raw `RegistryWalletEntry` shapes and converted `WalletInfo`.
+ */
+export function isCip0103Native(entry: { cip0103?: Cip0103Support }): boolean {
+  return entry?.cip0103?.native === true;
 }
 
 /**
