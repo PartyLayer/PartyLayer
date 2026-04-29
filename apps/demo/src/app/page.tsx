@@ -43,11 +43,11 @@ const NPM_URL = 'https://www.npmjs.com/package/@partylayer/sdk';
 
 const wallets = [
   { id: 'console', name: 'Console Wallet', desc: 'Official Console Wallet for Canton Network', transport: 'Extension + Mobile', logo: '/wallets/console.png' },
+  { id: 'send', name: 'Send', desc: 'Passkey-based Canton wallet (mainnet, beta)', transport: 'Injected (window.canton)', logo: '/wallets/send.svg' },
   { id: 'loop', name: '5N Loop', desc: '5N Loop Wallet for Canton Network', transport: 'QR Code / Popup', logo: '/wallets/loop.svg' },
   { id: 'cantor8', name: 'Cantor8 (C8)', desc: 'Cantor8 Wallet for Canton Network', transport: 'Deep Link', logo: '/wallets/cantor8.png' },
   { id: 'nightly', name: 'Nightly', desc: 'Multichain wallet with native Canton support', transport: 'Injected', logo: '/wallets/nightly.svg' },
   { id: 'bron', name: 'Bron', desc: 'Enterprise wallet for Canton Network', transport: 'OAuth2 / API', logo: '/wallets/bron.png' },
-  { id: 'send', name: 'Send', desc: 'Passkey-based Canton wallet (mainnet, beta)', transport: 'Injected (window.canton)', logo: '/wallets/send.svg' },
 ];
 
 /* ─── Global Styles (keyframes for pulse animation) ───────────────────── */
@@ -1133,7 +1133,7 @@ const proofItems = [
       </svg>
     ),
     title: 'Multi-Wallet',
-    description: 'Console, Loop, Cantor8, Nightly, Bron — one integration for all.',
+    description: 'Console, Send, Loop, Cantor8, Nightly, Bron — one integration for all.',
   },
   {
     icon: (
