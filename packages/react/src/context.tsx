@@ -11,13 +11,14 @@ import type {
   Session,
   WalletInfo,
 } from '@partylayer/sdk';
-import { discoverInjectedProviders } from '@partylayer/sdk';
+import { discoverInjectedProviders, isCip0103Native } from '@partylayer/sdk';
 import {
   createNativeAdapter,
   createSyntheticWalletInfo,
   enrichProviderInfo,
   promoteRegistryToNative,
 } from './native-cip0103-adapter';
+import { detectInstalledWithCeiling } from './native-readiness';
 
 interface PartyLayerContextValue {
   client: PartyLayerClient | null;
@@ -84,20 +85,47 @@ export function PartyLayerProvider({
 
         if (!mounted) return;
 
-        // 1. Promote each registry entry whose providerDetection matched
-        //    a discovered provider into the "CIP-0103 Native" section.
-        //    Branding stays from the registry; the wallet's REAL adapter
-        //    (e.g. SendAdapter, already registered via getBuiltinAdapters)
-        //    keeps handling connect / sign / submit — preserving wallet-
-        //    specific guards like the kernel.id check and template-id hint.
+        // 1a. Adapter-aware readiness for canonical CIP-0103 wallets.
+        //
+        //     The Prompt-6 detection model only checked `providerDetection`
+        //     against `window.canton`. That works for Send (which IS the
+        //     window.canton injector) but always reports Console as "not
+        //     installed" because Console uses postMessage, not
+        //     window.canton. The fix: ask each adapter its own
+        //     `detectInstalled()` — every adapter already knows its own
+        //     transport. The 2.5 s timeout per probe protects the picker
+        //     from slow / buggy adapters.
+        const cip0103Wallets = registryWallets.filter((w) => isCip0103Native(w));
+        const adapterReadiness = await Promise.all(
+          cip0103Wallets.map(async (entry) => {
+            const adapter = client.getAdapter(String(entry.walletId));
+            if (!adapter) return { walletId: String(entry.walletId), installed: false };
+            const installed = await detectInstalledWithCeiling(adapter);
+            return { walletId: String(entry.walletId), installed };
+          }),
+        );
+
+        if (!mounted) return;
+
+        const installedByAdapterIds = new Set(
+          adapterReadiness.filter((r) => r.installed).map((r) => r.walletId),
+        );
+
+        // 1b. providerDetection match (unchanged from Prompt 6/7) covers
+        //     wallets whose runtime identity is signalled via window.canton
+        //     — primarily Send, plus any future third-party CIP-0103 wallet
+        //     in the registry whose adapter isn't (yet) registered with
+        //     this client. EITHER signal flips the wallet to "ready".
         const matchedRegistryIds = new Set<string>();
         for (const dp of discovered) {
           if (dp.matchedWallet) matchedRegistryIds.add(String(dp.matchedWallet.walletId));
         }
         const promotedRegistryWallets = registryWallets.map((w) => {
-          if (!matchedRegistryIds.has(String(w.walletId))) return w;
+          const id = String(w.walletId);
+          const ready = installedByAdapterIds.has(id) || matchedRegistryIds.has(id);
+          if (!ready) return w;
           const dp = discovered.find(
-            (d) => d.matchedWallet && String(d.matchedWallet.walletId) === String(w.walletId),
+            (d) => d.matchedWallet && String(d.matchedWallet.walletId) === id,
           );
           return promoteRegistryToNative(w, dp?.status);
         });
