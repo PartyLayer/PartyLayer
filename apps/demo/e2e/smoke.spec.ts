@@ -75,8 +75,10 @@ test.describe('PartyLayer Demo Smoke Tests', () => {
     await page.waitForTimeout(1000);
     
     // Try to click on a wallet (if any are shown)
-    // Since wallets aren't installed in CI, this should show an error
-    const walletButtons = page.locator('button').filter({ hasText: /Console|Loop/i });
+    // Since wallets aren't installed in CI, this should show an error.
+    // Scope to the dialog — the home page also has wallet-name cards behind
+    // the modal overlay, and clicking one would hit the overlay's pointer trap.
+    const walletButtons = page.getByRole('dialog').locator('button').filter({ hasText: /Console|Loop/i });
     const count = await walletButtons.count();
     
     if (count > 0) {
