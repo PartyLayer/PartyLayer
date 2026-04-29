@@ -87,9 +87,11 @@ export {
   findMatchingWallet,
   findMatchingWalletInfo,
   deriveGenericWalletName,
+  isCip0103Native,
 } from '@partylayer/registry-client';
 export type {
   Cip0103StatusForDetection,
+  Cip0103Support,
   ProviderDetection,
   ProviderMatcher,
 } from '@partylayer/registry-client';
