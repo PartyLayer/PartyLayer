@@ -32,7 +32,12 @@
         "windowProperty": "consoleWallet",
         "deeplink": "https://consolewallet.io/wallet-connect"
       },
-      "sdkVersion": ">=0.2.5"
+      "sdkVersion": ">=0.2.5",
+      "cip0103": {
+        "native": true,
+        "evidence": "https://www.npmjs.com/package/@console-wallet/dapp-sdk",
+        "since": "2025-11-01"
+      }
     },
     {
       "id": "loop",
@@ -158,6 +163,11 @@
           { "field": "kernel.userUrl", "match": "domain", "value": "cantonwallet.com" },
           { "field": "kernel.id", "match": "exact", "values": ["ldmohiccoioolenadmogclhoklmanpgi"] }
         ]
+      },
+      "cip0103": {
+        "native": true,
+        "evidence": "https://sigilry.org",
+        "since": "2026-04-01"
       }
     }
   ]
