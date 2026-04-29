@@ -156,30 +156,33 @@ export class ConsoleAdapter implements WalletAdapter {
       return { installed: false, reason: 'Browser environment required' };
     }
 
+    // 'local' target: extension-only — answer matches the postMessage probe.
     if (this.target === 'local') {
       return this.detectExtension();
     }
 
-    // For 'remote' and 'combined', the wallet is always "available" because
-    // the SDK can show a QR code for mobile connection.
+    // 'remote' target: QR / deep-link only — there is no local install to
+    // detect. Report `installed: false` so the picker accurately reflects
+    // "extension not present"; connect() handles the QR / deep-link flow
+    // when invoked. The contract is: detectInstalled() answers "is the
+    // local install present?", not "is the wallet reachable somehow?".
     if (this.target === 'remote') {
       return {
-        installed: true,
-        reason: 'Console Wallet available via QR code / deep link',
+        installed: false,
+        reason:
+          'Console Wallet (remote target): no local install — connect() opens QR / deep link flow',
       };
     }
 
-    // Combined: check extension for informational purposes, but always available
-    const extensionResult = await this.detectExtension();
-    if (extensionResult.installed) {
-      return extensionResult;
-    }
-
-    return {
-      installed: true,
-      reason:
-        'Console Wallet available via QR code / deep link (extension not detected)',
-    };
+    // 'combined' target: extension is the primary medium. If the extension
+    // is present, that's an unambiguous "installed: true". If absent, we
+    // report `false` even though the QR fallback would still work at
+    // connect() time. This keeps the green-dot/grey-dot UX truthful for
+    // users who read "Ready" as "extension installed". The fallback flow
+    // remains intact: connect() in combined mode falls through to remote
+    // (QR) when checkExtensionAvailability() reports notInstalled — see
+    // the connect() implementation below.
+    return this.detectExtension();
   }
 
   /**
