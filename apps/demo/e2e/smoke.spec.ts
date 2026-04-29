@@ -16,7 +16,7 @@ test.describe('PartyLayer Demo Smoke Tests', () => {
     await page.goto('/');
     
     // Check main heading
-    await expect(page.getByRole('heading', { name: /PartyLayer Demo/i })).toBeVisible();
+    await expect(page.getByRole('heading', { name: /One SDK for every/i })).toBeVisible();
   });
 
   test('connect modal opens', async ({ page }) => {
@@ -90,10 +90,10 @@ test.describe('PartyLayer Demo Smoke Tests', () => {
       await page.waitForTimeout(2000);
       
       // Verify page is still functional
-      await expect(page.getByRole('heading', { name: /PartyLayer Demo/i })).toBeVisible();
+      await expect(page.getByRole('heading', { name: /One SDK for every/i })).toBeVisible();
     } else {
       // No wallets available - this is also a valid state
-      await expect(page.getByRole('heading', { name: /PartyLayer Demo/i })).toBeVisible();
+      await expect(page.getByRole('heading', { name: /One SDK for every/i })).toBeVisible();
     }
   });
 
