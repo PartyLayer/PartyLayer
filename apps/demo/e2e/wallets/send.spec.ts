@@ -85,7 +85,7 @@ const FOREIGN_PROVIDER: InjectArgs = {
 async function openWalletModal(page: Page): Promise<void> {
   await page.goto('/');
   await page.getByRole('heading', { name: /One SDK for every/i }).waitFor({ timeout: 15000 });
-  await page.getByRole('button', { name: /Connect Wallet/i }).click();
+  await page.getByRole('button', { name: /Connect Wallet/i }).first().click();
   await expect(page.getByRole('dialog').getByRole('heading', { name: /Connect Wallet/i })).toBeVisible({
     timeout: 5000,
   });
