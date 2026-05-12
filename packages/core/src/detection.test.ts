@@ -28,9 +28,15 @@ import {
   type Cip0103StatusForDetection,
 } from './detection';
 
+// Synthetic, clearly non-real placeholder kept in the Chrome-extension
+// character class (a-p, length 32) so the matcher exercises the same
+// code path as a real kernel.id without exposing any real wallet's
+// identifier in generic detection tests.
+const TEST_KERNEL_ID = 'pppppppppppppppppppppppppppppppp';
+
 const sendStatus: Cip0103StatusForDetection = {
   kernel: {
-    id: 'ldmohiccoioolenadmogclhoklmanpgi',
+    id: TEST_KERNEL_ID,
     url: 'https://api-mainnet.cantonwallet.com',
     userUrl: 'https://cantonwallet.com',
     clientType: 'browser',
@@ -60,7 +66,7 @@ const sendDetection: ProviderDetection = {
   matchers: [
     { field: 'kernel.url', match: 'domain', value: 'cantonwallet.com' },
     { field: 'kernel.userUrl', match: 'domain', value: 'cantonwallet.com' },
-    { field: 'kernel.id', match: 'exact', values: ['ldmohiccoioolenadmogclhoklmanpgi'] },
+    { field: 'kernel.id', match: 'exact', values: [TEST_KERNEL_ID] },
   ],
 };
 
@@ -131,14 +137,14 @@ describe('matchesProviderDetection — exact matcher', () => {
   }
 
   it('matches a single value', () => {
-    expect(matchesProviderDetection(sendStatus, withExact(['ldmohiccoioolenadmogclhoklmanpgi']))).toBe(
+    expect(matchesProviderDetection(sendStatus, withExact([TEST_KERNEL_ID]))).toBe(
       true,
     );
   });
 
   it('matches when the field value is in a multi-value list', () => {
     expect(
-      matchesProviderDetection(sendStatus, withExact(['x', 'ldmohiccoioolenadmogclhoklmanpgi', 'y'])),
+      matchesProviderDetection(sendStatus, withExact(['x', TEST_KERNEL_ID, 'y'])),
     ).toBe(true);
   });
 
@@ -148,7 +154,7 @@ describe('matchesProviderDetection — exact matcher', () => {
 
   it('is case-sensitive (matches the JSON-RPC contract semantics)', () => {
     expect(
-      matchesProviderDetection(sendStatus, withExact(['LDMOHICCOIOOLENADMOGCLHOKLMANPGI'])),
+      matchesProviderDetection(sendStatus, withExact([TEST_KERNEL_ID.toUpperCase()])),
     ).toBe(false);
   });
 });
