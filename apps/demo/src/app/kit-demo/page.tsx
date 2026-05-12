@@ -89,14 +89,16 @@ const WALLET_LOGOS: Record<string, string> = {
   cantor8: '/wallets/cantor8.png',
   bron: '/wallets/bron.png',
   nightly: '/wallets/nightly.svg',
+  send: '/wallets/send.svg',
 };
 
-function getWalletLogo(walletId: string): string | null {
+function getWalletLogo(walletId: string, registryIconUrl?: string): string | null {
   const id = walletId.replace(/^cip0103:/, '');
   if (WALLET_LOGOS[id]) return WALLET_LOGOS[id];
   for (const [key, url] of Object.entries(WALLET_LOGOS)) {
     if (id.toLowerCase().includes(key)) return url;
   }
+  if (registryIconUrl) return registryIconUrl;
   return null;
 }
 
@@ -209,6 +211,7 @@ function DemoContent() {
                         name={w.name}
                         walletId={w.walletId}
                         capabilities={w.capabilities}
+                        iconUrl={w.icons?.sm}
                         isNative
                       />
                     ))}
@@ -227,6 +230,7 @@ function DemoContent() {
                         name={w.name}
                         walletId={w.walletId}
                         capabilities={w.capabilities}
+                        iconUrl={w.icons?.sm}
                         website={w.website}
                       />
                     ))}
@@ -476,16 +480,18 @@ function WalletCard({
   capabilities,
   isNative,
   website,
+  iconUrl,
 }: {
   name: string;
   walletId: string;
   capabilities: string[];
   isNative?: boolean;
   website?: string;
+  iconUrl?: string;
 }) {
   const c = useTokens();
   const shadow = c.shadow;
-  const logo = getWalletLogo(walletId);
+  const logo = getWalletLogo(walletId, iconUrl);
 
   return (
     <div style={{
