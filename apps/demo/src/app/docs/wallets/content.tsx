@@ -35,7 +35,7 @@ export default function WalletsPage() {
               { name: 'Cantor8 (C8)', transport: 'Deep Link', detection: 'Browser extension', auto: 'Yes' },
               { name: 'Nightly', transport: 'Injected', detection: 'window.nightly.canton', auto: 'Yes' },
               { name: 'Bron', transport: 'OAuth', detection: 'Enterprise config', auto: 'No' },
-              { name: 'Send (beta)', transport: 'Injected', detection: 'window.canton (kernel.id guard)', auto: 'Yes' },
+              { name: 'Send', transport: 'Injected', detection: 'window.canton (kernel.id guard)', auto: 'Yes' },
             ].map(w => (
               <tr key={w.name} style={{ borderBottom: '1px solid rgba(15,23,42,0.10)' }}>
                 <td style={{ padding: '10px 14px', fontWeight: 500, color: '#0B0F1A' }}>{w.name}</td>
@@ -79,7 +79,7 @@ export default function WalletsPage() {
               { name: 'Cantor8', connect: true, signMessage: true, signTransaction: true, submitTransaction: false, ledgerApi: 'none', restore: true },
               { name: 'Nightly', connect: true, signMessage: true, signTransaction: false, submitTransaction: true, ledgerApi: 'full', restore: true },
               { name: 'Bron', connect: true, signMessage: true, signTransaction: true, submitTransaction: false, ledgerApi: 'full', restore: true },
-              { name: 'Send (beta)', connect: true, signMessage: true, signTransaction: false, submitTransaction: true, ledgerApi: 'full', restore: true },
+              { name: 'Send', connect: true, signMessage: true, signTransaction: false, submitTransaction: true, ledgerApi: 'full', restore: true },
             ].map(w => (
               <tr key={w.name} style={{ borderBottom: '1px solid rgba(15,23,42,0.10)' }}>
                 <td style={{ padding: '10px 14px', fontWeight: 500, color: '#0B0F1A' }}>{w.name}</td>
