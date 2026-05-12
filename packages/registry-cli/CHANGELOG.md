@@ -1,5 +1,12 @@
 # @cantonconnect/registry-cli
 
+## 0.1.8
+
+### Patch Changes
+
+- Updated dependencies [7770870]
+  - @partylayer/registry-client@0.3.0
+
 ## 0.1.7
 
 ### Patch Changes

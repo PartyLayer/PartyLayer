@@ -1,6 +1,6 @@
 {
   "name": "wallet-balance-loop-example",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "private": true,
   "type": "module",
   "scripts": {
@@ -9,8 +9,8 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@partylayer/sdk": "^0.3.4",
-    "@partylayer/react": "^0.4.3",
+    "@partylayer/sdk": "^0.4.0",
+    "@partylayer/react": "^0.4.4",
     "react": "^18.2.0",
     "react-dom": "^18.2.0"
   },
