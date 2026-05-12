@@ -107,7 +107,7 @@ export class SendAdapter implements WalletAdapter {
     if (!this.provider.isPotentiallyAvailable()) {
       return {
         installed: false,
-        reason: `Send Canton Wallet not detected. Install from ${SEND_INSTALL_URL}`,
+        reason: `Send Canton Wallet not detected. Visit ${SEND_INSTALL_URL} for installation instructions`,
       };
     }
     const installed = await this.provider.isInstalled();

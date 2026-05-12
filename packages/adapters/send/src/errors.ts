@@ -54,7 +54,7 @@ export class SendNotInstalledError extends WalletNotInstalledError {
   constructor(reason?: string) {
     super(
       WALLET_ID,
-      reason ?? `Send Canton Wallet is not detected. Install from ${SEND_INSTALL_URL}`,
+      reason ?? `Send Canton Wallet is not detected. Visit ${SEND_INSTALL_URL} for installation instructions`,
     );
     this.name = 'SendNotInstalledError';
     (this as { details?: Record<string, unknown> }).details = {

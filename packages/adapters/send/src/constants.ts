@@ -39,8 +39,7 @@ export const SEND_BUILTIN_DETECTION: ProviderDetection = {
  */
 export const SEND_SUPPORTED_NETWORKS = ['canton:mainnet'] as const;
 
-export const SEND_INSTALL_URL =
-  'https://chromewebstore.google.com/detail/send/ldmohiccoioolenadmogclhoklmanpgi';
+export const SEND_INSTALL_URL = 'https://sigilry.org';
 
 export const SEND_HOMEPAGE = 'https://cantonwallet.com';
 
