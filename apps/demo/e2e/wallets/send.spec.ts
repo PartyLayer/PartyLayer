@@ -1,4 +1,5 @@
 import { test, expect, type Page } from '@playwright/test';
+import { SEND_KERNEL_ID } from '@partylayer/adapter-send';
 
 /**
  * DOM-level smoke tests for the Send wallet adapter — registry-driven
@@ -22,7 +23,6 @@ import { test, expect, type Page } from '@playwright/test';
  * adapter's vitest suite + manual E2E.
  */
 
-const SEND_KERNEL_ID = 'ldmohiccoioolenadmogclhoklmanpgi';
 const BUILD_SPECIFIC_KERNEL_ID = 'lpnfhpbpmlobjlgkdmnjieeihjmihhjd';
 
 interface InjectArgs {
@@ -91,13 +91,14 @@ test.describe('Send adapter — DOM-level smoke (registry-driven detection)', ()
       await page.addInitScript(buildCantonStub(SEND_CANONICAL));
     });
 
-    test('Send appears in picker by name (NOT raw kernel.id) with Beta badge', async ({ page }) => {
+    test('Send appears in picker by name (NOT raw kernel.id) and is not flagged Beta', async ({ page }) => {
       await openWalletModal(page);
       const modal = page.getByRole('dialog');
       await expect(modal.getByText(/^Send$/)).toBeVisible({ timeout: 5000 });
       // The pre-Prompt-6 bug rendered the raw extension id — verify it does NOT appear.
       await expect(modal.getByText(SEND_KERNEL_ID)).toHaveCount(0);
-      await expect(modal.getByText('Beta', { exact: true }).first()).toBeVisible();
+      // Stable release: the Beta badge must NOT render for Send anymore.
+      await expect(modal.getByText('Beta', { exact: true })).toHaveCount(0);
     });
 
     test('all six wallets still visible in picker', async ({ page }) => {
