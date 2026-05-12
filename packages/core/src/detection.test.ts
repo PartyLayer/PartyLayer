@@ -344,3 +344,121 @@ describe('deriveGenericWalletName', () => {
     );
   });
 });
+
+// ─────────────────────────────────────────────────────────────────────────────
+// readField — generalized field paths
+//
+// The detection layer was historically limited to `kernel.*` paths. Real
+// wallets (notably Send) inject CIP-103 providers whose status response uses
+// other top-level keys, e.g. `provider.id`. These cases pin the generalized
+// behavior and the edge cases around it. Parity with the previous kernel-only
+// implementation is enforced separately in `readField-parity.test.ts`.
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe('readField — generalized field paths (via matchesProviderDetection)', () => {
+  it('matches kernel.id (legacy path, regression check)', () => {
+    const status = { kernel: { id: 'abc123' } };
+    const detection: ProviderDetection = {
+      transport: 'window.canton',
+      matchers: [{ field: 'kernel.id', match: 'exact', values: ['abc123'] }],
+    };
+    expect(matchesProviderDetection(status, detection)).toBe(true);
+  });
+
+  it('matches kernel.url with domain matcher (legacy path)', () => {
+    const status = { kernel: { url: 'https://app.cantonwallet.com/x' } };
+    const detection: ProviderDetection = {
+      transport: 'window.canton',
+      matchers: [{ field: 'kernel.url', match: 'domain', value: 'cantonwallet.com' }],
+    };
+    expect(matchesProviderDetection(status, detection)).toBe(true);
+  });
+
+  it('matches provider.id (new path Send uses)', () => {
+    const status = {
+      provider: { id: 'lpnfhpbpmlobjlgkdmnjieeihjmihhjd' },
+    } as unknown as Parameters<typeof matchesProviderDetection>[0];
+    const detection: ProviderDetection = {
+      transport: 'window.canton',
+      matchers: [
+        {
+          field: 'provider.id',
+          match: 'exact',
+          values: ['lpnfhpbpmlobjlgkdmnjieeihjmihhjd'],
+        },
+      ],
+    };
+    expect(matchesProviderDetection(status, detection)).toBe(true);
+  });
+
+  it('does not match when top-level object is missing', () => {
+    const status = { connection: { isConnected: false } } as unknown as Parameters<
+      typeof matchesProviderDetection
+    >[0];
+    const detection: ProviderDetection = {
+      transport: 'window.canton',
+      matchers: [{ field: 'provider.id', match: 'exact', values: ['abc'] }],
+    };
+    expect(matchesProviderDetection(status, detection)).toBe(false);
+  });
+
+  it('does not match when top-level value is not an object', () => {
+    const status = { provider: 'not-an-object' } as unknown as Parameters<
+      typeof matchesProviderDetection
+    >[0];
+    const detection: ProviderDetection = {
+      transport: 'window.canton',
+      matchers: [{ field: 'provider.id', match: 'exact', values: ['x'] }],
+    };
+    expect(matchesProviderDetection(status, detection)).toBe(false);
+  });
+
+  it('does not match when top-level value is null', () => {
+    const status = { kernel: null } as unknown as Parameters<
+      typeof matchesProviderDetection
+    >[0];
+    const detection: ProviderDetection = {
+      transport: 'window.canton',
+      matchers: [{ field: 'kernel.id', match: 'exact', values: ['x'] }],
+    };
+    expect(matchesProviderDetection(status, detection)).toBe(false);
+  });
+
+  it('does not match when nested value is not a string', () => {
+    const status = { provider: { id: 12345 } } as unknown as Parameters<
+      typeof matchesProviderDetection
+    >[0];
+    const detection: ProviderDetection = {
+      transport: 'window.canton',
+      matchers: [{ field: 'provider.id', match: 'exact', values: ['12345'] }],
+    };
+    expect(matchesProviderDetection(status, detection)).toBe(false);
+  });
+
+  it('handles a Send-shaped real-world status', () => {
+    const status = {
+      connection: { isConnected: false, reason: "Not added to extension's whitelist" },
+      provider: {
+        id: 'lpnfhpbpmlobjlgkdmnjieeihjmihhjd',
+        version: '2.1.7',
+        providerType: 'browser',
+      },
+    } as unknown as Parameters<typeof matchesProviderDetection>[0];
+    const detection: ProviderDetection = {
+      transport: 'window.canton',
+      matchers: [
+        {
+          field: 'kernel.id',
+          match: 'exact',
+          values: ['ldmohiccoioolenadmogclhoklmanpgi'],
+        },
+        {
+          field: 'provider.id',
+          match: 'exact',
+          values: ['lpnfhpbpmlobjlgkdmnjieeihjmihhjd'],
+        },
+      ],
+    };
+    expect(matchesProviderDetection(status, detection)).toBe(true);
+  });
+});

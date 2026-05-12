@@ -46,7 +46,12 @@ import {
   rpcError,
   uninstallMockCanton,
 } from './__mocks__/window-canton';
-import { SEND_BUILTIN_DETECTION, SEND_KERNEL_ID, SEND_SIGNING_METHOD } from './constants';
+import {
+  SEND_BUILTIN_DETECTION,
+  SEND_KERNEL_ID,
+  SEND_KNOWN_EXTENSION_IDS,
+  SEND_SIGNING_METHOD,
+} from './constants';
 import {
   SendAuthTimeoutError,
   SendKernelMismatchError,
@@ -221,9 +226,10 @@ describe('SendAdapter: provider-detection guard', () => {
     // production "not installed" surprise.
     expect(SEND_BUILTIN_DETECTION.transport).toBe('window.canton');
     expect(SEND_BUILTIN_DETECTION.matchers).toEqual([
+      { field: 'provider.id', match: 'exact', values: [...SEND_KNOWN_EXTENSION_IDS] },
       { field: 'kernel.url', match: 'domain', value: 'cantonwallet.com' },
       { field: 'kernel.userUrl', match: 'domain', value: 'cantonwallet.com' },
-      { field: 'kernel.id', match: 'exact', values: [SEND_KERNEL_ID] },
+      { field: 'kernel.id', match: 'exact', values: [...SEND_KNOWN_EXTENSION_IDS] },
     ]);
   });
 

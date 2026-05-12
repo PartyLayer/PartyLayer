@@ -61,17 +61,38 @@ function matchesSingle(status: Cip0103StatusForDetection, matcher: ProviderMatch
   }
 }
 
+/**
+ * Read a dot-separated field path from the wallet status object.
+ *
+ * Historically this only supported `kernel.*` paths because that's what
+ * CIP-103's status response shape was assumed to contain. Real-world
+ * wallets (notably Send) inject their CIP-103 provider with status
+ * payloads that nest provider info under different top-level keys
+ * (e.g., `provider.*`). This generalized form reads ANY top-level
+ * object on `status`.
+ *
+ * Behavior is identical to the previous `kernel.*`-only implementation
+ * for every `kernel.*` input: same return values, same undefined cases.
+ * The change is purely additive — it permits new top-level keys without
+ * altering existing path resolution.
+ *
+ * Supports two-segment paths only (`root.key`). Deeper nesting is
+ * intentionally not supported; if a wallet uses deeper paths, the
+ * matcher schema would need extension first (separate change).
+ */
 function readField(
   status: Cip0103StatusForDetection,
   field: ProviderMatcher['field'],
-): unknown {
-  // Only one nesting level today: `kernel.<key>`.
+): string | undefined {
+  if (!status || typeof status !== 'object') return undefined;
   const dot = field.indexOf('.');
   if (dot < 0) return undefined;
   const root = field.slice(0, dot);
   const key = field.slice(dot + 1);
-  if (root !== 'kernel' || !status.kernel) return undefined;
-  return (status.kernel as Record<string, unknown>)[key];
+  const subject = (status as unknown as Record<string, unknown>)[root];
+  if (!subject || typeof subject !== 'object') return undefined;
+  const value = (subject as Record<string, unknown>)[key];
+  return typeof value === 'string' ? value : undefined;
 }
 
 /**

@@ -1,5 +1,16 @@
 # @partylayer/adapter-send
 
+## 1.0.2
+
+### Patch Changes
+
+- Add production Send Canton wallet extension ID (`lpnfhpbpmlobjlgkdmnjieeihjmihhjd`) and the `status.provider.id` matcher path to the built-in detection rules. The previous detection (kernel-based matchers + legacy Chrome Web Store listing ID) is retained as a defensive fallback. Fixes the "Send not found" error in dApp connect modals when the Send extension is installed.
+
+  Adds `SEND_KNOWN_EXTENSION_IDS`, `SEND_PRODUCTION_EXTENSION_ID`, and `SEND_LEGACY_EXTENSION_ID` named exports. `SEND_KERNEL_ID` retained as a `@deprecated` alias for source-compat.
+
+- Updated dependencies
+  - @partylayer/core@0.3.1
+
 ## 1.0.1
 
 ### Patch Changes
