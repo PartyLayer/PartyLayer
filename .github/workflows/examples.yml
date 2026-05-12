@@ -1,0 +1,50 @@
+name: Examples
+
+# Runs example and app builds against the current state of @partylayer/*
+# on npm. Decoupled from ci.yml so that PR merges are not blocked by
+# example builds reproducing transient publish-state issues (e.g., during
+# a recovery wave). Surfaces breakage via scheduled runs.
+
+on:
+  workflow_dispatch:
+  schedule:
+    # Daily at 06:00 UTC. Enough to catch regressions within a day of any
+    # publish, without spending many CI minutes.
+    - cron: '0 6 * * *'
+
+jobs:
+  build-examples:
+    name: Build example consumers
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        # Version is read from the root package.json `packageManager` field.
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build all workspace targets including examples
+        # Unlike ci.yml (which scopes to @partylayer/* to stay green during
+        # recovery waves), this workflow builds everything — examples and
+        # apps included — so that broken consumer-side resolution surfaces.
+        run: pnpm -r build
+
+      - name: Summary
+        if: always()
+        run: |
+          echo "Examples build status: ${{ job.status }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "This workflow validates that example consumers (e.g. wallet-balance-loop)" >> $GITHUB_STEP_SUMMARY
+          echo "can build against the published @partylayer/* versions they reference." >> $GITHUB_STEP_SUMMARY
+          echo "A failure here typically means either:" >> $GITHUB_STEP_SUMMARY
+          echo "  1. A published @partylayer/* package has a broken dependency (run \`pnpm validate:publish\` locally to diagnose), or" >> $GITHUB_STEP_SUMMARY
+          echo "  2. The example's declared dependency range no longer resolves to a working version." >> $GITHUB_STEP_SUMMARY
