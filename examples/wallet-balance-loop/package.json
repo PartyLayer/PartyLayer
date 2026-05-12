@@ -9,8 +9,8 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@partylayer/sdk": "^0.4.0",
-    "@partylayer/react": "^0.4.4",
+    "@partylayer/sdk": "^0.4.1",
+    "@partylayer/react": "^0.4.5",
     "react": "^18.2.0",
     "react-dom": "^18.2.0"
   },
