@@ -2,9 +2,9 @@
   "metadata": {
     "registryVersion": "1.0.0",
     "schemaVersion": "1.0.0",
-    "publishedAt": "2026-04-23T00:00:00Z",
+    "publishedAt": "2026-05-12T00:00:00Z",
     "channel": "stable",
-    "sequence": 4,
+    "sequence": 5,
     "publisher": "PartyLayer"
   },
   "wallets": [
@@ -151,11 +151,9 @@
         "type": "@partylayer/adapter-send"
       },
       "installation": {
-        "windowProperty": "canton",
-        "extensionId": "ldmohiccoioolenadmogclhoklmanpgi"
+        "windowProperty": "canton"
       },
       "sdkVersion": ">=0.3.6",
-      "beta": true,
       "providerDetection": {
         "transport": "window.canton",
         "matchers": [
