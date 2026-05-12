@@ -2,7 +2,7 @@
  * Reusable `window.canton` mock for Send adapter tests.
  *
  * The fixtures in this file are NOT invented — every value was captured
- * from a real Send extension (kernel id `ldmohiccoioolenadmogclhoklmanpgi`)
+ * from a real Send extension (kernel id sourced from SEND_KERNEL_ID constant)
  * during manual verification. Treat them as authoritative; tweaking a
  * field to make a test pass is almost certainly papering over a bug.
  */

@@ -124,7 +124,7 @@ export class SendAuthTimeoutError extends WalletNotInstalledError {
 
 /**
  * Recognise Send-side authentication-timeout signatures in arbitrary
- * error payloads. Covers the wording variants Send Foundation surfaces
+ * error payloads. Covers the wording variants the Send wallet surfaces
  * today (the wallet UI itself uses both "Authentication timed out" and
  * "Cannot reach authentication server"; the underlying domain
  * `auth.cantonwallet.com` shows up in stack traces / fetch errors when

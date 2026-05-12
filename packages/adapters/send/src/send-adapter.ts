@@ -1,9 +1,8 @@
 /**
  * Send Canton Wallet adapter.
  *
- * Send (by Send Foundation, built on Sigilry) is a passkey-based Canton
- * wallet that exposes the splice-wallet-kernel OpenRPC protocol at
- * `window.canton`. Because the bare `window.canton` slot is shared with
+ * Send is a passkey-based Canton wallet that exposes the splice-wallet-kernel
+ * OpenRPC protocol at `window.canton`. Because the bare `window.canton` slot is shared with
  * other splice-spec wallets (e.g. Console-class), the adapter funnels
  * every request through `SendProvider.guardedRequest`, which verifies
  * the running provider's `kernel.id` matches Send's Chrome extension
