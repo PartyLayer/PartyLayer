@@ -81,7 +81,12 @@ export type ProviderMatcher =
       value: string;
     }
   | {
-      field: 'kernel.id' | 'kernel.url' | 'kernel.userUrl' | 'kernel.clientType';
+      field:
+        | 'kernel.id'
+        | 'kernel.url'
+        | 'kernel.userUrl'
+        | 'kernel.clientType'
+        | 'provider.id';
       match: 'exact';
       /** One or more exact values; ANY match returns true. */
       values: string[];

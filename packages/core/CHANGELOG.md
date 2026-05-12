@@ -1,5 +1,11 @@
 # @cantonconnect/core
 
+## 0.3.1
+
+### Patch Changes
+
+- Generalize `readField` in detection logic to read any top-level object on the status response, not just `kernel.*`. This is backward-compatible — existing `kernel.*` matchers continue to behave identically; this only enables matchers to also target `provider.*` and other future field paths in wallet status responses. Backward compatibility is enforced by a new parity test suite covering every status shape existing adapters can encounter.
+
 ## 0.3.0
 
 ### Minor Changes
