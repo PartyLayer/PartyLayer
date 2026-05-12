@@ -28,8 +28,13 @@ jobs:
       - name: Check workspace protocols
         run: pnpm run lint:workspace-protocol
 
-      - name: Build
-        run: pnpm build
+      - name: Build (workspace @partylayer/* only)
+        # Scoped to @partylayer/* during recovery waves so a transiently
+        # broken npm-published consumer (e.g. wallet-balance-loop pulling
+        # a borked transitive @partylayer/*) cannot block a recovery PR's
+        # CI. Full-tree build runs in .github/workflows/examples.yml on
+        # schedule and on-demand.
+        run: pnpm -r --filter "@partylayer/*" build
 
       - name: Validate publish coherence
         run: pnpm validate:publish
