@@ -4,7 +4,7 @@
     "schemaVersion": "1.0.0",
     "publishedAt": "2026-05-12T00:00:00Z",
     "channel": "stable",
-    "sequence": 5,
+    "sequence": 6,
     "publisher": "PartyLayer"
   },
   "wallets": [
@@ -157,9 +157,10 @@
       "providerDetection": {
         "transport": "window.canton",
         "matchers": [
+          { "field": "provider.id", "match": "exact", "values": ["lpnfhpbpmlobjlgkdmnjieeihjmihhjd", "ldmohiccoioolenadmogclhoklmanpgi"] },
           { "field": "kernel.url", "match": "domain", "value": "cantonwallet.com" },
           { "field": "kernel.userUrl", "match": "domain", "value": "cantonwallet.com" },
-          { "field": "kernel.id", "match": "exact", "values": ["ldmohiccoioolenadmogclhoklmanpgi"] }
+          { "field": "kernel.id", "match": "exact", "values": ["lpnfhpbpmlobjlgkdmnjieeihjmihhjd", "ldmohiccoioolenadmogclhoklmanpgi"] }
         ]
       },
       "cip0103": {
