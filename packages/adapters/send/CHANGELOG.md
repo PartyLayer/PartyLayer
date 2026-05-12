@@ -1,5 +1,13 @@
 # @partylayer/adapter-send
 
+## 1.0.3
+
+### Patch Changes
+
+- Republish 1.0.2 with the workspace protocol expanded to a concrete npm range. The 1.0.2 tarball was published with `vanilla npm publish`, which does not expand `workspace:^` literals — the resulting `package.json` on npm declared `"@partylayer/core": "workspace:^"`, causing dependency resolution to fail for external consumers. This release uses `pnpm publish` so the range expands correctly to `^0.3.1`.
+
+  No source code changes — same detection logic as 1.0.2.
+
 ## 1.0.2
 
 ### Patch Changes
