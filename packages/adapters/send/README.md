@@ -109,8 +109,6 @@ When detection fails — Send is not installed, or another Canton wallet is curr
 | Canton network       | `canton:mainnet`                                        |
 | `@partylayer/sdk`    | `>=0.3.6`                                              |
 
-Send is currently mainnet-only. DevNet support is pending and will be added when available.
-
 ---
 
 ## Send-specific behaviors

@@ -3,7 +3,7 @@ import SendContent from './content';
 
 const title = 'Send';
 const description =
-  'Passkey-based Canton wallet by Send Foundation. CIP-0103 native via Sigilry, mainnet-only, with registry-driven detection so Send and other splice-wallet-kernel extensions coexist safely at window.canton.';
+  'PartyLayer adapter for the Send Canton wallet. CIP-0103 native via Sigilry, mainnet-only, with registry-driven detection so Send and other splice-wallet-kernel extensions coexist safely at window.canton.';
 const url = 'https://partylayer.xyz/docs/wallets/send';
 
 export const metadata: Metadata = {

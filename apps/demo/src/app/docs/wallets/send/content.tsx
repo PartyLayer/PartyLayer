@@ -10,11 +10,10 @@ export default function SendContent() {
       <H1>Send Wallet</H1>
 
       <P>
-        <Strong>Send</Strong> is a passkey-based Canton wallet built by Send Foundation. The wallet is
-        delivered as a Chrome extension that injects a <Code>{'window.canton'}</Code> provider following
-        the splice-wallet-kernel OpenRPC contract. The dApp connection layer is open-sourced as{' '}
-        <A href="https://sigilry.org">Sigilry</A>; the
-        PartyLayer adapter wraps that contract with the same surface every other Canton wallet uses.
+        <Strong>Send</Strong> is a passkey-based Canton wallet that exposes the splice-wallet-kernel
+        OpenRPC contract via <Code>{'window.canton'}</Code>. The dApp connection layer is open-sourced as{' '}
+        <A href="https://sigilry.org">Sigilry</A>; this PartyLayer adapter wraps that contract with the
+        same surface every other Canton wallet uses.
       </P>
 
       <H2 id="how-send-differs">How Send Differs</H2>
@@ -36,7 +35,7 @@ export default function SendContent() {
             {[
               { prop: 'Authentication', send: 'Passkey (WebAuthn-PRF)', note: 'Touch ID / Face ID prompt per signature' },
               { prop: 'Provider injection', send: 'window.canton', note: 'CIP-0103 / splice-wallet-kernel native via Sigilry' },
-              { prop: 'Networks', send: 'canton:mainnet only', note: 'DevNet support pending Send Foundation' },
+              { prop: 'Networks', send: 'canton:mainnet only', note: '' },
             ].map(r => (
               <tr key={r.prop} style={{ borderBottom: '1px solid rgba(15,23,42,0.10)' }}>
                 <td style={{ padding: '10px 14px', fontWeight: 500, color: '#0B0F1A' }}>{r.prop}</td>
@@ -187,7 +186,7 @@ await submit({
 
       <H2 id="network-support">Network Support</H2>
       <P>
-        Send currently operates exclusively on <Code>{'canton:mainnet'}</Code>.
+        This adapter integrates with Send on <Code>{'canton:mainnet'}</Code>.
       </P>
       <Callout type="note">
         <Strong>Demo-app display caveat:</Strong> the PartyLayer demo at{' '}
@@ -212,8 +211,6 @@ await submit({
           backend at <Code>{'auth.cantonwallet.com'}</Code> is unreachable. Check network and retry.</LI>
         <LI><Strong>{'"OAuth state mismatch"'}</Strong> — stale Send session. Clear cookies for{' '}
           <Code>{'cantonwallet.com'}</Code> and reconnect.</LI>
-        <LI><Strong>{'"New signups are currently paused"'}</Strong> — Send Foundation has temporarily
-          halted new account creation. Existing accounts continue to work.</LI>
         <LI><Strong>Transaction errors with hint{' '}{'"Execute Unknown on Unknown"'}</Strong> — legacy{' '}
           <Code>{'Amulet_Transfer'}</Code> exercise on <Code>{'Splice.Amulet:Amulet'}</Code>. Migrate to
           CIP-56 <Code>{'TransferFactory_Transfer'}</Code>; see{' '}

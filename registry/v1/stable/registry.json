@@ -135,7 +135,7 @@
     {
       "id": "send",
       "name": "Send",
-      "description": "Passkey-based Canton wallet by Send Foundation. Currently mainnet-only.",
+      "description": "Passkey-based Canton wallet. Mainnet only.",
       "homepage": "https://cantonwallet.com",
       "icon": "https://registry.partylayer.xyz/wallets/send.svg",
       "supportedNetworks": ["mainnet"],
