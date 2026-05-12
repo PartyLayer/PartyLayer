@@ -7,14 +7,7 @@ export default function SendContent() {
 
   return (
     <>
-      <H1>Send Wallet (Beta)</H1>
-
-      <Callout type="warning">
-        <Strong>Beta:</Strong> Send Foundation has indicated that production use is not yet
-        recommended. The adapter is published as <Code>{'@partylayer/adapter-send@0.1.0'}</Code> on the
-        beta channel and is feature-complete for connect, sign, submit, and ledger-API flows on
-        Canton <Code>{'mainnet'}</Code>.
-      </Callout>
+      <H1>Send Wallet</H1>
 
       <P>
         <Strong>Send</Strong> is a passkey-based Canton wallet built by Send Foundation. The wallet is
@@ -44,8 +37,6 @@ export default function SendContent() {
               { prop: 'Authentication', send: 'Passkey (WebAuthn-PRF)', note: 'Touch ID / Face ID prompt per signature' },
               { prop: 'Provider injection', send: 'window.canton', note: 'CIP-0103 / splice-wallet-kernel native via Sigilry' },
               { prop: 'Networks', send: 'canton:mainnet only', note: 'DevNet support pending Send Foundation' },
-              { prop: 'Channel', send: 'beta', note: 'Per Send Foundation guidance' },
-              { prop: 'Identification', send: 'kernel.id = ldmohiccoioolenadmogclhoklmanpgi', note: 'Chrome Web Store extension ID; globally unique' },
             ].map(r => (
               <tr key={r.prop} style={{ borderBottom: '1px solid rgba(15,23,42,0.10)' }}>
                 <td style={{ padding: '10px 14px', fontWeight: 500, color: '#0B0F1A' }}>{r.prop}</td>
@@ -59,12 +50,9 @@ export default function SendContent() {
 
       <H2 id="installation">Installation</H2>
       <P>
-        Send requires the user to have the Send extension installed in Chrome. Direct your users to
-        the{' '}
-        <A href="https://chromewebstore.google.com/detail/send/ldmohiccoioolenadmogclhoklmanpgi">
-          Chrome Web Store listing
-        </A>{' '}
-        before they can connect.
+        Send is delivered as a browser extension. Direct your users to the Send wallet homepage at{' '}
+        <A href="https://sigilry.org">sigilry.org</A> for current installation instructions before
+        they can connect.
       </P>
       <CodeBlock language="bash">{`npm install @partylayer/sdk @partylayer/react @partylayer/adapter-send`}</CodeBlock>
       <P>
@@ -241,17 +229,17 @@ await submit({
           token in <Code>{'status.session.accessToken'}</Code> for the lifetime of the connection;
           PartyLayer{"'"}s session-persistence layer encrypts state at rest in the dApp{"'"}s
           configured storage.</LI>
-        <LI><Strong>kernel.id guard.</Strong> Every Send adapter call verifies that{' '}
-          <Code>{'window.canton.kernel.id === ldmohiccoioolenadmogclhoklmanpgi'}</Code> before
-          forwarding. If a different splice-wallet-kernel-compatible extension grabs the global,
-          Send adapter cleanly returns <Strong>not installed</Strong> and yields to the matching
-          adapter rather than acting on a foreign provider.</LI>
+        <LI><Strong>Registry-driven detection guard.</Strong> Every Send adapter call verifies the
+          live <Code>{'window.canton'}</Code> provider against the registry{"'"}s{' '}
+          <Code>{'providerDetection'}</Code> rules before forwarding. If a different
+          splice-wallet-kernel-compatible extension grabs the global, Send adapter cleanly returns{' '}
+          <Strong>not installed</Strong> and yields to the matching adapter rather than acting on a
+          foreign provider.</LI>
       </UL>
 
       <H3 id="references">References</H3>
       <UL>
         <LI><A href="https://cantonwallet.com">Send (cantonwallet.com)</A></LI>
-        <LI><A href="https://chromewebstore.google.com/detail/send/ldmohiccoioolenadmogclhoklmanpgi">Send Chrome extension</A></LI>
         <LI><A href="https://sigilry.org">Sigilry — open-source dApp SDK powering Send</A></LI>
         <LI><A href="/docs/token-transfers">CIP-56 Token Standard guide</A></LI>
         <LI><A href="/docs/wallets">Capability matrix across all six wallets</A></LI>
