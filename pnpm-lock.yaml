@@ -221,11 +221,11 @@ importers:
   examples/wallet-balance-loop:
     dependencies:
       '@partylayer/react':
-        specifier: ^0.4.3
-        version: 0.4.3(react@18.3.1)(typescript@5.9.3)
+        specifier: ^0.4.4
+        version: 0.4.4(react@18.3.1)(typescript@5.9.3)
       '@partylayer/sdk':
-        specifier: ^0.3.4
-        version: 0.3.4(typescript@5.9.3)
+        specifier: ^0.4.0
+        version: 0.4.0(typescript@5.9.3)
       react:
         specifier: ^18.2.0
         version: 18.3.1
@@ -1113,20 +1113,23 @@ packages:
     resolution: {integrity: sha512-oGB+UxlgWcgQkgwo8GcEGwemoTFt3FIO9ababBmaGwXIoBKZ+GTy0pP185beGg7Llih/NSHSV2XAs1lnznocSg==}
     engines: {node: '>= 8'}
 
-  '@partylayer/adapter-bron@0.2.8':
-    resolution: {integrity: sha512-UOdWegURAoE1h2SX3w+EvKt7NzVoHgggRvUdCNUpZthklOaXejFB8VEtELooRYa7ZqnPvlvBG8cweyaupI2cIA==}
+  '@partylayer/adapter-bron@0.2.9':
+    resolution: {integrity: sha512-8M3CDSHRDLC4zc3oP+1bDNovOwVlH85nonoGXYWtUv510L1n/2HcW0UEZuOCuQRy1sE6e6uBp7f5ILC4Efd9yA==}
 
-  '@partylayer/adapter-cantor8@0.2.8':
-    resolution: {integrity: sha512-S85U7tDRI/di89bEB5bMqDBLwKitynwtUPWSbhgd2oarGVFayuqYjIi0NosUuljBNfwz01VUlCKZpsFFZdwZUQ==}
+  '@partylayer/adapter-cantor8@0.2.9':
+    resolution: {integrity: sha512-GwiYlywywVA8++oyGos2fVN0zeaRTZSGFNe4l4cE2bxJgQe6XgHMfhAy0g9+2Yudsc0331I/tD2ep/6E0VAnQQ==}
 
   '@partylayer/adapter-console@0.3.3':
     resolution: {integrity: sha512-qb36PC0Wh9xQB2DMlq4bqm3MoNAPg9DMBUon/i5sRz2rMYGsXKoA3kGQGqWdMuupEZ2I2bPT0co9/38Sk3bX5Q==}
 
-  '@partylayer/adapter-loop@0.3.3':
-    resolution: {integrity: sha512-Uk+5Tgk+9e/0Wad5jXzTTPh5X+e6uy51N05Y1P0jYRe5+F5YSqkeduQCTOUY+a/wOHtrEsr/scqV3lFTor84jQ==}
+  '@partylayer/adapter-loop@0.3.6':
+    resolution: {integrity: sha512-obNIYRBlJvn0S1EgyGPM5Ht1N6ZyEybAqWux9FWylOm5jpGYKKWYmAgCBAT1lJnJ8BPOenxBG1/amwNMurB39A==}
 
   '@partylayer/adapter-nightly@0.2.8':
     resolution: {integrity: sha512-E9t1QGu1CGwPDE5yZPrnIjRsLuPsKu4sCVxUZRPhziq5iOYE+LqsVwLSbBSarrBcMtgkyGnQcLL52hB++i8cTA==}
+
+  '@partylayer/adapter-send@1.0.0':
+    resolution: {integrity: sha512-GexyhqQiIFjE3goJ5B3QsU37R/IkD7QDhVCC40XWQ9DRyixsZLy2+fgHgj2qjf4VQs1woHIrmYiWNPTxmeEnaw==}
 
   '@partylayer/core@0.2.7':
     resolution: {integrity: sha512-zlrKYPOeJTBgzp9Qw0UgcqAOZ4SLQWKJB1zpNWbIBZX0xNTuijXug5Fh7AdEXDN/FCM3SwF84VBu1mKa9OG81g==}
@@ -1134,16 +1137,16 @@ packages:
   '@partylayer/provider@0.1.6':
     resolution: {integrity: sha512-O0f2JqbblvaZn4TOXB0aSinNWzjL1ipmQhZXBoLCDllBMIWGSJzZI5qfjMd2H8JxvWuQ/RE754HZxZRwJJUHdw==}
 
-  '@partylayer/react@0.4.3':
-    resolution: {integrity: sha512-9sen/HhodKNh7u/9rCWneyG7FbVpHwS7WKFevEW2gnfzgdxA4crYStsXnz3nrd3E6X6icYOrXjwFx3ADKuLipg==}
+  '@partylayer/react@0.4.4':
+    resolution: {integrity: sha512-fPmi4AaDp5XM+otL9wFdn0tsRRpNVh6VWHzFLw0DznlxU+7yqaypeEhfTsPh4D/cjPnBwj6I3Z4eUUeOWhXd6A==}
     peerDependencies:
       react: '>=18.0.0'
 
-  '@partylayer/registry-client@0.2.8':
-    resolution: {integrity: sha512-QrBKrWPZUkpcLddnRxh4lwgPUXWWI041y+ut63zzFnWPWU9En7Bp6/lxO49MvAXARYIAGmUtJerxF3yP7uVHKw==}
+  '@partylayer/registry-client@0.3.0':
+    resolution: {integrity: sha512-NYFgyBqgUaLtYOg+jFuMRZoyfz3523CARYzTWxBl0r5N5G8aO3NcxNoFSb2okZ7p3j/KBKhna9asNVDyDLEKsQ==}
 
-  '@partylayer/sdk@0.3.4':
-    resolution: {integrity: sha512-6zw4fXFIzhKcyVxFqCEKYq7a8YEOoQc2ik0KmpFHYdMDlWug3CJVwnN3baxrVNHlpwDkjRxA0sLCWXQonXNsEQ==}
+  '@partylayer/sdk@0.4.0':
+    resolution: {integrity: sha512-hfQ3WBXEp75zKbNHoeBQOsRAzBG7dkjK12a5aJ0fxikTqiivs6rm6MXs5sMH1ZbTZ3TZ2MtFNyAgmcHUmjWFBw==}
 
   '@playwright/test@1.58.0':
     resolution: {integrity: sha512-fWza+Lpbj6SkQKCrU6si4iu+fD2dD3gxNHFhUPxsfXBPhnv3rRSQVd0NtBUT9Z/RhF/boCBcuUaMUSTRTopjZg==}
@@ -4581,11 +4584,11 @@ snapshots:
       '@nodelib/fs.scandir': 2.1.5
       fastq: 1.20.1
 
-  '@partylayer/adapter-bron@0.2.8':
+  '@partylayer/adapter-bron@0.2.9':
     dependencies:
       '@partylayer/core': 0.2.7
 
-  '@partylayer/adapter-cantor8@0.2.8':
+  '@partylayer/adapter-cantor8@0.2.9':
     dependencies:
       '@partylayer/core': 0.2.7
 
@@ -4600,7 +4603,7 @@ snapshots:
       - encoding
       - magicast
 
-  '@partylayer/adapter-loop@0.3.3(typescript@5.9.3)':
+  '@partylayer/adapter-loop@0.3.6(typescript@5.9.3)':
     dependencies:
       '@fivenorth/loop-sdk': 0.10.0(typescript@5.9.3)
       '@partylayer/core': 0.2.7
@@ -4611,16 +4614,20 @@ snapshots:
     dependencies:
       '@partylayer/core': 0.2.7
 
+  '@partylayer/adapter-send@1.0.0':
+    dependencies:
+      '@partylayer/core': 0.2.7
+
   '@partylayer/core@0.2.7': {}
 
   '@partylayer/provider@0.1.6':
     dependencies:
       '@partylayer/core': 0.2.7
 
-  '@partylayer/react@0.4.3(react@18.3.1)(typescript@5.9.3)':
+  '@partylayer/react@0.4.4(react@18.3.1)(typescript@5.9.3)':
     dependencies:
-      '@partylayer/registry-client': 0.2.8
-      '@partylayer/sdk': 0.3.4(typescript@5.9.3)
+      '@partylayer/registry-client': 0.3.0
+      '@partylayer/sdk': 0.4.0(typescript@5.9.3)
       react: 18.3.1
     transitivePeerDependencies:
       - '@biomejs/wasm-bundler'
@@ -4630,20 +4637,21 @@ snapshots:
       - magicast
       - typescript
 
-  '@partylayer/registry-client@0.2.8':
+  '@partylayer/registry-client@0.3.0':
     dependencies:
       '@partylayer/core': 0.2.7
 
-  '@partylayer/sdk@0.3.4(typescript@5.9.3)':
+  '@partylayer/sdk@0.4.0(typescript@5.9.3)':
     dependencies:
-      '@partylayer/adapter-bron': 0.2.8
-      '@partylayer/adapter-cantor8': 0.2.8
+      '@partylayer/adapter-bron': 0.2.9
+      '@partylayer/adapter-cantor8': 0.2.9
       '@partylayer/adapter-console': 0.3.3
-      '@partylayer/adapter-loop': 0.3.3(typescript@5.9.3)
+      '@partylayer/adapter-loop': 0.3.6(typescript@5.9.3)
       '@partylayer/adapter-nightly': 0.2.8
+      '@partylayer/adapter-send': 1.0.0
       '@partylayer/core': 0.2.7
       '@partylayer/provider': 0.1.6
-      '@partylayer/registry-client': 0.2.8
+      '@partylayer/registry-client': 0.3.0
     transitivePeerDependencies:
       - '@biomejs/wasm-bundler'
       - '@biomejs/wasm-web'
