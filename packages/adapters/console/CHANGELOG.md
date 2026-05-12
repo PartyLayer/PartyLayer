@@ -1,5 +1,12 @@
 # @cantonconnect/adapter-console
 
+## 0.3.4
+
+### Patch Changes
+
+- Updated dependencies
+  - @partylayer/core@0.3.0
+
 ## 0.2.5
 
 ### Patch Changes

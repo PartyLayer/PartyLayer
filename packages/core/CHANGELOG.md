@@ -1,5 +1,22 @@
 # @cantonconnect/core
 
+## 0.3.0
+
+### Minor Changes
+
+- Promote CIP-0103 wallet-detection utilities to the public API surface.
+
+  The following symbols were already imported by `@partylayer/registry-client`
+  and `@partylayer/adapter-send` internally, but were not declared as exports
+  in any published version of `@partylayer/core`:
+  - `matchesProviderDetection`, `isCip0103Native`
+  - `findMatchingWallet`, `findMatchingWalletInfo`, `deriveGenericWalletName`
+  - type-only: `ProviderDetection`, `ProviderMatcher`, `Cip0103Support`,
+    `Cip0103StatusForDetection`
+
+  This release makes them part of the stable public API. No exports removed;
+  fully backward-compatible with 0.2.x.
+
 ## 0.2.6
 
 ### Patch Changes

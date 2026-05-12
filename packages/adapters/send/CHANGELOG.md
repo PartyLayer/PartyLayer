@@ -1,5 +1,20 @@
 # @partylayer/adapter-send
 
+## 1.0.1
+
+### Patch Changes
+
+- Repair the `@partylayer/core` dependency reference.
+
+  `1.0.0` was published declaring `@partylayer/core@^0.2.7`, but its compiled
+  bundle imports `matchesProviderDetection` and `ProviderDetection` — symbols
+  that only exist in `@partylayer/core@0.3.0+`. External consumers of `1.0.0`
+  saw build failures during bundler resolution (Vite/Rollup). This release
+  pins the dependency to the correct core range.
+
+- Updated dependencies
+  - @partylayer/core@0.3.0
+
 ## 1.0.0
 
 ### Major Changes

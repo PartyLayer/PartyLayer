@@ -31,6 +31,9 @@ jobs:
       - name: Build
         run: pnpm build
 
+      - name: Validate publish coherence
+        run: pnpm validate:publish
+
       - name: Lint
         run: pnpm lint
 

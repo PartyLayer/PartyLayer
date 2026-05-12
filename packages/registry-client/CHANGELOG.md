@@ -1,5 +1,19 @@
 # @cantonconnect/registry-client
 
+## 0.3.1
+
+### Patch Changes
+
+- Repair the `@partylayer/core` dependency reference.
+
+  `0.3.0` was published declaring `@partylayer/core@^0.2.7`, but its compiled
+  bundle imports nine symbols from core (the CIP-0103 detection helpers and
+  related types) that only exist in `@partylayer/core@0.3.0+`. This release
+  pins the dependency to the correct core range.
+
+- Updated dependencies
+  - @partylayer/core@0.3.0
+
 ## 0.3.0
 
 ### Minor Changes

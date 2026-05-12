@@ -1,5 +1,30 @@
 # @cantonconnect/sdk
 
+## 0.4.1
+
+### Patch Changes
+
+- Repair the transitive `@partylayer/core` dependency reference.
+
+  `0.4.0` itself does not directly import any new core symbols, but it
+  depends on `@partylayer/registry-client@^0.3.0`, whose `0.3.0` release was
+  broken in the same way. Republishing the SDK ensures its workspace
+  dependency resolution points to the fixed `registry-client@0.3.1` and the
+  fixed `core@0.3.0`.
+
+- Updated dependencies
+- Updated dependencies
+- Updated dependencies
+  - @partylayer/adapter-send@1.0.1
+  - @partylayer/registry-client@0.3.1
+  - @partylayer/core@0.3.0
+  - @partylayer/adapter-bron@0.2.10
+  - @partylayer/adapter-cantor8@0.2.10
+  - @partylayer/adapter-console@0.3.4
+  - @partylayer/adapter-loop@0.3.7
+  - @partylayer/adapter-nightly@0.2.9
+  - @partylayer/provider@0.1.7
+
 ## 0.4.0
 
 ### Minor Changes

@@ -1,5 +1,21 @@
 # @cantonconnect/react
 
+## 0.4.5
+
+### Patch Changes
+
+- Repair the transitive `@partylayer/core` dependency reference.
+
+  `0.4.4` itself does not directly import any new core symbols, but it
+  depends transitively on the broken `sdk@0.4.0` and `registry-client@0.3.0`.
+  Republishing ensures workspace dependency resolution points to the fixed
+  versions.
+
+- Updated dependencies
+- Updated dependencies
+  - @partylayer/registry-client@0.3.1
+  - @partylayer/sdk@0.4.1
+
 ## 0.4.4
 
 ### Patch Changes
