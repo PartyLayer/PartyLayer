@@ -13,17 +13,9 @@
 
 ## Overview
 
-Adapter for [Send Canton Wallet](https://cantonwallet.com), a passkey-based Canton wallet built by Send Foundation. The wallet ships as a Chrome extension that injects a `window.canton` provider following the splice-wallet-kernel OpenRPC contract; the dApp connection layer is open-sourced as [Sigilry](https://sigilry.org).
+Adapter for [Send](https://cantonwallet.com), a passkey-based Canton wallet. Send is delivered as a browser extension that injects a `window.canton` provider following the splice-wallet-kernel OpenRPC contract; the dApp connection layer is open-sourced as [Sigilry](https://sigilry.org).
 
 > **Note:** This adapter is included in `@partylayer/sdk` by default. You only need to install it separately if you build a custom adapter list.
-
----
-
-## Status
-
-**Beta.** Send Foundation has indicated that production use is not yet recommended. The package ships as `0.1.0`; the registry entry sets the `beta` flag so dApps render a "Beta" badge automatically.
-
-Send currently operates exclusively on `canton:mainnet`. DevNet support is pending Send Foundation.
 
 ---
 
@@ -33,7 +25,7 @@ Send currently operates exclusively on `canton:mainnet`. DevNet support is pendi
 npm install @partylayer/adapter-send
 ```
 
-Users must also install the **[Send extension from the Chrome Web Store](https://chromewebstore.google.com/detail/send/ldmohiccoioolenadmogclhoklmanpgi)** for the adapter to detect the wallet.
+Users connect through a browser extension. Direct them to [sigilry.org](https://sigilry.org) for current installation instructions before they can connect.
 
 ---
 
@@ -80,15 +72,51 @@ const client = createPartyLayer({
 | `submitTransaction` | ✓    | Via `prepareExecuteAndWait`; receipt populated from `tx.payload.updateId`              |
 | `ledgerApi`         | ✓    | Full Sigilry passthrough (matches Console / Nightly)                                   |
 | `events`            | ✓    | `txChanged` bridged to PartyLayer `tx:status`                                          |
-| `injected`          | ✓    | `window.canton` discovery with kernel.id guard                                         |
+| `injected`          | ✓    | `window.canton` discovery with registry-driven detection guard                         |
+
+---
+
+## CIP-0103 compliance
+
+`@partylayer/adapter-send` is a CIP-0103 native adapter. It exposes the Send wallet's `window.canton` provider through PartyLayer's standard `WalletAdapter` interface so the same dApp code that talks to any other CIP-0103 wallet (Console, Loop, Nightly, Cantor8) also talks to Send.
+
+The adapter:
+
+- Maps every Sigilry RPC method (`status`, `connect`, `disconnect`, `getPrimaryAccount`, `signMessage`, `prepareExecute`, `prepareExecuteAndWait`, `ledgerApi`) onto the PartyLayer capability surface declared in `getCapabilities()`.
+- Bridges Send's `txChanged` event into PartyLayer's `tx:status` channel so transaction subscribers receive the same shape regardless of which wallet is connected.
+- Routes structured JSON-RPC errors (4001 user-rejected, 4100/4900/4901 transport, -32601 method-not-supported) onto the canonical PartyLayer error taxonomy (`UserRejectedError`, `TransportError`, `CapabilityNotSupportedError`), so existing error-handling branches in dApp code continue to work without modification.
+
+---
+
+## Detection
+
+The Send adapter detects whether the running browser has a compatible Send install via the registry's `providerDetection` rules. The same `window.canton` slot is shared with other splice-wallet-kernel-compatible extensions, so the adapter funnels every RPC call through a guard that verifies the live provider matches Send's detection rule before forwarding.
+
+When detection fails — Send is not installed, or another Canton wallet is currently occupying `window.canton` — the adapter raises a typed error consumers can branch on:
+
+- `SendNotInstalledError` (subclass of `WalletNotInstalledError`) — surfaced from `detectInstalled()` and from any RPC call when `window.canton` is absent. Carries `details.installUrl` so a dApp can present a single click-through to the Send wallet homepage.
+- `SendKernelMismatchError` (also a subclass of `WalletNotInstalledError`) — surfaced when `window.canton` is present but its identity doesn't match Send. The adapter cleanly returns "not installed" so any other CIP-0103 adapter present in the registry can claim the active provider instead.
+- `SendAuthTimeoutError` — surfaced when Send's authentication backend is unreachable or slow. Carries `details.cause = 'send-auth-timeout'` plus `retry: true` so a dApp can present a "try again" affordance rather than treating the failure as a permanent error.
+
+---
+
+## Compatibility
+
+| Requirement          | Value                                                  |
+|----------------------|--------------------------------------------------------|
+| Browser              | Chromium-based browsers with WebAuthn-PRF support      |
+| Authentication       | Passkey (Touch ID / Face ID / platform authenticator)  |
+| Canton network       | `canton:mainnet`                                        |
+| `@partylayer/sdk`    | `>=0.3.6`                                              |
+
+Send is currently mainnet-only. DevNet support is pending and will be added when available.
 
 ---
 
 ## Send-specific behaviors
 
 - **Passkey per signature.** Every `signMessage` and every `submitTransaction` triggers a fresh passkey unlock. Send does not cache passkey approval across calls — by design.
-- **Mainnet only.** The adapter's `getCapabilities()` declaration is network-agnostic, but Send itself only operates on `canton:mainnet` today.
-- **Kernel.id namespace guard.** Send injects at the *bare* `window.canton` slot — the same path any other splice-wallet-kernel-compatible extension uses. The adapter verifies `window.canton.kernel.id === ldmohiccoioolenadmogclhoklmanpgi` (Send's Chrome Web Store ID) before forwarding any RPC. If a foreign provider is sitting at the global, Send adapter cleanly returns "not installed" and yields to the matching adapter.
+- **Sign-and-submit are fused.** Send does not expose a standalone `signTransaction` step. The adapter mirrors that: `signTransaction()` throws `CapabilityNotSupportedError` pointing at `submitTransaction()` (`prepareExecuteAndWait` under the hood).
 - **CIP-56 hint.** Submitting a legacy `Amulet_Transfer` exercise on `Splice.Amulet:Amulet` produces an actionable error pointing at the Token Standard `TransferFactory_Transfer` flow. Same hint as the Loop adapter.
 
 ---
@@ -96,9 +124,8 @@ const client = createPartyLayer({
 ## References
 
 - [Send (cantonwallet.com)](https://cantonwallet.com)
-- [Send Chrome extension](https://chromewebstore.google.com/detail/send/ldmohiccoioolenadmogclhoklmanpgi)
 - [Sigilry — open-source dApp SDK powering Send](https://sigilry.org)
-- [PartyLayer documentation: Send (Beta)](https://partylayer.xyz/docs/wallets/send)
+- [PartyLayer documentation: Send](https://partylayer.xyz/docs/wallets/send)
 - [GitHub Repository](https://github.com/PartyLayer/PartyLayer)
 - [Report issues](https://github.com/PartyLayer/PartyLayer/issues)
 
