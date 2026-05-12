@@ -1,20 +1,15 @@
 ---
-"@partylayer/adapter-send": minor
 "@partylayer/sdk": minor
 "@partylayer/registry-client": minor
 "@partylayer/react": patch
 ---
 
-Add Send Canton Wallet adapter (beta).
+Registry-driven detection and adapter-aware picker readiness.
 
-The adapter implements full Sigilry RPC method coverage: `connect` / `disconnect` / `restore`, `signMessage`, `prepareExecute` and `prepareExecuteAndWait` (CIP-56 transfers), `ledgerApi` proxy, plus `accountsChanged` and `txChanged` events bridged into PartyLayer's `tx:status` channel.
+`@partylayer/core` and `@partylayer/registry-client` introduce a multi-signal `providerDetection` schema on `RegistryWalletEntry`. Registry entries can declare a transport plus an ordered list of matcher rules (`domain`, `exact`, `prefix`) over the live CIP-0103 `status` shape — `kernel.url`, `kernel.userUrl`, `kernel.id`. This lets new CIP-0103 wallets be added to the ecosystem through a registry JSON update without an SDK code change, and lets the SDK identify a wallet by stable signals (vendor domain) when the per-install identity field (`kernel.id`) varies. The matcher engine is OR-combined, case-insensitive on domains, case-sensitive on exact values, and short-circuits on first match. 33 unit tests cover the matcher semantics.
 
-A **kernel.id namespace guard** keeps Send and other splice-wallet-kernel-compatible extensions from claiming each other's `window.canton` provider — Send adapter only forwards calls when `window.canton.kernel.id` matches its Chrome Web Store ID. The same guard pattern is reusable for any future wallet that injects at the bare `window.canton` slot.
+The registry-client schema also gains an optional `RegistryWalletEntry.beta?: boolean` flag and a `RegistryWalletEntry.cip0103?: { native, evidence, since }` marker. The picker UI uses `cip0103.native` to surface CIP-0103-native wallets in a dedicated section regardless of install state. The optional `beta` flag, when present on any entry, propagates through `WalletInfo.metadata.beta = 'true'` so UIs can render a "Beta" badge generically.
 
-`@partylayer/sdk` registers `SendAdapter` in `getBuiltinAdapters()` and exports `SendAdapter` for advanced usage. As a side improvement, the SDK's `tsup` external list now also externalises `cantor8` / `bron` / `nightly` / `send` adapters (previously only `console` + `loop` were external) — bundled SDK dist drops from ~80 KB ESM to ~30 KB ESM with no API changes.
+`@partylayer/sdk` re-exports the detection helpers (`isCip0103Native`, `Cip0103Support`, `ProviderDetection`, `matchesProviderDetection`) and adds `getAdapter(walletId)` for adapter-aware UI integrations that need to probe `detectInstalled()` directly. The `tsup` external list grew to externalise all built-in adapter packages — the bundled SDK dist drops from ~80 KB ESM to ~30 KB ESM with no public API change.
 
-`@partylayer/registry-client` schema gained an optional `RegistryWalletEntry.beta?: boolean` field, surfaced via `WalletInfo.metadata.beta = 'true'`, so any wallet entry can opt into a "Beta" badge in the picker independently of the registry channel file.
-
-`@partylayer/react` renders that Beta badge in the wallet picker modal — generic, not Send-specific.
-
-Send is published on the `beta` registry channel; Send Foundation has indicated production use is not yet recommended.
+`@partylayer/react` renders the optional Beta badge in the wallet picker modal from `WalletInfo.metadata.beta`. The picker also adds an adapter-aware NATIVE readiness probe: when an adapter implements `detectInstalled()`, the picker reflects its result rather than guessing from a static install hint.
