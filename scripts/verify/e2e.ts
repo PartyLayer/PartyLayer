@@ -281,7 +281,11 @@ async function main() {
 
     // Step 2: Build all packages
     runStep('Build all packages', () => {
-      exec('pnpm build', ROOT);
+      // Scoped to @partylayer/* for the same reason as ci.yml's Build step:
+      // during a recovery wave, wallet-balance-loop's pinned npm range may
+      // resolve to a transiently-broken consumer and fail the verify pipeline.
+      // The full-tree build runs in .github/workflows/examples.yml on schedule.
+      exec('pnpm -r --filter "@partylayer/*" build', ROOT);
     });
 
     // Step 3: Verify registry signatures
