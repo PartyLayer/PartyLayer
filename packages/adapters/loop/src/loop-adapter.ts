@@ -712,10 +712,17 @@ export class LoopAdapter implements WalletAdapter {
 
   /**
    * Map network ID to Loop SDK network format.
+   *
+   * The Loop SDK serves a distinct backend per network
+   * (devnet.cantonloop.com, testnet.cantonloop.com, cantonloop.com),
+   * so each input must map to its own value. Collapsing testnet
+   * onto devnet connects the wallet to the wrong Canton synchronizer
+   * and produces UNKNOWN_INFORMEES at submit time.
    */
-  private mapNetworkToLoop(network: string): 'local' | 'devnet' | 'mainnet' {
+  private mapNetworkToLoop(network: string): 'local' | 'devnet' | 'testnet' | 'mainnet' {
     if (network === 'local') return 'local';
-    if (network === 'devnet' || network === 'testnet') return 'devnet';
+    if (network === 'devnet') return 'devnet';
+    if (network === 'testnet') return 'testnet';
     return 'mainnet';
   }
 }

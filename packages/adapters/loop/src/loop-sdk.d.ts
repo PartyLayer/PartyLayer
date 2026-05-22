@@ -37,7 +37,7 @@ declare module '@fivenorth/loop-sdk' {
 
   export interface LoopInitConfig {
     appName: string;
-    network: 'local' | 'devnet' | 'mainnet';
+    network: 'local' | 'devnet' | 'testnet' | 'mainnet';
     walletUrl?: string;
     apiUrl?: string;
     onAccept: (provider: LoopProvider) => void;
