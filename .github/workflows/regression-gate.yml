@@ -1,0 +1,48 @@
+name: Regression Safety Gate
+
+# Mechanical regression net for PartyLayer. Runs the single `pnpm gate`
+# command, which is the source of truth for "is everything still safe":
+#   typecheck → lint → build (@partylayer/*) → unit tests → CIP-0103
+#   native-path conformance → public-API snapshot diff → registry integrity.
+#
+# Any drift in the public API of a published package, any broken adapter or
+# conformance test, or a dropped cip0103 flag in the registry fails this
+# check. Intended to be a REQUIRED status check via branch protection on
+# main (configure in GitHub repo settings).
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches:
+      - main
+      - chore/regression-safety-gate
+
+# Cancel superseded runs on the same ref to save CI minutes.
+concurrency:
+  group: regression-gate-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  gate:
+    name: pnpm gate
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        # Version is read from the root package.json `packageManager` field.
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run regression safety gate
+        run: pnpm gate

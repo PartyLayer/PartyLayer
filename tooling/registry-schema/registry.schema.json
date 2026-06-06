@@ -1,0 +1,116 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://registry.partylayer.xyz/schema/v1/registry.schema.json",
+  "title": "PartyLayer Wallet Registry v1",
+  "description": "Shape + required-field contract for registry/v1/<channel>/registry.json. This is a structural gate, NOT a frozen-content diff — registry content is expected to grow additively.",
+  "type": "object",
+  "required": ["metadata", "wallets"],
+  "additionalProperties": true,
+  "properties": {
+    "metadata": {
+      "type": "object",
+      "required": [
+        "registryVersion",
+        "schemaVersion",
+        "publishedAt",
+        "channel",
+        "sequence"
+      ],
+      "additionalProperties": true,
+      "properties": {
+        "registryVersion": { "type": "string", "minLength": 1 },
+        "schemaVersion": { "type": "string", "minLength": 1 },
+        "publishedAt": { "type": "string", "minLength": 1 },
+        "channel": { "type": "string", "enum": ["stable", "beta"] },
+        "sequence": { "type": "integer", "minimum": 0 },
+        "publisher": { "type": "string" }
+      }
+    },
+    "wallets": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/definitions/walletEntry" }
+    }
+  },
+  "definitions": {
+    "walletEntry": {
+      "type": "object",
+      "required": [
+        "id",
+        "name",
+        "supportedNetworks",
+        "capabilities",
+        "adapter"
+      ],
+      "additionalProperties": true,
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "name": { "type": "string", "minLength": 1 },
+        "description": { "type": "string" },
+        "homepage": { "type": "string" },
+        "icon": { "type": "string" },
+        "supportedNetworks": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string", "enum": ["devnet", "testnet", "mainnet"] }
+        },
+        "capabilities": {
+          "type": "object",
+          "required": [
+            "signMessage",
+            "signTransaction",
+            "submitTransaction",
+            "transactionStatus",
+            "switchNetwork",
+            "multiParty"
+          ],
+          "additionalProperties": true,
+          "properties": {
+            "signMessage": { "type": "boolean" },
+            "signTransaction": { "type": "boolean" },
+            "submitTransaction": { "type": "boolean" },
+            "transactionStatus": { "type": "boolean" },
+            "switchNetwork": { "type": "boolean" },
+            "multiParty": { "type": "boolean" },
+            "mobileConnect": { "type": "boolean" },
+            "remoteSigner": { "type": "boolean" }
+          }
+        },
+        "adapter": {
+          "type": "object",
+          "required": ["type"],
+          "additionalProperties": true,
+          "properties": {
+            "type": { "type": "string", "minLength": 1 },
+            "requiresConfig": { "type": "boolean" },
+            "config": { "type": "object" }
+          }
+        },
+        "installation": { "type": "object" },
+        "sdkVersion": { "type": "string" },
+        "version": { "type": "string" },
+        "beta": { "type": "boolean" },
+        "originAllowlist": { "type": "array", "items": { "type": "string" } },
+        "providerDetection": {
+          "type": "object",
+          "required": ["transport", "matchers"],
+          "additionalProperties": true,
+          "properties": {
+            "transport": { "type": "string", "enum": ["window.canton"] },
+            "matchers": { "type": "array", "minItems": 1 }
+          }
+        },
+        "cip0103": {
+          "type": "object",
+          "required": ["native"],
+          "additionalProperties": true,
+          "properties": {
+            "native": { "type": "boolean" },
+            "evidence": { "type": "string" },
+            "since": { "type": "string" }
+          }
+        }
+      }
+    }
+  }
+}
