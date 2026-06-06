@@ -19,7 +19,8 @@
     "build": "tsup",
     "clean": "rm -rf dist",
     "lint": "eslint src --ext .ts",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
   },
   "keywords": [
     "canton",
@@ -42,6 +43,7 @@
   },
   "devDependencies": {
     "@types/node": "^20.11.0",
-    "typescript": "^5.3.3"
+    "typescript": "^5.3.3",
+    "vitest": "^1.2.0"
   }
 }
