@@ -517,6 +517,31 @@ importers:
         specifier: ^5.3.3
         version: 5.9.3
 
+  packages/session:
+    dependencies:
+      '@partylayer/core':
+        specifier: workspace:^
+        version: link:../core
+    devDependencies:
+      '@partylayer/testing':
+        specifier: workspace:^
+        version: link:../testing
+      '@types/node':
+        specifier: ^20.11.0
+        version: 20.19.30
+      '@vitest/ui':
+        specifier: ^1.2.0
+        version: 1.6.1(vitest@1.6.1)
+      tsup:
+        specifier: ^8.0.0
+        version: 8.5.1(jiti@2.6.1)(postcss@8.5.6)(tsx@4.21.0)(typescript@5.9.3)(yaml@2.8.2)
+      typescript:
+        specifier: ^5.3.3
+        version: 5.9.3
+      vitest:
+        specifier: ^1.2.0
+        version: 1.6.1(@types/node@20.19.30)(@vitest/ui@1.6.1)
+
   packages/testing:
     dependencies:
       '@partylayer/core':
