@@ -652,4 +652,32 @@ describe('LoopAdapter', () => {
       expect(adapter.name).toBe('5N Loop');
     });
   });
+
+  describe('mapNetworkToLoop', () => {
+    // The Loop SDK serves a distinct backend per network
+    // (devnet.cantonloop.com, testnet.cantonloop.com, cantonloop.com).
+    // Each input must map to its own value, otherwise the wallet
+    // connects to the wrong Canton synchronizer.
+    type WithMap = { mapNetworkToLoop: (n: string) => string };
+
+    it('maps local to local', () => {
+      expect((adapter as unknown as WithMap).mapNetworkToLoop('local')).toBe('local');
+    });
+
+    it('maps devnet to devnet', () => {
+      expect((adapter as unknown as WithMap).mapNetworkToLoop('devnet')).toBe('devnet');
+    });
+
+    it('maps testnet to testnet (not devnet)', () => {
+      expect((adapter as unknown as WithMap).mapNetworkToLoop('testnet')).toBe('testnet');
+    });
+
+    it('maps mainnet to mainnet', () => {
+      expect((adapter as unknown as WithMap).mapNetworkToLoop('mainnet')).toBe('mainnet');
+    });
+
+    it('falls back to mainnet for unknown values', () => {
+      expect((adapter as unknown as WithMap).mapNetworkToLoop('something-else')).toBe('mainnet');
+    });
+  });
 });
