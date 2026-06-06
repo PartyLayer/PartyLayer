@@ -24,7 +24,7 @@
     "registry:sign": "tsx scripts/registry/sign.ts",
     "registry:verify": "tsx scripts/registry/verify.ts",
     "verify:e2e": "tsx scripts/verify/e2e.ts",
-    "gate": "pnpm typecheck && pnpm lint && pnpm gate:build && pnpm gate:test && pnpm gate:conformance && pnpm gate:api && pnpm gate:registry",
+    "gate": "pnpm gate:build && pnpm typecheck && pnpm lint && pnpm gate:test && pnpm gate:conformance && pnpm gate:api && pnpm gate:registry",
     "gate:build": "pnpm -r --filter \"@partylayer/*\" build",
     "gate:test": "CI=true pnpm -r test",
     "gate:conformance": "node scripts/gate/conformance-native.mjs",

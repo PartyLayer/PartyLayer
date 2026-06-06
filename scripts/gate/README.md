@@ -13,14 +13,19 @@ pnpm gate
 `pnpm gate` is the source of truth for "is everything still safe". It runs, in
 order:
 
-1. `pnpm typecheck` — all packages
-2. `pnpm lint` — all packages
-3. `pnpm gate:build` — builds `@partylayer/*` (scoped like `ci.yml`, so a
+1. `pnpm gate:build` — builds `@partylayer/*` (scoped like `ci.yml`, so a
    transiently broken example/consumer can't block the gate)
+2. `pnpm typecheck` — all packages
+3. `pnpm lint` — all packages
 4. `pnpm gate:test` — all unit tests (`CI=true` forces single-run, no watch)
 5. `pnpm gate:conformance` — CIP-0103 **native-path** conformance
 6. `pnpm gate:api` — public-API surface snapshot diff
 7. `pnpm gate:registry` — registry integrity + cip0103 footgun guard
+
+> **Why build runs first.** Workspace packages resolve `@partylayer/*` imports
+> to each other's built `dist/*.d.ts`, so `typecheck`, the unit tests, the
+> conformance check, and the API snapshot all need a fresh build present. The
+> repo's existing `ci.yml` builds before typechecking for the same reason.
 
 CI runs this exact command on every PR to `main` (see
 `.github/workflows/regression-gate.yml`).
