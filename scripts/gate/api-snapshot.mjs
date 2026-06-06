@@ -1,23 +1,35 @@
 #!/usr/bin/env node
 /**
- * Regression gate — public-API surface snapshot + diff.
+ * Regression gate — public-API + packaging-surface snapshots & diff.
  *
- * For every CURRENTLY PUBLISHED package that exposes a type entry point
- * (package.json "types" / exports["."].types), this captures the exact
- * .d.ts the package publishes as its public contract and compares it to a
- * committed snapshot under tooling/api-snapshots/<pkg>.api.d.ts.
+ * For every CURRENTLY PUBLISHED package that exposes a type entry point, this
+ * captures TWO committed snapshots and diffs both on every gate run:
  *
- * ANY change to a published type entry point fails the gate. That is the
- * point: it makes silent breakage of the public API impossible while we
- * evolve the SDK.
+ *   1. tooling/api-snapshots/<pkg>.api.d.ts  — the package's public TYPE
+ *      surface (the .d.ts it publishes via package.json "types"/"exports"),
+ *      normalized through Prettier so cosmetic ordering/whitespace can never
+ *      cause a false gate failure.
+ *
+ *   2. tooling/api-snapshots/<pkg>.pkg.json  — the package's PACKAGING
+ *      surface: a normalized JSON of { name, main, module, types, exports,
+ *      bin, peerDependencies } (version intentionally EXCLUDED). A
+ *      peerDependencies range change or a removed exports subpath breaks
+ *      consumers but never shows up in the .d.ts rollup — this catches it.
+ *
+ * ANY change to either snapshot fails the gate. That is the point: it makes
+ * silent breakage of the public API OR the packaging contract impossible
+ * while we evolve the SDK.
  *
  * Approach — d.ts rollup (NOT Microsoft API Extractor):
  *   The @partylayer/* packages build with tsup, which already emits a single
- *   bundled dist/index.d.ts containing the FULL public type surface (all
- *   re-exported and transitively referenced types inlined). That bundled
- *   file IS the published contract, so snapshotting it verbatim is both
- *   faithful and deterministic — no extra heavy tooling required. (The two
- *   tsc-built packages, adapter-starter and the CLIs, are handled below.)
+ *   bundled dist/index.d.ts containing the FULL public type surface. That
+ *   bundled file IS the published contract, so snapshotting it (Prettier-
+ *   normalized) is both faithful and deterministic — no extra heavy tooling.
+ *
+ * Snapshot set is AUTO-DISCOVERED: every workspace package with
+ * "private": false AND a "types" entry point, minus EXCLUDED_PACKAGES below.
+ * New publishable packages (e.g. @partylayer/session, @partylayer/testing)
+ * are picked up automatically once published.
  *
  * Usage:
  *   node scripts/gate/api-snapshot.mjs            # check (default) — diffs, exits 1 on change
@@ -31,6 +43,7 @@
 
 import { fileURLToPath } from 'node:url';
 import { dirname, resolve, join } from 'node:path';
+import { createRequire } from 'node:module';
 import {
   readFileSync,
   writeFileSync,
@@ -42,8 +55,37 @@ import {
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const repoRoot = resolve(__dirname, '..', '..');
 const snapshotDir = resolve(repoRoot, 'tooling', 'api-snapshots');
+const require = createRequire(import.meta.url);
 
 const UPDATE = process.argv.includes('--update');
+
+// ─── Excluded packages ───────────────────────────────────────────────────────
+// Packages deliberately kept OUT of the API gate.
+//
+//   @partylayer/adapter-starter — a copy-me template, not a runtime
+//     dependency of any dApp. It builds with `tsc` (not tsup), so its
+//     index.d.ts only RE-EXPORTS from sibling files rather than inlining the
+//     full surface. Snapshotting it would be half-protection (entry file
+//     only) and a source of false failures, so it is excluded entirely.
+const EXCLUDED_PACKAGES = new Set(['@partylayer/adapter-starter']);
+
+// ─── Prettier (deterministic .d.ts normalization) ────────────────────────────
+
+let prettier;
+try {
+  prettier = require('prettier');
+} catch {
+  console.error(
+    '✗ `prettier` is not installed. Run `pnpm install` (it is a root devDependency).',
+  );
+  process.exit(1);
+}
+const prettierConfig =
+  (await prettier.resolveConfig(resolve(repoRoot, '.prettierrc'))) ?? {};
+
+async function normalizeDts(raw) {
+  return prettier.format(raw, { ...prettierConfig, parser: 'typescript' });
+}
 
 // ─── Discover published packages with a public type entry point ──────────────
 
@@ -62,11 +104,13 @@ function discoverPackages() {
       const pkgJsonPath = join(base, entry.name, 'package.json');
       if (!existsSync(pkgJsonPath)) continue;
       const pkg = JSON.parse(readFileSync(pkgJsonPath, 'utf-8'));
-      if (pkg.private) continue;
+      if (pkg.private) continue; // private packages are never published
+      if (EXCLUDED_PACKAGES.has(pkg.name)) continue;
       const typesRel = pkg.types ?? pkg.exports?.['.']?.types;
       if (!typesRel) continue; // CLIs (registry-cli, conformance-runner) — no type surface
       pkgs.push({
         name: pkg.name,
+        json: pkg,
         dir: join(base, entry.name),
         typesPath: join(base, entry.name, typesRel),
       });
@@ -78,8 +122,48 @@ function discoverPackages() {
 }
 
 /** @partylayer/core -> partylayer__core */
-function snapshotFileFor(name) {
-  return join(snapshotDir, `${name.replace('@', '').replace('/', '__')}.api.d.ts`);
+function sanitize(name) {
+  return name.replace('@', '').replace('/', '__');
+}
+function dtsSnapshotFor(name) {
+  return join(snapshotDir, `${sanitize(name)}.api.d.ts`);
+}
+function pkgSnapshotFor(name) {
+  return join(snapshotDir, `${sanitize(name)}.pkg.json`);
+}
+
+// ─── Packaging-surface normalization ─────────────────────────────────────────
+// Selected fields only; version is intentionally EXCLUDED (it changes every
+// release and is not part of the consumer contract). Keys are sorted
+// recursively so a cosmetic reorder in package.json can't cause a false
+// failure, while an added/removed export subpath or a changed peerDeps range
+// still shows up as a real diff.
+const PACKAGING_FIELDS = [
+  'name',
+  'main',
+  'module',
+  'types',
+  'exports',
+  'bin',
+  'peerDependencies',
+];
+
+function stableSort(value) {
+  if (Array.isArray(value)) return value.map(stableSort);
+  if (value && typeof value === 'object') {
+    const out = {};
+    for (const key of Object.keys(value).sort()) out[key] = stableSort(value[key]);
+    return out;
+  }
+  return value;
+}
+
+function packagingSnapshot(pkgJson) {
+  const picked = {};
+  for (const field of PACKAGING_FIELDS) {
+    if (pkgJson[field] !== undefined) picked[field] = pkgJson[field];
+  }
+  return JSON.stringify(stableSort(picked), null, 2) + '\n';
 }
 
 // ─── Run ─────────────────────────────────────────────────────────────────────
@@ -103,30 +187,39 @@ for (const pkg of packages) {
     continue;
   }
 
-  const current = readFileSync(pkg.typesPath, 'utf-8');
-  const snapPath = snapshotFileFor(pkg.name);
+  // ── 1. Public type surface (.d.ts, Prettier-normalized) ──────────────────
   const header =
     `// API SURFACE SNAPSHOT — ${pkg.name}\n` +
     `// Generated by scripts/gate/api-snapshot.mjs from the package's published\n` +
-    `// "types" entry point. DO NOT edit by hand. To intentionally accept a\n` +
-    `// public-API change, run: pnpm gate:api:update\n` +
+    `// "types" entry point, normalized through Prettier. DO NOT edit by hand.\n` +
+    `// To intentionally accept a public-API change, run: pnpm gate:api:update\n` +
     `// ----------------------------------------------------------------------------\n`;
-  const body = header + current;
+  const dtsBody = header + (await normalizeDts(readFileSync(pkg.typesPath, 'utf-8')));
+  const dtsSnap = dtsSnapshotFor(pkg.name);
+
+  // ── 2. Packaging surface (.pkg.json) ─────────────────────────────────────
+  const pkgBody = packagingSnapshot(pkg.json);
+  const pkgSnap = pkgSnapshotFor(pkg.name);
 
   if (UPDATE) {
-    writeFileSync(snapPath, body);
+    writeFileSync(dtsSnap, dtsBody);
+    writeFileSync(pkgSnap, pkgBody);
     updated++;
     continue;
   }
 
-  if (!existsSync(snapPath)) {
-    drifted.push({ pkg, reason: 'no committed snapshot exists' });
-    continue;
+  // ── Diff: type surface ───────────────────────────────────────────────────
+  if (!existsSync(dtsSnap)) {
+    drifted.push({ pkg, kind: 'type', reason: 'no committed .api.d.ts snapshot exists' });
+  } else if (readFileSync(dtsSnap, 'utf-8') !== dtsBody) {
+    drifted.push({ pkg, kind: 'type', reason: 'public type surface differs from snapshot' });
   }
 
-  const committed = readFileSync(snapPath, 'utf-8');
-  if (committed !== body) {
-    drifted.push({ pkg, reason: 'public API differs from committed snapshot' });
+  // ── Diff: packaging surface ──────────────────────────────────────────────
+  if (!existsSync(pkgSnap)) {
+    drifted.push({ pkg, kind: 'pkg', reason: 'no committed .pkg.json snapshot exists' });
+  } else if (readFileSync(pkgSnap, 'utf-8') !== pkgBody) {
+    drifted.push({ pkg, kind: 'pkg', reason: 'packaging surface differs from snapshot' });
   }
 }
 
@@ -137,28 +230,36 @@ if (missingBuild.length > 0) {
 }
 
 if (UPDATE) {
-  console.log(`✓ Updated ${updated} API snapshot(s) in tooling/api-snapshots/`);
+  console.log(`✓ Updated ${updated} package snapshot(s) (.api.d.ts + .pkg.json) in tooling/api-snapshots/`);
   for (const pkg of packages) console.log(`    ${pkg.name}`);
   process.exit(0);
 }
 
 if (drifted.length > 0) {
-  console.error('✗ Public-API surface changed for:');
-  for (const d of drifted) console.error(`    ${d.pkg.name} — ${d.reason}`);
-  console.error('');
-  console.error('  The public type contract of a published package changed.');
-  console.error('  Review the diff:');
+  console.error('✗ Public surface changed:');
   for (const d of drifted) {
-    console.error(
-      `    diff <(tail -n +6 ${relativize(snapshotFileFor(d.pkg.name))}) ${relativize(d.pkg.typesPath)}`,
-    );
+    const label = d.kind === 'type' ? 'public API' : 'packaging (package.json)';
+    console.error(`    ${d.pkg.name} — ${label}: ${d.reason}`);
+  }
+  console.error('');
+  console.error('  Review the diff(s):');
+  for (const d of drifted) {
+    if (d.kind === 'type') {
+      console.error(
+        `    diff <(tail -n +6 ${relativize(dtsSnapshotFor(d.pkg.name))}) <(pnpm exec prettier --parser typescript ${relativize(d.pkg.typesPath)})`,
+      );
+    } else {
+      console.error(`    git diff ${relativize(pkgSnapshotFor(d.pkg.name))}`);
+    }
   }
   console.error('');
   console.error('  If the change is INTENTIONAL, accept it with: pnpm gate:api:update');
   process.exit(1);
 }
 
-console.log(`✓ Public-API surface unchanged across ${packages.length} package(s):`);
+console.log(
+  `✓ Public API + packaging surface unchanged across ${packages.length} package(s):`,
+);
 for (const pkg of packages) console.log(`    ${pkg.name}`);
 
 function relativize(p) {

@@ -35,8 +35,8 @@ CI runs this exact command on every PR to `main` (see
 | Command | What it does |
 |---|---|
 | `pnpm gate:conformance` | Runs the published CIP-0103 conformance suite against the **native** `PartyLayerProvider`, wrapping an in-repo reference wallet. Fails on any non-conformant result. |
-| `pnpm gate:api` | Diffs each published package's `types` entry point against `tooling/api-snapshots/<pkg>.api.d.ts`. Fails on any public-API change. |
-| `pnpm gate:api:update` | **Intentionally** accepts public-API changes by rewriting the snapshots. Run this (and commit) when a public-API change is deliberate. |
+| `pnpm gate:api` | Diffs each published package's **type surface** (`<pkg>.api.d.ts`, Prettier-normalized) **and packaging surface** (`<pkg>.pkg.json`) against committed snapshots. Fails on any change to a public export, a `peerDependencies` range, an `exports` subpath, `bin`, etc. |
+| `pnpm gate:api:update` | **Intentionally** accepts API/packaging changes by rewriting both snapshot kinds. Run this (and commit) when a change is deliberate. |
 | `pnpm gate:registry` | Validates `registry/v1/{stable,beta}/registry.json` against `tooling/registry-schema/registry.schema.json` and asserts CIP-0103-native wallets keep their `cip0103.native` flag. |
 
 ## How to intentionally update the API snapshot
@@ -45,13 +45,30 @@ When you *mean* to change a public API:
 
 ```bash
 pnpm gate:build          # produce fresh dist/*.d.ts
-pnpm gate:api:update     # rewrite tooling/api-snapshots/*.api.d.ts
+pnpm gate:api:update     # rewrite tooling/api-snapshots/*.api.d.ts + *.pkg.json
 git add tooling/api-snapshots
-git commit -m "chore(api): accept public-API change for <pkg>"
+git commit -m "chore(api): accept public-API/packaging change for <pkg>"
 ```
 
-Reviewers see the exact public-API delta in the diff of the snapshot files —
-that is the whole point.
+Reviewers see the exact delta (type surface and/or packaging) in the diff of
+the snapshot files — that is the whole point.
+
+## What is snapshotted, and the snapshot set
+
+Two committed artifacts per package, under `tooling/api-snapshots/`:
+
+- **`<pkg>.api.d.ts`** — the published `.d.ts` (the `types`/`exports` entry),
+  run through Prettier (repo config) before both writing and diffing so
+  cosmetic ordering/whitespace can never cause a false failure.
+- **`<pkg>.pkg.json`** — normalized JSON of `{ name, main, module, types,
+  exports, bin, peerDependencies }`. **`version` is excluded** (it changes
+  every release and isn't part of the consumer contract). Keys are sorted
+  recursively. This catches packaging breakage — a tightened `peerDependencies`
+  range or a removed `exports` subpath — that never appears in the `.d.ts`.
+
+The set is **auto-discovered**: every workspace package with `"private": false`
+and a `"types"` entry, minus `EXCLUDED_PACKAGES` in `api-snapshot.mjs`. New
+publishable packages (e.g. `@partylayer/session`) are picked up automatically.
 
 ## How to add a new CIP-0103-native wallet
 
@@ -69,8 +86,8 @@ This keeps the footgun guard in lock-step with the registry.
 - **API snapshot = d.ts rollup, not API Extractor.** The `@partylayer/*`
   packages build with `tsup`, which already emits a single bundled
   `dist/index.d.ts` containing the full public type surface. That bundled file
-  *is* the published contract, so snapshotting it verbatim is faithful and
-  deterministic without adding heavy tooling.
+  *is* the published contract, so snapshotting it (Prettier-normalized) is
+  faithful and deterministic without adding heavy tooling.
 - **Registry check is shape/required-field, not a frozen diff.** Registry
   content grows additively; the gate only enforces structure + the cip0103
   footgun guard.
@@ -78,10 +95,12 @@ This keeps the footgun guard in lock-step with the registry.
   `createProviderBridge(mockClient)` construction already used by the provider
   package's own conformance-gate test), so no live wallet is required.
 
-## Known limitation
+## Excluded packages
 
-`@partylayer/adapter-starter` builds with `tsc` (not `tsup`), so its
-`index.d.ts` re-exports from sibling files rather than inlining them. Its
-snapshot therefore captures only the entry file. This is a low-risk template
-package; the eleven `tsup`-built packages (core, provider, react, sdk,
-registry-client, and all six adapters) get full rolled-up surfaces.
+`@partylayer/adapter-starter` is **excluded from the API gate**
+(`EXCLUDED_PACKAGES` in `api-snapshot.mjs`). It is a copy-me template, not a
+runtime dependency of any dApp, and it builds with `tsc` (not `tsup`) — its
+`index.d.ts` only re-exports from sibling files rather than inlining the full
+surface, so a snapshot would be half-protection (entry file only) and a source
+of false failures. The eleven `tsup`-built packages (core, provider, react,
+sdk, registry-client, and all six adapters) get full rolled-up surfaces.
