@@ -103,6 +103,25 @@ export function createSessionStore(
     }
   }
 
+  /**
+   * WC fallback: WalletConnect never emits `chainChanged` and its `status`
+   * event may omit `network`, so after a successful connect/restore the
+   * derived `networkId` can be null. When it is, ask the provider directly via
+   * `getActiveNetwork`. Guarded — older providers that lack the method (or
+   * fail) simply leave `networkId` null.
+   */
+  async function ensureNetworkId(): Promise<void> {
+    if (state.networkId) return;
+    try {
+      const net = await provider.request<CIP0103Network>({
+        method: 'getActiveNetwork',
+      });
+      if (net?.networkId) setState({ networkId: net.networkId });
+    } catch {
+      // Provider does not support getActiveNetwork — leave networkId null.
+    }
+  }
+
   // ── Provider event wiring ──────────────────────────────────────────────────
 
   const onStatusChanged: CIP0103EventListener = (...args: unknown[]) => {
@@ -145,6 +164,57 @@ export function createSessionStore(
   provider.on(CIP0103_EVENTS.ACCOUNTS_CHANGED, onAccountsChanged);
   provider.on('chainChanged', onChainChanged);
 
+  // ── restore/init implementation ─────────────────────────────────────────────
+  // Closure-captured so `init()` and `restore()` both delegate here WITHOUT
+  // relying on `this` — `const { init } = store; init()` must not crash.
+  async function restoreImpl(): Promise<SessionState> {
+    setState({ status: 'reconnecting', lastError: null });
+    try {
+      const hadMarker = (await storage.getItem(storageKey)) !== null;
+      const status = await provider.request<CIP0103StatusEvent>({
+        method: 'status',
+      });
+      const connected = status?.connection?.isConnected === true;
+
+      if (connected) {
+        let accounts: SessionAccount[] = [];
+        try {
+          accounts = await provider.request<CIP0103Account[]>({
+            method: 'listAccounts',
+          });
+        } catch {
+          accounts = [];
+        }
+        setState({
+          status: 'connected',
+          accounts,
+          account: pickPrimary(accounts),
+          networkId: status?.network?.networkId ?? null,
+          lastError: null,
+        });
+        await ensureNetworkId(); // WC fallback when status omitted network
+        await persistConnected();
+      } else {
+        setState({
+          status: 'disconnected',
+          account: null,
+          accounts: [],
+          networkId: null,
+        });
+        if (hadMarker) await clearConnected();
+      }
+
+      // pass 2: TanStack Query cache wiring attaches here — seed/invalidate
+      // query caches keyed by the restored account/network. Do NOT build it
+      // in 6a.
+
+      return state;
+    } catch (err) {
+      setState({ status: 'disconnected', lastError: toError(err) });
+      return state;
+    }
+  }
+
   // ── Public store ───────────────────────────────────────────────────────────
 
   const store: SessionStore = {
@@ -167,6 +237,7 @@ export function createSessionStore(
         // normally already moved us to 'connected'; assert it defensively in
         // case a provider does not emit on connect.
         if (state.status !== 'connected') setState({ status: 'connected' });
+        await ensureNetworkId(); // WC fallback when status omitted network
         await persistConnected();
         return state;
       } catch (err) {
@@ -197,55 +268,12 @@ export function createSessionStore(
       }
     },
 
-    async restore() {
-      setState({ status: 'reconnecting', lastError: null });
-      try {
-        const hadMarker = (await storage.getItem(storageKey)) !== null;
-        const status = await provider.request<CIP0103StatusEvent>({
-          method: 'status',
-        });
-        const connected = status?.connection?.isConnected === true;
-
-        if (connected) {
-          let accounts: SessionAccount[] = [];
-          try {
-            accounts = await provider.request<CIP0103Account[]>({
-              method: 'listAccounts',
-            });
-          } catch {
-            accounts = [];
-          }
-          setState({
-            status: 'connected',
-            accounts,
-            account: pickPrimary(accounts),
-            networkId: status?.network?.networkId ?? null,
-            lastError: null,
-          });
-          await persistConnected();
-        } else {
-          setState({
-            status: 'disconnected',
-            account: null,
-            accounts: [],
-            networkId: null,
-          });
-          if (hadMarker) await clearConnected();
-        }
-
-        // pass 2: TanStack Query cache wiring attaches here — seed/invalidate
-        // query caches keyed by the restored account/network. Do NOT build it
-        // in 6a.
-
-        return state;
-      } catch (err) {
-        setState({ status: 'disconnected', lastError: toError(err) });
-        return state;
-      }
+    restore() {
+      return restoreImpl();
     },
 
     init() {
-      return this.restore();
+      return restoreImpl();
     },
 
     getProvider() {

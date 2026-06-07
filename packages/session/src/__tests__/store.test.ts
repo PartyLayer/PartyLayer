@@ -6,7 +6,12 @@
  */
 
 import { describe, it, expect, vi } from 'vitest';
-import { CIP0103_EVENTS, type CIP0103Account, type CIP0103StatusEvent } from '@partylayer/core';
+import {
+  CIP0103_EVENTS,
+  type CIP0103Account,
+  type CIP0103Provider,
+  type CIP0103StatusEvent,
+} from '@partylayer/core';
 import {
   createMockWallet,
   createTransactionLifecycle,
@@ -228,5 +233,97 @@ describe('createSessionStore — subscribe / getSnapshot', () => {
       provider: { id: 'mock', version: '0', providerType: 'browser' },
     } as CIP0103StatusEvent);
     expect(store.getSnapshot()).toBe(before); // unchanged — listener was removed
+  });
+});
+
+// ── 6b fold-in fixes ─────────────────────────────────────────────────────────
+
+/**
+ * A minimal CIP-0103 provider that mimics a WalletConnect-style wallet: its
+ * `status`/`statusChanged` OMIT `network` (WC never emits chainChanged and may
+ * not include network in status), but it DOES answer `getActiveNetwork`.
+ */
+function createNetworklessProvider(networkId = 'canton:da-mainnet'): CIP0103Provider {
+  const bus = new Map<string, Set<(...args: unknown[]) => void>>();
+  const fire = (event: string, ...args: unknown[]) =>
+    bus.get(event)?.forEach((fn) => fn(...args));
+  const provider: CIP0103Provider = {
+    async request<T>(args: { method: string }): Promise<T> {
+      switch (args.method) {
+        case 'connect':
+          fire(CIP0103_EVENTS.STATUS_CHANGED, {
+            connection: { isConnected: true },
+            provider: { id: 'wc', version: '1', providerType: 'remote' },
+            // note: no `network`
+          } as CIP0103StatusEvent);
+          fire(CIP0103_EVENTS.ACCOUNTS_CHANGED, [account('party::wc')]);
+          return { isConnected: true } as T;
+        case 'status':
+          return {
+            connection: { isConnected: true },
+            provider: { id: 'wc', version: '1', providerType: 'remote' },
+          } as T; // no `network`
+        case 'listAccounts':
+          return [account('party::wc')] as T;
+        case 'getActiveNetwork':
+          return { networkId } as T;
+        default:
+          return undefined as T;
+      }
+    },
+    on(event, listener) {
+      let set = bus.get(event);
+      if (!set) {
+        set = new Set();
+        bus.set(event, set);
+      }
+      set.add(listener as (...args: unknown[]) => void);
+      return provider;
+    },
+    emit(event, ...args) {
+      fire(event, ...args);
+      return true;
+    },
+    removeListener(event, listener) {
+      bus.get(event)?.delete(listener as (...args: unknown[]) => void);
+      return provider;
+    },
+  };
+  return provider;
+}
+
+describe('createSessionStore — networkId WC fallback (status without network)', () => {
+  it('connect(): falls back to getActiveNetwork when statusChanged omits network', async () => {
+    const store = createSessionStore(createNetworklessProvider('canton:da-mainnet'));
+    const s = await store.connect();
+    expect(s.status).toBe('connected');
+    expect(s.networkId).toBe('canton:da-mainnet'); // populated via getActiveNetwork
+    store.destroy();
+  });
+
+  it('restore(): falls back to getActiveNetwork when status omits network', async () => {
+    const store = createSessionStore(createNetworklessProvider('canton:da-testnet'));
+    const s = await store.restore();
+    expect(s.status).toBe('connected');
+    expect(s.networkId).toBe('canton:da-testnet');
+    store.destroy();
+  });
+});
+
+describe('createSessionStore — destructure-safe lifecycle methods', () => {
+  it('a destructured init() does not rely on `this` and works', async () => {
+    const store = createSessionStore(createMockWallet({ connected: true }));
+    const { init } = store; // destructured — would crash if init used this.restore()
+    const s = await init();
+    expect(s.status).toBe('connected');
+    store.destroy();
+  });
+
+  it('a destructured restore() also works', async () => {
+    const store = createSessionStore(createMockWallet({ connected: true }));
+    const { restore } = store;
+    const s = await restore();
+    expect(s.status).toBe('connected');
+    store.destroy();
   });
 });
