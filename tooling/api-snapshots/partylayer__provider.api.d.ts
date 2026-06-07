@@ -436,6 +436,7 @@ declare class MethodRouter {
 export {
   type AsyncConnectOptions,
   type AsyncPrepareExecuteOptions,
+  type BridgeableClient,
   CANTON_NETWORKS,
   CIP0103EventBus,
   type DiscoveredProvider,

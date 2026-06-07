@@ -20,6 +20,7 @@ export type { PartyLayerProviderOptions } from './provider';
 // ─── Bridge ─────────────────────────────────────────────────────────────────
 
 export { createProviderBridge } from './bridge';
+export type { BridgeableClient } from './bridge';
 
 // ─── Errors ─────────────────────────────────────────────────────────────────
 
