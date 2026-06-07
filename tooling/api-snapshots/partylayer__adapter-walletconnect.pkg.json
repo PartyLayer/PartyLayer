@@ -1,0 +1,17 @@
+{
+  "exports": {
+    ".": {
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "main": "./dist/index.js",
+  "module": "./dist/index.mjs",
+  "name": "@partylayer/adapter-walletconnect",
+  "peerDependencies": {
+    "@walletconnect/sign-client": "^2.23.8",
+    "@walletconnect/types": "^2.23.8"
+  },
+  "types": "./dist/index.d.ts"
+}

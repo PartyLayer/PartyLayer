@@ -1,0 +1,63 @@
+{
+  "name": "@partylayer/adapter-walletconnect",
+  "version": "0.1.0",
+  "description": "WalletConnect adapter for PartyLayer — wraps @canton-network/dapp-sdk's WalletConnectAdapter (opt-in)",
+  "main": "./dist/index.js",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "clean": "rm -rf dist",
+    "lint": "eslint src --ext .ts",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "keywords": [
+    "canton",
+    "wallet",
+    "walletconnect",
+    "cip-0103"
+  ],
+  "author": "PartyLayer Contributors",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/PartyLayer/PartyLayer.git",
+    "directory": "packages/adapters/walletconnect"
+  },
+  "homepage": "https://github.com/PartyLayer/PartyLayer#readme",
+  "bugs": {
+    "url": "https://github.com/PartyLayer/PartyLayer/issues"
+  },
+  "dependencies": {
+    "@partylayer/core": "workspace:^",
+    "@canton-network/dapp-sdk": "^1.2.0"
+  },
+  "peerDependencies": {
+    "@walletconnect/sign-client": "^2.23.8",
+    "@walletconnect/types": "^2.23.8"
+  },
+  "peerDependenciesMeta": {
+    "@walletconnect/sign-client": {
+      "optional": true
+    },
+    "@walletconnect/types": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "typescript": "^5.3.3",
+    "vitest": "^1.2.0"
+  }
+}
