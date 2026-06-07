@@ -17,7 +17,15 @@ New additive exports on `@partylayer/provider`:
   provider.
 - `discoverProviders(options?)` — merges the existing synchronous
   `window.canton` scan with announce results, **deduped by stable provider id**
-  (a wallet reachable both ways — e.g. Console — appears exactly once).
+  (a wallet reachable both ways — e.g. Console — appears exactly once). The
+  injected entry's stable id is resolved sync-id → capped read-only `status()`
+  probe (`provider.id`, no popup) → path id, since live `window.canton`
+  (Console) exposes no top-level `id`; announce entries are keyed by their own
+  id and are NOT status-probed, so an offline announce wallet (Send) never
+  blocks discovery. The direct `window.canton` provider wins the dedup over the
+  announce shim.
+- `createExtensionChannelProvider` only accepts responses posted on the page's
+  own `window` and (when available) matching origin.
 - `createExtensionChannelProvider(options?)` — a self-contained CIP-0103
   provider over the splice-wallet `target` postMessage channel (the transport
   for announce wallets). `discoverAnnouncedProviders` uses it by default;

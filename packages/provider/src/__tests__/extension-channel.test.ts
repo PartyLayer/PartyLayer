@@ -24,9 +24,15 @@ function mockExtension(reply: Reply): () => void {
     const data = event.data as { type?: string; request?: { id: string; method: string; params?: unknown } };
     if (data?.type !== 'SPLICE_WALLET_REQUEST' || !data.request) return;
     const out = reply(data.request);
-    window.postMessage(
-      { type: 'SPLICE_WALLET_RESPONSE', response: { jsonrpc: '2.0', id: data.request.id, ...out } },
-      '*',
+    // Mirror a real content script: post on the page window with
+    // source === window and the page origin, so the provider's origin/source
+    // guard accepts it.
+    window.dispatchEvent(
+      new MessageEvent('message', {
+        data: { type: 'SPLICE_WALLET_RESPONSE', response: { jsonrpc: '2.0', id: data.request.id, ...out } },
+        source: window,
+        origin: window.location.origin,
+      }),
     );
   };
   window.addEventListener('message', handler as EventListener);

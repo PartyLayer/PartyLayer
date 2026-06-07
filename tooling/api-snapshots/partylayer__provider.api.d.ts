@@ -127,12 +127,20 @@ declare function discoverAnnouncedProviders(
 ): Promise<DiscoveredProvider[]>;
 /**
  * Discover ALL CIP-0103 wallets: the synchronous `window.canton` scan PLUS the
- * `canton:announceProvider` handshake, MERGED and deduped by stable provider id
- * (window.canton results win when a wallet is reachable both ways — e.g.
- * Console announces AND owns `window.canton`, so it appears exactly once).
+ * `canton:announceProvider` handshake, MERGED and deduped by stable provider id.
  *
- * Backward-compatible superset of `discoverInjectedProviders()` (which is left
- * unchanged for existing callers).
+ * Dedup keys:
+ *   - INJECTED entries: resolved via {@link resolveInjectedKey} (sync id →
+ *     capped read-only status() probe → path id). Resolved in PARALLEL.
+ *   - ANNOUNCE entries: their `d.id` (== announce id == target == the wallet's
+ *     `provider.id`). NOT status-probed — an offline announce wallet (e.g. Send)
+ *     would otherwise hang up to the channel timeout.
+ *
+ * INJECTED entries are processed FIRST so the direct `window.canton` provider
+ * wins over the announce postMessage shim for a wallet reachable both ways
+ * (e.g. Console announces AND owns `window.canton` → appears exactly once).
+ *
+ * Backward-compatible superset of `discoverInjectedProviders()` (left unchanged).
  */
 declare function discoverProviders(
   options?: AnnounceDiscoveryOptions

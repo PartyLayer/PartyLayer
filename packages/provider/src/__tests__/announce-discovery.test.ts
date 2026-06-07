@@ -172,3 +172,106 @@ describe('discoverProviders — dedup + no-regression', () => {
     }
   });
 });
+
+// ── Live Console/Send reality (PR #18 dedup defect) ──────────────────────────
+
+/**
+ * Console-like injected provider: NO top-level `id` (only request/on/emit/
+ * removeListener/source), stable id available ONLY via status().provider.id —
+ * the exact live shape that caused Console to be listed twice.
+ */
+function consoleLikeInjected(statusId: string): CIP0103Provider {
+  const p = {
+    source: 'console',
+    request: async (args: { method: string }) => {
+      if (args.method === 'status') return { provider: { id: statusId } };
+      return {};
+    },
+    on() {
+      return p;
+    },
+    emit() {
+      return true;
+    },
+    removeListener() {
+      return p;
+    },
+  };
+  return p as unknown as CIP0103Provider;
+}
+
+/** Injected provider whose status() NEVER resolves (non-responsive). */
+function hangingInjected(): CIP0103Provider {
+  const p = {
+    source: 'stuck',
+    request: () => new Promise<never>(() => {}), // never resolves
+    on() {
+      return p;
+    },
+    emit() {
+      return true;
+    },
+    removeListener() {
+      return p;
+    },
+  };
+  return p as unknown as CIP0103Provider;
+}
+
+describe('discoverProviders — live Console/Send reality', () => {
+  it('dedups Console to ONE entry when window.canton has NO top-level id (status-based), keeping the INJECTED provider', async () => {
+    const injected = consoleLikeInjected('lpnf');
+    setWindowCanton(injected);
+    const stop = mockExtension([{ providerId: 'lpnf', target: 'lpnf', name: 'Console' }]);
+
+    const result = await discoverProviders({ timeoutMs: 0, createProvider: resolveMock });
+    stop();
+
+    const consoleEntries = result.filter(
+      (r) =>
+        r.id === 'lpnf' ||
+        r.id === 'canton' ||
+        (r.provider as unknown as { id?: string }).id === 'lpnf',
+    );
+    expect(consoleEntries).toHaveLength(1); // not twice
+    // The kept entry is the direct window.canton provider, not the announce shim.
+    expect(consoleEntries[0].id).toBe('canton');
+    expect(consoleEntries[0].provider).toBe(injected);
+  });
+
+  it('an OFFLINE announce wallet (Send: announces, no window.canton, status never responds) appears once and does NOT delay discovery', async () => {
+    // No window.canton. Send announces but its channel provider never responds.
+    const stop = mockExtension([{ providerId: 'ldmoh', target: 'ldmoh', name: 'Send' }]);
+
+    const start = Date.now();
+    // No createProvider override → default native channel provider (offline-safe:
+    // announce entries are NOT status-probed by discoverProviders).
+    const result = await discoverProviders({ timeoutMs: 0 });
+    const elapsed = Date.now() - start;
+    stop();
+
+    expect(elapsed).toBeLessThan(1000); // nowhere near the 30s channel timeout
+    const send = result.filter((r) => r.id === 'ldmoh');
+    expect(send).toHaveLength(1);
+    expect(isCIP0103Provider(send[0].provider)).toBe(true);
+  });
+
+  it('caps the injected status() id-probe so a non-responsive window.canton can NEVER block discovery', async () => {
+    setWindowCanton(hangingInjected());
+    const start = Date.now();
+    const result = await discoverProviders({ timeoutMs: 0, createProvider: resolveMock });
+    const elapsed = Date.now() - start;
+
+    // Falls back to the path id after the ~1500ms cap; appears exactly once.
+    expect(elapsed).toBeLessThan(5000);
+    const entries = result.filter((r) => r.id === 'canton');
+    expect(entries).toHaveLength(1);
+  });
+
+  it('a window.canton owner with no id and no announce still appears exactly once', async () => {
+    setWindowCanton(consoleLikeInjected('solo'));
+    const result = await discoverProviders({ timeoutMs: 0, createProvider: resolveMock });
+    const entries = result.filter((r) => r.id === 'canton');
+    expect(entries).toHaveLength(1);
+  });
+});

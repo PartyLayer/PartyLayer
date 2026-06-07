@@ -74,6 +74,13 @@ export function createExtensionChannelProvider(
   >();
 
   function onMessage(event: MessageEvent): void {
+    // Only accept responses posted on the page's OWN window by the content
+    // script — never cross-window or cross-origin messages.
+    if (event.source !== window) return;
+    const selfOrigin =
+      typeof window !== 'undefined' ? window.location?.origin : undefined;
+    if (selfOrigin && selfOrigin !== 'null' && event.origin !== selfOrigin) return;
+
     const data = event.data as Partial<SpliceResponseMessage> | undefined;
     if (!data || data.type !== SPLICE_WALLET_RESPONSE || !data.response) return;
     const { id, result, error } = data.response;

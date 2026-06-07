@@ -285,25 +285,62 @@ export async function discoverAnnouncedProviders(
   return results;
 }
 
+/** Max time to spend on the read-only status() id-probe for ONE injected provider. */
+const INJECTED_ID_PROBE_TIMEOUT_MS = 1500;
+
+function raceTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
+  return Promise.race([
+    promise,
+    new Promise<T>((_, reject) =>
+      setTimeout(() => reject(new Error('id-probe timeout')), ms),
+    ),
+  ]);
+}
+
 /**
- * Stable identity for dedup across discovery paths. Prefers the provider's own
- * `id` (extensions report their extension id — Console's `window.canton`
- * provider reports the SAME id it announces with), falling back to the
- * discovery-path id.
+ * Resolve the stable dedup id for an INJECTED (window.canton scan) entry.
+ *
+ * Live reality: Console's `window.canton` has NO top-level `id` — its stable id
+ * is only available via `status().provider.id` (== its announce id/target). So:
+ *   1. use a sync top-level `provider.id` if a provider ever exposes one;
+ *   2. else a READ-ONLY `status()` probe reading `result.provider.id` (Console
+ *      → "lpnf…", no popup / no signing UI), capped so a non-responsive
+ *      injected provider can NEVER block discovery;
+ *   3. else fall back to the discovery-path id.
  */
-function stableProviderId(d: DiscoveredProvider): string {
-  const pid = (d.provider as unknown as { id?: unknown }).id;
-  return typeof pid === 'string' && pid.length > 0 ? pid : d.id;
+async function resolveInjectedKey(d: DiscoveredProvider): Promise<string> {
+  const sync = (d.provider as unknown as { id?: unknown }).id;
+  if (typeof sync === 'string' && sync.length > 0) return sync;
+
+  try {
+    const status = await raceTimeout(
+      d.provider.request<{ provider?: { id?: unknown } }>({ method: 'status' }),
+      INJECTED_ID_PROBE_TIMEOUT_MS,
+    );
+    const pid = status?.provider?.id;
+    if (typeof pid === 'string' && pid.length > 0) return pid;
+  } catch {
+    // timeout / throw / non-responsive → fall back to the path id
+  }
+  return d.id;
 }
 
 /**
  * Discover ALL CIP-0103 wallets: the synchronous `window.canton` scan PLUS the
- * `canton:announceProvider` handshake, MERGED and deduped by stable provider id
- * (window.canton results win when a wallet is reachable both ways — e.g.
- * Console announces AND owns `window.canton`, so it appears exactly once).
+ * `canton:announceProvider` handshake, MERGED and deduped by stable provider id.
  *
- * Backward-compatible superset of `discoverInjectedProviders()` (which is left
- * unchanged for existing callers).
+ * Dedup keys:
+ *   - INJECTED entries: resolved via {@link resolveInjectedKey} (sync id →
+ *     capped read-only status() probe → path id). Resolved in PARALLEL.
+ *   - ANNOUNCE entries: their `d.id` (== announce id == target == the wallet's
+ *     `provider.id`). NOT status-probed — an offline announce wallet (e.g. Send)
+ *     would otherwise hang up to the channel timeout.
+ *
+ * INJECTED entries are processed FIRST so the direct `window.canton` provider
+ * wins over the announce postMessage shim for a wallet reachable both ways
+ * (e.g. Console announces AND owns `window.canton` → appears exactly once).
+ *
+ * Backward-compatible superset of `discoverInjectedProviders()` (left unchanged).
  */
 export async function discoverProviders(
   options: AnnounceDiscoveryOptions = {},
@@ -311,14 +348,26 @@ export async function discoverProviders(
   const injected = discoverInjectedProviders();
   const announcedResults = await discoverAnnouncedProviders(options);
 
+  // Resolve injected keys in parallel; each probe is independently capped.
+  const injectedKeys = await Promise.all(injected.map(resolveInjectedKey));
+
   const out: DiscoveredProvider[] = [];
   const seen = new Set<string>();
-  // injected first so window.canton wins on duplicate ids
-  for (const d of [...injected, ...announcedResults]) {
-    const key = stableProviderId(d);
-    if (seen.has(key)) continue;
+
+  // INJECTED first — the direct window.canton provider wins on duplicate ids.
+  injected.forEach((d, i) => {
+    const key = injectedKeys[i];
+    if (seen.has(key)) return;
     seen.add(key);
     out.push(d);
+  });
+
+  // ANNOUNCE entries keyed by their own id (no status probe → offline-safe).
+  for (const d of announcedResults) {
+    if (seen.has(d.id)) continue;
+    seen.add(d.id);
+    out.push(d);
   }
+
   return out;
 }
