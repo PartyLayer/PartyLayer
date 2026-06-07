@@ -8,13 +8,15 @@
  * (`subscribe` + `getSnapshot`) for `useSyncExternalStore` (Step 6b) and Vue
  * composables.
  *
- * This package is intentionally `private` for now: the API is still forming
- * and the React hooks land in Step 6b. Keeping it private also keeps it out of
- * the published-API snapshot gate until 6b/stabilization (same rationale as
- * `@partylayer/testing`).
+ * This is a published (non-private) package: `@partylayer/react` depends on it
+ * via `workspace:^` for its `useAccount` / `useAccountEffect` hooks (Step 6b),
+ * and a Vue layer will consume it later. Its public surface is tracked by the
+ * regression-gate API snapshot like every other published `@partylayer/*`
+ * package. It stays in the 0.x range until the M1 cut, where changesets
+ * releases it ahead of `@partylayer/react`.
  *
- * Step 6b (SEPARATE PR) adds React hooks (useAccount/useAccountEffect and
- * wires useSession onto this core, backward-compatibly). Do NOT add React here.
+ * Framework layers (React in `@partylayer/react`, Vue later) consume this core;
+ * keep this package framework-agnostic — do NOT add React/Vue/DOM code here.
  */
 
 export { createSessionStore } from './store';
