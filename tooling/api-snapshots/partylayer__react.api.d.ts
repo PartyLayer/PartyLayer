@@ -31,6 +31,7 @@ import {
   DiscoveredProvider,
   Cip0103StatusForDetection,
 } from '@partylayer/sdk';
+import { SessionStore, SessionAccount, SessionStatus, SessionStorage } from '@partylayer/session';
 import * as _partylayer_core from '@partylayer/core';
 export { RegistryStatus } from '@partylayer/registry-client';
 
@@ -40,6 +41,13 @@ interface PartyLayerContextValue {
   wallets: WalletInfo[];
   isLoading: boolean;
   error: Error | null;
+  /**
+   * Shared framework-agnostic session store (Step 6b). Backed by the client's
+   * CIP-0103 provider and a localStorage adapter. Read by `useAccount` /
+   * `useAccountEffect`. Additive — existing consumers can ignore it; the
+   * legacy `session` field above is unchanged.
+   */
+  store: SessionStore | null;
 }
 declare function usePartyLayerContext(): PartyLayerContextValue;
 interface PartyLayerProviderProps {
@@ -350,6 +358,83 @@ declare function createSyntheticWalletInfo(
   network: string
 ): WalletInfo;
 
+/**
+ * React hooks over the @partylayer/session core (Step 6b).
+ *
+ * NEW, additive hooks — `useAccount` and `useAccountEffect` — with wagmi
+ * parity. They read the shared `SessionStore` created by `PartyLayerProvider`
+ * via `useSyncExternalStore`. The existing `useSession` (SDK-layer) is left
+ * untouched; the two coexist until the M2 react v2 unification.
+ */
+
+/** wagmi-parity-ish chain handle derived from the CAIP-2 networkId. */
+interface SessionChain {
+  /** CAIP-2 network id, e.g. "canton:da-mainnet". */
+  id: string;
+}
+interface UseAccountReturn {
+  /** Active party id (Canton's address analog), or null. */
+  party: string | null;
+  /** wagmi-parity alias of `party`. */
+  address: string | null;
+  /** Full active (primary) account, or null. */
+  account: SessionAccount | null;
+  /** All accounts the wallet exposed. */
+  accounts: readonly SessionAccount[];
+  /** Connection status state-machine value. */
+  status: SessionStatus;
+  isConnected: boolean;
+  isConnecting: boolean;
+  isReconnecting: boolean;
+  isDisconnected: boolean;
+  /** Active network in CAIP-2 form, or null. */
+  networkId: string | null;
+  /** wagmi-parity chain handle derived from `networkId`, or null. */
+  chain: SessionChain | null;
+  /** Last connect/restore error, or null. */
+  lastError: Error | null;
+}
+/**
+ * Read the active account/connection from the shared session store.
+ *
+ * wagmi parity: `useAccount()` returns `{ address, status, isConnected, ... }`.
+ * SSR-safe — `getServerSnapshot` returns a stable disconnected snapshot.
+ */
+declare function useAccount(): UseAccountReturn;
+interface UseAccountEffectParameters {
+  /** Fired on a transition INTO `connected` (from disconnected/connecting/reconnecting). */
+  onConnect?: (data: {
+    account: SessionAccount | null;
+    accounts: readonly SessionAccount[];
+    networkId: string | null;
+  }) => void;
+  /** Fired on a transition `connected → disconnected`. */
+  onDisconnect?: () => void;
+}
+/**
+ * Fire side-effects on session status transitions — no render churn.
+ *
+ * - `onConnect` runs once when status becomes `connected`.
+ * - `onDisconnect` runs once on `connected → disconnected`.
+ */
+declare function useAccountEffect(parameters?: UseAccountEffectParameters): void;
+
+/**
+ * Browser `localStorage`-backed `SessionStorage` for the session core.
+ *
+ * The `@partylayer/session` core is DOM-free and never touches `localStorage`
+ * itself — this adapter is the only place that does, and it is SSR-safe
+ * (guards `typeof window`). The `PartyLayerProvider` injects it into the
+ * session store it creates.
+ */
+
+/**
+ * Create a `SessionStorage` backed by `window.localStorage`. On the server (or
+ * any environment without `localStorage`) every method is a safe no-op, so the
+ * session core degrades to "no persistence" rather than throwing.
+ */
+declare function createLocalStorage(): SessionStorage;
+
 export {
   PartyLayerProvider as CantonConnectProvider,
   ConnectButton,
@@ -359,16 +444,22 @@ export {
   type PartyLayerKitProps,
   PartyLayerProvider,
   type PartyLayerTheme,
+  type SessionChain,
   ThemeProvider,
+  type UseAccountEffectParameters,
+  type UseAccountReturn,
   type WalletIconMap,
   WalletModal,
   type WalletModalProps,
+  createLocalStorage,
   createNativeAdapter,
   createSyntheticWalletInfo,
   darkTheme,
   lightTheme,
   resolveWalletIcon,
   truncatePartyId,
+  useAccount,
+  useAccountEffect,
   usePartyLayer as useCantonConnect,
   useConnect,
   useDisconnect,

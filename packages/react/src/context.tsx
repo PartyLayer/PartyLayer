@@ -19,12 +19,14 @@
  * conformance suite — only the picker stops consuming them.
  */
 
-import { createContext, useContext, useEffect, useState } from 'react';
+import { createContext, useContext, useEffect, useRef, useState } from 'react';
 import type {
   PartyLayerClient,
   Session,
   WalletInfo,
 } from '@partylayer/sdk';
+import { createSessionStore, type SessionStore } from '@partylayer/session';
+import { createLocalStorage } from './session-storage';
 
 interface PartyLayerContextValue {
   client: PartyLayerClient | null;
@@ -32,6 +34,13 @@ interface PartyLayerContextValue {
   wallets: WalletInfo[];
   isLoading: boolean;
   error: Error | null;
+  /**
+   * Shared framework-agnostic session store (Step 6b). Backed by the client's
+   * CIP-0103 provider and a localStorage adapter. Read by `useAccount` /
+   * `useAccountEffect`. Additive — existing consumers can ignore it; the
+   * legacy `session` field above is unchanged.
+   */
+  store: SessionStore | null;
 }
 
 const PartyLayerContext =
@@ -62,6 +71,32 @@ export function PartyLayerProvider({
   const [wallets, setWallets] = useState<WalletInfo[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
+
+  // ── Shared session store (6b) ──────────────────────────────────────────────
+  // One store per client, created at render so the hooks can read it on first
+  // paint. Recreated if the `client` prop changes. The mount effect below runs
+  // init()/destroy(); on a StrictMode remount the ref is nulled by cleanup so
+  // the render-phase guard rebuilds a fresh, re-subscribed store.
+  const storeRef = useRef<{ client: PartyLayerClient; store: SessionStore } | null>(null);
+  if (storeRef.current === null || storeRef.current.client !== client) {
+    storeRef.current?.store.destroy();
+    storeRef.current = {
+      client,
+      store: createSessionStore(client.asProvider(), {
+        storage: createLocalStorage(),
+      }),
+    };
+  }
+  const store = storeRef.current.store;
+
+  useEffect(() => {
+    // Restore/reconnect on mount; tear down on unmount.
+    void store.init();
+    return () => {
+      store.destroy();
+      if (storeRef.current?.store === store) storeRef.current = null;
+    };
+  }, [store]);
 
   useEffect(() => {
     let mounted = true;
@@ -135,6 +170,7 @@ export function PartyLayerProvider({
         wallets,
         isLoading,
         error,
+        store,
       }}
     >
       {children}
