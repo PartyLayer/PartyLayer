@@ -42,11 +42,14 @@ npm install @partylayer/provider
 ```typescript
 import { PartyLayerProvider, discoverProviders } from '@partylayer/provider';
 
-// Discover injected CIP-0103 wallet providers
-const wallets = discoverProviders();
+// Discover CIP-0103 wallets: the synchronous window.canton scan PLUS the
+// canton:announceProvider handshake (async), merged + deduped by provider id.
+const wallets = await discoverProviders();
 
 // Create provider with first discovered wallet
 const provider = new PartyLayerProvider({ walletProvider: wallets[0] });
+
+// (For the synchronous window.canton-only scan, use discoverInjectedProviders().)
 
 // Connect
 const result = await provider.request({ method: 'connect' });

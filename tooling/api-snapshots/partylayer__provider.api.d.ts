@@ -62,6 +62,8 @@ interface DiscoveredProvider {
   isAsync?: boolean;
   /** Display name (if discoverable from status) */
   name?: string;
+  /** Icon (data: URI or URL) — populated for announce-discovered wallets. */
+  icon?: string;
 }
 /**
  * Check if an object implements the CIP-0103 Provider interface.
@@ -91,6 +93,49 @@ declare function waitForProvider(
   id: string,
   timeoutMs?: number
 ): Promise<DiscoveredProvider | null>;
+/** Metadata carried by a `canton:announceProvider` event. */
+interface AnnouncedWallet {
+  /** Stable provider id (extension id), e.g. "ldmoh…" for Send. */
+  id: string;
+  /** Display name. */
+  name?: string;
+  /** Icon (data: URI or URL). */
+  icon?: string;
+  /** Routing key for the extension postMessage channel. */
+  target?: string;
+}
+interface AnnounceDiscoveryOptions {
+  /** How long to collect announce replies after the request (ms). Default 300. */
+  timeoutMs?: number;
+  /**
+   * Build a CIP-0103 provider from an announced wallet. Defaults to the
+   * official `@canton-network/dapp-sdk` `ExtensionAdapter` (postMessage over
+   * the `target` channel). Injectable for tests.
+   */
+  createProvider?: (announced: AnnouncedWallet) => CIP0103Provider | Promise<CIP0103Provider>;
+}
+/**
+ * Discover wallets that advertise via `canton:announceProvider` (EIP-6963-style).
+ *
+ * Works regardless of who owns `window.canton` — this is how Send (and
+ * Console-via-announce) are found. Each result is a working CIP-0103 provider.
+ * Announce replies are deduped by id within a single call.
+ */
+declare function discoverAnnouncedProviders(
+  options?: AnnounceDiscoveryOptions
+): Promise<DiscoveredProvider[]>;
+/**
+ * Discover ALL CIP-0103 wallets: the synchronous `window.canton` scan PLUS the
+ * `canton:announceProvider` handshake, MERGED and deduped by stable provider id
+ * (window.canton results win when a wallet is reachable both ways — e.g.
+ * Console announces AND owns `window.canton`, so it appears exactly once).
+ *
+ * Backward-compatible superset of `discoverInjectedProviders()` (which is left
+ * unchanged for existing callers).
+ */
+declare function discoverProviders(
+  options?: AnnounceDiscoveryOptions
+): Promise<DiscoveredProvider[]>;
 
 /**
  * PartyLayerProvider — CIP-0103 Native Provider Implementation
@@ -434,6 +479,8 @@ declare class MethodRouter {
 }
 
 export {
+  type AnnounceDiscoveryOptions,
+  type AnnouncedWallet,
   type AsyncConnectOptions,
   type AsyncPrepareExecuteOptions,
   type BridgeableClient,
@@ -450,7 +497,9 @@ export {
   chainDisconnected,
   createProviderBridge,
   disconnected,
+  discoverAnnouncedProviders,
   discoverInjectedProviders,
+  discoverProviders,
   fromCAIP2Network,
   handleAsyncConnect,
   handleAsyncPrepareExecute,
