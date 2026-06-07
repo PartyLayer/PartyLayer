@@ -359,6 +359,9 @@ importers:
       '@partylayer/core':
         specifier: workspace:^
         version: link:../../core
+      '@partylayer/provider':
+        specifier: workspace:^
+        version: link:../../provider
     devDependencies:
       '@types/node':
         specifier: ^20.11.0
@@ -5538,7 +5541,7 @@ snapshots:
       pathe: 1.1.2
       picocolors: 1.1.1
       sirv: 2.0.4
-      vitest: 1.6.1(@types/node@25.9.2)(@vitest/ui@1.6.1)(jsdom@24.1.3)
+      vitest: 1.6.1(@types/node@20.19.30)(@vitest/ui@1.6.1)(jsdom@24.1.3)
 
   '@vitest/utils@1.6.1':
     dependencies:

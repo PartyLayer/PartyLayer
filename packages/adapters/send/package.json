@@ -45,7 +45,8 @@
     "url": "https://github.com/PartyLayer/PartyLayer/issues"
   },
   "dependencies": {
-    "@partylayer/core": "workspace:^"
+    "@partylayer/core": "workspace:^",
+    "@partylayer/provider": "workspace:^"
   },
   "devDependencies": {
     "@types/node": "^20.11.0",

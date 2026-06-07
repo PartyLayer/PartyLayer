@@ -1,18 +1,30 @@
 /**
- * Reusable `window.canton` mock for Send adapter tests.
+ * Reusable test harness for the Send adapter — announce + extension-channel
+ * transport.
  *
- * The fixtures in this file are NOT invented — every value was captured
- * from a real Send extension (kernel id sourced from SEND_KERNEL_ID constant)
- * during manual verification. Treat them as authoritative; tweaking a
- * field to make a test pass is almost certainly papering over a bug.
+ * Send is announce-only: it advertises via `canton:announceProvider` and routes
+ * RPCs over the splice postMessage `target` channel; it does NOT inject
+ * `window.canton` (Console owns that slot). So this harness no longer installs
+ * a `window.canton` provider — instead it:
+ *   - builds a mock CHANNEL provider (the `request`/`on`/`off` surface a real
+ *     extension-channel provider exposes), reusing the captured real fixtures;
+ *   - exposes `makeSendProvider()` which wires a `SendProvider` to that channel
+ *     via an injected announce-`discover` (so tests need no real postMessage);
+ *   - models the live collision by parking a Console-class provider at
+ *     `window.canton` while Send is reached purely via announce.
+ *
+ * The fixtures below are NOT invented — captured from a real Send extension.
  */
 
 import { vi } from 'vitest';
 
+import type { CIP0103Provider, ProviderDetection } from '@partylayer/core';
+import type { AnnounceDiscoveryOptions, DiscoveredProvider } from '@partylayer/provider';
+
 import { SEND_KERNEL_ID } from '../constants';
+import { SendProvider } from '../send-provider';
 import type {
   SendAccount,
-  SendCantonProvider,
   SendEventListener,
   SendEventName,
   SendLedgerApiResult,
@@ -59,40 +71,8 @@ export const REAL_PRIMARY_ACCOUNT: SendAccount = {
 
 export const REAL_LIST_ACCOUNTS: SendAccount[] = [REAL_PRIMARY_ACCOUNT];
 
-/**
- * A plausible-but-foreign extension id. Used in build-specific tests
- * (where Send is installed in developer mode, so kernel.id varies but
- * URL signals stay stable — registry detection MUST still match Send).
- */
+/** A non-Send extension id (Console's), used to model the shared-slot collision. */
 export const FOREIGN_KERNEL_ID = 'lpnfhpbpmlobjlgkdmnjieeihjmihhjd';
-
-/**
- * Status that LOOKS like Send except for a non-canonical kernel.id —
- * mirrors the developer-mode Send install. URL-based matchers still
- * fire, so detection should pass.
- */
-export const BUILD_SPECIFIC_STATUS: SendStatusResponse = {
-  ...REAL_STATUS,
-  kernel: { ...REAL_STATUS.kernel, id: FOREIGN_KERNEL_ID },
-};
-
-/** @deprecated Pre-Prompt-6 alias. New code should use {@link BUILD_SPECIFIC_STATUS}. */
-export const FOREIGN_STATUS: SendStatusResponse = BUILD_SPECIFIC_STATUS;
-
-/**
- * A truly foreign provider — different kernel.id AND different URL
- * domain. This is what a Console-class wallet at `window.canton` would
- * look like, and the case where Send adapter MUST refuse to act.
- */
-export const FULLY_FOREIGN_STATUS: SendStatusResponse = {
-  ...REAL_STATUS,
-  kernel: {
-    ...REAL_STATUS.kernel,
-    id: 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
-    url: 'https://api.other-wallet.example.com',
-    userUrl: 'https://other-wallet.example.com',
-  },
-};
 
 // ── RPC error helpers ──────────────────────────────────────────────────────
 
@@ -106,11 +86,11 @@ export function rpcError(code: number, message: string, data?: unknown): MockRpc
   return { code, message, data };
 }
 
-// ── Provider mock ──────────────────────────────────────────────────────────
+// ── Channel-provider mock ───────────────────────────────────────────────────
 
 export interface MockProviderConfig {
-  /** Kernel id reported by `status`. Defaults to `SEND_KERNEL_ID`. */
-  kernelId?: string;
+  /** Announce id Send advertises with (== target). Defaults to SEND_KERNEL_ID. */
+  announceId?: string;
   /** Replace whole status response. */
   status?: SendStatusResponse;
   /** Replace primary account response. */
@@ -136,10 +116,9 @@ export interface MockProviderConfig {
 }
 
 /**
- * Test-facing shape. Uses `vi.fn()` for `request`/`on`/`off` so tests can
- * assert call args; deliberately NOT structurally compatible with
- * `SendCantonProvider`'s typed `request<M>` signature (we cast at the
- * stubGlobal boundary instead).
+ * Mock channel provider. `request`/`on`/`off` are `vi.fn()` so tests can assert
+ * call args (same shape as the previous window.canton mock). It satisfies the
+ * `CIP0103Provider` surface SendProvider needs (request/on/emit/removeListener).
  */
 export interface MockCantonProvider {
   request: ReturnType<typeof vi.fn>;
@@ -148,7 +127,6 @@ export interface MockCantonProvider {
   removeListener?: ReturnType<typeof vi.fn>;
   emit(event: SendEventName, ...args: unknown[]): void;
   listeners: Map<SendEventName, Set<SendEventListener>>;
-  /** For inspection in tests — last config used to build the mock. */
   __config: MockProviderConfig;
 }
 
@@ -168,24 +146,14 @@ const DEFAULT_SIGN_MESSAGE: SendSignMessageResult = {
   signature: 'MEUCIQDdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefAiBcafebabe==',
 };
 
-/**
- * Install a fully-typed mock provider at `window.canton` and return a
- * handle to it for assertions. Call `uninstallMockCanton()` in afterEach
- * to restore globals.
- */
-export function installMockCanton(config: MockProviderConfig = {}): MockCantonProvider {
-  const kernelId = config.kernelId ?? SEND_KERNEL_ID;
-  const status: SendStatusResponse = config.status ?? {
-    ...REAL_STATUS,
-    kernel: { ...REAL_STATUS.kernel, id: kernelId },
-  };
+function buildChannel(config: MockProviderConfig): MockCantonProvider {
+  const status: SendStatusResponse = config.status ?? REAL_STATUS;
   const listeners = new Map<SendEventName, Set<SendEventListener>>();
 
   function maybeThrow(method: SendRpcMethod): void {
     const err = config.errors?.[method];
     if (!err) return;
-    if (err instanceof Error) throw err;
-    throw err; // plain object — exercises adapter's RPC-error code branches
+    throw err; // Error instance or plain RPC-shaped object (exercises code branches)
   }
 
   const request = vi.fn(async (args: { method: SendRpcMethod; params?: unknown }) => {
@@ -245,22 +213,80 @@ export function installMockCanton(config: MockProviderConfig = {}): MockCantonPr
   };
 
   if (!config.omitAllUnsubscribe) {
-    if (!config.omitOff) {
-      provider.off = off as unknown as MockCantonProvider['off'];
-    }
+    if (!config.omitOff) provider.off = off as unknown as MockCantonProvider['off'];
     provider.removeListener = removeListener as unknown as MockCantonProvider['removeListener'];
   }
 
-  vi.stubGlobal('window', { canton: provider as unknown as SendCantonProvider });
   return provider;
 }
 
-/** Remove the mock from `window.canton` and reset all stubs. */
-export function uninstallMockCanton(): void {
-  vi.unstubAllGlobals();
+// ── Announce harness state ──────────────────────────────────────────────────
+
+let announcedChannel: MockCantonProvider | null = null;
+let announcedId: string = SEND_KERNEL_ID;
+let discoverCalls = 0;
+
+/** A Console-class provider that owns the shared `window.canton` slot. */
+function consoleAtWindowCanton(): unknown {
+  return {
+    source: 'consoleWallet',
+    request: async () => ({}),
+    on: () => {},
+    emit: () => true,
+    removeListener: () => {},
+  };
 }
 
-/** Install `window` without a `canton` property (extension not present). */
+/** Injected announce discovery: returns Send's channel entry iff Send "announced". */
+async function sendDiscover(_options?: AnnounceDiscoveryOptions): Promise<DiscoveredProvider[]> {
+  discoverCalls += 1;
+  if (!announcedChannel) return [];
+  return [
+    {
+      id: announcedId,
+      provider: announcedChannel as unknown as CIP0103Provider,
+      source: 'injected',
+      name: 'Send',
+    },
+  ];
+}
+
+/** Number of announce-discovery calls since the last `uninstallMockCanton()`. */
+export function getDiscoverCalls(): number {
+  return discoverCalls;
+}
+
+/**
+ * Build a `SendProvider` wired to the mock announce channel (announce timeout 0).
+ * Use this in place of the real announce handshake in tests.
+ */
+export function makeSendProvider(detection?: ProviderDetection): SendProvider {
+  return new SendProvider(detection, { discover: sendDiscover, announceTimeoutMs: 0 });
+}
+
+/**
+ * Mark Send as announcing with the given channel config, and park Console at
+ * the shared `window.canton` slot (proving Send is reached via announce
+ * regardless of who owns window.canton). Returns the channel mock for assertions.
+ */
+export function installMockCanton(config: MockProviderConfig = {}): MockCantonProvider {
+  const channel = buildChannel(config);
+  announcedChannel = channel;
+  announcedId = config.announceId ?? SEND_KERNEL_ID;
+  vi.stubGlobal('window', { canton: consoleAtWindowCanton() });
+  return channel;
+}
+
+/** A browser where Send does NOT announce (Console may still own window.canton). */
 export function installEmptyWindow(): void {
-  vi.stubGlobal('window', {});
+  announcedChannel = null;
+  vi.stubGlobal('window', { canton: consoleAtWindowCanton() });
+}
+
+/** Reset the announce harness and restore globals. */
+export function uninstallMockCanton(): void {
+  announcedChannel = null;
+  announcedId = SEND_KERNEL_ID;
+  discoverCalls = 0;
+  vi.unstubAllGlobals();
 }

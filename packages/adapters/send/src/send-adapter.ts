@@ -109,14 +109,15 @@ export class SendAdapter implements WalletAdapter {
         reason: `Send Canton Wallet not detected. Visit ${SEND_INSTALL_URL} for installation instructions`,
       };
     }
+    // Installed iff Send advertises via canton:announceProvider — independent
+    // of who owns the shared window.canton slot (e.g. Console).
     const installed = await this.provider.isInstalled();
     if (installed) {
       return { installed: true, reason: 'Send Canton Wallet detected' };
     }
     return {
       installed: false,
-      reason:
-        'window.canton is present but its kernel.id does not match Send. Another Canton wallet is active.',
+      reason: `Send Canton Wallet did not announce (canton:announceProvider). Visit ${SEND_INSTALL_URL} for installation instructions`,
     };
   }
 

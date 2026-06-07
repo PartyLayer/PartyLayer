@@ -6,6 +6,7 @@
 import * as _partylayer_core from '@partylayer/core';
 import {
   ProviderDetection,
+  CIP0103Provider,
   WalletAdapter,
   CapabilityKey,
   AdapterDetectResult,
@@ -27,6 +28,7 @@ import {
   ErrorMappingContext,
   PartyLayerError,
 } from '@partylayer/core';
+import { AnnounceDiscoveryOptions, DiscoveredProvider } from '@partylayer/provider';
 
 /**
  * Local Sigilry-shape types.
@@ -239,65 +241,93 @@ declare global {
 }
 
 /**
- * Typed wrapper around the `window.canton` provider exposed by Send.
+ * Typed wrapper around the Send Canton wallet, reached via the
+ * `canton:announceProvider` + extension postMessage `target` channel.
  *
- * Detection is **registry-driven** via `matchesProviderDetection`. The
- * adapter accepts an optional `ProviderDetection` rule set at construction
- * (sourced from the registry's `providerDetection` field for the Send
- * entry); when omitted, it falls back to `SEND_BUILTIN_DETECTION` which
- * mirrors the canonical registry rule. Every public RPC method goes
- * through `guardedRequest`, which checks the live `status` response
- * against those rules before forwarding the call. The result: if a
- * non-Send wallet is sitting at `window.canton`, every Send call resolves
- * to a `SendKernelMismatchError` (treated by the SDK as "Send is not
- * installed"), and Send only ever acts on its own provider.
+ * WHY NOT `window.canton`: Send is announce-only. When another wallet (e.g.
+ * Console) owns the single shared `window.canton` slot, the old transport
+ * (bind `window.canton`, guard by `kernel.id`) returned a kernel mismatch and
+ * Send was unconnectable. Send instead fires `canton:announceProvider` with
+ * `{ id, name, icon, target }` (id == target == its extension id) and does NOT
+ * inject `window.canton`. So detection + every RPC now go through the announce
+ * handshake and the splice postMessage `target` channel, regardless of who
+ * owns `window.canton`.
+ *
+ * Transport is reused from `@partylayer/provider`: `discoverAnnouncedProviders`
+ * finds Send's announce entry (a ready `createExtensionChannelProvider` over
+ * its `target`), and every call is forwarded through that channel provider's
+ * request/response. Detection is registry-driven: the announce `id` is matched
+ * against Send's accepted extension ids (the `provider.id` matchers of the
+ * supplied `ProviderDetection`, plus `SEND_KNOWN_EXTENSION_IDS`).
+ *
+ * INBOUND EVENTS: the official splice extension (sync) provider does not push
+ * events over `postMessage` — the wire protocol has no inbound-event message
+ * type, and event push exists only on the remote/SSE path. Send's tx result
+ * comes from `prepareExecuteAndWait`'s response, not from `txChanged`. So
+ * `on`/`off` simply delegate to the channel provider's local event bus (kept so
+ * the `events` capability and API are preserved); they never throw.
  */
 
+interface SendProviderOptions {
+  /**
+   * Pre-resolved channel provider (used by tests). When set, the announce
+   * handshake is skipped and every call routes through this provider.
+   */
+  provider?: CIP0103Provider;
+  /** Override the announce-collection window (ms). Default 500. */
+  announceTimeoutMs?: number;
+  /** Override announce discovery (used by tests). Defaults to the real handshake. */
+  discover?: (options?: AnnounceDiscoveryOptions) => Promise<DiscoveredProvider[]>;
+}
 declare class SendProvider {
   private readonly detection;
+  private readonly announceTimeoutMs;
+  private readonly discover;
+  private readonly injectedProvider?;
+  private cachedChannel;
+  private channelPromise;
   private cachedStatus;
   /**
-   * @param detection Optional. Used to match the running `window.canton`
-   *   provider against Send's identity. When omitted, falls back to
-   *   `SEND_BUILTIN_DETECTION` (canonical registry rule mirror).
+   * @param detection Optional registry `ProviderDetection`. Its `provider.id`
+   *   exact-match values define which announced extension ids are treated as
+   *   Send. Defaults to `SEND_BUILTIN_DETECTION`.
+   * @param options Optional test/advanced hooks (see {@link SendProviderOptions}).
    */
-  constructor(detection?: ProviderDetection);
+  constructor(detection?: ProviderDetection, options?: SendProviderOptions);
+  /** Extension ids accepted as Send: registry `provider.id` matchers ∪ known ids. */
+  private acceptedIds;
   /**
-   * True when `window.canton` is present AND its self-reported status
-   * matches Send's detection rules. Performs an actual `status` round-trip
-   * on first call and caches the response for subsequent ones.
+   * Resolve (and cache) Send's announce channel. Returns null if Send did not
+   * announce. Concurrent callers share a single in-flight announce (dedup), so
+   * a burst of requests triggers exactly one handshake.
+   */
+  private resolveChannel;
+  private doResolveChannel;
+  private channelRequest;
+  /**
+   * True iff Send announces via `canton:announceProvider` — independent of who
+   * owns `window.canton`. Caches the resolved channel.
    */
   isInstalled(): Promise<boolean>;
   /**
-   * Synchronous best-effort presence check. Used for fast picker rendering
-   * before any async status introspection. May report `true` for a
-   * non-Send provider — callers must follow up with `isInstalled()` (or
-   * any guarded request) before assuming Send is wired in.
+   * Synchronous best-effort presence check: only that we are in a browser where
+   * announce discovery can run. The authoritative check is `isInstalled()` /
+   * any request (which performs the announce handshake). No longer depends on
+   * the shared `window.canton` slot.
    */
   isPotentiallyAvailable(): boolean;
   /**
-   * Read the cached `kernel.id` from the running provider, fetching status
-   * on demand. Diagnostic helper kept public for back-compat — detection
-   * itself no longer hinges on this single field.
+   * Read `status().kernel.id`. Diagnostic helper kept for back-compat. Live
+   * Send no longer reports a kernel; this throws `SendNotInstalledError` when
+   * absent (callers that need the stable id should use the announce target).
    */
   getKernelId(): Promise<string>;
-  /**
-   * Read the latest cached status object. Resolves the underlying RPC on
-   * demand if no cached value is present.
-   */
+  /** Latest status (cached after first fetch). */
   getStatus(): Promise<SendStatusResponse>;
-  /**
-   * Reset the cached status (e.g. after the user uninstalls and reinstalls
-   * the extension, or you suspect kernel identity changed mid-session).
-   * Kept under both names to avoid breaking existing test imports.
-   */
+  /** Reset cached status AND the resolved announce channel (forces re-announce). */
   resetKernelCache(): void;
   resetStatusCache(): void;
   private fetchStatus;
-  /** Internal — bypasses the detection guard. */
-  private rawRequest;
-  /** Public dispatch — guards every call with a registry-driven detection check. */
-  private guardedRequest;
   status(): Promise<SendStatusResponse>;
   connect(): Promise<SendStatusResponse>;
   disconnect(): Promise<null>;

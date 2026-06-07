@@ -35,14 +35,13 @@ import {
 // (signTransaction stub assertions, mapSigilryError 4200 case).
 
 import {
-  BUILD_SPECIFIC_STATUS,
-  FOREIGN_KERNEL_ID,
-  FULLY_FOREIGN_STATUS,
   REAL_LIST_ACCOUNTS,
   REAL_PRIMARY_ACCOUNT,
   REAL_STATUS,
+  getDiscoverCalls,
   installEmptyWindow,
   installMockCanton,
+  makeSendProvider,
   rpcError,
   uninstallMockCanton,
 } from './__mocks__/window-canton';
@@ -112,58 +111,54 @@ const baseSubmitPayload: SendPrepareSubmissionRequest = {
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Group 1 — Provider-detection guard (registry-driven, multi-signal)
+// Group 1 — Announce-based detection (the production "Send missed" fix)
 // ─────────────────────────────────────────────────────────────────────────────
 //
-// As of Prompt 6 the adapter no longer keys identity on `kernel.id` alone.
-// Detection is driven by a `ProviderDetection` rule set (URL domain matchers
-// for stable identity, kernel.id whitelist as a fallback). Tests cover:
-//   - Stable identity via URL domain (production install)
-//   - Build-specific kernel.id with stable URL (developer-mode install)
-//   - Truly foreign provider with mismatched URL and id (Console-class)
-//   - Constructor-injected detection from registry entry
-//   - Parity between built-in detection and the canonical registry rule
+// Send is announce-only: it advertises via `canton:announceProvider` and does
+// NOT inject `window.canton` (Console owns that slot). Detection therefore no
+// longer reads `window.canton`/`kernel.id`; it is true iff Send ANNOUNCES, and
+// registry `ProviderDetection` `provider.id` matchers define which announced
+// extension ids count as Send. These tests replace the old window.canton/
+// kernel.id guard tests (that transport is gone).
 
-describe('SendAdapter: provider-detection guard', () => {
+describe('SendAdapter: announce-based detection', () => {
   let adapter: SendAdapter;
   let ctx: AdapterContext;
 
   beforeEach(() => {
-    adapter = new SendAdapter();
+    adapter = new SendAdapter({ provider: makeSendProvider() });
     ctx = createMockContext();
   });
   afterEach(() => uninstallMockCanton());
 
-  it('isInstalled() is true when kernel.url + kernel.id both match canonical Send', async () => {
+  it('detectInstalled() is true when Send announces', async () => {
     installMockCanton();
     await expect(adapter.detectInstalled()).resolves.toMatchObject({ installed: true });
   });
 
-  it('isInstalled() is true when only kernel.url matches (build-specific kernel.id)', async () => {
-    // Developer-mode Send install: kernel.id varies per build but URLs stay
-    // anchored to cantonwallet.com. URL-domain matchers must be enough.
-    installMockCanton({ status: BUILD_SPECIFIC_STATUS });
+  it('detectInstalled() is TRUE even while another wallet (Console) owns window.canton (the production bug)', async () => {
+    // installMockCanton parks a Console-class provider at window.canton AND makes
+    // Send announce. Old transport returned "kernel.id does not match Send";
+    // announce transport must find Send regardless of who owns the slot.
+    const channel = installMockCanton();
+    expect((window as unknown as { canton: { source: string } }).canton.source).toBe(
+      'consoleWallet',
+    );
     const detect = await adapter.detectInstalled();
     expect(detect.installed).toBe(true);
+    // and it is reachable over the announce channel, not window.canton:
+    await adapter.connect(ctx);
+    expect(channel.request).toHaveBeenCalledWith({ method: 'connect' });
   });
 
-  it('isInstalled() is true when only kernel.id matches (URLs absent or stale)', async () => {
-    installMockCanton({
-      status: {
-        ...REAL_STATUS,
-        kernel: { ...REAL_STATUS.kernel, url: '', userUrl: '' },
-      },
-    });
+  it('detectInstalled() is false when Send does NOT announce (Console-only)', async () => {
+    installEmptyWindow(); // Console at window.canton, but Send does not announce
     const detect = await adapter.detectInstalled();
-    expect(detect.installed).toBe(true);
+    expect(detect.installed).toBe(false);
+    expect(detect.reason).toMatch(/did not announce/i);
   });
 
-  it('isInstalled() is false when window.canton is undefined', async () => {
-    installEmptyWindow();
-    await expect(adapter.detectInstalled()).resolves.toMatchObject({ installed: false });
-  });
-
-  it('isInstalled() is false in non-browser environment (no window)', async () => {
+  it('detectInstalled() is false in non-browser environment (no window)', async () => {
     vi.unstubAllGlobals();
     expect(typeof (globalThis as { window?: unknown }).window).toBe('undefined');
     await expect(adapter.detectInstalled()).resolves.toMatchObject({
@@ -172,51 +167,48 @@ describe('SendAdapter: provider-detection guard', () => {
     });
   });
 
-  it('isInstalled() is false when kernel.id AND kernel.url are foreign (Console-class collision)', async () => {
-    installMockCanton({ status: FULLY_FOREIGN_STATUS });
-    const detect = await adapter.detectInstalled();
-    expect(detect.installed).toBe(false);
-    expect(detect.reason).toMatch(/kernel\.id does not match Send|other Canton wallet/i);
+  it('connect() throws SendNotInstalledError when Send does not announce', async () => {
+    installEmptyWindow();
+    await expect(adapter.connect(ctx)).rejects.toBeInstanceOf(SendNotInstalledError);
   });
 
-  it('connect() throws SendKernelMismatchError when the active provider is fully foreign', async () => {
-    installMockCanton({ status: FULLY_FOREIGN_STATUS });
-    await expect(adapter.connect(ctx)).rejects.toBeInstanceOf(SendKernelMismatchError);
-  });
-
-  it('signMessage / submitTransaction / ledgerApi all throw on a fully foreign provider', async () => {
-    installMockCanton({ status: FULLY_FOREIGN_STATUS });
+  it('signMessage / submitTransaction / ledgerApi all throw when Send does not announce', async () => {
+    installEmptyWindow();
     const session = createMockSession();
     await expect(
       adapter.signMessage(ctx, session, { message: 'hi' }),
-    ).rejects.toBeInstanceOf(SendKernelMismatchError);
+    ).rejects.toBeInstanceOf(SendNotInstalledError);
     await expect(
       adapter.submitTransaction(ctx, session, { signedTx: baseSubmitPayload }),
-    ).rejects.toBeInstanceOf(SendKernelMismatchError);
+    ).rejects.toBeInstanceOf(SendNotInstalledError);
     await expect(
       adapter.ledgerApi(ctx, session, {
         requestMethod: 'GET',
         resource: '/v2/state/ledger-end',
       }),
-    ).rejects.toBeInstanceOf(SendKernelMismatchError);
+    ).rejects.toBeInstanceOf(SendNotInstalledError);
   });
 
-  it('constructor accepts injected ProviderDetection from registry (overrides built-in)', async () => {
-    // A custom rule that ONLY matches kernel.id values registry has whitelisted.
-    // Build-specific status (URL still cantonwallet.com but non-canonical id) must
-    // FAIL detection under this rule — proving the injected detection actually
-    // takes effect.
-    const restrictiveDetection = {
+  it('injected ProviderDetection drives accepted announce ids (overrides built-in)', async () => {
+    // A registry detection that adds a custom provider.id. Send announcing with
+    // that id is accepted only when the custom detection is injected — proving
+    // the injected rule takes effect.
+    const customId = 'customsendextensionidaaaaaaaaaaaa';
+    const customDetection = {
       transport: 'window.canton' as const,
       matchers: [
-        { field: 'kernel.id' as const, match: 'exact' as const, values: [SEND_KERNEL_ID] },
+        { field: 'provider.id' as const, match: 'exact' as const, values: [customId] },
       ],
     };
-    const restricted = new SendAdapter({ detection: restrictiveDetection });
-    installMockCanton({ status: BUILD_SPECIFIC_STATUS });
-    await expect(restricted.detectInstalled()).resolves.toMatchObject({
-      installed: false,
-    });
+
+    // Built-in detection does NOT know the custom id → not installed.
+    installMockCanton({ announceId: customId });
+    const builtin = new SendAdapter({ provider: makeSendProvider() });
+    await expect(builtin.detectInstalled()).resolves.toMatchObject({ installed: false });
+
+    // Injected custom detection accepts the custom id → installed.
+    const custom = new SendAdapter({ provider: makeSendProvider(customDetection) });
+    await expect(custom.detectInstalled()).resolves.toMatchObject({ installed: true });
   });
 
   it('built-in detection mirrors the canonical registry rule (parity guard)', () => {
@@ -232,13 +224,6 @@ describe('SendAdapter: provider-detection guard', () => {
       { field: 'kernel.id', match: 'exact', values: [...SEND_KNOWN_EXTENSION_IDS] },
     ]);
   });
-
-  it('FOREIGN_KERNEL_ID is preserved as developer-mode marker (not as a synonym for fully foreign)', () => {
-    // Belt-and-braces: confirm the legacy alias still resolves to a Send-shaped
-    // status (URLs are cantonwallet.com), not a stranger.
-    expect(BUILD_SPECIFIC_STATUS.kernel.id).toBe(FOREIGN_KERNEL_ID);
-    expect(BUILD_SPECIFIC_STATUS.kernel.url).toMatch(/cantonwallet\.com/);
-  });
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -250,39 +235,35 @@ describe('SendAdapter: installation detection', () => {
   let ctx: AdapterContext;
 
   beforeEach(() => {
-    adapter = new SendAdapter();
+    adapter = new SendAdapter({ provider: makeSendProvider() });
     ctx = createMockContext();
   });
   afterEach(() => uninstallMockCanton());
 
-  it('connect() throws SendNotInstalledError-equivalent when window.canton is undefined', async () => {
+  it('connect() throws SendNotInstalledError when Send does not announce', async () => {
     installEmptyWindow();
     await expect(adapter.connect(ctx)).rejects.toThrow(SendNotInstalledError);
   });
 
-  it('caches kernel.id after the first successful lookup', async () => {
-    const provider = installMockCanton();
+  it('caches the announce channel after the first lookup (one announce handshake)', async () => {
+    installMockCanton();
     await adapter.detectInstalled();
     await adapter.detectInstalled();
     await adapter.detectInstalled();
-    const statusCalls = provider.request.mock.calls.filter(
-      ([arg]: [{ method: string }]) => arg.method === 'status',
-    );
-    expect(statusCalls.length).toBe(1);
+    // Detection no longer probes status(); it resolves the announce channel once.
+    expect(getDiscoverCalls()).toBe(1);
   });
 
-  it('SendProvider.resetKernelCache() forces a re-fetch on the next call', async () => {
-    const provider = installMockCanton();
+  it('SendProvider.resetKernelCache() forces a fresh announce on the next call', async () => {
+    installMockCanton();
     await adapter.detectInstalled();
+    expect(getDiscoverCalls()).toBe(1);
     // pull the underlying provider via cast (it's a private field)
     const inner = (adapter as unknown as { provider: { resetKernelCache: () => void } })
       .provider;
     inner.resetKernelCache();
     await adapter.detectInstalled();
-    const statusCalls = provider.request.mock.calls.filter(
-      ([arg]: [{ method: string }]) => arg.method === 'status',
-    );
-    expect(statusCalls.length).toBe(2);
+    expect(getDiscoverCalls()).toBe(2);
   });
 });
 
@@ -295,7 +276,7 @@ describe('SendAdapter: connection lifecycle', () => {
   let ctx: AdapterContext;
 
   beforeEach(() => {
-    adapter = new SendAdapter();
+    adapter = new SendAdapter({ provider: makeSendProvider() });
     ctx = createMockContext();
   });
   afterEach(() => uninstallMockCanton());
@@ -363,7 +344,7 @@ describe('SendAdapter: restore', () => {
   let ctx: AdapterContext;
 
   beforeEach(() => {
-    adapter = new SendAdapter();
+    adapter = new SendAdapter({ provider: makeSendProvider() });
     ctx = createMockContext();
   });
   afterEach(() => uninstallMockCanton());
@@ -428,7 +409,7 @@ describe('SendAdapter: account/metadata mapping', () => {
   let ctx: AdapterContext;
 
   beforeEach(() => {
-    adapter = new SendAdapter();
+    adapter = new SendAdapter({ provider: makeSendProvider() });
     ctx = createMockContext();
   });
   afterEach(() => uninstallMockCanton());
@@ -493,7 +474,7 @@ describe('SendAdapter: signMessage', () => {
   let ctx: AdapterContext;
 
   beforeEach(() => {
-    adapter = new SendAdapter();
+    adapter = new SendAdapter({ provider: makeSendProvider() });
     ctx = createMockContext();
   });
   afterEach(() => uninstallMockCanton());
@@ -553,7 +534,7 @@ describe('SendAdapter: submitTransaction', () => {
   let ctx: AdapterContext;
 
   beforeEach(() => {
-    adapter = new SendAdapter();
+    adapter = new SendAdapter({ provider: makeSendProvider() });
     ctx = createMockContext();
   });
   afterEach(() => uninstallMockCanton());
@@ -681,7 +662,7 @@ describe('SendAdapter: ledgerApi', () => {
   let ctx: AdapterContext;
 
   beforeEach(() => {
-    adapter = new SendAdapter();
+    adapter = new SendAdapter({ provider: makeSendProvider() });
     ctx = createMockContext();
   });
   afterEach(() => uninstallMockCanton());
@@ -763,19 +744,24 @@ describe('SendAdapter: events', () => {
   let adapter: SendAdapter;
 
   beforeEach(() => {
-    adapter = new SendAdapter();
+    adapter = new SendAdapter({ provider: makeSendProvider() });
   });
   afterEach(() => uninstallMockCanton());
 
-  it('on("txStatus", listener) registers a txChanged listener with the provider', () => {
+  // Event subscriptions attach to the resolved announce channel. In production a
+  // dApp connects before subscribing; here detectInstalled() resolves+caches the
+  // channel without firing connect RPCs.
+  it('on("txStatus", listener) registers a txChanged listener with the channel', async () => {
     const provider = installMockCanton();
+    await adapter.detectInstalled();
     const listener = vi.fn();
     adapter.on('txStatus', listener);
     expect(provider.on).toHaveBeenCalledWith('txChanged', expect.any(Function));
   });
 
-  it('forwards txChanged events with PartyLayer-translated status strings', () => {
+  it('forwards txChanged events with PartyLayer-translated status strings', async () => {
     const provider = installMockCanton();
+    await adapter.detectInstalled();
     const handler = vi.fn();
     adapter.on('txStatus', handler);
     provider.emit('txChanged', { status: 'executed', commandId: 'cmd-1', payload: {} });
@@ -786,8 +772,9 @@ describe('SendAdapter: events', () => {
     });
   });
 
-  it('translates pending → pending, signed → submitted, failed → failed', () => {
+  it('translates pending → pending, signed → submitted, failed → failed', async () => {
     const provider = installMockCanton();
+    await adapter.detectInstalled();
     const handler = vi.fn();
     adapter.on('txStatus', handler);
     provider.emit('txChanged', { status: 'pending', commandId: 'cmd-p' });
@@ -800,8 +787,9 @@ describe('SendAdapter: events', () => {
     ]);
   });
 
-  it('returned unsubscribe function removes the listener', () => {
+  it('returned unsubscribe function removes the listener', async () => {
     const provider = installMockCanton();
+    await adapter.detectInstalled();
     const handler = vi.fn();
     const unsub = adapter.on('txStatus', handler);
     unsub();
@@ -809,8 +797,9 @@ describe('SendAdapter: events', () => {
     expect(handler).not.toHaveBeenCalled();
   });
 
-  it('falls back to removeListener when off is not implemented by the provider', () => {
+  it('unsubscribe routes through the channel removeListener', async () => {
     const provider = installMockCanton({ omitOff: true });
+    await adapter.detectInstalled();
     const handler = vi.fn();
     const unsub = adapter.on('txStatus', handler);
     unsub();
@@ -832,7 +821,7 @@ describe('SendAdapter: events', () => {
 
 describe('SendAdapter: capability matrix integrity', () => {
   it('every declared capability has a corresponding implemented method', () => {
-    const adapter = new SendAdapter();
+    const adapter = new SendAdapter({ provider: makeSendProvider() });
     const caps = adapter.getCapabilities();
 
     const methodFor: Partial<Record<CapabilityKey, keyof SendAdapter>> = {
@@ -855,12 +844,12 @@ describe('SendAdapter: capability matrix integrity', () => {
   });
 
   it('signTransaction is NOT in the capabilities array', () => {
-    const adapter = new SendAdapter();
+    const adapter = new SendAdapter({ provider: makeSendProvider() });
     expect(adapter.getCapabilities()).not.toContain('signTransaction');
   });
 
   it('signTransaction() throws CapabilityNotSupportedError pointing at submitTransaction', async () => {
-    const adapter = new SendAdapter();
+    const adapter = new SendAdapter({ provider: makeSendProvider() });
     const ctx = createMockContext();
     const session = createMockSession();
     const err = await adapter
@@ -880,7 +869,7 @@ describe('SendAdapter: error handling edges', () => {
   let ctx: AdapterContext;
 
   beforeEach(() => {
-    adapter = new SendAdapter();
+    adapter = new SendAdapter({ provider: makeSendProvider() });
     ctx = createMockContext();
   });
   afterEach(() => uninstallMockCanton());
@@ -915,8 +904,8 @@ describe('SendAdapter: error handling edges', () => {
     expect(result.message).toBe('x');
   });
 
-  it('handles concurrent requests without firing N status() probes (kernel.id cache)', async () => {
-    const provider = installMockCanton();
+  it('concurrent requests share a single announce handshake (channel dedup)', async () => {
+    installMockCanton();
     const session = createMockSession();
     await Promise.all([
       adapter.signMessage(ctx, session, { message: 'a' }),
@@ -927,14 +916,9 @@ describe('SendAdapter: error handling edges', () => {
         resource: '/v2/state/ledger-end',
       }),
     ]);
-    const statusCalls = provider.request.mock.calls.filter(
-      ([arg]: [{ method: string }]) => arg.method === 'status',
-    );
-    // Up to one status probe per concurrent path before cache populates,
-    // but well below the 4-call upper bound. Pin to ≤ N so a regression
-    // (e.g. cache disabled) shows up immediately.
-    expect(statusCalls.length).toBeLessThanOrEqual(4);
-    expect(statusCalls.length).toBeGreaterThan(0);
+    // In-flight promise dedup: a burst of concurrent requests must trigger
+    // exactly one announce handshake, not one per call.
+    expect(getDiscoverCalls()).toBe(1);
   });
 });
 
