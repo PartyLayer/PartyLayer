@@ -39,6 +39,7 @@ import {
   type WalletAdapter,
 } from '@partylayer/core';
 import { getBuiltinAdapters } from '@partylayer/sdk';
+import { buildWalletConnectAdapter } from './walletconnect-demo';
 
 const WALLET_ID = 'canton-demo';
 const WALLET_NAME = 'Canton Demo Wallet';
@@ -190,6 +191,9 @@ export class CantonDemoWalletAdapter implements WalletAdapter {
  */
 export function buildDemoAdapters(): WalletAdapter[] {
   const adapters: WalletAdapter[] = [...getBuiltinAdapters()];
+  // Opt-in WalletConnect (live mobile-wallet scan). Registering it surfaces
+  // "WalletConnect" in the picker; its dapp-sdk barrel only loads at connect.
+  adapters.push(buildWalletConnectAdapter());
   if (process.env.NODE_ENV !== 'production') {
     adapters.push(new CantonDemoWalletAdapter());
   }
