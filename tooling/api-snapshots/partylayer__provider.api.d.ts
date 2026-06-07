@@ -109,8 +109,9 @@ interface AnnounceDiscoveryOptions {
   timeoutMs?: number;
   /**
    * Build a CIP-0103 provider from an announced wallet. Defaults to the
-   * official `@canton-network/dapp-sdk` `ExtensionAdapter` (postMessage over
-   * the `target` channel). Injectable for tests.
+   * self-contained `createExtensionChannelProvider` (splice postMessage over
+   * the `target` channel). Injectable so apps can substitute the official
+   * `@canton-network/dapp-sdk` `ExtensionAdapter`, and tests a mock.
    */
   createProvider?: (announced: AnnouncedWallet) => CIP0103Provider | Promise<CIP0103Provider>;
 }
@@ -339,6 +340,38 @@ declare function toProviderRpcError(err: unknown): ProviderRpcError;
 declare function toPartyLayerError(err: ProviderRpcError): PartyLayerError;
 
 /**
+ * Extension target-channel CIP-0103 provider.
+ *
+ * Builds a working CIP-0103 provider for a wallet discovered via
+ * `canton:announceProvider` (see discovery.ts). Announce wallets route requests
+ * over the splice-wallet postMessage protocol — the dApp posts a
+ * `SPLICE_WALLET_REQUEST` on `window` and the extension replies with a
+ * `SPLICE_WALLET_RESPONSE`, correlated by JSON-RPC id and routed by `target`.
+ *
+ * This is a self-contained, dependency-free implementation of that wire
+ * protocol. We deliberately do NOT depend on `@canton-network/dapp-sdk`'s
+ * `ExtensionAdapter`: its single bundled entry statically imports
+ * `@walletconnect/sign-client` (an optional peer used only by its
+ * WalletConnectAdapter), which is not installed and breaks every downstream
+ * webpack/Next build that pulls `@partylayer/provider` into its graph
+ * (confirmed against the live demo's `next build`). The protocol constants and
+ * message shapes below mirror `@canton-network/core-types` (`WalletEvent`,
+ * `SpliceMessage`) verbatim, so behaviour matches the official adapter.
+ */
+
+interface ExtensionChannelOptions {
+  /** Routing key (announce `target`) included on every request message. */
+  target?: string;
+  /** Per-request timeout in ms. Default 30000. */
+  timeoutMs?: number;
+}
+/**
+ * Create a CIP-0103 provider that talks the splice-wallet postMessage protocol
+ * over the page `window`, routed by `target`.
+ */
+declare function createExtensionChannelProvider(options?: ExtensionChannelOptions): CIP0103Provider;
+
+/**
  * Async Wallet Handling
  *
  * CIP-0103 async wallet extensions allow methods like `connect` and
@@ -487,6 +520,7 @@ export {
   CANTON_NETWORKS,
   CIP0103EventBus,
   type DiscoveredProvider,
+  type ExtensionChannelOptions,
   JSON_RPC_ERRORS,
   type MethodHandler,
   MethodRouter,
@@ -495,6 +529,7 @@ export {
   ProviderRpcError,
   RPC_ERRORS,
   chainDisconnected,
+  createExtensionChannelProvider,
   createProviderBridge,
   disconnected,
   discoverAnnouncedProviders,

@@ -40,7 +40,6 @@
     "url": "https://github.com/PartyLayer/PartyLayer/issues"
   },
   "dependencies": {
-    "@canton-network/dapp-sdk": "^1.2.0",
     "@partylayer/core": "workspace:^"
   },
   "devDependencies": {

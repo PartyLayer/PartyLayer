@@ -7,6 +7,7 @@
  */
 
 import type { CIP0103Provider } from '@partylayer/core';
+import { createExtensionChannelProvider } from './extension-channel';
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -171,11 +172,14 @@ function findById(id: string): DiscoveredProvider | undefined {
 //      `detail` carries `{ id/providerId, name, icon, target }`;
 //   3. a working provider is built over the extension `target` channel.
 //
-// Step 3 (the postMessage handshake) is delegated to the official
-// `ExtensionAdapter` from `@canton-network/dapp-sdk` rather than reimplemented
-// here — it already implements the exact wire protocol, which is the risky part
-// to get right on a production path. The factory is injectable so tests can
-// substitute a mock provider.
+// Step 3 (the postMessage handshake) is implemented natively in
+// extension-channel.ts (mirroring the splice-wallet protocol from
+// `@canton-network/core-types`). We do NOT depend on
+// `@canton-network/dapp-sdk`'s `ExtensionAdapter`: its single bundled entry
+// statically imports `@walletconnect/sign-client` (an uninstalled optional
+// peer), which breaks every downstream webpack/Next build that pulls
+// `@partylayer/provider` into its graph. The factory is injectable so apps can
+// substitute the official adapter (or tests a mock).
 
 /** Wire event names for the Canton EIP-6963-style provider handshake. */
 const CANTON_REQUEST_PROVIDER_EVENT = 'canton:requestProvider';
@@ -198,8 +202,9 @@ export interface AnnounceDiscoveryOptions {
   timeoutMs?: number;
   /**
    * Build a CIP-0103 provider from an announced wallet. Defaults to the
-   * official `@canton-network/dapp-sdk` `ExtensionAdapter` (postMessage over
-   * the `target` channel). Injectable for tests.
+   * self-contained `createExtensionChannelProvider` (splice postMessage over
+   * the `target` channel). Injectable so apps can substitute the official
+   * `@canton-network/dapp-sdk` `ExtensionAdapter`, and tests a mock.
    */
   createProvider?: (
     announced: AnnouncedWallet,
@@ -207,22 +212,11 @@ export interface AnnounceDiscoveryOptions {
 }
 
 /**
- * Default announce→provider factory: delegates the `target` postMessage
- * handshake to the official `ExtensionAdapter`. Loaded lazily so the dapp-sdk
- * bundle is only pulled in a browser when announce discovery actually runs.
+ * Default announce→provider factory: a self-contained CIP-0103 provider over
+ * the splice-wallet postMessage `target` channel (no external dependency).
  */
-async function defaultAnnounceProvider(
-  announced: AnnouncedWallet,
-): Promise<CIP0103Provider> {
-  const { ExtensionAdapter } = await import('@canton-network/dapp-sdk');
-  const adapter = new ExtensionAdapter({
-    providerId: announced.id,
-    name: announced.name,
-    icon: announced.icon,
-    target: announced.target,
-  });
-  // The official Provider has the same four methods as CIP0103Provider.
-  return adapter.provider() as unknown as CIP0103Provider;
+function defaultAnnounceProvider(announced: AnnouncedWallet): CIP0103Provider {
+  return createExtensionChannelProvider({ target: announced.target });
 }
 
 /**

@@ -14,16 +14,24 @@ New additive exports on `@partylayer/provider`:
 
 - `discoverAnnouncedProviders(options?)` — dispatches `canton:requestProvider`
   and resolves each `canton:announceProvider` reply to a working CIP-0103
-  provider. The `target` postMessage handshake is delegated to the official
-  `@canton-network/dapp-sdk` `ExtensionAdapter` (injectable via
-  `options.createProvider` for tests).
+  provider.
 - `discoverProviders(options?)` — merges the existing synchronous
   `window.canton` scan with announce results, **deduped by stable provider id**
   (a wallet reachable both ways — e.g. Console — appears exactly once).
-- `DiscoveredProvider.icon?` (new optional field) and the `AnnouncedWallet` /
-  `AnnounceDiscoveryOptions` types.
+- `createExtensionChannelProvider(options?)` — a self-contained CIP-0103
+  provider over the splice-wallet `target` postMessage channel (the transport
+  for announce wallets). `discoverAnnouncedProviders` uses it by default;
+  `options.createProvider` is injectable to substitute another implementation.
+- `DiscoveredProvider.icon?` (new optional field) and the `AnnouncedWallet`,
+  `AnnounceDiscoveryOptions`, `ExtensionChannelOptions` types.
+
+The `target` postMessage handshake is implemented natively (mirroring the
+splice-wallet protocol) rather than via `@canton-network/dapp-sdk`: that
+package's single bundled entry statically imports `@walletconnect/sign-client`
+(an uninstalled optional peer), which breaks every downstream webpack/Next
+build that pulls `@partylayer/provider` into its graph — so it is deliberately
+NOT a dependency. No external runtime dependency is added.
 
 `discoverInjectedProviders()` (the `window.canton` scan) is unchanged, as is
-its return type. Adds `@canton-network/dapp-sdk` as a dependency for the
-`ExtensionAdapter` transport. No behavior change to existing discovery,
-`adapter-send`, or any other adapter.
+its return type. No behavior change to existing discovery, `adapter-send`, or
+any other adapter.
