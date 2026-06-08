@@ -28,10 +28,10 @@ export function WalletGrid({ installedWallets, onWalletClick }: WalletGridProps)
                 key={wallet.id}
                 variant="default"
                 hoverable
-                className="cursor-pointer"
+                className="cursor-pointer h-full"
                 onClick={() => onWalletClick(wallet.id)}
               >
-                <CardContent>
+                <CardContent className="flex flex-col h-full">
                   {/* Logo */}
                   <div className="w-14 h-14 rounded-lg mb-4 overflow-hidden">
                     <img
@@ -57,8 +57,8 @@ export function WalletGrid({ installedWallets, onWalletClick }: WalletGridProps)
                     {wallet.description}
                   </p>
 
-                  {/* Meta */}
-                  <div className="flex items-center justify-between">
+                  {/* Meta — pinned to the bottom so cards equalize regardless of copy length */}
+                  <div className="flex items-center justify-between mt-auto">
                     <span className="text-xs text-slate-400">{wallet.transport}</span>
                     {isInstalled ? (
                       <span className="badge badge-installed">

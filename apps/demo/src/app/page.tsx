@@ -4,6 +4,7 @@ import { useState, useRef, useEffect, useCallback, type ReactNode } from 'react'
 import Link from 'next/link';
 import { PartyLayerKit, WalletModal, useSession, useDisconnect, truncatePartyId } from '@partylayer/react';
 import { buildDemoAdapters } from '../lib/canton-demo-adapter';
+import { sortByCanonicalOrder } from '../lib/wallet-order';
 import { useBreakpoint, responsive } from './hooks/useBreakpoint';
 
 /* ─── Design Tokens (mirrored from apps/marketing/src/design/tokens.ts) ── */
@@ -42,15 +43,19 @@ const NPM_URL = 'https://www.npmjs.com/package/@partylayer/sdk';
 
 /* ─── Wallet Data ──────────────────────────────────────────────────────── */
 
-const wallets = [
-  { id: 'console', name: 'Console Wallet', desc: 'Official Console Wallet for Canton Network', transport: 'Extension + Mobile', logo: '/wallets/console.png' },
-  { id: 'send', name: 'Send', desc: 'Passkey-based Canton wallet (mainnet)', transport: 'Injected (window.canton)', logo: '/wallets/send.svg' },
-  { id: 'loop', name: '5N Loop', desc: '5N Loop Wallet for Canton Network', transport: 'QR Code / Popup', logo: '/wallets/loop.svg' },
-  { id: 'walletconnect', name: 'WalletConnect', desc: 'Connect any WalletConnect-compatible Canton wallet', transport: 'WalletConnect', logo: '/wallets/walletconnect.svg' },
-  { id: 'cantor8', name: 'Cantor8 (C8)', desc: 'Cantor8 Wallet for Canton Network', transport: 'Deep Link', logo: '/wallets/cantor8.png' },
-  { id: 'nightly', name: 'Nightly', desc: 'Multichain wallet with native Canton support', transport: 'Injected', logo: '/wallets/nightly.svg' },
-  { id: 'bron', name: 'Bron', desc: 'Enterprise wallet for Canton Network', transport: 'OAuth2 / API', logo: '/wallets/bron.png' },
-];
+// Sorted by the single canonical order (no per-list hardcoded order).
+const wallets = sortByCanonicalOrder(
+  [
+    { id: 'console', name: 'Console Wallet', desc: 'Official Console Wallet for Canton Network', transport: 'Extension + Mobile', logo: '/wallets/console.png' },
+    { id: 'send', name: 'Send', desc: 'Passkey-based Canton wallet (mainnet)', transport: 'Injected (window.canton)', logo: '/wallets/send.svg' },
+    { id: 'loop', name: '5N Loop', desc: '5N Loop Wallet for Canton Network', transport: 'QR Code / Popup', logo: '/wallets/loop.svg' },
+    { id: 'walletconnect', name: 'WalletConnect', desc: 'Connect any WalletConnect-compatible Canton wallet', transport: 'WalletConnect', logo: '/wallets/walletconnect.svg' },
+    { id: 'cantor8', name: 'Cantor8 (C8)', desc: 'Cantor8 Wallet for Canton Network', transport: 'Deep Link', logo: '/wallets/cantor8.png' },
+    { id: 'nightly', name: 'Nightly', desc: 'Multichain wallet with native Canton support', transport: 'Injected', logo: '/wallets/nightly.svg' },
+    { id: 'bron', name: 'Bron', desc: 'Enterprise wallet for Canton Network', transport: 'OAuth2 / API', logo: '/wallets/bron.png' },
+  ],
+  (w) => w.id
+);
 
 /* ─── Global Styles (keyframes for pulse animation) ───────────────────── */
 
@@ -872,7 +877,7 @@ const archNodes: { id: ArchNodeId; label: string; sub: string; icon: ReactNode; 
     ),
   },
   {
-    id: 'wallets', label: 'Wallets', sub: '5 wallets, 1 integration',
+    id: 'wallets', label: 'Wallets', sub: '1 integration',
     icon: (
       <svg width={28} height={28} fill="none" viewBox="0 0 24 24" stroke="#F59E0B" strokeWidth={1.5}>
         <path strokeLinecap="round" strokeLinejoin="round" d="M21 12a2.25 2.25 0 00-2.25-2.25H15a3 3 0 11-6 0H5.25A2.25 2.25 0 003 12m18 0v6a2.25 2.25 0 01-2.25 2.25H5.25A2.25 2.25 0 013 18v-6m18 0V9M3 12V9m18 0a2.25 2.25 0 00-2.25-2.25H5.25A2.25 2.25 0 003 9m18 0V6a2.25 2.25 0 00-2.25-2.25H5.25A2.25 2.25 0 003 6v3" />
