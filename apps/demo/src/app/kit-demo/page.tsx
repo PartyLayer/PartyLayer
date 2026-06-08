@@ -11,6 +11,7 @@ import {
 } from '@partylayer/react';
 import { useBreakpoint, responsive } from '../hooks/useBreakpoint';
 import { buildDemoAdapters } from '../../lib/canton-demo-adapter';
+import { sortByCanonicalOrder } from '../../lib/wallet-order';
 
 // ─── Design Tokens (light + dark, matching marketing/landing page) ──────────
 
@@ -90,6 +91,7 @@ const WALLET_LOGOS: Record<string, string> = {
   bron: '/wallets/bron.png',
   nightly: '/wallets/nightly.svg',
   send: '/wallets/send.svg',
+  walletconnect: '/wallets/walletconnect.svg',
 };
 
 function getWalletLogo(walletId: string, registryIconUrl?: string): string | null {
@@ -114,8 +116,14 @@ function DemoContent() {
   const client = usePartyLayer();
   const [signResult, setSignResult] = useState<string | null>(null);
 
-  const nativeWallets = wallets.filter((w) => w.metadata?.source === 'native-cip0103');
-  const registryWallets = wallets.filter((w) => !w.metadata?.source);
+  const nativeWallets = sortByCanonicalOrder(
+    wallets.filter((w) => w.metadata?.source === 'native-cip0103'),
+    (w) => w.walletId
+  );
+  const registryWallets = sortByCanonicalOrder(
+    wallets.filter((w) => !w.metadata?.source),
+    (w) => w.walletId
+  );
 
   const handleSign = async () => {
     setSignResult(null);

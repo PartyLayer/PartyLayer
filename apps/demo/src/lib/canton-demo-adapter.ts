@@ -40,6 +40,7 @@ import {
 } from '@partylayer/core';
 import { getBuiltinAdapters } from '@partylayer/sdk';
 import { buildWalletConnectAdapter } from './walletconnect-demo';
+import { sortByCanonicalOrder } from './wallet-order';
 
 const WALLET_ID = 'canton-demo';
 const WALLET_NAME = 'Canton Demo Wallet';
@@ -196,13 +197,6 @@ export function buildDemoAdapters(): WalletAdapter[] {
   if (process.env.NODE_ENV !== 'production') {
     adapters.push(new CantonDemoWalletAdapter());
   }
-  // Canonical connect-modal order — mirrors apps/marketing's tokens `wallets`
-  // source: Console, Send, 5N Loop, WalletConnect, Cantor8, Nightly, Bron.
-  // (Bron isn't registered in the demo; ids not in the list sort to the end.)
-  const MODAL_ORDER = ['console', 'send', 'loop', 'walletconnect', 'cantor8', 'nightly', 'bron'];
-  const rank = (id: string) => {
-    const i = MODAL_ORDER.indexOf(id);
-    return i === -1 ? MODAL_ORDER.length : i;
-  };
-  return adapters.sort((a, b) => rank(String(a.walletId)) - rank(String(b.walletId)));
+  // Canonical order shared across every demo-rendered wallet list.
+  return sortByCanonicalOrder(adapters, (a) => String(a.walletId));
 }
