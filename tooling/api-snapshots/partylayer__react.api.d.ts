@@ -212,6 +212,11 @@ interface PartyLayerKitProps {
   theme?: 'light' | 'dark' | 'auto' | PartyLayerTheme;
   /** Custom wallet icon URLs by walletId */
   walletIcons?: WalletIconMap;
+  /**
+   * Wallet ids in display order for the connect modal; wallets not listed fall
+   * to the end. Sorts within the CIP-0103 Native / Available sections.
+   */
+  walletOrder?: readonly string[];
 }
 declare function PartyLayerKit({
   network,
@@ -222,6 +227,7 @@ declare function PartyLayerKit({
   adapters,
   theme,
   walletIcons,
+  walletOrder,
 }: PartyLayerKitProps): react_jsx_runtime.JSX.Element;
 
 interface WalletModalProps {
@@ -236,12 +242,19 @@ interface WalletModalProps {
   onConnect?: (sessionId: string) => void;
   /** Custom wallet icon URLs (merged with PartyLayerKit context) */
   walletIcons?: WalletIconMap;
+  /**
+   * Wallet ids in display order; wallets not listed fall to the end. Sorts
+   * within the CIP-0103 Native / Available sections, preserving the section
+   * structure. When omitted, the discovered order is preserved (default).
+   */
+  walletOrder?: readonly string[];
 }
 declare function WalletModal({
   isOpen,
   onClose,
   onConnect,
   walletIcons: propIcons,
+  walletOrder: propWalletOrder,
 }: WalletModalProps): react_jsx_runtime.JSX.Element | null;
 
 /**

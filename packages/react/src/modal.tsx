@@ -15,7 +15,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useWallets, useConnect, useRegistryStatus } from './hooks';
 import { useTheme } from './theme';
-import { useWalletIcons, resolveWalletIcon } from './kit';
+import { useWalletIcons, useWalletOrder, resolveWalletIcon } from './kit';
 import type { WalletInfo } from '@partylayer/sdk';
 import { isCip0103Native } from '@partylayer/sdk';
 import type { WalletIconMap } from './kit';
@@ -34,6 +34,12 @@ export interface WalletModalProps {
   onConnect?: (sessionId: string) => void;
   /** Custom wallet icon URLs (merged with PartyLayerKit context) */
   walletIcons?: WalletIconMap;
+  /**
+   * Wallet ids in display order; wallets not listed fall to the end. Sorts
+   * within the CIP-0103 Native / Available sections, preserving the section
+   * structure. When omitted, the discovered order is preserved (default).
+   */
+  walletOrder?: readonly string[];
 }
 
 type ModalView = 'list' | 'connecting' | 'success' | 'error' | 'not-installed';
@@ -68,6 +74,25 @@ const SDK_QR_CONTAINER_ID = 'console-wallet-connect-placeholder';
  */
 function isNativeWallet(wallet: WalletInfo): boolean {
   return isCip0103Native(wallet);
+}
+
+/** Normalize a wallet id for order matching (case-insensitive, strip cip0103: prefix). */
+function normalizeWalletId(id: string): string {
+  return id.replace(/^cip0103:/, '').toLowerCase();
+}
+
+/**
+ * Stable sort of wallets by an explicit `walletOrder` (ids in display order).
+ * Wallets whose id isn't listed keep their relative order at the end. Returns a
+ * new array; the input is untouched.
+ */
+function sortByWalletOrder(items: readonly WalletInfo[], order: readonly string[]): WalletInfo[] {
+  const normalized = order.map(normalizeWalletId);
+  const rank = (id: string) => {
+    const i = normalized.indexOf(normalizeWalletId(id));
+    return i === -1 ? normalized.length : i;
+  };
+  return [...items].sort((a, b) => rank(a.walletId) - rank(b.walletId));
 }
 
 /**
@@ -390,6 +415,7 @@ export function WalletModal({
   onClose,
   onConnect,
   walletIcons: propIcons,
+  walletOrder: propWalletOrder,
 }: WalletModalProps) {
   const { wallets, isLoading } = useWallets();
   const { connect, error, reset: resetConnect } = useConnect();
@@ -401,6 +427,11 @@ export function WalletModal({
 
   // Merge prop icons over context icons
   const walletIcons: WalletIconMap = { ...contextIcons, ...propIcons };
+
+  // Wallet display-order override: prop takes precedence over Kit context.
+  let contextWalletOrder: readonly string[] | undefined;
+  try { contextWalletOrder = useWalletOrder(); } catch { /* no Kit context */ }
+  const walletOrder = propWalletOrder ?? contextWalletOrder;
 
   const [view, setView] = useState<ModalView>('list');
   const [selectedWallet, setSelectedWallet] = useState<WalletInfo | null>(null);
@@ -643,8 +674,12 @@ export function WalletModal({
   if (!isOpen && !closing) return null;
 
   // Split wallets
-  const nativeWallets = wallets.filter(isNativeWallet);
-  const registryWallets = wallets.filter((w) => !isNativeWallet(w));
+  // Split into sections first, then (optionally) order WITHIN each section by
+  // `walletOrder` — preserving the section structure. Default: discovered order.
+  const nativeWalletsRaw = wallets.filter(isNativeWallet);
+  const registryWalletsRaw = wallets.filter((w) => !isNativeWallet(w));
+  const nativeWallets = walletOrder ? sortByWalletOrder(nativeWalletsRaw, walletOrder) : nativeWalletsRaw;
+  const registryWallets = walletOrder ? sortByWalletOrder(registryWalletsRaw, walletOrder) : registryWalletsRaw;
 
   const isDark = theme.mode === 'dark';
 

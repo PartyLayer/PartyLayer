@@ -11,7 +11,7 @@ import {
 } from '@partylayer/react';
 import { useBreakpoint, responsive } from '../hooks/useBreakpoint';
 import { buildDemoAdapters } from '../../lib/canton-demo-adapter';
-import { sortByCanonicalOrder } from '../../lib/wallet-order';
+import { sortByCanonicalOrder, CANONICAL_WALLET_ORDER } from '../../lib/wallet-order';
 
 // ─── Design Tokens (light + dark, matching marketing/landing page) ──────────
 
@@ -770,7 +770,7 @@ export default function KitDemoPage() {
         fontFamily: font,
         transition: 'background-color 200ms, color 200ms',
       }}>
-        <PartyLayerKit network="devnet" appName="PartyLayer Kit Demo" theme={theme} walletIcons={WALLET_LOGOS} adapters={buildDemoAdapters()} registryUrl="/registry">
+        <PartyLayerKit network="devnet" appName="PartyLayer Kit Demo" theme={theme} walletIcons={WALLET_LOGOS} walletOrder={CANONICAL_WALLET_ORDER} adapters={buildDemoAdapters()} registryUrl="/registry">
           <div style={{ maxWidth: '880px', margin: '0 auto', padding: '0 24px' }}>
 
             {/* Navbar */}

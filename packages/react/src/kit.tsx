@@ -27,6 +27,15 @@ export function useWalletIcons(): WalletIconMap {
   return useContext(WalletIconsContext);
 }
 
+// ─── Wallet Order Context ─────────────────────────────────────────────────────
+
+const WalletOrderContext = createContext<readonly string[] | undefined>(undefined);
+
+/** Access the wallet display-order override from PartyLayerKit */
+export function useWalletOrder(): readonly string[] | undefined {
+  return useContext(WalletOrderContext);
+}
+
 /**
  * Resolve icon URL for a wallet. Priority:
  * 1. walletIcons map (exact match or fuzzy)
@@ -76,6 +85,11 @@ export interface PartyLayerKitProps {
   theme?: 'light' | 'dark' | 'auto' | PartyLayerTheme;
   /** Custom wallet icon URLs by walletId */
   walletIcons?: WalletIconMap;
+  /**
+   * Wallet ids in display order for the connect modal; wallets not listed fall
+   * to the end. Sorts within the CIP-0103 Native / Available sections.
+   */
+  walletOrder?: readonly string[];
 }
 
 // ─── Component ───────────────────────────────────────────────────────────────
@@ -89,6 +103,7 @@ export function PartyLayerKit({
   adapters,
   theme = 'light',
   walletIcons = {},
+  walletOrder,
 }: PartyLayerKitProps) {
   // Stable reference for adapters array to avoid re-creating client on every render
   const adaptersRef = useRef(adapters);
@@ -119,11 +134,13 @@ export function PartyLayerKit({
 
   return (
     <WalletIconsContext.Provider value={walletIcons}>
-      <ThemeProvider theme={themeValue}>
-        <PartyLayerProvider client={client} network={network}>
-          {children}
-        </PartyLayerProvider>
-      </ThemeProvider>
+      <WalletOrderContext.Provider value={walletOrder}>
+        <ThemeProvider theme={themeValue}>
+          <PartyLayerProvider client={client} network={network}>
+            {children}
+          </PartyLayerProvider>
+        </ThemeProvider>
+      </WalletOrderContext.Provider>
     </WalletIconsContext.Provider>
   );
 }
