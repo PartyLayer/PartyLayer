@@ -10,10 +10,10 @@ import {
   PartyLayerError,
   CIP0103ConnectResult,
   CIP0103TxChangedEvent,
-  CIP0103Network,
   CIP0103RequestParams,
 } from '@partylayer/core';
 export {
+  CANTON_NETWORKS,
   CIP0103Account,
   CIP0103AccountStatus,
   CIP0103ConnectResult,
@@ -40,6 +40,9 @@ export {
   CIP0103_EVENTS,
   CIP0103_MANDATORY_METHODS,
   CIP0103_METHODS,
+  fromCAIP2Network,
+  isValidCAIP2,
+  toCAIP2Network,
 } from '@partylayer/core';
 
 /**
@@ -430,37 +433,6 @@ declare function handleAsyncPrepareExecute(
 ): Promise<CIP0103TxChangedEvent>;
 
 /**
- * CAIP-2 Network Identity Utilities
- *
- * All CIP-0103 network identifiers use CAIP-2 format: "namespace:reference"
- * e.g. "canton:da-mainnet", "canton:da-devnet"
- *
- * Reference: https://github.com/ChainAgnostic/CAIPs/blob/main/CAIPs/caip-2.md
- */
-
-declare const CANTON_NETWORKS: Record<string, string>;
-/**
- * Convert a legacy PartyLayer NetworkId (e.g. "devnet") or already-CAIP-2
- * string to a CIP-0103 Network object.
- *
- * @throws {Error} if the resulting network ID is not valid CAIP-2
- */
-declare function toCAIP2Network(networkId: string): CIP0103Network;
-/**
- * Extract the short network name from a CAIP-2 ID.
- * Returns the original string if no reverse mapping exists.
- */
-declare function fromCAIP2Network(caip2: string): string;
-/**
- * Validate that a string conforms to CAIP-2 format.
- *
- * CAIP-2 format: namespace:reference
- * - namespace: [-a-z0-9]{3,8}
- * - reference: [-_a-zA-Z0-9]{1,32}
- */
-declare function isValidCAIP2(networkId: string): boolean;
-
-/**
  * CIP-0103 Event Bus
  *
  * Minimal, spec-compliant event emitter.
@@ -525,7 +497,6 @@ export {
   type AsyncConnectOptions,
   type AsyncPrepareExecuteOptions,
   type BridgeableClient,
-  CANTON_NETWORKS,
   CIP0103EventBus,
   type DiscoveredProvider,
   type ExtensionChannelOptions,
@@ -543,17 +514,14 @@ export {
   discoverAnnouncedProviders,
   discoverInjectedProviders,
   discoverProviders,
-  fromCAIP2Network,
   handleAsyncConnect,
   handleAsyncPrepareExecute,
   internalError,
   invalidParams,
   isCIP0103Provider,
-  isValidCAIP2,
   methodNotFound,
   resourceNotFound,
   resourceUnavailable,
-  toCAIP2Network,
   toPartyLayerError,
   toProviderRpcError,
   transactionRejected,

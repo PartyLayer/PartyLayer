@@ -20,6 +20,7 @@ import {
   CapabilityNotSupportedError,
   mapUnknownErrorToPartyLayerError,
   toPartyId,
+  toCAIP2Network,
   toSignature,
   toTransactionHash,
   toWalletId,
@@ -30,6 +31,7 @@ import {
   type CapabilityKey,
   type LedgerApiParams,
   type LedgerApiResult,
+  type NetworkId,
   type PartyId,
   type PersistedSession,
   type Session,
@@ -100,8 +102,10 @@ export interface WalletConnectAdapterConfig {
   /** Callback for the SIWX result. */
   onSignInWithCanton?: (result: unknown) => void;
   /**
-   * Optional CAIP-2 chain id. Left UNSET by default per the Canton WC spec —
-   * request the `canton` namespace and use whatever network the wallet provides.
+   * Optional explicit CAIP-2 chain override. If unset, the chain is derived
+   * from the PartyLayer-configured network (`ctx.network`) via `toCAIP2Network`
+   * — e.g. 'mainnet' → 'canton:da-mainnet'. Set only to pin a chain regardless
+   * of the configured network.
    */
   chainId?: string;
 }
@@ -159,6 +163,8 @@ export class WalletConnectAdapter implements WalletAdapter {
   private readonly config: WalletConnectAdapterConfig;
   private readonly createOfficial: OfficialWcFactory;
   private official: OfficialWcAdapter | null = null;
+  /** CAIP-2 chain the memoized `official` adapter was built with (for rebuild-on-change). */
+  private officialChain?: string;
   /** Per-connect display-URI callback (e.g. from the connect modal). */
   private activeDisplayUri?: (uri: string) => void;
 
@@ -194,7 +200,20 @@ export class WalletConnectAdapter implements WalletAdapter {
     return { id: WALLET_ID, name: this.name, icon: WALLETCONNECT_ICON };
   }
 
-  private buildOfficialConfig(): Record<string, unknown> {
+  /** Resolve the CAIP-2 chain: explicit config.chainId wins, else derive from the network. */
+  private resolveChainId(network?: NetworkId): string | undefined {
+    let chain = this.config.chainId;
+    if (!chain && network) {
+      try {
+        chain = toCAIP2Network(network).networkId;
+      } catch {
+        /* invalid custom network → leave unset (dapp-sdk picks its own default) */
+      }
+    }
+    return chain;
+  }
+
+  private buildOfficialConfig(network?: NetworkId): Record<string, unknown> {
     const cfg: Record<string, unknown> = { projectId: this.config.projectId };
     if (this.config.metadata) cfg.metadata = this.config.metadata;
     // Always wrap `onUri` so the pairing URI reaches BOTH the integrator's
@@ -203,8 +222,10 @@ export class WalletConnectAdapter implements WalletAdapter {
     cfg.onUri = (uri: string) => this.deliverDisplayUri(uri);
     if (this.config.signInWithCanton) cfg.signInWithCanton = this.config.signInWithCanton;
     if (this.config.onSignInWithCanton) cfg.onSignInWithCanton = this.config.onSignInWithCanton;
-    // chainId left UNSET by default (Canton WC: request the `canton` namespace).
-    if (this.config.chainId) cfg.chainId = this.config.chainId;
+    // Chain precedence: explicit config.chainId > CAIP-2 derived from ctx.network
+    // > unset. Unset only when neither is available (invalid custom network).
+    const chain = this.resolveChainId(network);
+    if (chain) cfg.chainId = chain;
     return cfg;
   }
 
@@ -218,9 +239,22 @@ export class WalletConnectAdapter implements WalletAdapter {
     this.activeDisplayUri?.(uri);
   }
 
-  private async ensureOfficial(): Promise<OfficialWcAdapter> {
+  private async ensureOfficial(network?: NetworkId): Promise<OfficialWcAdapter> {
     if (!this.official) {
-      this.official = await this.createOfficial(this.buildOfficialConfig());
+      this.official = await this.createOfficial(this.buildOfficialConfig(network));
+      this.officialChain = this.resolveChainId(network);
+      return this.official;
+    }
+    // Already built. Rebuild only when a network is explicitly provided (connect/
+    // restore) AND its resolved chain differs — a live network switch picks up
+    // the new chain. Callers without a network (signMessage, ledgerApi, …) reuse
+    // the existing adapter so an active session is never torn down.
+    if (network !== undefined) {
+      const chain = this.resolveChainId(network);
+      if (chain !== this.officialChain) {
+        this.official = await this.createOfficial(this.buildOfficialConfig(network));
+        this.officialChain = chain;
+      }
     }
     return this.official;
   }
@@ -237,7 +271,7 @@ export class WalletConnectAdapter implements WalletAdapter {
     this.activeDisplayUri = opts?.onDisplayUri;
     const restorePopup = suppressBlankWalletPopup();
     try {
-      const wc = await this.ensureOfficial();
+      const wc = await this.ensureOfficial(ctx.network);
 
       // Establishes the WC session: fires `onUri` (→ display URI / modal QR),
       // then awaits wallet approval.
@@ -311,7 +345,7 @@ export class WalletConnectAdapter implements WalletAdapter {
   async restore(ctx: AdapterContext, persisted: PersistedSession): Promise<Session | null> {
     try {
       if (persisted.expiresAt && Date.now() >= persisted.expiresAt) return null;
-      const wc = await this.ensureOfficial();
+      const wc = await this.ensureOfficial(ctx.network);
       const restored = await wc.restore();
       if (!restored) {
         this.official = null;

@@ -1237,6 +1237,37 @@ declare const CIP0103_EVENTS: {
 type CIP0103Event = (typeof CIP0103_EVENTS)[keyof typeof CIP0103_EVENTS];
 
 /**
+ * CAIP-2 Network Identity Utilities
+ *
+ * All CIP-0103 network identifiers use CAIP-2 format: "namespace:reference"
+ * e.g. "canton:da-mainnet", "canton:da-devnet"
+ *
+ * Reference: https://github.com/ChainAgnostic/CAIPs/blob/main/CAIPs/caip-2.md
+ */
+
+declare const CANTON_NETWORKS: Record<string, string>;
+/**
+ * Convert a legacy PartyLayer NetworkId (e.g. "devnet") or already-CAIP-2
+ * string to a CIP-0103 Network object.
+ *
+ * @throws {Error} if the resulting network ID is not valid CAIP-2
+ */
+declare function toCAIP2Network(networkId: string): CIP0103Network;
+/**
+ * Extract the short network name from a CAIP-2 ID.
+ * Returns the original string if no reverse mapping exists.
+ */
+declare function fromCAIP2Network(caip2: string): string;
+/**
+ * Validate that a string conforms to CAIP-2 format.
+ *
+ * CAIP-2 format: namespace:reference
+ * - namespace: [-a-z0-9]{3,8}
+ * - reference: [-_a-zA-Z0-9]{1,32}
+ */
+declare function isValidCAIP2(networkId: string): boolean;
+
+/**
  * Deep Link Transport
  *
  * Opens a deep link URL (mobile) and awaits callback via redirect or postMessage.
@@ -1498,6 +1529,7 @@ export {
   type AdapterDetectResult,
   type AdapterEventName,
   type AdapterMetadata,
+  CANTON_NETWORKS,
   type CIP0103Account,
   type CIP0103AccountStatus,
   type CIP0103ConnectResult,
@@ -1595,13 +1627,16 @@ export {
   errorMetricName,
   findMatchingWallet,
   findMatchingWalletInfo,
+  fromCAIP2Network,
   generateSessionId,
   hashForPrivacy,
   installGuard,
   isCip0103Native,
   isSessionExpired,
+  isValidCAIP2,
   mapUnknownErrorToPartyLayerError,
   matchesProviderDetection,
+  toCAIP2Network,
   toPartyId,
   toSessionId,
   toSignature,

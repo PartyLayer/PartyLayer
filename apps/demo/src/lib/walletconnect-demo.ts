@@ -21,8 +21,9 @@ const FALLBACK_PROJECT_ID = '577414f6b46f09a7383d3c306c013a57';
 
 /**
  * Construct the demo's WalletConnect adapter. `projectId` comes from
- * `NEXT_PUBLIC_WC_PROJECT_ID` (with a local-dev fallback). `chainId` is left
- * unset (the official adapter defaults to `canton:devnet`).
+ * `NEXT_PUBLIC_WC_PROJECT_ID` (with a local-dev fallback). `chainId` unset →
+ * PartyLayer derives it from the configured network (kit `network` prop →
+ * `ctx.network`), e.g. `network="devnet"` → `canton:da-devnet`.
  */
 export function buildWalletConnectAdapter(): WalletAdapter {
   const projectId = process.env.NEXT_PUBLIC_WC_PROJECT_ID || FALLBACK_PROJECT_ID;

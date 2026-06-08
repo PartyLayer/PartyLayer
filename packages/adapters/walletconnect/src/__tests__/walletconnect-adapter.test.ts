@@ -231,8 +231,8 @@ describe('WalletConnectAdapter — connect', () => {
     expect(captured?.projectId).toBe('proj-1');
     expect(captured?.metadata).toMatchObject({ name: 'My dApp' });
     expect(typeof captured?.onUri).toBe('function');
-    // chainId left unset by default
-    expect(captured?.chainId).toBeUndefined();
+    // no explicit config.chainId → derived from ctx.network ('mainnet')
+    expect(captured?.chainId).toBe('canton:da-mainnet');
   });
 
   it('delivers the pairing URI to connect opts.onDisplayUri (modal QR plumbing)', async () => {
@@ -457,5 +457,77 @@ describe('WalletConnectAdapter — lazy import proof', () => {
     // Only the default connect() path triggers the dynamic import.
     await adapter.connect(createMockContext());
     expect(h.dappSdkLoaded).toBe(true);
+  });
+});
+
+describe('WalletConnectAdapter — CAIP-2 chain derivation (A1)', () => {
+  function withNetwork(network: string): AdapterContext {
+    return { ...createMockContext(), network };
+  }
+
+  async function capturedChainFor(network: string, configChainId?: string): Promise<unknown> {
+    let captured: Record<string, unknown> | undefined;
+    const adapter = new WalletConnectAdapter(
+      { projectId: 'p', ...(configChainId ? { chainId: configChainId } : {}) },
+      {
+        createOfficialAdapter: (cfg) => {
+          captured = cfg;
+          return makeMockOfficial(cfg);
+        },
+      },
+    );
+    await adapter.connect(withNetwork(network));
+    return captured?.chainId;
+  }
+
+  it("derives 'canton:da-devnet' from ctx.network='devnet'", async () => {
+    expect(await capturedChainFor('devnet')).toBe('canton:da-devnet');
+  });
+
+  it("derives 'canton:da-mainnet' from ctx.network='mainnet'", async () => {
+    expect(await capturedChainFor('mainnet')).toBe('canton:da-mainnet');
+  });
+
+  it("derives 'canton:da-testnet' from ctx.network='testnet'", async () => {
+    expect(await capturedChainFor('testnet')).toBe('canton:da-testnet');
+  });
+
+  it('explicit config.chainId overrides the derived network chain', async () => {
+    expect(await capturedChainFor('mainnet', 'canton:da-devnet')).toBe('canton:da-devnet');
+  });
+
+  it('rebuilds the official adapter when the network (chain) changes', async () => {
+    const chains: unknown[] = [];
+    let calls = 0;
+    const adapter = new WalletConnectAdapter(
+      { projectId: 'p' },
+      {
+        createOfficialAdapter: (cfg) => {
+          calls += 1;
+          chains.push(cfg.chainId);
+          return makeMockOfficial(cfg);
+        },
+      },
+    );
+    await adapter.connect(withNetwork('devnet'));
+    await adapter.connect(withNetwork('mainnet'));
+    expect(calls).toBe(2);
+    expect(chains).toEqual(['canton:da-devnet', 'canton:da-mainnet']);
+  });
+
+  it('reuses the official adapter when the network is unchanged', async () => {
+    let calls = 0;
+    const adapter = new WalletConnectAdapter(
+      { projectId: 'p' },
+      {
+        createOfficialAdapter: (cfg) => {
+          calls += 1;
+          return makeMockOfficial(cfg);
+        },
+      },
+    );
+    await adapter.connect(withNetwork('devnet'));
+    await adapter.connect(withNetwork('devnet'));
+    expect(calls).toBe(1);
   });
 });

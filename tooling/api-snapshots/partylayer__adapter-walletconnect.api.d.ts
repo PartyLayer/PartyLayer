@@ -58,8 +58,10 @@ interface WalletConnectAdapterConfig {
   /** Callback for the SIWX result. */
   onSignInWithCanton?: (result: unknown) => void;
   /**
-   * Optional CAIP-2 chain id. Left UNSET by default per the Canton WC spec —
-   * request the `canton` namespace and use whatever network the wallet provides.
+   * Optional explicit CAIP-2 chain override. If unset, the chain is derived
+   * from the PartyLayer-configured network (`ctx.network`) via `toCAIP2Network`
+   * — e.g. 'mainnet' → 'canton:da-mainnet'. Set only to pin a chain regardless
+   * of the configured network.
    */
   chainId?: string;
 }
@@ -92,6 +94,8 @@ declare class WalletConnectAdapter implements WalletAdapter {
   private readonly config;
   private readonly createOfficial;
   private official;
+  /** CAIP-2 chain the memoized `official` adapter was built with (for rebuild-on-change). */
+  private officialChain?;
   /** Per-connect display-URI callback (e.g. from the connect modal). */
   private activeDisplayUri?;
   constructor(config: WalletConnectAdapterConfig, options?: WalletConnectAdapterOptions);
@@ -108,6 +112,8 @@ declare class WalletConnectAdapter implements WalletAdapter {
     name: string;
     icon: string;
   };
+  /** Resolve the CAIP-2 chain: explicit config.chainId wins, else derive from the network. */
+  private resolveChainId;
   private buildOfficialConfig;
   /** Fan the pairing URI out to the integrator callback + the active connect's handler. */
   private deliverDisplayUri;
