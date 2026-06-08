@@ -242,7 +242,9 @@ A pre-built modal for wallet selection.
 <WalletModal
   isOpen={isOpen}
   onClose={() => setIsOpen(false)}
-  onConnect={(session) => console.log('Connected:', session)}
+  // optional — the modal self-closes via onClose and the session is observable
+  // via useSession()/useAccount(); pass it only to get the session id directly.
+  onConnect={(sessionId) => console.log('Connected:', sessionId)}
 />
 ```
 
@@ -252,7 +254,7 @@ A pre-built modal for wallet selection.
 |------|------|----------|-------------|
 | `isOpen` | `boolean` | Yes | Whether the modal is visible |
 | `onClose` | `() => void` | Yes | Called when modal should close |
-| `onConnect` | `(session: Session) => void` | No | Called after successful connection |
+| `onConnect` | `(sessionId: string) => void` | No | Optional; called with the new session id after a successful connection |
 
 ---
 

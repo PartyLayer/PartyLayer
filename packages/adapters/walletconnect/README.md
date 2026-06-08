@@ -24,7 +24,9 @@ import { createPartyLayer, getBuiltinAdapters } from '@partylayer/sdk';
 const wc = new WalletConnectAdapter({
   projectId: process.env.NEXT_PUBLIC_WC_PROJECT_ID!,
   metadata: { name: 'My dApp', description: '…', url: 'https://my.app', icons: ['https://my.app/icon.png'] },
-  onUri: (uri) => showQrCode(uri), // wire to your connect modal's QR UI
+  // onUri is OPTIONAL/advanced — only for a custom QR UI. With @partylayer/react
+  // the connect modal renders the pairing QR + deep-link out of the box (and
+  // suppresses dapp-sdk's blank popup), so you normally don't pass onUri.
 });
 
 const pl = createPartyLayer({ adapters: [...getBuiltinAdapters(), wc] });

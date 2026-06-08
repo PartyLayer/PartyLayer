@@ -25,7 +25,13 @@ import type { WalletIconMap } from './kit';
 export interface WalletModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onConnect: (sessionId: string) => void;
+  /**
+   * Optional callback fired with the new session id once a wallet connects.
+   * The modal already self-closes via `onClose` on success, and the session is
+   * observable via hooks (`useSession`/`useAccount`), so wiring this is only
+   * needed if you want the session id directly at connect time.
+   */
+  onConnect?: (sessionId: string) => void;
   /** Custom wallet icon URLs (merged with PartyLayerKit context) */
   walletIcons?: WalletIconMap;
 }
@@ -579,7 +585,7 @@ export function WalletModal({
     if (session) {
       setView('success');
       setTimeout(() => {
-        onConnect(session.sessionId);
+        onConnect?.(session.sessionId);
         onClose();
       }, 800);
     }
@@ -617,7 +623,7 @@ export function WalletModal({
       if (session) {
         setView('success');
         setTimeout(() => {
-          onConnect(session.sessionId);
+          onConnect?.(session.sessionId);
           onClose();
         }, 800);
       }
