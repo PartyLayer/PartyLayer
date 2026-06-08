@@ -159,7 +159,12 @@ declare class LoopAdapter implements WalletAdapter {
    */
   private templateIdHint;
   /**
-   * Map network ID to Loop SDK network format.
+   * Map a PartyLayer network ID to the Loop SDK network format.
+   *
+   * Loop serves only local / devnet / mainnet. Unsupported networks (e.g.
+   * testnet — Loop has none) throw a clear error at connect (via the adapter's
+   * existing error path) instead of being silently substituted to the wrong
+   * network.
    */
   private mapNetworkToLoop;
 }

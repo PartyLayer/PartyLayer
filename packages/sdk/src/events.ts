@@ -61,6 +61,22 @@ export interface SessionExpiredEvent {
 }
 
 /**
+ * Network mismatch event — the connected wallet's effective network differs
+ * from the dApp's configured network. Emitted under ALL policies (informational);
+ * `enforced` is true when the active policy ('guard' | 'strict') will block.
+ */
+export interface SessionNetworkMismatchEvent {
+  type: 'session:networkMismatch';
+  sessionId: SessionId;
+  /** dApp-configured (expected) network, CAIP-2 normalized. */
+  expected: string;
+  /** Wallet-reported (actual) network, CAIP-2 normalized. */
+  actual: string;
+  /** Whether the active policy will block (guard|strict) vs. detect-only (off). */
+  enforced: boolean;
+}
+
+/**
  * Transaction status event
  */
 export interface TxStatusEvent {
@@ -88,6 +104,7 @@ export type PartyLayerEvent =
   | SessionConnectedEvent
   | SessionDisconnectedEvent
   | SessionExpiredEvent
+  | SessionNetworkMismatchEvent
   | TxStatusEvent
   | ErrorEvent;
 

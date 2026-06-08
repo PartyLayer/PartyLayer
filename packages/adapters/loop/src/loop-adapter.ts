@@ -711,12 +711,20 @@ export class LoopAdapter implements WalletAdapter {
   }
 
   /**
-   * Map network ID to Loop SDK network format.
+   * Map a PartyLayer network ID to the Loop SDK network format.
+   *
+   * Loop serves only local / devnet / mainnet. Unsupported networks (e.g.
+   * testnet — Loop has none) throw a clear error at connect (via the adapter's
+   * existing error path) instead of being silently substituted to the wrong
+   * network.
    */
   private mapNetworkToLoop(network: string): 'local' | 'devnet' | 'mainnet' {
     if (network === 'local') return 'local';
-    if (network === 'devnet' || network === 'testnet') return 'devnet';
-    return 'mainnet';
+    if (network === 'devnet') return 'devnet';
+    if (network === 'mainnet') return 'mainnet';
+    throw new Error(
+      `Loop wallet does not support the "${network}" network (supported: local, devnet, mainnet).`,
+    );
   }
 }
 

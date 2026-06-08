@@ -214,6 +214,12 @@ export interface Session {
   capabilitiesSnapshot: CapabilityKey[];
   /** Additional metadata (encrypted in storage) */
   metadata?: Record<string, string>;
+  /**
+   * Set when the wallet's reported network differs from the dApp's configured
+   * network (CAIP-2 normalized). Absent when the networks match or no confident
+   * mismatch was detected. See `networkEnforcement` for blocking behavior.
+   */
+  networkMismatch?: { expected: string; actual: string };
 }
 
 /**

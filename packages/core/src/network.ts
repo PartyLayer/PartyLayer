@@ -74,3 +74,32 @@ export function fromCAIP2Network(caip2: string): string {
 export function isValidCAIP2(networkId: string): boolean {
   return /^[-a-z0-9]{3,8}:[-_a-zA-Z0-9]{1,32}$/.test(networkId);
 }
+
+// ─── Network mismatch detection ─────────────────────────────────────────────
+
+/** The recognized, well-known Canton CAIP-2 ids (e.g. canton:da-mainnet). */
+const KNOWN_CAIP2 = new Set(Object.values(CANTON_NETWORKS));
+
+/**
+ * Detect a confident, recognized, DIFFERENT-network mismatch between an
+ * `expected` (dApp-configured) and `actual` (wallet-reported) network.
+ *
+ * Conservative by design — returns `null` (no mismatch) unless BOTH networks
+ * normalize to recognized well-known Canton CAIP-2 ids AND differ. Unparseable
+ * or unrecognized/custom networks → `null` (never a false positive).
+ */
+export function detectNetworkMismatch(
+  expected: string,
+  actual: string,
+): { expected: string; actual: string } | null {
+  let ne: string;
+  let na: string;
+  try {
+    ne = toCAIP2Network(expected).networkId;
+    na = toCAIP2Network(actual).networkId;
+  } catch {
+    return null;
+  }
+  if (!KNOWN_CAIP2.has(ne) || !KNOWN_CAIP2.has(na)) return null; // unrecognized/custom → skip
+  return ne === na ? null : { expected: ne, actual: na };
+}

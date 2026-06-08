@@ -652,4 +652,24 @@ describe('LoopAdapter', () => {
       expect(adapter.name).toBe('5N Loop');
     });
   });
+
+  describe('mapNetworkToLoop', () => {
+    // Private mapping — exercised via cast (also reached at connect()).
+    const map = (n: string) =>
+      (adapter as unknown as { mapNetworkToLoop(network: string): string }).mapNetworkToLoop(n);
+
+    it('maps the supported networks', () => {
+      expect(map('local')).toBe('local');
+      expect(map('devnet')).toBe('devnet');
+      expect(map('mainnet')).toBe('mainnet');
+    });
+
+    it('throws on testnet (Loop has none) instead of silently substituting', () => {
+      expect(() => map('testnet')).toThrow(/does not support the "testnet" network/);
+    });
+
+    it('throws on an unknown network', () => {
+      expect(() => map('whatever')).toThrow(/does not support/);
+    });
+  });
 });

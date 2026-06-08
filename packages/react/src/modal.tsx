@@ -42,7 +42,7 @@ export interface WalletModalProps {
   walletOrder?: readonly string[];
 }
 
-type ModalView = 'list' | 'connecting' | 'success' | 'error' | 'not-installed';
+type ModalView = 'list' | 'connecting' | 'success' | 'error' | 'not-installed' | 'network-mismatch';
 
 /**
  * Sub-view for the connecting state when a wallet supports dual transport
@@ -147,6 +147,13 @@ function getErrorMessage(error: Error): string {
       return 'Connection was cancelled.';
     case 'ORIGIN_NOT_ALLOWED':
       return 'This website is not authorized to connect.';
+    case 'NETWORK_MISMATCH': {
+      const e = error as { expected?: string; actual?: string };
+      if (e.actual && e.expected) {
+        return `Your wallet is on ${e.actual}. This app requires ${e.expected}. Switch your wallet's network, then reconnect.`;
+      }
+      return error.message;
+    }
     default:
       return error.message;
   }
@@ -435,6 +442,7 @@ export function WalletModal({
 
   const [view, setView] = useState<ModalView>('list');
   const [selectedWallet, setSelectedWallet] = useState<WalletInfo | null>(null);
+  const [mismatchInfo, setMismatchInfo] = useState<{ expected: string; actual: string } | null>(null);
   const [closing, setClosing] = useState(false);
   const [connectError, setConnectError] = useState<Error | null>(null);
 
@@ -614,14 +622,22 @@ export function WalletModal({
     cleanupConnectResources();
 
     if (session) {
-      setView('success');
-      setTimeout(() => {
-        onConnect?.(session.sessionId);
-        onClose();
-      }, 800);
+      // 'guard'/'off' policy: connect succeeds but the wallet is on the wrong
+      // network → show the switch-network state instead of success.
+      if (session.networkMismatch) {
+        setMismatchInfo(session.networkMismatch);
+        setView('network-mismatch');
+      } else {
+        setView('success');
+        setTimeout(() => {
+          onConnect?.(session.sessionId);
+          onClose();
+        }, 800);
+      }
     }
     // If session is null, the useConnect hook's error state will trigger
-    // the useEffect above to route to the appropriate error view
+    // the useEffect above to route to the appropriate error view ('strict'
+    // policy throws NetworkMismatchError → handled there via getErrorMessage).
   }, [connect, onConnect, onClose, startQrObserver, cleanupConnectResources, handleDisplayUri]);
 
   const handleRetry = useCallback(() => {
@@ -652,11 +668,16 @@ export function WalletModal({
       cleanupConnectResources();
 
       if (session) {
-        setView('success');
-        setTimeout(() => {
-          onConnect?.(session.sessionId);
-          onClose();
-        }, 800);
+        if (session.networkMismatch) {
+          setMismatchInfo(session.networkMismatch);
+          setView('network-mismatch');
+        } else {
+          setView('success');
+          setTimeout(() => {
+            onConnect?.(session.sessionId);
+            onClose();
+          }, 800);
+        }
       }
     })();
   }, [selectedWallet, connect, resetConnect, onConnect, onClose, startQrObserver, cleanupConnectResources]);
@@ -1683,6 +1704,52 @@ export function WalletModal({
     );
   };
 
+  // ─── Network Mismatch View ─────────────────────────────────────────
+
+  const renderNetworkMismatchView = () => {
+    const iconUrl = selectedWallet
+      ? resolveWalletIcon(selectedWallet.walletId, walletIcons, selectedWallet.icons?.sm)
+      : null;
+    return (
+      <>
+        {renderSubHeader(handleBackToList)}
+        <div style={{ padding: '16px 32px 32px', textAlign: 'center' }}>
+          {selectedWallet && (
+            <div style={{ width: '64px', height: '64px', borderRadius: '14px', overflow: 'hidden', margin: '0 auto 20px', opacity: 0.85 }}>
+              <ModalWalletIcon wallet={selectedWallet} size={64} iconUrl={iconUrl} />
+            </div>
+          )}
+          <div style={{ fontSize: '17px', fontWeight: 600, color: theme.colors.text, marginBottom: '8px' }}>
+            Wrong network
+          </div>
+          <div style={{ fontSize: '13px', color: theme.colors.textSecondary, lineHeight: 1.5, maxWidth: '320px', margin: '0 auto 20px' }}>
+            {mismatchInfo
+              ? `Your wallet is on ${mismatchInfo.actual}. This app requires ${mismatchInfo.expected}. Switch your wallet's network, then reconnect.`
+              : "Your wallet is on a different network than this app requires. Switch your wallet's network, then reconnect."}
+          </div>
+          <div style={{ display: 'flex', gap: '10px', justifyContent: 'center', flexWrap: 'wrap' }}>
+            <button
+              onClick={handleRetry}
+              style={primaryBtnStyle}
+              onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = theme.colors.primaryHover; e.currentTarget.style.transform = 'translateY(-1px)'; }}
+              onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = theme.colors.primary; e.currentTarget.style.transform = 'translateY(0)'; }}
+            >
+              Reconnect
+            </button>
+            <button
+              onClick={handleBackToList}
+              style={ghostBtnStyle}
+              onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = theme.colors.surface; }}
+              onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; }}
+            >
+              All Wallets
+            </button>
+          </div>
+        </div>
+      </>
+    );
+  };
+
   // ─── Not Installed View ────────────────────────────────────────────
 
   const renderNotInstalledView = () => {
@@ -1827,6 +1894,7 @@ export function WalletModal({
         {view === 'connecting' && renderConnectingView()}
         {view === 'success' && renderSuccessView()}
         {view === 'error' && renderErrorView()}
+        {view === 'network-mismatch' && renderNetworkMismatchView()}
         {view === 'not-installed' && renderNotInstalledView()}
       </div>
 

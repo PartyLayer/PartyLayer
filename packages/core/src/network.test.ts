@@ -4,6 +4,7 @@ import {
   toCAIP2Network,
   fromCAIP2Network,
   isValidCAIP2,
+  detectNetworkMismatch,
 } from './network';
 
 describe('CANTON_NETWORKS', () => {
@@ -65,5 +66,32 @@ describe('isValidCAIP2', () => {
     expect(isValidCAIP2('mainnet')).toBe(false); // no colon
     expect(isValidCAIP2('canton:')).toBe(false); // empty reference
     expect(isValidCAIP2('x:1')).toBe(false); // namespace too short
+  });
+});
+
+describe('detectNetworkMismatch', () => {
+  it('flags a recognized different-network mismatch (normalized)', () => {
+    expect(detectNetworkMismatch('devnet', 'mainnet')).toEqual({
+      expected: 'canton:da-devnet',
+      actual: 'canton:da-mainnet',
+    });
+    expect(detectNetworkMismatch('mainnet', 'testnet')).toEqual({
+      expected: 'canton:da-mainnet',
+      actual: 'canton:da-testnet',
+    });
+  });
+
+  it('returns null when the networks are normalize-equal (no false positive)', () => {
+    expect(detectNetworkMismatch('devnet', 'canton:da-devnet')).toBeNull();
+    expect(detectNetworkMismatch('devnet', 'devnet')).toBeNull();
+  });
+
+  it('returns null for unrecognized/custom networks (conservative skip)', () => {
+    expect(detectNetworkMismatch('devnet', 'someCustom')).toBeNull(); // → canton:someCustom, not well-known
+    expect(detectNetworkMismatch('devnet', 'eip155:1')).toBeNull(); // recognized CAIP-2 but not a known Canton id
+  });
+
+  it('returns null when a side is unparseable', () => {
+    expect(detectNetworkMismatch('devnet', 'this-reference-is-way-too-long-to-be-valid-caip2')).toBeNull();
   });
 });
