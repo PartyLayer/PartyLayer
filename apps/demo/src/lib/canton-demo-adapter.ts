@@ -190,12 +190,19 @@ export class CantonDemoWalletAdapter implements WalletAdapter {
  * in the picker.
  */
 export function buildDemoAdapters(): WalletAdapter[] {
-  const adapters: WalletAdapter[] = [...getBuiltinAdapters()];
   // Opt-in WalletConnect (live mobile-wallet scan). Registering it surfaces
   // "WalletConnect" in the picker; its dapp-sdk barrel only loads at connect.
-  adapters.push(buildWalletConnectAdapter());
+  const adapters: WalletAdapter[] = [...getBuiltinAdapters(), buildWalletConnectAdapter()];
   if (process.env.NODE_ENV !== 'production') {
     adapters.push(new CantonDemoWalletAdapter());
   }
-  return adapters;
+  // Canonical connect-modal order — mirrors apps/marketing's tokens `wallets`
+  // source: Console, Send, 5N Loop, WalletConnect, Cantor8, Nightly, Bron.
+  // (Bron isn't registered in the demo; ids not in the list sort to the end.)
+  const MODAL_ORDER = ['console', 'send', 'loop', 'walletconnect', 'cantor8', 'nightly', 'bron'];
+  const rank = (id: string) => {
+    const i = MODAL_ORDER.indexOf(id);
+    return i === -1 ? MODAL_ORDER.length : i;
+  };
+  return adapters.sort((a, b) => rank(String(a.walletId)) - rank(String(b.walletId)));
 }

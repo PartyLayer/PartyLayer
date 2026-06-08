@@ -46,6 +46,7 @@ const wallets = [
   { id: 'console', name: 'Console Wallet', desc: 'Official Console Wallet for Canton Network', transport: 'Extension + Mobile', logo: '/wallets/console.png' },
   { id: 'send', name: 'Send', desc: 'Passkey-based Canton wallet (mainnet)', transport: 'Injected (window.canton)', logo: '/wallets/send.svg' },
   { id: 'loop', name: '5N Loop', desc: '5N Loop Wallet for Canton Network', transport: 'QR Code / Popup', logo: '/wallets/loop.svg' },
+  { id: 'walletconnect', name: 'WalletConnect', desc: 'Connect any WalletConnect-compatible Canton wallet', transport: 'WalletConnect', logo: '/wallets/walletconnect.svg' },
   { id: 'cantor8', name: 'Cantor8 (C8)', desc: 'Cantor8 Wallet for Canton Network', transport: 'Deep Link', logo: '/wallets/cantor8.png' },
   { id: 'nightly', name: 'Nightly', desc: 'Multichain wallet with native Canton support', transport: 'Injected', logo: '/wallets/nightly.svg' },
   { id: 'bron', name: 'Bron', desc: 'Enterprise wallet for Canton Network', transport: 'OAuth2 / API', logo: '/wallets/bron.png' },
@@ -400,6 +401,7 @@ const WALLET_LOGOS: Record<string, string> = {
   bron: '/wallets/bron.png',
   nightly: '/wallets/nightly.svg',
   send: '/wallets/send.svg',
+  walletconnect: '/wallets/walletconnect.svg',
 };
 
 /* ─── Nav (from apps/marketing/src/components/Nav.tsx) ─────────────────── */

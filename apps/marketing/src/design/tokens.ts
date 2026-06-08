@@ -76,6 +76,14 @@ export const wallets = [
     homepage: 'https://consolewallet.io',
   },
   {
+    id: 'send',
+    name: 'Send',
+    description: 'Send Wallet for Canton Network',
+    transport: 'Extension',
+    logo: '/wallets/SendBrandColorLogomark.svg',
+    homepage: 'https://cantonwallet.com',
+  },
+  {
     id: 'loop',
     name: '5N Loop',
     description: '5N Loop Wallet for Canton Network',
@@ -84,12 +92,28 @@ export const wallets = [
     homepage: 'https://cantonloop.com',
   },
   {
+    id: 'walletconnect',
+    name: 'WalletConnect',
+    description: 'Connect any WalletConnect-compatible Canton wallet',
+    transport: 'WalletConnect',
+    logo: '/wallets/walletconnect-logo.svg',
+    homepage: 'https://walletconnect.network',
+  },
+  {
     id: 'cantor8',
     name: 'Cantor8 (C8)',
     description: 'Cantor8 Wallet for Canton Network',
     transport: 'Popup',
     logo: '/wallets/cantor8.png',
     homepage: 'https://www.canton.network/ecosystem/cantor8',
+  },
+  {
+    id: 'nightly',
+    name: 'Nightly',
+    description: 'Nightly Wallet for Canton Network',
+    transport: 'Extension + Mobile',
+    logo: '/wallets/nightlywallet.webp',
+    homepage: 'https://nightly.app',
   },
   {
     id: 'bron',

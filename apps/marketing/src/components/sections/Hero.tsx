@@ -1,5 +1,6 @@
 import { Button } from '@/components/ui/Button';
 import { cn } from '@/design/cn';
+import { wallets } from '@/design/tokens';
 
 interface HeroProps {
   onOpenDemo: () => void;
@@ -103,16 +104,11 @@ export function Hero({ onOpenDemo }: HeroProps) {
                       Select a wallet to connect to this dapp.
                     </p>
 
-                    {/* Wallet List Preview */}
+                    {/* Wallet List Preview — derived from the canonical tokens `wallets` source */}
                     <div className="space-y-2">
-                      {[
-                        { name: 'Console Wallet', logo: '/wallets/console.png', verified: true, installed: true },
-                        { name: '5N Loop', logo: '/wallets/loop.svg', verified: true, installed: false },
-                        { name: 'Cantor8 (C8)', logo: '/wallets/cantor8.png', verified: true, installed: false },
-                        { name: 'Bron', logo: '/wallets/bron.png', verified: true, installed: false },
-                      ].map((wallet) => (
+                      {wallets.map((wallet) => (
                         <button
-                          key={wallet.name}
+                          key={wallet.id}
                           onClick={onOpenDemo}
                           className={cn(
                             'w-full flex items-center gap-3 p-3 rounded-md border border-border',
@@ -129,12 +125,10 @@ export function Hero({ onOpenDemo }: HeroProps) {
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2">
                               <span className="font-medium text-fg">{wallet.name}</span>
-                              {wallet.verified && (
-                                <span className="badge badge-verified">Verified</span>
-                              )}
+                              <span className="badge badge-verified">Verified</span>
                             </div>
                           </div>
-                          {wallet.installed && (
+                          {wallet.id === 'console' && (
                             <span className="text-xs text-green-600 font-medium">Installed</span>
                           )}
                         </button>

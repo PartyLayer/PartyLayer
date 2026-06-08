@@ -1,5 +1,9 @@
 import { Card, CardContent } from '@/components/ui/Card';
 import { cn } from '@/design/cn';
+import { wallets } from '@/design/tokens';
+
+// Derived from the canonical tokens `wallets` source so the copy stays in sync.
+const walletNames = wallets.map((w) => w.name).join(', ');
 
 const proofItems = [
   {
@@ -27,7 +31,7 @@ const proofItems = [
       </svg>
     ),
     title: 'Multi-Wallet',
-    description: 'Console, Loop, Cantor8, Bron — one integration for all.',
+    description: `${walletNames} — one integration for all.`,
   },
 ];
 
