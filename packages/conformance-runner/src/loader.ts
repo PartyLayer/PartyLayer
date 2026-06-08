@@ -4,9 +4,17 @@
  * Dynamically loads adapter modules (ESM/CJS safe)
  */
 
-import type { WalletAdapter } from '@partylayer/core';
+import { createRequire } from 'module';
 import { resolve } from 'path';
 import { pathToFileURL } from 'url';
+
+import type { WalletAdapter } from '@partylayer/core';
+
+// This package builds to ESM (type: module), where the `require` global is
+// undefined — a bare `require(...)`/`require.resolve(...)` throws at runtime
+// (and would hit esbuild's `__require` shim in bundled consumers). Use a real
+// Node require created from this module's URL instead.
+const nodeRequire = createRequire(import.meta.url);
 
 /**
  * Load adapter from package or path
@@ -22,7 +30,7 @@ export async function loadAdapter(
   } else {
     // Try to resolve as package
     try {
-      adapterPath = require.resolve(packageNameOrPath);
+      adapterPath = nodeRequire.resolve(packageNameOrPath);
     } catch {
       throw new Error(`Cannot resolve adapter: ${packageNameOrPath}`);
     }
@@ -49,8 +57,7 @@ export async function loadAdapter(
   } catch (err) {
     // Fallback to CJS
     try {
-      // eslint-disable-next-line @typescript-eslint/no-var-requires
-      const module = require(adapterPath);
+      const module = nodeRequire(adapterPath);
       const adapter = module.default || module[Object.keys(module)[0]];
       
       if (!adapter) {
