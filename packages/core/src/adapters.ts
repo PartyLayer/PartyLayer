@@ -249,6 +249,13 @@ export interface WalletAdapter {
       partyId?: PartyId;
       /** When false, prefer remote/mobile transport over installed extension */
       preferInstalled?: boolean;
+      /**
+       * Called with a pairing/display URI (e.g. a WalletConnect `wc:` URI) as
+       * soon as the adapter produces one, before the user approves. Lets the
+       * connect UI render a QR / deep-link itself. Adapters that have no such
+       * URI (their own SDK shows the QR) simply never call it.
+       */
+      onDisplayUri?: (uri: string) => void;
     }
   ): Promise<AdapterConnectResult>;
 

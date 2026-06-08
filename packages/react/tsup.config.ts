@@ -17,5 +17,6 @@ export default defineConfig({
     'react',
     '@partylayer/sdk',
     '@partylayer/registry-client',
+    'qrcode',
   ],
 });

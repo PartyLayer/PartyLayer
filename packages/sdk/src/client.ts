@@ -32,6 +32,7 @@ import {
 } from '@partylayer/core';
 import { RegistryClient } from '@partylayer/registry-client';
 import type { RegistryStatus } from '@partylayer/registry-client';
+import { createProviderBridge } from '@partylayer/provider';
 import {
   DEFAULT_REGISTRY_URL,
   type PartyLayerConfig,
@@ -346,6 +347,7 @@ export class PartyLayerClient {
         timeoutMs,
         partyId: undefined,
         preferInstalled: options?.preferInstalled,
+        onDisplayUri: options?.onDisplayUri,
       });
 
       const timeoutPromise = new Promise<never>((_, reject) => {
@@ -645,8 +647,11 @@ export class PartyLayerClient {
    * @returns CIP-0103 compliant Provider
    */
   asProvider(): import('@partylayer/core').CIP0103Provider {
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
-    const { createProviderBridge } = require('@partylayer/provider') as typeof import('@partylayer/provider');
+    // Static import (top of file) — a runtime `require('@partylayer/provider')`
+    // hits esbuild's `__require` shim in the ESM build and throws "Dynamic
+    // require not supported" in browser bundles (dev + prod), crashing
+    // PartyLayerKit on mount. `@partylayer/provider` does not import
+    // `@partylayer/sdk`, so the static import introduces no cycle.
     return createProviderBridge(this);
   }
 

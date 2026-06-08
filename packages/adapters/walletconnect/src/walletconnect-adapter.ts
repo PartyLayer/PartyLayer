@@ -20,6 +20,7 @@ import {
   CapabilityNotSupportedError,
   mapUnknownErrorToPartyLayerError,
   toPartyId,
+  toSignature,
   toTransactionHash,
   toWalletId,
   type AdapterConnectResult,
@@ -27,10 +28,14 @@ import {
   type AdapterDetectResult,
   type AdapterEventName,
   type CapabilityKey,
+  type LedgerApiParams,
+  type LedgerApiResult,
   type PartyId,
   type PersistedSession,
   type Session,
+  type SignedMessage,
   type SignedTransaction,
+  type SignMessageParams,
   type SignTransactionParams,
   type SubmitTransactionParams,
   type TxReceipt,
@@ -154,6 +159,8 @@ export class WalletConnectAdapter implements WalletAdapter {
   private readonly config: WalletConnectAdapterConfig;
   private readonly createOfficial: OfficialWcFactory;
   private official: OfficialWcAdapter | null = null;
+  /** Per-connect display-URI callback (e.g. from the connect modal). */
+  private activeDisplayUri?: (uri: string) => void;
 
   constructor(config: WalletConnectAdapterConfig, options?: WalletConnectAdapterOptions) {
     if (!config || typeof config.projectId !== 'string' || config.projectId.length === 0) {
@@ -190,12 +197,25 @@ export class WalletConnectAdapter implements WalletAdapter {
   private buildOfficialConfig(): Record<string, unknown> {
     const cfg: Record<string, unknown> = { projectId: this.config.projectId };
     if (this.config.metadata) cfg.metadata = this.config.metadata;
-    if (this.config.onUri) cfg.onUri = this.config.onUri;
+    // Always wrap `onUri` so the pairing URI reaches BOTH the integrator's
+    // config callback AND the per-connect `onDisplayUri` (e.g. the connect
+    // modal's QR), without the integrator having to hand-wire anything.
+    cfg.onUri = (uri: string) => this.deliverDisplayUri(uri);
     if (this.config.signInWithCanton) cfg.signInWithCanton = this.config.signInWithCanton;
     if (this.config.onSignInWithCanton) cfg.onSignInWithCanton = this.config.onSignInWithCanton;
     // chainId left UNSET by default (Canton WC: request the `canton` namespace).
     if (this.config.chainId) cfg.chainId = this.config.chainId;
     return cfg;
+  }
+
+  /** Fan the pairing URI out to the integrator callback + the active connect's handler. */
+  private deliverDisplayUri(uri: string): void {
+    try {
+      this.config.onUri?.(uri);
+    } catch {
+      /* integrator callback must not break connect */
+    }
+    this.activeDisplayUri?.(uri);
   }
 
   private async ensureOfficial(): Promise<OfficialWcAdapter> {
@@ -207,13 +227,20 @@ export class WalletConnectAdapter implements WalletAdapter {
 
   async connect(
     ctx: AdapterContext,
-    _opts?: { timeoutMs?: number; partyId?: PartyId; preferInstalled?: boolean },
+    opts?: {
+      timeoutMs?: number;
+      partyId?: PartyId;
+      preferInstalled?: boolean;
+      onDisplayUri?: (uri: string) => void;
+    },
   ): Promise<AdapterConnectResult> {
+    this.activeDisplayUri = opts?.onDisplayUri;
+    const restorePopup = suppressBlankWalletPopup();
     try {
       const wc = await this.ensureOfficial();
 
-      // Establishes the WC session: fires `onUri` (modal shows the QR), then
-      // awaits wallet approval.
+      // Establishes the WC session: fires `onUri` (→ display URI / modal QR),
+      // then awaits wallet approval.
       await wc.request({ method: 'connect' });
 
       const account = await wc.request<{
@@ -259,6 +286,9 @@ export class WalletConnectAdapter implements WalletAdapter {
         transport: 'remote',
         details: { origin: ctx.origin, network: ctx.network },
       });
+    } finally {
+      restorePopup();
+      this.activeDisplayUri = undefined;
     }
   }
 
@@ -295,6 +325,36 @@ export class WalletConnectAdapter implements WalletAdapter {
     }
   }
 
+  async signMessage(
+    _ctx: AdapterContext,
+    session: Session,
+    params: SignMessageParams,
+  ): Promise<SignedMessage> {
+    try {
+      const wc = await this.ensureOfficial();
+      // The official adapter prefixes `canton_`, so this issues a
+      // `canton_signMessage` request over the WalletConnect session.
+      const result = await wc.request<{ signature?: string }>({
+        method: 'signMessage',
+        params: { message: params.message },
+      });
+      return {
+        signature: toSignature(result?.signature ?? ''),
+        partyId: session.partyId,
+        message: params.message,
+        nonce: params.nonce,
+        domain: params.domain,
+      };
+    } catch (err) {
+      throw mapUnknownErrorToPartyLayerError(err, {
+        walletId: this.walletId,
+        phase: 'signMessage',
+        transport: 'remote',
+        details: { sessionId: session.sessionId },
+      });
+    }
+  }
+
   async signTransaction(
     _ctx: AdapterContext,
     _session: Session,
@@ -322,6 +382,41 @@ export class WalletConnectAdapter implements WalletAdapter {
       throw mapUnknownErrorToPartyLayerError(err, {
         walletId: this.walletId,
         phase: 'submitTransaction',
+        transport: 'remote',
+        details: { sessionId: session.sessionId },
+      });
+    }
+  }
+
+  async ledgerApi(
+    _ctx: AdapterContext,
+    session: Session,
+    params: LedgerApiParams,
+  ): Promise<LedgerApiResult> {
+    try {
+      const wc = await this.ensureOfficial();
+      // Proxies a JSON Ledger API request through the wallet via
+      // `canton_ledgerApi`.
+      const result = await wc.request<unknown>({
+        method: 'ledgerApi',
+        params: {
+          requestMethod: params.requestMethod,
+          resource: params.resource,
+          ...(params.body !== undefined ? { body: params.body } : {}),
+        },
+      });
+      const maybeResponse = (result as { response?: unknown } | null)?.response;
+      const response =
+        typeof result === 'string'
+          ? result
+          : typeof maybeResponse === 'string'
+            ? maybeResponse
+            : JSON.stringify(result ?? null);
+      return { response };
+    } catch (err) {
+      throw mapUnknownErrorToPartyLayerError(err, {
+        walletId: this.walletId,
+        phase: 'ledgerApi',
         transport: 'remote',
         details: { sessionId: session.sessionId },
       });
@@ -363,6 +458,33 @@ export class WalletConnectAdapter implements WalletAdapter {
 }
 
 // ── helpers ──────────────────────────────────────────────────────────────────
+
+/**
+ * The official dapp-sdk adapter unconditionally opens a blank popup via
+ * `window.open('', 'wallet-popup')` (its own QR popup) during WC connect, even
+ * when we render the QR ourselves. There is no config flag to disable it, so we
+ * narrowly intercept ONLY that specific `window.open` (target `wallet-popup`)
+ * for the duration of connect and return null — which makes `showUriInPopup`
+ * early-return without creating a window. Returns a restore function; all other
+ * `window.open` calls pass through untouched.
+ */
+function suppressBlankWalletPopup(): () => void {
+  if (typeof window === 'undefined' || typeof window.open !== 'function') {
+    return () => {};
+  }
+  const original = window.open;
+  window.open = ((
+    url?: string | URL,
+    target?: string,
+    features?: string,
+  ): Window | null => {
+    if (target === 'wallet-popup') return null;
+    return original.call(window, url as string, target as string, features as string);
+  }) as typeof window.open;
+  return () => {
+    window.open = original;
+  };
+}
 
 /** Translate Canton `txChanged` statuses to PartyLayer's TransactionStatus. */
 function mapTxStatus(

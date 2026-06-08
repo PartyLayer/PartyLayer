@@ -89,6 +89,22 @@ function isDualTransportWallet(wallet: WalletInfo): boolean {
   return hasExtension && hasMobile;
 }
 
+/**
+ * Pure-remote / QR-only wallet: NO browser extension, reached only via a
+ * remote signer / mobile transport (e.g. WalletConnect). These deliver a
+ * pairing URI at connect time (via `onDisplayUri`) which the modal renders as
+ * a QR / deep-link itself — they have no `#console-wallet-connect-placeholder`
+ * DOM injection. (Wallets whose own SDK draws the QR simply never emit a URI,
+ * so the QR view is only entered once a URI actually arrives.)
+ */
+function isPureRemoteWallet(wallet: WalletInfo): boolean {
+  const caps = wallet.capabilities;
+  if (caps.includes('injected')) return false;
+  return (
+    caps.includes('remoteSigner') || caps.includes('deeplink') || caps.includes('popup')
+  );
+}
+
 function getErrorMessage(error: Error): string {
   const code = 'code' in error ? (error as { code: string }).code : '';
   switch (code) {
@@ -497,6 +513,24 @@ export function WalletModal({
     observerRef.current = observer;
   }, []);
 
+  /**
+   * Receives a pairing/display URI from the adapter (e.g. a WalletConnect `wc:`
+   * URI) during connect, renders it as a QR in the modal, and keeps the raw URI
+   * as a mobile deep-link. Only adapters that emit a URI (WalletConnect) trigger
+   * this; everything else keeps its existing flow.
+   */
+  const handleDisplayUri = useCallback(async (uri: string) => {
+    setDeepLinkUrl(uri);
+    setConnectPhase('qr');
+    try {
+      const QRCode = await import('qrcode');
+      const svg = await QRCode.toString(uri, { type: 'svg', margin: 1, width: 240 });
+      setQrSvgHtml(svg);
+    } catch {
+      // Keep the "Generating QR code..." spinner; the deep-link still works.
+    }
+  }, []);
+
   const handleWalletClick = useCallback(async (wallet: WalletInfo) => {
     setSelectedWallet(wallet);
     setConnectError(null);
@@ -505,9 +539,18 @@ export function WalletModal({
     setDeepLinkUrl(null);
 
     const isDual = isDualTransportWallet(wallet);
+    const connectOptions: {
+      walletId: typeof wallet.walletId;
+      preferInstalled: boolean;
+      onDisplayUri?: (uri: string) => void;
+    } = {
+      walletId: wallet.walletId,
+      preferInstalled: true,
+    };
 
     if (isDual) {
       // Dual-transport wallet: start extension flow with timeout + QR observer
+      // (Console SDK injects its QR into #console-wallet-connect-placeholder).
       setConnectPhase('extension');
 
       // Watch for SDK's QR DOM injection (signals extension not found)
@@ -523,12 +566,13 @@ export function WalletModal({
       }, EXTENSION_TIMEOUT_MS);
     } else {
       setConnectPhase('default');
+      // QR-only / remote-signer wallets (e.g. WalletConnect): when the adapter
+      // emits a pairing URI, render the QR in-modal. Wallets that drive their
+      // own QR never call onDisplayUri, so their flow is unchanged.
+      connectOptions.onDisplayUri = handleDisplayUri;
     }
 
-    const session = await connect({
-      walletId: wallet.walletId,
-      preferInstalled: true,
-    });
+    const session = await connect(connectOptions);
 
     cleanupConnectResources();
 
@@ -541,7 +585,7 @@ export function WalletModal({
     }
     // If session is null, the useConnect hook's error state will trigger
     // the useEffect above to route to the appropriate error view
-  }, [connect, onConnect, onClose, startQrObserver, cleanupConnectResources]);
+  }, [connect, onConnect, onClose, startQrObserver, cleanupConnectResources, handleDisplayUri]);
 
   const handleRetry = useCallback(() => {
     if (selectedWallet) {
@@ -1267,6 +1311,13 @@ export function WalletModal({
     if (!selectedWallet) return null;
     const iconUrl = resolveWalletIcon(selectedWallet.walletId, walletIcons, selectedWallet.icons?.sm);
     const installUrl = getWalletUrl(selectedWallet);
+    // Generic (WalletConnect / QR-only) entries are wallet-agnostic: the same
+    // QR works with any Canton WC wallet, so don't name a specific wallet.
+    const isGenericRemote = isPureRemoteWallet(selectedWallet);
+    const scanCopy = isGenericRemote
+      ? 'Scan with your Canton wallet'
+      : `Scan with ${selectedWallet.name} mobile app`;
+    const openCopy = isGenericRemote ? 'Open wallet' : `Open in ${selectedWallet.name}`;
 
     return (
       <>
@@ -1335,7 +1386,7 @@ export function WalletModal({
             color: theme.colors.textSecondary,
             marginBottom: '20px',
           }}>
-            Scan with {selectedWallet.name} mobile app
+            {scanCopy}
           </div>
 
           {/* Deep link button for mobile browsers */}
@@ -1354,7 +1405,7 @@ export function WalletModal({
               }}
             >
               <SmartphoneIcon size={14} color="#0B0F1A" />
-              Open in {selectedWallet.name}
+              {openCopy}
             </a>
           )}
 

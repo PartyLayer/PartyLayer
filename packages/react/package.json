@@ -44,11 +44,13 @@
   "dependencies": {
     "@partylayer/sdk": "workspace:^",
     "@partylayer/registry-client": "workspace:^",
-    "@partylayer/session": "workspace:^"
+    "@partylayer/session": "workspace:^",
+    "qrcode": "^1.5.4"
   },
   "devDependencies": {
     "@partylayer/testing": "workspace:^",
     "@testing-library/react": "^14.2.0",
+    "@types/qrcode": "^1.5.5",
     "@types/react": "^18.2.0",
     "@types/react-dom": "^18.2.0",
     "@types/node": "^20.11.0",

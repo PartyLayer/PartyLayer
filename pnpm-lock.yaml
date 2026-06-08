@@ -477,6 +477,9 @@ importers:
       '@partylayer/session':
         specifier: workspace:^
         version: link:../session
+      qrcode:
+        specifier: ^1.5.4
+        version: 1.5.4
     devDependencies:
       '@partylayer/testing':
         specifier: workspace:^
@@ -487,6 +490,9 @@ importers:
       '@types/node':
         specifier: ^20.11.0
         version: 20.19.30
+      '@types/qrcode':
+        specifier: ^1.5.5
+        version: 1.5.6
       '@types/react':
         specifier: ^18.2.0
         version: 18.3.27

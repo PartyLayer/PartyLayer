@@ -13,10 +13,14 @@ import {
   AdapterConnectResult,
   Session,
   PersistedSession,
+  SignMessageParams,
+  SignedMessage,
   SignTransactionParams,
   SignedTransaction,
   SubmitTransactionParams,
   TxReceipt,
+  LedgerApiParams,
+  LedgerApiResult,
   AdapterEventName,
 } from '@partylayer/core';
 
@@ -88,6 +92,8 @@ declare class WalletConnectAdapter implements WalletAdapter {
   private readonly config;
   private readonly createOfficial;
   private official;
+  /** Per-connect display-URI callback (e.g. from the connect modal). */
+  private activeDisplayUri?;
   constructor(config: WalletConnectAdapterConfig, options?: WalletConnectAdapterOptions);
   getCapabilities(): CapabilityKey[];
   /**
@@ -103,17 +109,25 @@ declare class WalletConnectAdapter implements WalletAdapter {
     icon: string;
   };
   private buildOfficialConfig;
+  /** Fan the pairing URI out to the integrator callback + the active connect's handler. */
+  private deliverDisplayUri;
   private ensureOfficial;
   connect(
     ctx: AdapterContext,
-    _opts?: {
+    opts?: {
       timeoutMs?: number;
       partyId?: PartyId;
       preferInstalled?: boolean;
+      onDisplayUri?: (uri: string) => void;
     }
   ): Promise<AdapterConnectResult>;
   disconnect(ctx: AdapterContext, _session: Session): Promise<void>;
   restore(ctx: AdapterContext, persisted: PersistedSession): Promise<Session | null>;
+  signMessage(
+    _ctx: AdapterContext,
+    session: Session,
+    params: SignMessageParams
+  ): Promise<SignedMessage>;
   signTransaction(
     _ctx: AdapterContext,
     _session: Session,
@@ -124,6 +138,11 @@ declare class WalletConnectAdapter implements WalletAdapter {
     session: Session,
     params: SubmitTransactionParams
   ): Promise<TxReceipt>;
+  ledgerApi(
+    _ctx: AdapterContext,
+    session: Session,
+    params: LedgerApiParams
+  ): Promise<LedgerApiResult>;
   /**
    * Subscribe to adapter events by delegating to the official adapter's event
    * bus (events arrive via `session_event` and are buffered until a listener
