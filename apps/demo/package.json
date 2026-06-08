@@ -19,7 +19,10 @@
     "@partylayer/adapter-cantor8": "workspace:^",
     "@partylayer/adapter-bron": "workspace:^",
     "@partylayer/adapter-send": "workspace:^",
+    "@partylayer/adapter-walletconnect": "workspace:^",
     "@partylayer/provider": "workspace:^",
+    "@walletconnect/sign-client": "^2.23.8",
+    "@walletconnect/types": "^2.23.8",
     "next": "^14.0.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0"

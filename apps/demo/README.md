@@ -9,6 +9,37 @@ A Next.js demo application showcasing the PartyLayer SDK integration.
 - Message signing demo
 - Registry status display
 - Event logging on debug page
+- **WalletConnect** (opt-in) — connect Canton wallets over WalletConnect (e.g.
+  Nightly mobile) by scanning a QR
+
+## WalletConnect (live mobile-wallet scan)
+
+The demo registers the opt-in `@partylayer/adapter-walletconnect`, so
+**"WalletConnect"** appears in the connect modal. Clicking it shows a scannable
+pairing QR + mobile deep-link **rendered by the `@partylayer/react` modal
+itself** (from the adapter's `onDisplayUri`) — the demo does no QR/URI rendering
+of its own.
+
+Set a WalletConnect Cloud project id (falls back to a shared local-dev id):
+
+```bash
+# apps/demo/.env.local
+NEXT_PUBLIC_WC_PROJECT_ID=577414f6b46f09a7383d3c306c013a57
+```
+
+To run the live scan test locally:
+
+```bash
+pnpm install
+pnpm -r --filter "@partylayer/*" build      # build the workspace packages
+cd apps/demo && NEXT_PUBLIC_WC_PROJECT_ID=577414f6b46f09a7383d3c306c013a57 pnpm dev
+# open http://localhost:3000 → Connect → WalletConnect → scan the QR with a
+# Canton WC wallet (e.g. Nightly mobile) → approve.
+```
+
+The WalletConnect adapter loads `@canton-network/dapp-sdk` only at connect time
+(dynamic import), so registering it does not pull `@walletconnect/sign-client`
+into the demo's main bundle.
 
 ## Quick Start
 
