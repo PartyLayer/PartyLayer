@@ -20,6 +20,7 @@ import {
   CapabilityNotSupportedError,
   mapUnknownErrorToPartyLayerError,
   toPartyId,
+  toSignature,
   toTransactionHash,
   toWalletId,
   type AdapterConnectResult,
@@ -27,10 +28,14 @@ import {
   type AdapterDetectResult,
   type AdapterEventName,
   type CapabilityKey,
+  type LedgerApiParams,
+  type LedgerApiResult,
   type PartyId,
   type PersistedSession,
   type Session,
+  type SignedMessage,
   type SignedTransaction,
+  type SignMessageParams,
   type SignTransactionParams,
   type SubmitTransactionParams,
   type TxReceipt,
@@ -295,6 +300,36 @@ export class WalletConnectAdapter implements WalletAdapter {
     }
   }
 
+  async signMessage(
+    _ctx: AdapterContext,
+    session: Session,
+    params: SignMessageParams,
+  ): Promise<SignedMessage> {
+    try {
+      const wc = await this.ensureOfficial();
+      // The official adapter prefixes `canton_`, so this issues a
+      // `canton_signMessage` request over the WalletConnect session.
+      const result = await wc.request<{ signature?: string }>({
+        method: 'signMessage',
+        params: { message: params.message },
+      });
+      return {
+        signature: toSignature(result?.signature ?? ''),
+        partyId: session.partyId,
+        message: params.message,
+        nonce: params.nonce,
+        domain: params.domain,
+      };
+    } catch (err) {
+      throw mapUnknownErrorToPartyLayerError(err, {
+        walletId: this.walletId,
+        phase: 'signMessage',
+        transport: 'remote',
+        details: { sessionId: session.sessionId },
+      });
+    }
+  }
+
   async signTransaction(
     _ctx: AdapterContext,
     _session: Session,
@@ -322,6 +357,41 @@ export class WalletConnectAdapter implements WalletAdapter {
       throw mapUnknownErrorToPartyLayerError(err, {
         walletId: this.walletId,
         phase: 'submitTransaction',
+        transport: 'remote',
+        details: { sessionId: session.sessionId },
+      });
+    }
+  }
+
+  async ledgerApi(
+    _ctx: AdapterContext,
+    session: Session,
+    params: LedgerApiParams,
+  ): Promise<LedgerApiResult> {
+    try {
+      const wc = await this.ensureOfficial();
+      // Proxies a JSON Ledger API request through the wallet via
+      // `canton_ledgerApi`.
+      const result = await wc.request<unknown>({
+        method: 'ledgerApi',
+        params: {
+          requestMethod: params.requestMethod,
+          resource: params.resource,
+          ...(params.body !== undefined ? { body: params.body } : {}),
+        },
+      });
+      const maybeResponse = (result as { response?: unknown } | null)?.response;
+      const response =
+        typeof result === 'string'
+          ? result
+          : typeof maybeResponse === 'string'
+            ? maybeResponse
+            : JSON.stringify(result ?? null);
+      return { response };
+    } catch (err) {
+      throw mapUnknownErrorToPartyLayerError(err, {
+        walletId: this.walletId,
+        phase: 'ledgerApi',
         transport: 'remote',
         details: { sessionId: session.sessionId },
       });

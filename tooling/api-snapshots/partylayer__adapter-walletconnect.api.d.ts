@@ -13,10 +13,14 @@ import {
   AdapterConnectResult,
   Session,
   PersistedSession,
+  SignMessageParams,
+  SignedMessage,
   SignTransactionParams,
   SignedTransaction,
   SubmitTransactionParams,
   TxReceipt,
+  LedgerApiParams,
+  LedgerApiResult,
   AdapterEventName,
 } from '@partylayer/core';
 
@@ -114,6 +118,11 @@ declare class WalletConnectAdapter implements WalletAdapter {
   ): Promise<AdapterConnectResult>;
   disconnect(ctx: AdapterContext, _session: Session): Promise<void>;
   restore(ctx: AdapterContext, persisted: PersistedSession): Promise<Session | null>;
+  signMessage(
+    _ctx: AdapterContext,
+    session: Session,
+    params: SignMessageParams
+  ): Promise<SignedMessage>;
   signTransaction(
     _ctx: AdapterContext,
     _session: Session,
@@ -124,6 +133,11 @@ declare class WalletConnectAdapter implements WalletAdapter {
     session: Session,
     params: SubmitTransactionParams
   ): Promise<TxReceipt>;
+  ledgerApi(
+    _ctx: AdapterContext,
+    session: Session,
+    params: LedgerApiParams
+  ): Promise<LedgerApiResult>;
   /**
    * Subscribe to adapter events by delegating to the official adapter's event
    * bus (events arrive via `session_event` and are buffered until a listener

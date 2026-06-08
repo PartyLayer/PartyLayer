@@ -116,6 +116,10 @@ function makeMockOfficial(cfg: { onUri?: (u: string) => void }, opts: MockOffici
           };
         case 'prepareExecuteAndWait':
           return { tx: { commandId: 'cmd-2', payload: { updateId: 'update-2' } } };
+        case 'signMessage':
+          return { signature: 'wc-signature-deadbeef' };
+        case 'ledgerApi':
+          return { offset: '42', from: 'canton_ledgerApi' };
         case 'disconnect':
           connected = false;
           return null;
@@ -305,11 +309,78 @@ describe('WalletConnectAdapter — disconnect / restore / submit', () => {
     expect(String(receipt.transactionHash)).toBe('update-2');
   });
 
+  it('signMessage() issues canton_signMessage and maps the result to SignedMessage', async () => {
+    const official = makeMockOfficial({});
+    const adapter = new WalletConnectAdapter(
+      { projectId: 'p' },
+      { createOfficialAdapter: () => official },
+    );
+    const session = createMockSession();
+    const signed = await adapter.signMessage(createMockContext(), session, {
+      message: 'Hello Canton',
+      nonce: 'n1',
+    });
+    // request goes through the official adapter as `signMessage` (it prefixes canton_)
+    expect(official.request).toHaveBeenCalledWith({
+      method: 'signMessage',
+      params: { message: 'Hello Canton' },
+    });
+    expect(String(signed.signature)).toBe('wc-signature-deadbeef');
+    expect(signed.partyId).toBe(session.partyId);
+    expect(signed.message).toBe('Hello Canton');
+    expect(signed.nonce).toBe('n1');
+  });
+
+  it('ledgerApi() proxies through canton_ledgerApi and returns a string response', async () => {
+    const official = makeMockOfficial({});
+    const adapter = new WalletConnectAdapter(
+      { projectId: 'p' },
+      { createOfficialAdapter: () => official },
+    );
+    const res = await adapter.ledgerApi(createMockContext(), createMockSession(), {
+      requestMethod: 'GET',
+      resource: '/v2/state/ledger-end',
+    });
+    expect(official.request).toHaveBeenCalledWith({
+      method: 'ledgerApi',
+      params: { requestMethod: 'GET', resource: '/v2/state/ledger-end' },
+    });
+    expect(typeof res.response).toBe('string');
+    expect(res.response).toContain('canton_ledgerApi');
+  });
+
   it('signTransaction() throws CapabilityNotSupportedError', async () => {
     const adapter = new WalletConnectAdapter({ projectId: 'p' });
     await expect(
       adapter.signTransaction(createMockContext(), createMockSession(), { tx: {} }),
     ).rejects.toBeInstanceOf(CapabilityNotSupportedError);
+  });
+
+  it('capability/method integrity: every method-capability has a working method', () => {
+    const adapter = new WalletConnectAdapter({ projectId: 'p' });
+    const caps = adapter.getCapabilities();
+    // Capabilities that MUST have a corresponding adapter method (the rest —
+    // remoteSigner/deeplink/events — are transport flags or handled via on()).
+    const methodFor: Partial<Record<string, keyof WalletConnectAdapter>> = {
+      connect: 'connect',
+      disconnect: 'disconnect',
+      restore: 'restore',
+      signMessage: 'signMessage',
+      submitTransaction: 'submitTransaction',
+      ledgerApi: 'ledgerApi',
+      events: 'on',
+    };
+    for (const cap of caps) {
+      const method = methodFor[cap];
+      if (!method) continue; // transport flag (remoteSigner/deeplink)
+      expect(
+        typeof (adapter as unknown as Record<string, unknown>)[method as string],
+        `capability "${cap}" must have method "${String(method)}"`,
+      ).toBe('function');
+    }
+    // signMessage + ledgerApi must be present (regression: were declared but unimplemented)
+    expect(typeof adapter.signMessage).toBe('function');
+    expect(typeof adapter.ledgerApi).toBe('function');
   });
 });
 
