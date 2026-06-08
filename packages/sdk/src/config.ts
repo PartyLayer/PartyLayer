@@ -171,6 +171,12 @@ export interface ConnectOptions {
   requiredCapabilities?: string[];
   /** Timeout in milliseconds */
   timeoutMs?: number;
+  /**
+   * Called with a pairing/display URI (e.g. a WalletConnect `wc:` URI) the
+   * moment the adapter produces one, before approval. Used by the connect UI
+   * to render a QR / deep-link. Adapters without such a URI never call it.
+   */
+  onDisplayUri?: (uri: string) => void;
 }
 
 /**

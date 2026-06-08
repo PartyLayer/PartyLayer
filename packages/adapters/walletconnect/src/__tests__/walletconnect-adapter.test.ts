@@ -234,6 +234,63 @@ describe('WalletConnectAdapter — connect', () => {
     // chainId left unset by default
     expect(captured?.chainId).toBeUndefined();
   });
+
+  it('delivers the pairing URI to connect opts.onDisplayUri (modal QR plumbing)', async () => {
+    const seen: string[] = [];
+    const adapter = new WalletConnectAdapter(
+      { projectId: 'p' },
+      { createOfficialAdapter: (cfg) => makeMockOfficial(cfg) },
+    );
+    await adapter.connect(createMockContext(), { onDisplayUri: (u) => seen.push(u) });
+    expect(seen.some((u) => u.startsWith('wc:'))).toBe(true);
+  });
+
+  it('fans the URI to BOTH the integrator config.onUri AND connect opts.onDisplayUri', async () => {
+    const configOnUri = vi.fn();
+    const onDisplayUri = vi.fn();
+    const adapter = new WalletConnectAdapter(
+      { projectId: 'p', onUri: configOnUri },
+      { createOfficialAdapter: (cfg) => makeMockOfficial(cfg) },
+    );
+    await adapter.connect(createMockContext(), { onDisplayUri });
+    expect(configOnUri).toHaveBeenCalledWith(expect.stringMatching(/^wc:/));
+    expect(onDisplayUri).toHaveBeenCalledWith(expect.stringMatching(/^wc:/));
+  });
+
+  it('suppresses the blank wallet-popup during connect and restores window.open after', async () => {
+    const realOpen = vi.fn((_url?: unknown, _target?: unknown) => ({ closed: false }));
+    vi.stubGlobal('window', { open: realOpen });
+    let popupDuringConnect: unknown = 'unset';
+    const adapter = new WalletConnectAdapter(
+      { projectId: 'p' },
+      {
+        createOfficialAdapter: (cfg) => {
+          const base = makeMockOfficial(cfg);
+          return {
+            ...base,
+            request: async (args: { method: string; params?: unknown }) => {
+              if (args.method === 'connect') {
+                cfg.onUri?.('wc:popup-test@2');
+                // mirror the official adapter's showUriInPopup window.open call
+                popupDuringConnect = (window as unknown as { open: typeof window.open }).open(
+                  '',
+                  'wallet-popup',
+                );
+                return { isConnected: true };
+              }
+              return base.request(args);
+            },
+          };
+        },
+      },
+    );
+    await adapter.connect(createMockContext());
+    expect(popupDuringConnect).toBeNull(); // wallet-popup suppressed during connect
+    expect((window as unknown as { open: unknown }).open).toBe(realOpen); // restored after
+    // the real window.open was never invoked for the blank wallet-popup
+    expect(realOpen).not.toHaveBeenCalledWith('', 'wallet-popup');
+    vi.unstubAllGlobals();
+  });
 });
 
 describe('WalletConnectAdapter — events (delegation + buffering)', () => {
