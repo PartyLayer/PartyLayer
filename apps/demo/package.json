@@ -24,13 +24,11 @@
     "@walletconnect/sign-client": "^2.23.8",
     "@walletconnect/types": "^2.23.8",
     "next": "^14.0.0",
-    "qrcode": "^1.5.4",
     "react": "^18.2.0",
     "react-dom": "^18.2.0"
   },
   "devDependencies": {
     "@types/node": "^20.11.0",
-    "@types/qrcode": "^1.5.5",
     "@types/react": "^18.2.0",
     "@types/react-dom": "^18.2.0",
     "typescript": "^5.3.3"

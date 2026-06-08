@@ -15,9 +15,10 @@ A Next.js demo application showcasing the PartyLayer SDK integration.
 ## WalletConnect (live mobile-wallet scan)
 
 The demo registers the opt-in `@partylayer/adapter-walletconnect`, so
-**"WalletConnect"** appears in the connect modal. Clicking it opens a scannable
-pairing QR (the official `@canton-network/dapp-sdk` adapter's QR popup; the URI
-is also surfaced through the modal's QR seam).
+**"WalletConnect"** appears in the connect modal. Clicking it shows a scannable
+pairing QR + mobile deep-link **rendered by the `@partylayer/react` modal
+itself** (from the adapter's `onDisplayUri`) — the demo does no QR/URI rendering
+of its own.
 
 Set a WalletConnect Cloud project id (falls back to a shared local-dev id):
 
