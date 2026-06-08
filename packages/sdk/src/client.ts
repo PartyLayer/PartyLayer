@@ -347,6 +347,7 @@ export class PartyLayerClient {
         timeoutMs,
         partyId: undefined,
         preferInstalled: options?.preferInstalled,
+        onDisplayUri: options?.onDisplayUri,
       });
 
       const timeoutPromise = new Promise<never>((_, reject) => {

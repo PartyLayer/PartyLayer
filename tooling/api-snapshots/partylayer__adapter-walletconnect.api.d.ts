@@ -92,6 +92,8 @@ declare class WalletConnectAdapter implements WalletAdapter {
   private readonly config;
   private readonly createOfficial;
   private official;
+  /** Per-connect display-URI callback (e.g. from the connect modal). */
+  private activeDisplayUri?;
   constructor(config: WalletConnectAdapterConfig, options?: WalletConnectAdapterOptions);
   getCapabilities(): CapabilityKey[];
   /**
@@ -107,13 +109,16 @@ declare class WalletConnectAdapter implements WalletAdapter {
     icon: string;
   };
   private buildOfficialConfig;
+  /** Fan the pairing URI out to the integrator callback + the active connect's handler. */
+  private deliverDisplayUri;
   private ensureOfficial;
   connect(
     ctx: AdapterContext,
-    _opts?: {
+    opts?: {
       timeoutMs?: number;
       partyId?: PartyId;
       preferInstalled?: boolean;
+      onDisplayUri?: (uri: string) => void;
     }
   ): Promise<AdapterConnectResult>;
   disconnect(ctx: AdapterContext, _session: Session): Promise<void>;
