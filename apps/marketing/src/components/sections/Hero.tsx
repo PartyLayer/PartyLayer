@@ -3,10 +3,10 @@ import { cn } from '@/design/cn';
 import { wallets } from '@/design/tokens';
 
 interface HeroProps {
-  onOpenDemo: () => void;
+  onConnect: () => void;
 }
 
-export function Hero({ onOpenDemo }: HeroProps) {
+export function Hero({ onConnect }: HeroProps) {
   return (
     <section className="relative pt-20 pb-24 md:pt-28 md:pb-32">
       <div className="max-w-6xl mx-auto px-4 sm:px-6">
@@ -109,7 +109,7 @@ export function Hero({ onOpenDemo }: HeroProps) {
                       {wallets.map((wallet) => (
                         <button
                           key={wallet.id}
-                          onClick={onOpenDemo}
+                          onClick={onConnect}
                           className={cn(
                             'w-full flex items-center gap-3 p-3 rounded-md border border-border',
                             'hover:bg-muted hover:border-slate-300',

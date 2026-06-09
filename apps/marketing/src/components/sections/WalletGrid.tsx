@@ -1,12 +1,12 @@
 import { Card, CardContent } from '@/components/ui/Card';
-import { wallets, type WalletId } from '@/design/tokens';
+import { wallets } from '@/design/tokens';
 
 interface WalletGridProps {
-  installedWallets: WalletId[];
-  onWalletClick: (walletId: WalletId) => void;
+  /** Open the REAL @partylayer/react connect modal (mounted in App). */
+  onConnect: () => void;
 }
 
-export function WalletGrid({ installedWallets, onWalletClick }: WalletGridProps) {
+export function WalletGrid({ onConnect }: WalletGridProps) {
   return (
     <section id="wallets" className="py-20 border-t border-border">
       <div className="max-w-6xl mx-auto px-4 sm:px-6">
@@ -21,15 +21,13 @@ export function WalletGrid({ installedWallets, onWalletClick }: WalletGridProps)
         {/* Wallet Cards */}
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
           {wallets.map((wallet) => {
-            const isInstalled = installedWallets.includes(wallet.id);
-
             return (
               <Card
                 key={wallet.id}
                 variant="default"
                 hoverable
                 className="cursor-pointer h-full"
-                onClick={() => onWalletClick(wallet.id)}
+                onClick={onConnect}
               >
                 <CardContent className="flex flex-col h-full">
                   {/* Logo */}
@@ -60,14 +58,6 @@ export function WalletGrid({ installedWallets, onWalletClick }: WalletGridProps)
                   {/* Meta — pinned to the bottom so cards equalize regardless of copy length */}
                   <div className="flex items-center justify-between mt-auto">
                     <span className="text-xs text-slate-400">{wallet.transport}</span>
-                    {isInstalled ? (
-                      <span className="badge badge-installed">
-                        <span className="w-1.5 h-1.5 rounded-full bg-green-500" />
-                        Installed
-                      </span>
-                    ) : (
-                      <span className="badge badge-not-installed">Not installed</span>
-                    )}
                   </div>
                 </CardContent>
               </Card>
