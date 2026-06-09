@@ -515,6 +515,16 @@ describe('WalletConnectAdapter — CAIP-2 chain derivation (A1)', () => {
     expect(chains).toEqual(['canton:da-devnet', 'canton:da-mainnet']);
   });
 
+  it('reports the wallet effective network in session.network (not ctx.network)', async () => {
+    // The mock status/account report canton:da-mainnet; the dApp requested devnet.
+    const adapter = new WalletConnectAdapter(
+      { projectId: 'p' },
+      { createOfficialAdapter: (cfg) => makeMockOfficial(cfg) },
+    );
+    const result = await adapter.connect({ ...createMockContext(), network: 'devnet' });
+    expect(result.session.network).toBe('canton:da-mainnet'); // wallet-reported wins
+  });
+
   it('reuses the official adapter when the network is unchanged', async () => {
     let calls = 0;
     const adapter = new WalletConnectAdapter(

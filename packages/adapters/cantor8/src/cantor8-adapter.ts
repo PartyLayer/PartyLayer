@@ -151,6 +151,9 @@ export class Cantor8Adapter implements WalletAdapter {
         partyId: response.partyId,
         session: {
           walletId: this.walletId,
+          // Cantor8's connect response carries no network → not wallet-reported,
+          // so network-mismatch detection is limited for this adapter (echoes
+          // the requested ctx.network).
           network: ctx.network,
           createdAt: Date.now(),
           expiresAt: response.expiresAt,

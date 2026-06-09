@@ -199,6 +199,9 @@ export class NightlyAdapter implements WalletAdapter {
         partyId,
         session: {
           walletId: this.walletId,
+          // The Nightly provider does not report the connected network → not
+          // wallet-reported, so network-mismatch detection is limited for this
+          // adapter (echoes the requested ctx.network).
           network: ctx.network,
           createdAt: Date.now(),
           metadata: {

@@ -163,6 +163,9 @@ export class BronAdapter implements WalletAdapter {
         partyId: session.partyId,
         session: {
           walletId: this.walletId,
+          // Bron's API session does not report the connected network → not
+          // wallet-reported, so network-mismatch detection is limited for this
+          // adapter (echoes the requested ctx.network).
           network: ctx.network,
           createdAt: Date.now(),
           expiresAt: session.expiresAt,

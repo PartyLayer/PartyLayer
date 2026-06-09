@@ -149,7 +149,10 @@ export class SendAdapter implements WalletAdapter {
         partyId,
         session: {
           walletId: this.walletId,
-          network: ctx.network,
+          // The wallet's EFFECTIVE network (so the client can detect a
+          // mismatch with the dApp's configured network). Prefer what the
+          // wallet reports; fall back to ctx.network only when absent.
+          network: status.network?.networkId ?? account.networkId ?? ctx.network,
           createdAt: Date.now(),
           metadata: buildSessionMetadata(status, account),
         },

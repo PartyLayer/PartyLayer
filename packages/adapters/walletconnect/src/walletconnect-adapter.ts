@@ -304,7 +304,10 @@ export class WalletConnectAdapter implements WalletAdapter {
         partyId,
         session: {
           walletId: this.walletId,
-          network: ctx.network,
+          // The wallet's EFFECTIVE network (A1 constrains the requested chain;
+          // this makes the session truthful so the client can also catch a
+          // post-connect divergence). Prefer wallet-reported; else ctx.network.
+          network: status.network?.networkId ?? account.networkId ?? ctx.network,
           createdAt: Date.now(),
           ...(typeof status.session?.expiresAt === 'number'
             ? { expiresAt: status.session.expiresAt }
