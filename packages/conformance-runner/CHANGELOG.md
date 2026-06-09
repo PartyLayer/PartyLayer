@@ -1,5 +1,25 @@
 # @cantonconnect/conformance-runner
 
+## 0.2.0
+
+### Minor Changes
+
+- 32c6c1c: feat: assert session.network is the wallet's effective network
+
+  Add the `checkNetworkTruthfulness` contract: an adapter's `connect()` must
+  surface the wallet's EFFECTIVE network in `session.network` (so the SDK can
+  detect a network mismatch), not merely echo `ctx.network`. Adapters that
+  genuinely cannot read the wallet network are recorded as "network-reported: no"
+  in the support matrix rather than silently passing.
+
+### Patch Changes
+
+- Updated dependencies [9642aee]
+- Updated dependencies [2c4c10c]
+- Updated dependencies [9642aee]
+  - @partylayer/core@0.5.0
+  - @partylayer/provider@0.2.1
+
 ## 0.1.10
 
 ### Patch Changes

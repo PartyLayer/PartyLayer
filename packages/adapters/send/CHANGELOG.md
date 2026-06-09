@@ -1,5 +1,24 @@
 # @partylayer/adapter-send
 
+## 1.1.0
+
+### Minor Changes
+
+- 32c6c1c: feat: report the wallet's effective network in session.network (enables network-mismatch detection)
+
+  `connect()` now sets `session.network` to `status.network?.networkId ??
+account.networkId ?? ctx.network` (prefer the wallet-reported network), so the
+  SDK's `networkEnforcement` can detect a wallet/dApp network mismatch for Send.
+  Unchanged when the wallet is on the configured network.
+
+### Patch Changes
+
+- Updated dependencies [9642aee]
+- Updated dependencies [2c4c10c]
+- Updated dependencies [9642aee]
+  - @partylayer/core@0.5.0
+  - @partylayer/provider@0.2.1
+
 ## 1.0.4
 
 ### Patch Changes

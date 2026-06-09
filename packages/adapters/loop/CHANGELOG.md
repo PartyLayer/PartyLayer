@@ -1,5 +1,20 @@
 # @cantonconnect/adapter-loop
 
+## 0.3.9
+
+### Patch Changes
+
+- 2c4c10c: fix(adapter-loop): fail clearly on unsupported networks instead of silently substituting
+
+  `mapNetworkToLoop` previously mapped testnet→devnet and unknown→mainnet,
+  silently connecting to the wrong network. It now returns local/devnet/mainnet
+  and throws a clear error for anything else (Loop has no testnet), surfaced via
+  the adapter's existing connect error path.
+
+- Updated dependencies [9642aee]
+- Updated dependencies [2c4c10c]
+  - @partylayer/core@0.5.0
+
 ## 0.3.8
 
 ### Patch Changes

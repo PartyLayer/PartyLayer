@@ -1,5 +1,13 @@
 # @cantonconnect/adapter-starter
 
+## 0.1.11
+
+### Patch Changes
+
+- Updated dependencies [9642aee]
+- Updated dependencies [2c4c10c]
+  - @partylayer/core@0.5.0
+
 ## 0.1.10
 
 ### Patch Changes

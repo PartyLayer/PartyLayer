@@ -272,11 +272,11 @@ importers:
   examples/wallet-balance-loop:
     dependencies:
       '@partylayer/react':
-        specifier: ^0.5.0
-        version: 0.5.0(react@18.3.1)(typescript@5.9.3)
+        specifier: workspace:^
+        version: link:../../packages/react
       '@partylayer/sdk':
-        specifier: ^0.5.0
-        version: 0.5.0(typescript@5.9.3)
+        specifier: workspace:^
+        version: link:../../packages/sdk
       react:
         specifier: ^18.2.0
         version: 18.3.1
@@ -1446,44 +1446,6 @@ packages:
   '@nodelib/fs.walk@1.2.8':
     resolution: {integrity: sha512-oGB+UxlgWcgQkgwo8GcEGwemoTFt3FIO9ababBmaGwXIoBKZ+GTy0pP185beGg7Llih/NSHSV2XAs1lnznocSg==}
     engines: {node: '>= 8'}
-
-  '@partylayer/adapter-bron@0.2.11':
-    resolution: {integrity: sha512-C+R9DATGOSg/z/UJM0HZidtvjFtj2/3BlqZw4sqjjEk/mNWsQwmoMfOLZEPFLiHTeO+c60XCBWTy2FG1jjSmNA==}
-
-  '@partylayer/adapter-cantor8@0.2.11':
-    resolution: {integrity: sha512-+l1d6ULbjQIfd46Gr75DB9i7S32TofOY/gypEiRhO8nYhaLw22MoJD9ocDVT+amgycj/0CFFoV82ULABevngFw==}
-
-  '@partylayer/adapter-console@0.3.5':
-    resolution: {integrity: sha512-Oj5Y+OI3fziGU2XFrv0pkFUPQXOUKlav0qORkjdymbEPsHHFvNkIjE57U0ARinw8HMH6fgwfDL9tv09tMSHnQg==}
-
-  '@partylayer/adapter-loop@0.3.8':
-    resolution: {integrity: sha512-kVJMZGxIG+Y9BpTJSoT5L+vIrfzgZakVlhHqX1wGAGZe5ry/HX/6PDPpk7Ck6x5AT1AFdsvG6l3sELChtrZfgQ==}
-
-  '@partylayer/adapter-nightly@0.2.10':
-    resolution: {integrity: sha512-mFxeiA3a1ImBWqie5EI27xJSRXNIml0BrGEghbMbIfpYT6fUI9OIc/yC4ncwYe644k3Lf4hYn7q04/9jlOZx+A==}
-
-  '@partylayer/adapter-send@1.0.4':
-    resolution: {integrity: sha512-niil6JfZcIoR+eSxFznI19vBRUwPVMwivmAlouM648emLy/M2IpKtz3clBsSYEjp5vuzsP0ZR1EDUoyACWHeXw==}
-
-  '@partylayer/core@0.4.0':
-    resolution: {integrity: sha512-za9ecwe6+p6Eii24xRm/5PwRjE4XDrpAiOLirNHfBUITRbeeFaq33qmQc3FgeLmrdpay9CjQc1bxXqRTvbLhsA==}
-
-  '@partylayer/provider@0.2.0':
-    resolution: {integrity: sha512-CEB6WDPyUrjJrkABGzHoUYIlYzAod+xOaYkQPXSnJI6F7nTQrLP4im/V6wc/16qkcGcoxpkpKRHKT2hr7IQssg==}
-
-  '@partylayer/react@0.5.0':
-    resolution: {integrity: sha512-3GEMK+ccZAgCpGHKsWLnqPQ7ADuSOnh/pQVEPtSsv/883cMkRaQpnEXum3omK7xjkvm5hfmSUlzyApIX1+eaoQ==}
-    peerDependencies:
-      react: '>=18.0.0'
-
-  '@partylayer/registry-client@0.3.2':
-    resolution: {integrity: sha512-MXipDWMtWKX64MfqHgziH/0z0skkQKlOg/Fwtj2FsgytszEXl8A7LpQEWb+P0Azcz7WPufce1DZeXYyfzo0RLA==}
-
-  '@partylayer/sdk@0.5.0':
-    resolution: {integrity: sha512-jNrprivgzvEDwYYmBUJlma9t9snJgCpn7vDI8aOH3u0gHQszohb7Agl0EyejbUz1QcGHvcZVTy6Wj22XrmYOcA==}
-
-  '@partylayer/session@0.2.0':
-    resolution: {integrity: sha512-d/UxGcbHKF2Sx3YdncJ5dm1nPq5b8Djufa//I9ot/rss2rk3NyDO9zghrQ9fOIwcmDYDw1uNzaWzEZiIlh3BQg==}
 
   '@pinojs/redact@0.4.0':
     resolution: {integrity: sha512-k2ENnmBugE/rzQfEcdWHcCY+/FM3VLzH9cYEsbdsoqrvzAKRhUZeRNhAZvB8OitQJ1TBed3yqWtdjzS6wJKBwg==}
@@ -5753,89 +5715,6 @@ snapshots:
     dependencies:
       '@nodelib/fs.scandir': 2.1.5
       fastq: 1.20.1
-
-  '@partylayer/adapter-bron@0.2.11':
-    dependencies:
-      '@partylayer/core': 0.4.0
-
-  '@partylayer/adapter-cantor8@0.2.11':
-    dependencies:
-      '@partylayer/core': 0.4.0
-
-  '@partylayer/adapter-console@0.3.5':
-    dependencies:
-      '@console-wallet/dapp-sdk': 2.1.5
-      '@partylayer/core': 0.4.0
-    transitivePeerDependencies:
-      - '@biomejs/wasm-bundler'
-      - '@biomejs/wasm-web'
-      - debug
-      - encoding
-      - magicast
-
-  '@partylayer/adapter-loop@0.3.8(typescript@5.9.3)':
-    dependencies:
-      '@fivenorth/loop-sdk': 0.10.0(typescript@5.9.3)
-      '@partylayer/core': 0.4.0
-    transitivePeerDependencies:
-      - typescript
-
-  '@partylayer/adapter-nightly@0.2.10':
-    dependencies:
-      '@partylayer/core': 0.4.0
-
-  '@partylayer/adapter-send@1.0.4':
-    dependencies:
-      '@partylayer/core': 0.4.0
-      '@partylayer/provider': 0.2.0
-
-  '@partylayer/core@0.4.0': {}
-
-  '@partylayer/provider@0.2.0':
-    dependencies:
-      '@partylayer/core': 0.4.0
-
-  '@partylayer/react@0.5.0(react@18.3.1)(typescript@5.9.3)':
-    dependencies:
-      '@partylayer/registry-client': 0.3.2
-      '@partylayer/sdk': 0.5.0(typescript@5.9.3)
-      '@partylayer/session': 0.2.0
-      qrcode: 1.5.4
-      react: 18.3.1
-    transitivePeerDependencies:
-      - '@biomejs/wasm-bundler'
-      - '@biomejs/wasm-web'
-      - debug
-      - encoding
-      - magicast
-      - typescript
-
-  '@partylayer/registry-client@0.3.2':
-    dependencies:
-      '@partylayer/core': 0.4.0
-
-  '@partylayer/sdk@0.5.0(typescript@5.9.3)':
-    dependencies:
-      '@partylayer/adapter-bron': 0.2.11
-      '@partylayer/adapter-cantor8': 0.2.11
-      '@partylayer/adapter-console': 0.3.5
-      '@partylayer/adapter-loop': 0.3.8(typescript@5.9.3)
-      '@partylayer/adapter-nightly': 0.2.10
-      '@partylayer/adapter-send': 1.0.4
-      '@partylayer/core': 0.4.0
-      '@partylayer/provider': 0.2.0
-      '@partylayer/registry-client': 0.3.2
-    transitivePeerDependencies:
-      - '@biomejs/wasm-bundler'
-      - '@biomejs/wasm-web'
-      - debug
-      - encoding
-      - magicast
-      - typescript
-
-  '@partylayer/session@0.2.0':
-    dependencies:
-      '@partylayer/core': 0.4.0
 
   '@pinojs/redact@0.4.0': {}
 

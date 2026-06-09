@@ -1,5 +1,40 @@
 # @cantonconnect/sdk
 
+## 0.6.0
+
+### Minor Changes
+
+- 2c4c10c: feat(sdk): network-mismatch detection + enforcement (networkEnforcement, default 'guard') + session:networkMismatch event
+
+  Detects when a connected wallet's effective network differs from the dApp's
+  configured network, flags the session (`session.networkMismatch`), and emits
+  `session:networkMismatch`. New `networkEnforcement?: 'off' | 'guard' | 'strict'`
+  config (default `'guard'`): 'strict' also blocks connect; 'guard' blocks
+  wrong-network transactions; 'off' detects + emits only.
+
+  BEHAVIOR: transactions are now blocked on a detected wallet/dApp network
+  mismatch by default; set `networkEnforcement: 'off'` to restore the previous
+  always-proceed behavior. The session's `network` now reflects the wallet's
+  reported network (adapters that read the live wallet); echo-only adapters still
+  report the configured network, so there is no false positive.
+
+### Patch Changes
+
+- Updated dependencies [9642aee]
+- Updated dependencies [2c4c10c]
+- Updated dependencies [2c4c10c]
+- Updated dependencies [9642aee]
+- Updated dependencies [32c6c1c]
+  - @partylayer/core@0.5.0
+  - @partylayer/adapter-loop@0.3.9
+  - @partylayer/provider@0.2.1
+  - @partylayer/adapter-send@1.1.0
+  - @partylayer/adapter-bron@0.2.12
+  - @partylayer/adapter-cantor8@0.2.12
+  - @partylayer/adapter-console@0.3.6
+  - @partylayer/adapter-nightly@0.2.11
+  - @partylayer/registry-client@0.3.3
+
 ## 0.5.0
 
 ### Minor Changes
