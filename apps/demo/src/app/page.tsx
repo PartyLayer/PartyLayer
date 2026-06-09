@@ -4,7 +4,7 @@ import { useState, useRef, useEffect, useCallback, type ReactNode } from 'react'
 import Link from 'next/link';
 import { PartyLayerKit, WalletModal, useSession, useDisconnect, truncatePartyId } from '@partylayer/react';
 import { buildDemoAdapters } from '../lib/canton-demo-adapter';
-import { sortByCanonicalOrder } from '../lib/wallet-order';
+import { sortByCanonicalOrder, CANONICAL_WALLET_ORDER } from '../lib/wallet-order';
 import { useBreakpoint, responsive } from './hooks/useBreakpoint';
 
 /* ─── Design Tokens (mirrored from apps/marketing/src/design/tokens.ts) ── */
@@ -1819,7 +1819,7 @@ export default function Home() {
   if (!mounted) return <LoadingSkeleton />;
 
   return (
-    <PartyLayerKit network="devnet" appName="PartyLayer" walletIcons={WALLET_LOGOS} adapters={buildDemoAdapters()} registryUrl="/registry">
+    <PartyLayerKit network="devnet" appName="PartyLayer" walletIcons={WALLET_LOGOS} walletOrder={CANONICAL_WALLET_ORDER} adapters={buildDemoAdapters()} registryUrl="/registry">
       <LandingContent />
     </PartyLayerKit>
   );
