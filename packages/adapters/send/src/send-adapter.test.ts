@@ -307,6 +307,13 @@ describe('SendAdapter: connection lifecycle', () => {
     expect(result.session.metadata?.userId).toBe(REAL_STATUS.session!.userId);
   });
 
+  it('reports the wallet effective network in session.network (not ctx.network)', async () => {
+    installMockCanton();
+    // dApp requested 'devnet'; the wallet (REAL_STATUS) reports 'canton:mainnet'.
+    const result = await adapter.connect({ ...ctx, network: 'devnet' });
+    expect(result.session.network).toBe('canton:mainnet'); // wallet-reported wins
+  });
+
   it('connect() maps Sigilry USER_REJECTED (4001) to PartyLayer UserRejectedError', async () => {
     installMockCanton({
       errors: { connect: rpcError(SendRpcErrorCode.USER_REJECTED, 'User declined') },

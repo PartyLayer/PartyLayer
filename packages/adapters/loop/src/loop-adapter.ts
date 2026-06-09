@@ -164,6 +164,9 @@ export class LoopAdapter implements WalletAdapter {
               partyId,
               session: {
                 walletId: this.walletId,
+                // Loop's connect callback does not report the connected network
+                // → not wallet-reported, so network-mismatch detection is
+                // limited for this adapter (echoes the requested ctx.network).
                 network: ctx.network,
                 createdAt: Date.now(),
               },

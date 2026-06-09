@@ -234,3 +234,44 @@ export async function runConformanceTests(
 
   return results;
 }
+
+/**
+ * Network-truthfulness contract.
+ *
+ * An adapter's `connect()` MUST surface the wallet's EFFECTIVE network in
+ * `session.network` (so the SDK can detect a wallet/dApp network mismatch) —
+ * not merely echo the requested `context.network`.
+ *
+ * Drive it with a context whose `.network` differs from the network the wallet
+ * actually reports (`walletReportedNetwork`); a compliant adapter returns
+ * `session.network === walletReportedNetwork`. An adapter that echoes
+ * `context.network` fails the contract.
+ *
+ * Adapters that genuinely cannot read the wallet's network must NOT claim to
+ * (leave `session.network = context.network`) and must be recorded as
+ * "network-reported: no" in the support matrix — they are out of scope for this
+ * contract rather than silently passing it.
+ */
+export async function checkNetworkTruthfulness(
+  adapter: WalletAdapter,
+  context: AdapterContext,
+  walletReportedNetwork: string,
+): Promise<TestResult> {
+  const name = 'connect() session.network is the wallet effective network';
+  try {
+    const result = await adapter.connect(context);
+    const got = result.session.network;
+    const passed = got === walletReportedNetwork;
+    return {
+      name,
+      passed,
+      error: passed
+        ? undefined
+        : `expected session.network='${walletReportedNetwork}' (wallet-reported), got '${String(got)}'` +
+          (got === context.network ? ' — merely echoed context.network' : ''),
+      details: { expected: walletReportedNetwork, got, ctxNetwork: context.network },
+    };
+  } catch (err) {
+    return { name, passed: false, error: err instanceof Error ? err.message : String(err) };
+  }
+}

@@ -36,6 +36,26 @@ Verdict legend:
 
 ---
 
+## Network-reported status (A1b / A1b-2)
+
+Whether `connect()` sets `session.network` to the wallet's **effective** network
+(enabling the SDK's `networkEnforcement` mismatch detection) or merely echoes the
+requested `ctx.network`. Echo-only adapters get **no** mismatch detection (no
+false positives, but limited protection) — this is the
+`checkNetworkTruthfulness` conformance contract.
+
+| walletId | network-reported | source |
+|---|---|---|
+| console | **yes** | `consoleWallet.getActiveNetwork().id` → `session.network` |
+| send | **yes** | `status.network?.networkId ?? account.networkId` → `session.network` |
+| walletconnect | **yes** | `status.network?.networkId ?? account.networkId` → `session.network` |
+| loop | no | SDK connect callback exposes no network → echoes `ctx.network` |
+| cantor8 | no | connect response carries no network → echoes `ctx.network` |
+| bron | no | API session carries no network → echoes `ctx.network` |
+| nightly | no | provider exposes no network → echoes `ctx.network` |
+
+---
+
 ## Per-wallet detail
 
 ### console — `@partylayer/adapter-console`
