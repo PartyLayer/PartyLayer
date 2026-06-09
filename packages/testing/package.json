@@ -1,6 +1,6 @@
 {
   "name": "@partylayer/testing",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "private": true,
   "description": "Offline test utilities for PartyLayer: mock CIP-0103 provider, simulated transaction lifecycle, and deterministic helpers (pass 1)",
   "main": "./dist/index.js",

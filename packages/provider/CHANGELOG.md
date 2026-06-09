@@ -1,5 +1,19 @@
 # @partylayer/provider
 
+## 0.2.1
+
+### Patch Changes
+
+- 9642aee: refactor(provider): re-export CAIP-2 utils from @partylayer/core (no API change)
+
+  `CANTON_NETWORKS`, `toCAIP2Network`, `fromCAIP2Network`, `isValidCAIP2` now live
+  in @partylayer/core; provider re-exports them so its public surface and
+  bridge.ts imports are unchanged.
+
+- Updated dependencies [9642aee]
+- Updated dependencies [2c4c10c]
+  - @partylayer/core@0.5.0
+
 ## 0.2.0
 
 ### Minor Changes

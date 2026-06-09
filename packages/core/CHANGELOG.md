@@ -1,5 +1,23 @@
 # @cantonconnect/core
 
+## 0.5.0
+
+### Minor Changes
+
+- 9642aee: feat(core): add CAIP-2 network utilities (CANTON_NETWORKS, toCAIP2Network, fromCAIP2Network, isValidCAIP2)
+
+  These moved from @partylayer/core's consumer (@partylayer/provider) into core so
+  the lower adapter layer can derive a WalletConnect CAIP-2 chain from a
+  PartyLayer NetworkId without an illegal upward import. Additive — provider
+  re-exports them unchanged.
+
+- 2c4c10c: feat(core): NetworkMismatchError + detectNetworkMismatch + Session.networkMismatch
+  - `NetworkMismatchError` (code `NETWORK_MISMATCH`, public `expected`/`actual`).
+  - `detectNetworkMismatch(expected, actual)` — conservative: returns the
+    normalized `{expected, actual}` only for a confident, recognized,
+    DIFFERENT-network mismatch; `null` otherwise (never a false positive).
+  - Optional `Session.networkMismatch?: { expected; actual }` (additive).
+
 ## 0.4.0
 
 ### Minor Changes

@@ -1,5 +1,13 @@
 # @partylayer/session
 
+## 0.2.1
+
+### Patch Changes
+
+- Updated dependencies [9642aee]
+- Updated dependencies [2c4c10c]
+  - @partylayer/core@0.5.0
+
 ## 0.2.0
 
 ### Minor Changes
