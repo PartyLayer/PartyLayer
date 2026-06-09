@@ -21,11 +21,14 @@ import type {
   TxReceipt,
   WalletAdapter,
   AdapterContext,
+  NetworkId,
 } from '@partylayer/core';
 import {
   toSessionId,
   WalletNotFoundError,
   CapabilityNotSupportedError,
+  NetworkMismatchError,
+  detectNetworkMismatch,
   mapUnknownErrorToPartyLayerError,
   capabilityGuard,
   installGuard,
@@ -243,6 +246,32 @@ export class PartyLayerClient {
     return registryWallets;
   }
 
+  /** Active network-enforcement policy (default 'guard'). */
+  private get enforcement(): 'off' | 'guard' | 'strict' {
+    return this.config.networkEnforcement ?? 'guard';
+  }
+
+  /**
+   * Detect a confident network mismatch between the dApp's configured network
+   * and the session's (wallet-reported) network. Returns null when they match
+   * or the comparison isn't confident (conservative — never a false positive).
+   */
+  private networkMismatch(session: Session): { expected: string; actual: string } | null {
+    return detectNetworkMismatch(this.config.network, session.network);
+  }
+
+  /**
+   * Guard a transaction-class operation: throw `NetworkMismatchError` when the
+   * session is on the wrong network AND the policy enforces it ('guard' |
+   * 'strict'). Also protects restored sessions and mid-session network switches.
+   */
+  private assertNetworkOk(session: Session): void {
+    const mm = this.networkMismatch(session);
+    if (mm && this.enforcement !== 'off') {
+      throw new NetworkMismatchError(mm.expected, mm.actual);
+    }
+  }
+
   /**
    * Connect to a wallet
    */
@@ -363,13 +392,35 @@ export class PartyLayerClient {
         sessionId: toSessionId(`session_${Date.now()}_${Math.random().toString(36).substring(2, 15)}`),
         walletId: selectedWallet.walletId,
         partyId: result.partyId,
-        network: this.config.network,
+        // The wallet's reported network (adapters that read the live wallet —
+        // e.g. Console via getActiveNetwork — surface the actual network here;
+        // echo-only adapters report ctx.network === config.network). Used for
+        // mismatch detection; falls back to the configured network.
+        network: (result.session.network ?? this.config.network) as NetworkId,
         createdAt: Date.now(),
         expiresAt: result.session.expiresAt,
         origin: this.origin,
         capabilitiesSnapshot: result.capabilities,
         metadata: result.session.metadata as Record<string, string> | undefined,
       };
+
+      // Network-mismatch detection: the wallet connected on a different network
+      // than the dApp is configured for. Always detected + flagged + emitted;
+      // 'strict' blocks the connect, 'guard'/'off' let it proceed.
+      const mismatch = this.networkMismatch(session);
+      if (mismatch) {
+        session.networkMismatch = mismatch;
+        this.emit('session:networkMismatch', {
+          type: 'session:networkMismatch',
+          sessionId: session.sessionId,
+          expected: mismatch.expected,
+          actual: mismatch.actual,
+          enforced: this.enforcement !== 'off',
+        });
+        if (this.enforcement === 'strict') {
+          throw new NetworkMismatchError(mismatch.expected, mismatch.actual);
+        }
+      }
 
       // Persist session
       await this.persistSession(session);
@@ -475,6 +526,7 @@ export class PartyLayerClient {
     }
 
     try {
+      this.assertNetworkOk(session);
       const ctx = this.createAdapterContext();
       return await adapter.signMessage(ctx, session, params);
     } catch (err) {
@@ -505,6 +557,7 @@ export class PartyLayerClient {
     }
 
     try {
+      this.assertNetworkOk(session);
       const ctx = this.createAdapterContext();
       const result = await adapter.signTransaction(ctx, session, params);
       
@@ -546,6 +599,7 @@ export class PartyLayerClient {
     }
 
     try {
+      this.assertNetworkOk(session);
       const ctx = this.createAdapterContext();
       const result = await adapter.submitTransaction(ctx, session, params);
 
@@ -587,6 +641,7 @@ export class PartyLayerClient {
     }
 
     try {
+      this.assertNetworkOk(session);
       const ctx = this.createAdapterContext();
       return await adapter.ledgerApi(ctx, session, params);
     } catch (err) {

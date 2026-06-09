@@ -198,6 +198,19 @@ interface PartyLayerConfig {
   /** Default network */
   network: NetworkId;
   /**
+   * Network-mismatch enforcement policy (default: `'guard'`).
+   *
+   * When a connected wallet's effective network differs from `network`:
+   * - `'off'`    — detect + emit `session:networkMismatch` only; never block.
+   * - `'guard'`  — (default) block wrong-network TRANSACTIONS (signMessage,
+   *   signTransaction, submitTransaction, ledgerApi); connect still succeeds.
+   * - `'strict'` — also block CONNECT (throws `NetworkMismatchError`).
+   *
+   * BEHAVIOR CHANGE: prior to this, wrong-network transactions always
+   * proceeded. Set `'off'` to restore that.
+   */
+  networkEnforcement?: 'off' | 'guard' | 'strict';
+  /**
    * Wallet adapters to register (OPTIONAL)
    *
    * By default, ALL built-in adapters are automatically registered:
@@ -346,6 +359,21 @@ interface SessionExpiredEvent {
   sessionId: SessionId;
 }
 /**
+ * Network mismatch event — the connected wallet's effective network differs
+ * from the dApp's configured network. Emitted under ALL policies (informational);
+ * `enforced` is true when the active policy ('guard' | 'strict') will block.
+ */
+interface SessionNetworkMismatchEvent {
+  type: 'session:networkMismatch';
+  sessionId: SessionId;
+  /** dApp-configured (expected) network, CAIP-2 normalized. */
+  expected: string;
+  /** Wallet-reported (actual) network, CAIP-2 normalized. */
+  actual: string;
+  /** Whether the active policy will block (guard|strict) vs. detect-only (off). */
+  enforced: boolean;
+}
+/**
  * Transaction status event
  */
 interface TxStatusEvent {
@@ -371,6 +399,7 @@ type PartyLayerEvent =
   | SessionConnectedEvent
   | SessionDisconnectedEvent
   | SessionExpiredEvent
+  | SessionNetworkMismatchEvent
   | TxStatusEvent
   | ErrorEvent;
 /**
@@ -423,6 +452,20 @@ declare class PartyLayerClient {
    * List available wallets
    */
   listWallets(filter?: WalletFilter): Promise<WalletInfo[]>;
+  /** Active network-enforcement policy (default 'guard'). */
+  private get enforcement();
+  /**
+   * Detect a confident network mismatch between the dApp's configured network
+   * and the session's (wallet-reported) network. Returns null when they match
+   * or the comparison isn't confident (conservative — never a false positive).
+   */
+  private networkMismatch;
+  /**
+   * Guard a transaction-class operation: throw `NetworkMismatchError` when the
+   * session is on the wrong network AND the policy enforces it ('guard' |
+   * 'strict'). Also protects restored sessions and mid-session network switches.
+   */
+  private assertNetworkOk;
   /**
    * Connect to a wallet
    */

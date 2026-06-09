@@ -23,6 +23,7 @@ export type ErrorCode =
   | 'REGISTRY_VERIFICATION_FAILED'
   | 'REGISTRY_SCHEMA_INVALID'
   | 'INTERNAL_ERROR'
+  | 'NETWORK_MISMATCH'
   | 'TIMEOUT';
 
 /**
@@ -158,6 +159,29 @@ export class SessionExpiredError extends PartyLayerError {
       details: { sessionId },
     });
     this.name = 'SessionExpiredError';
+  }
+}
+
+/**
+ * Network mismatch error — the connected wallet's effective network differs
+ * from the dApp's configured network. Thrown to block wrong-network connects
+ * (policy 'strict') and wrong-network transactions (policy 'guard' | 'strict').
+ */
+export class NetworkMismatchError extends PartyLayerError {
+  /** The dApp's configured (expected) network, CAIP-2 normalized. */
+  public readonly expected: string;
+  /** The wallet's reported (actual) network, CAIP-2 normalized. */
+  public readonly actual: string;
+
+  constructor(expected: string, actual: string) {
+    super(
+      `Wallet is on network "${actual}" but this app requires "${expected}". Switch your wallet's network, then reconnect.`,
+      'NETWORK_MISMATCH',
+      { details: { expected, actual } }
+    );
+    this.name = 'NetworkMismatchError';
+    this.expected = expected;
+    this.actual = actual;
   }
 }
 

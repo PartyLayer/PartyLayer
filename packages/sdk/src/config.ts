@@ -89,6 +89,19 @@ export interface PartyLayerConfig {
   channel?: 'stable' | 'beta';
   /** Default network */
   network: NetworkId;
+  /**
+   * Network-mismatch enforcement policy (default: `'guard'`).
+   *
+   * When a connected wallet's effective network differs from `network`:
+   * - `'off'`    — detect + emit `session:networkMismatch` only; never block.
+   * - `'guard'`  — (default) block wrong-network TRANSACTIONS (signMessage,
+   *   signTransaction, submitTransaction, ledgerApi); connect still succeeds.
+   * - `'strict'` — also block CONNECT (throws `NetworkMismatchError`).
+   *
+   * BEHAVIOR CHANGE: prior to this, wrong-network transactions always
+   * proceeded. Set `'off'` to restore that.
+   */
+  networkEnforcement?: 'off' | 'guard' | 'strict';
   /** 
    * Wallet adapters to register (OPTIONAL)
    * 

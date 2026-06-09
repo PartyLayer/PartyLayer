@@ -211,6 +211,15 @@ interface Session {
   capabilitiesSnapshot: CapabilityKey[];
   /** Additional metadata (encrypted in storage) */
   metadata?: Record<string, string>;
+  /**
+   * Set when the wallet's reported network differs from the dApp's configured
+   * network (CAIP-2 normalized). Absent when the networks match or no confident
+   * mismatch was detected. See `networkEnforcement` for blocking behavior.
+   */
+  networkMismatch?: {
+    expected: string;
+    actual: string;
+  };
 }
 /**
  * Persisted session (for restoration)
@@ -322,6 +331,7 @@ type ErrorCode =
   | 'REGISTRY_VERIFICATION_FAILED'
   | 'REGISTRY_SCHEMA_INVALID'
   | 'INTERNAL_ERROR'
+  | 'NETWORK_MISMATCH'
   | 'TIMEOUT';
 /**
  * Error mapping context
@@ -395,6 +405,18 @@ declare class OriginNotAllowedError extends PartyLayerError {
  */
 declare class SessionExpiredError extends PartyLayerError {
   constructor(sessionId: string);
+}
+/**
+ * Network mismatch error — the connected wallet's effective network differs
+ * from the dApp's configured network. Thrown to block wrong-network connects
+ * (policy 'strict') and wrong-network transactions (policy 'guard' | 'strict').
+ */
+declare class NetworkMismatchError extends PartyLayerError {
+  /** The dApp's configured (expected) network, CAIP-2 normalized. */
+  readonly expected: string;
+  /** The wallet's reported (actual) network, CAIP-2 normalized. */
+  readonly actual: string;
+  constructor(expected: string, actual: string);
 }
 /**
  * Capability not supported error
@@ -1266,6 +1288,21 @@ declare function fromCAIP2Network(caip2: string): string;
  * - reference: [-_a-zA-Z0-9]{1,32}
  */
 declare function isValidCAIP2(networkId: string): boolean;
+/**
+ * Detect a confident, recognized, DIFFERENT-network mismatch between an
+ * `expected` (dApp-configured) and `actual` (wallet-reported) network.
+ *
+ * Conservative by design — returns `null` (no mismatch) unless BOTH networks
+ * normalize to recognized well-known Canton CAIP-2 ids AND differ. Unparseable
+ * or unrecognized/custom networks → `null` (never a false positive).
+ */
+declare function detectNetworkMismatch(
+  expected: string,
+  actual: string
+): {
+  expected: string;
+  actual: string;
+} | null;
 
 /**
  * Deep Link Transport
@@ -1579,6 +1616,7 @@ export {
   type MetricsPayload,
   MockTransport,
   type NetworkId,
+  NetworkMismatchError,
   OriginNotAllowedError,
   type PartyId,
   PartyLayerError,
@@ -1624,6 +1662,7 @@ export {
   createMetricsPayload,
   createSession,
   deriveGenericWalletName,
+  detectNetworkMismatch,
   errorMetricName,
   findMatchingWallet,
   findMatchingWalletInfo,
