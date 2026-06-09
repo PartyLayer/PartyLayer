@@ -1,4 +1,4 @@
-# @cantonconnect/core
+# @partylayer/core
 
 ## 0.5.0
 

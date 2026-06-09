@@ -1,4 +1,4 @@
-# @cantonconnect/registry-cli
+# @partylayer/registry-cli
 
 ## 0.1.9
 
@@ -47,17 +47,17 @@
 ### Patch Changes
 
 - Updated dependencies
-  - @cantonconnect/registry-client@0.2.2
+  - @partylayer/registry-client@0.2.2
 
 ## 0.1.2
 
 ### Patch Changes
 
-- @cantonconnect/registry-client@0.2.1
+- @partylayer/registry-client@0.2.1
 
 ## 0.1.1
 
 ### Patch Changes
 
 - Updated dependencies
-  - @cantonconnect/registry-client@0.2.0
+  - @partylayer/registry-client@0.2.0

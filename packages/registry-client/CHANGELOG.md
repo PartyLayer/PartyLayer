@@ -1,4 +1,4 @@
-# @cantonconnect/registry-client
+# @partylayer/registry-client
 
 ## 0.3.3
 
@@ -65,14 +65,14 @@
 
 - Update GitHub repository URLs to cayvox/CantonConnect
 - Updated dependencies
-  - @cantonconnect/core@0.2.2
+  - @partylayer/core@0.2.2
 
 ## 0.2.1
 
 ### Patch Changes
 
 - Updated dependencies
-  - @cantonconnect/core@0.2.1
+  - @partylayer/core@0.2.1
 
 ## 0.2.0
 
@@ -92,4 +92,4 @@
 ### Patch Changes
 
 - Updated dependencies
-  - @cantonconnect/core@0.2.0
+  - @partylayer/core@0.2.0

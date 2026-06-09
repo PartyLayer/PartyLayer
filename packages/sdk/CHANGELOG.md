@@ -1,4 +1,4 @@
-# @cantonconnect/sdk
+# @partylayer/sdk
 
 ## 0.6.0
 
@@ -193,12 +193,12 @@
 
 - Update GitHub repository URLs to cayvox/CantonConnect
 - Updated dependencies
-  - @cantonconnect/core@0.2.2
-  - @cantonconnect/registry-client@0.2.2
-  - @cantonconnect/adapter-console@0.2.2
-  - @cantonconnect/adapter-loop@0.2.2
-  - @cantonconnect/adapter-cantor8@0.2.2
-  - @cantonconnect/adapter-bron@0.2.2
+  - @partylayer/core@0.2.2
+  - @partylayer/registry-client@0.2.2
+  - @partylayer/adapter-console@0.2.2
+  - @partylayer/adapter-loop@0.2.2
+  - @partylayer/adapter-cantor8@0.2.2
+  - @partylayer/adapter-bron@0.2.2
 
 ## 0.2.1
 
@@ -206,12 +206,12 @@
 
 - Add comprehensive README documentation for npm package pages
 - Updated dependencies
-  - @cantonconnect/core@0.2.1
-  - @cantonconnect/adapter-bron@0.2.1
-  - @cantonconnect/adapter-cantor8@0.2.1
-  - @cantonconnect/adapter-console@0.2.1
-  - @cantonconnect/adapter-loop@0.2.1
-  - @cantonconnect/registry-client@0.2.1
+  - @partylayer/core@0.2.1
+  - @partylayer/adapter-bron@0.2.1
+  - @partylayer/adapter-cantor8@0.2.1
+  - @partylayer/adapter-console@0.2.1
+  - @partylayer/adapter-loop@0.2.1
+  - @partylayer/registry-client@0.2.1
 
 ## 0.2.0
 
@@ -231,9 +231,9 @@
 ### Patch Changes
 
 - Updated dependencies
-  - @cantonconnect/core@0.2.0
-  - @cantonconnect/registry-client@0.2.0
-  - @cantonconnect/adapter-console@0.2.0
-  - @cantonconnect/adapter-loop@0.2.0
-  - @cantonconnect/adapter-cantor8@0.2.0
-  - @cantonconnect/adapter-bron@0.2.0
+  - @partylayer/core@0.2.0
+  - @partylayer/registry-client@0.2.0
+  - @partylayer/adapter-console@0.2.0
+  - @partylayer/adapter-loop@0.2.0
+  - @partylayer/adapter-cantor8@0.2.0
+  - @partylayer/adapter-bron@0.2.0

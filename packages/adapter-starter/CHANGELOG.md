@@ -1,4 +1,4 @@
-# @cantonconnect/adapter-starter
+# @partylayer/adapter-starter
 
 ## 0.1.11
 
@@ -54,18 +54,18 @@
 ### Patch Changes
 
 - Updated dependencies
-  - @cantonconnect/core@0.2.2
+  - @partylayer/core@0.2.2
 
 ## 0.1.2
 
 ### Patch Changes
 
 - Updated dependencies
-  - @cantonconnect/core@0.2.1
+  - @partylayer/core@0.2.1
 
 ## 0.1.1
 
 ### Patch Changes
 
 - Updated dependencies
-  - @cantonconnect/core@0.2.0
+  - @partylayer/core@0.2.0

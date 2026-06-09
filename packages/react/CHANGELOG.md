@@ -1,4 +1,4 @@
-# @cantonconnect/react
+# @partylayer/react
 
 ## 0.6.0
 
@@ -149,14 +149,14 @@ string) => void`). A connect modal shouldn't require a connect callback — it
 ### Patch Changes
 
 - Updated dependencies
-  - @cantonconnect/sdk@0.2.4
+  - @partylayer/sdk@0.2.4
 
 ## 0.2.3
 
 ### Patch Changes
 
 - Updated dependencies
-  - @cantonconnect/sdk@0.2.3
+  - @partylayer/sdk@0.2.3
 
 ## 0.2.2
 
@@ -164,8 +164,8 @@ string) => void`). A connect modal shouldn't require a connect callback — it
 
 - Update GitHub repository URLs to cayvox/CantonConnect
 - Updated dependencies
-  - @cantonconnect/sdk@0.2.2
-  - @cantonconnect/registry-client@0.2.2
+  - @partylayer/sdk@0.2.2
+  - @partylayer/registry-client@0.2.2
 
 ## 0.2.1
 
@@ -173,8 +173,8 @@ string) => void`). A connect modal shouldn't require a connect callback — it
 
 - Add comprehensive README documentation for npm package pages
 - Updated dependencies
-  - @cantonconnect/sdk@0.2.1
-  - @cantonconnect/registry-client@0.2.1
+  - @partylayer/sdk@0.2.1
+  - @partylayer/registry-client@0.2.1
 
 ## 0.2.0
 
@@ -194,5 +194,5 @@ string) => void`). A connect modal shouldn't require a connect callback — it
 ### Patch Changes
 
 - Updated dependencies
-  - @cantonconnect/registry-client@0.2.0
-  - @cantonconnect/sdk@0.2.0
+  - @partylayer/registry-client@0.2.0
+  - @partylayer/sdk@0.2.0
