@@ -35,16 +35,37 @@ jobs:
       - name: Build all workspace targets including examples
         # Unlike ci.yml (which scopes to @partylayer/* to stay green during
         # recovery waves), this workflow builds everything — examples and
-        # apps included — so that broken consumer-side resolution surfaces.
-        run: pnpm -r build
+        # apps included — so that workspace-side build breakage surfaces.
+        #
+        # --workspace-concurrency=1 (serial) is REQUIRED, not just tidiness:
+        # apps/marketing's build re-runs every dep build via
+        # `pnpm --filter "@partylayer/marketing^..." build`, and tsup uses
+        # `clean: true`. Run concurrently with apps/demo's `next build`, that
+        # re-clean transiently removes e.g. packages/provider/dist/index.mjs
+        # while next is reading it → "No such file or directory" (a nondeterministic
+        # race the scheduled canary tripped on 2026-06-10). Serial build removes
+        # the overlap. (Do NOT change apps/marketing's self-contained build —
+        # that is the Cloudflare Pages path.)
+        run: pnpm -r --workspace-concurrency=1 build
 
       - name: Summary
         if: always()
         run: |
           echo "Examples build status: ${{ job.status }}" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "This workflow validates that example consumers (e.g. wallet-balance-loop)" >> $GITHUB_STEP_SUMMARY
-          echo "can build against the published @partylayer/* versions they reference." >> $GITHUB_STEP_SUMMARY
-          echo "A failure here typically means either:" >> $GITHUB_STEP_SUMMARY
-          echo "  1. A published @partylayer/* package has a broken dependency (run \`pnpm validate:publish\` locally to diagnose), or" >> $GITHUB_STEP_SUMMARY
-          echo "  2. The example's declared dependency range no longer resolves to a working version." >> $GITHUB_STEP_SUMMARY
+          echo "Monorepo build canary: runs a workspace-wide \`pnpm -r build\` over" >> $GITHUB_STEP_SUMMARY
+          echo "ALL targets — packages, apps, and examples (e.g. wallet-balance-loop)." >> $GITHUB_STEP_SUMMARY
+          echo "Examples reference \`@partylayer/*\` via \`workspace:^\`, so this builds" >> $GITHUB_STEP_SUMMARY
+          echo "them against the LOCAL workspace sources, not the npm-published versions." >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "A failure here usually means one of:" >> $GITHUB_STEP_SUMMARY
+          echo "  1. A build-orchestration issue (e.g. concurrent dist clean/read across" >> $GITHUB_STEP_SUMMARY
+          echo "     workspace builds — hence \`--workspace-concurrency=1\`), or" >> $GITHUB_STEP_SUMMARY
+          echo "  2. A workspace package that no longer builds, or a consumer (app/example)" >> $GITHUB_STEP_SUMMARY
+          echo "     that no longer compiles against the current workspace sources." >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "NOTE: this does NOT verify the npm-PUBLISHED packages (workspace:^ links" >> $GITHUB_STEP_SUMMARY
+          echo "local sources). Published-coherence is checked separately by" >> $GITHUB_STEP_SUMMARY
+          echo "\`pnpm validate:publish\`. A true published-consumer canary (install" >> $GITHUB_STEP_SUMMARY
+          echo "@partylayer/* from npm into a clean dir at the example's declared ranges," >> $GITHUB_STEP_SUMMARY
+          echo "then build) is tracked as a backlog item." >> $GITHUB_STEP_SUMMARY
