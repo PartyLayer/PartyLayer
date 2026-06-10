@@ -32,3 +32,25 @@ export type {
   SessionStore,
   SessionStoreOptions,
 } from './types';
+// M1-S1 — encrypted persistence core (additive). Two SessionStorage backends
+// (the AES-GCM-256 key is always non-extractable + stored in IndexedDB; only the
+// ciphertext blob location varies) plus the versioned session envelope, a
+// migration scaffold, and restore/reconcile helpers. See README "Encrypted
+// persistence" + the honest threat model.
+export {
+  createEncryptedIndexedDBStorage,
+  createEncryptedLocalStorage,
+  type EncryptedStorageOptions,
+} from './encrypted-storage';
+export {
+  encodeSessionEnvelope,
+  decodeSessionEnvelope,
+  migrateSessionEnvelope,
+  restoreSession,
+  reconcileSession,
+  CURRENT_SESSION_ENVELOPE_VERSION,
+  type PersistedSessionSnapshot,
+  type LiveSessionStatus,
+  type SessionDiff,
+  type ReconcileResult,
+} from './session-envelope';

@@ -129,14 +129,123 @@ declare function createSessionStore(
   options?: SessionStoreOptions
 ): SessionStore;
 
+interface EncryptedStorageOptions {
+  /**
+   * Explicit origin tag for naming the key/data stores. Defaults to
+   * `location.origin` (browser) or a stable off-origin literal (Node/tests).
+   * Enables per-origin isolation + deterministic test naming.
+   */
+  origin?: string;
+}
+/** DEFAULT encrypted backend — ciphertext in IndexedDB, key in IndexedDB. */
+declare function createEncryptedIndexedDBStorage(options?: EncryptedStorageOptions): SessionStorage;
+/** Encrypted backend with ciphertext in localStorage — key STILL in IndexedDB. */
+declare function createEncryptedLocalStorage(options?: EncryptedStorageOptions): SessionStorage;
+
+/**
+ * Versioned SESSION payload envelope + migration scaffold + restore/reconcile
+ * helpers (grant Milestone 1, S1).
+ *
+ * This is the PLAINTEXT that the encrypted backends persist (compose:
+ * `storage.setItem(key, encodeSessionEnvelope(snapshot))`). It carries an
+ * explicit `version` so the session SCHEMA can evolve — `migrateSessionEnvelope`
+ * is the switch-on-version scaffold that seeds the grant's "schema migration
+ * helpers" acceptance item. (Distinct from the crypto-envelope format version
+ * in crypto.ts, which governs the at-rest ciphertext shape.)
+ *
+ * Field names mirror the REAL session shape (`SessionState` in types.ts /
+ * `CIP0103Account`): `account`, `accounts`, `networkId`, plus `connectedAt`
+ * and an optional `expiresAt`.
+ *
+ * SAFETY: decode of a corrupt string or an unknown FUTURE schema version returns
+ * `null` (never throws); `restoreSession` additionally CLEARS such an entry so a
+ * forward-incompatible blob can't wedge the app.
+ */
+
+/** Current session-schema envelope version. Bump + extend `migrate` on shape changes. */
+declare const CURRENT_SESSION_ENVELOPE_VERSION: 1;
+/** The persisted session snapshot (schema v1). */
+interface PersistedSessionSnapshot {
+  /** Active (primary) account/party, or null. */
+  readonly account: SessionAccount | null;
+  /** All accounts the wallet exposed. */
+  readonly accounts: readonly SessionAccount[];
+  /** Active CAIP-2 network, or null. */
+  readonly networkId: string | null;
+  /** Epoch ms when this session was persisted/connected. */
+  readonly connectedAt: number;
+  /** Optional epoch-ms expiry; restore drops the snapshot once past it. */
+  readonly expiresAt?: number;
+}
+/** Serialize a snapshot into the versioned envelope JSON string (the plaintext to encrypt). */
+declare function encodeSessionEnvelope(snapshot: PersistedSessionSnapshot): string;
+/**
+ * Migration scaffold — switch on the envelope `version` and return a
+ * current-shape snapshot, or `null` for an UNKNOWN (future / unsupported)
+ * version. Add `case 2:` etc. here as the schema evolves; older versions map
+ * forward into {@link PersistedSessionSnapshot}.
+ */
+declare function migrateSessionEnvelope(parsed: unknown): PersistedSessionSnapshot | null;
+/** Decode an envelope plaintext into a snapshot, or `null` (corrupt / unknown version). Never throws. */
+declare function decodeSessionEnvelope(plaintext: string): PersistedSessionSnapshot | null;
+/**
+ * Read + decode a persisted session from any {@link SessionStorage} (typically
+ * an encrypted backend). Returns `null` and CLEARS the entry when the blob is
+ * absent, corrupt, a wrong/unknown version, or expired — never throws.
+ */
+declare function restoreSession(
+  storage: SessionStorage,
+  key: string,
+  now?: number
+): Promise<PersistedSessionSnapshot | null>;
+/** The live wallet status the restored snapshot is reconciled against. */
+interface LiveSessionStatus {
+  readonly account: SessionAccount | null;
+  readonly networkId: string | null;
+}
+/** One field-level difference between the persisted snapshot and live status. */
+interface SessionDiff {
+  readonly field: 'account' | 'networkId';
+  readonly persisted: string | null;
+  readonly live: string | null;
+}
+/** Structured reconcile result — `matches` true iff there are no diffs. */
+interface ReconcileResult {
+  readonly matches: boolean;
+  readonly diffs: readonly SessionDiff[];
+}
+/**
+ * Compare an optimistic restored snapshot against the live wallet status and
+ * emit a STRUCTURED diff (never throws). The framework layer uses this to decide
+ * whether the optimistic snapshot can stand or must be reconciled/cleared
+ * (e.g. user switched account/network in the wallet while away).
+ */
+declare function reconcileSession(
+  snapshot: PersistedSessionSnapshot,
+  live: LiveSessionStatus
+): ReconcileResult;
+
 export {
+  CURRENT_SESSION_ENVELOPE_VERSION,
+  type EncryptedStorageOptions,
+  type LiveSessionStatus,
   type MaybePromise,
+  type PersistedSessionSnapshot,
+  type ReconcileResult,
   type SessionAccount,
+  type SessionDiff,
   type SessionState,
   type SessionStatus,
   type SessionStorage,
   type SessionStore,
   type SessionStoreOptions,
+  createEncryptedIndexedDBStorage,
+  createEncryptedLocalStorage,
   createMemoryStorage,
   createSessionStore,
+  decodeSessionEnvelope,
+  encodeSessionEnvelope,
+  migrateSessionEnvelope,
+  reconcileSession,
+  restoreSession,
 };
