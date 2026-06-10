@@ -5,7 +5,7 @@
  * configured for a different network. We assert detection + the 'off'/'guard'/
  * 'strict' policy semantics + the `session:networkMismatch` event payload.
  */
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
 // createPartyLayer pulls getBuiltinAdapters transitively → Console's SDK imports
 // SVGs that explode under Node. Stub at the module boundary.
@@ -73,8 +73,40 @@ function makeClient(opts: {
     ...(opts.enforcement ? { networkEnforcement: opts.enforcement } : {}),
     storage: noopStorage as never,
     crypto: idCrypto as never,
+    // Hermeticity: never run the EIP-6963 announce round-trip in tests.
+    discovery: { announce: false },
   });
 }
+
+// HERMETICITY (de-flake): the SDK's RegistryClient defaults to fetching the live
+// registry CDN. We stub the global `fetch` to instantly resolve an EMPTY-but-valid
+// registry so every registry op succeeds offline: `listWallets()` returns [] +
+// the merged mock adapter, and `getWalletEntry('mock-net')` is "not in registry"
+// → WalletNotFoundError (which connect catches, exactly as the live CDN behaved —
+// mock-net was never in the real registry). No production change; we only stub
+// the global fetch the client already uses. Each test runs in <1s with zero I/O.
+const EMPTY_REGISTRY = JSON.stringify({
+  metadata: {
+    registryVersion: '1.0.0',
+    schemaVersion: '1.0.0',
+    publishedAt: '2026-01-01T00:00:00Z',
+    channel: 'stable',
+    sequence: 1,
+    publisher: 'test',
+  },
+  wallets: [],
+});
+beforeEach(() => {
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(async () =>
+      new Response(EMPTY_REGISTRY, { status: 200, headers: { 'content-type': 'application/json' } }),
+    ),
+  );
+});
+afterEach(() => {
+  vi.unstubAllGlobals();
+});
 
 describe('network enforcement', () => {
   it("'strict' blocks connect on a mismatch (and still emits the event)", async () => {
