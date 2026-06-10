@@ -28,6 +28,38 @@ interface SessionStorage {
 declare function createMemoryStorage(): SessionStorage;
 
 /**
+ * Reconnect retry policy + backoff math (grant Milestone 1, S2).
+ *
+ * Pure + deterministic (jitter is opt-in and injectable) so the backoff SCHEDULE
+ * can be asserted at exact fake-timer offsets in tests.
+ */
+/** Exponential-backoff reconnect policy. */
+interface RetryPolicy {
+  /** Delay before the FIRST retry (attempt 1), in ms. */
+  baseDelayMs: number;
+  /** Multiplier applied per attempt (`base * factor^(attempt-1)`). */
+  factor: number;
+  /** Upper bound on any single delay, in ms. */
+  maxDelayMs: number;
+  /** Max reconnect attempts before giving up. */
+  maxAttempts: number;
+  /** When true, randomize each delay within [50%, 100%] of the computed value. */
+  jitter?: boolean;
+}
+/** Sane defaults: 0.5s → 1s → 2s → 4s → 8s, capped at 30s, 5 attempts, no jitter. */
+declare const DEFAULT_RETRY_POLICY: RetryPolicy;
+/**
+ * Compute the delay (ms) before a 1-based `attempt`. Exponential, capped at
+ * `maxDelayMs`. With `jitter`, scales by a `rand()` value in [0,1) into the
+ * [50%,100%] band (`rand` injectable for determinism; defaults to Math.random).
+ */
+declare function computeBackoffDelay(
+  policy: RetryPolicy,
+  attempt: number,
+  rand?: () => number
+): number;
+
+/**
  * Public types for the framework-agnostic session core.
  */
 
@@ -84,7 +116,68 @@ interface SessionStoreOptions {
   storage?: SessionStorage;
   /** Storage key used for the auto-reconnect marker. */
   storageKey?: string;
+  /**
+   * M1-S2: automatic reconnect with exponential backoff on TRANSIENT disconnects
+   * (a `statusChanged(isConnected:false)` that was NOT an explicit
+   * `store.disconnect()`). A `RetryPolicy` enables it; `false` disables it;
+   * omitted ⇒ the default policy (enabled). NEVER fires after a user disconnect.
+   */
+  reconnect?: RetryPolicy | false;
+  /**
+   * M1-S2: runtime session-expiry → graceful re-auth. When `ttlMs` is set, an
+   * active session arms a timer; on expiry the store emits `session:expired` and
+   * invokes `onReauthRequired`. New operations submitted through
+   * {@link SessionStore.enqueue} during re-auth are held in a bounded queue
+   * (`pendingQueueSize`, default 32), resumed on success or rejected on
+   * failure/overflow.
+   */
+  expiry?: ExpiryOptions;
 }
+/** M1-S2 expiry / graceful re-auth configuration. */
+interface ExpiryOptions {
+  /** Time-to-live (ms from connect/restore) after which the session expires at runtime. */
+  ttlMs?: number;
+  /**
+   * App-supplied re-auth hook invoked on runtime expiry. Perform a fresh connect
+   * here; resolve to resume queued operations, reject to drain-reject them.
+   */
+  onReauthRequired?: (ctx: ReauthContext) => Promise<void> | void;
+  /** Max operations held in the pending queue during re-auth. Default 32. */
+  pendingQueueSize?: number;
+}
+/** Context passed to {@link ExpiryOptions.onReauthRequired}. */
+interface ReauthContext {
+  readonly reason: 'expired';
+  /** Epoch-ms at which expiry fired. */
+  readonly expiredAt: number;
+}
+/**
+ * Structured resilience events (M1-S2). Subscribe via {@link SessionStore.on}.
+ * `delayMs`/`attempt` let UIs surface backoff progress; `attempt` is 1-based.
+ */
+type SessionEvent =
+  | {
+      readonly type: 'reconnect:scheduled';
+      readonly attempt: number;
+      readonly delayMs: number;
+    }
+  | {
+      readonly type: 'reconnect:attempt';
+      readonly attempt: number;
+    }
+  | {
+      readonly type: 'reconnect:succeeded';
+      readonly attempt: number;
+    }
+  | {
+      readonly type: 'reconnect:gaveup';
+      readonly attempts: number;
+      readonly lastError: Error | null;
+    }
+  | {
+      readonly type: 'session:expired';
+      readonly expiredAt: number;
+    };
 /**
  * Framework-agnostic session manager. Subscribable for `useSyncExternalStore`
  * (6b) and Vue composables; contains no React/Vue/DOM code.
@@ -109,6 +202,21 @@ interface SessionStore {
   init(): Promise<SessionState>;
   /** The underlying CIP-0103 provider. */
   getProvider(): CIP0103Provider;
+  /**
+   * M1-S2: subscribe to structured resilience events (reconnect lifecycle +
+   * session expiry). Returns an unsubscribe function. Distinct from
+   * {@link subscribe} (which is the state-change notifier for
+   * `useSyncExternalStore`).
+   */
+  on(event: SessionEvent['type'], handler: (event: SessionEvent) => void): () => void;
+  /**
+   * M1-S2: run an operation, queuing it (bounded) if a re-auth is in progress —
+   * resumed after re-auth succeeds, rejected on overflow or re-auth failure.
+   * When no re-auth is in progress it runs immediately. Preserves QUEUED intent
+   * + session context across re-auth; a tx already inside the wallet cannot be
+   * resurrected (explicit limit — see README).
+   */
+  enqueue<T>(op: () => Promise<T>): Promise<T>;
   /** Tear down: remove all provider listeners and internal subscribers. */
   destroy(): void;
 }
@@ -227,18 +335,24 @@ declare function reconcileSession(
 
 export {
   CURRENT_SESSION_ENVELOPE_VERSION,
+  DEFAULT_RETRY_POLICY,
   type EncryptedStorageOptions,
+  type ExpiryOptions,
   type LiveSessionStatus,
   type MaybePromise,
   type PersistedSessionSnapshot,
+  type ReauthContext,
   type ReconcileResult,
+  type RetryPolicy,
   type SessionAccount,
   type SessionDiff,
+  type SessionEvent,
   type SessionState,
   type SessionStatus,
   type SessionStorage,
   type SessionStore,
   type SessionStoreOptions,
+  computeBackoffDelay,
   createEncryptedIndexedDBStorage,
   createEncryptedLocalStorage,
   createMemoryStorage,

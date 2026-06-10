@@ -32,6 +32,18 @@ export type {
   SessionStore,
   SessionStoreOptions,
 } from './types';
+// M1-S2 — resilience: automatic reconnect (exponential backoff) + runtime expiry
+// → graceful re-auth with a bounded pending queue (additive).
+export type {
+  SessionEvent,
+  ExpiryOptions,
+  ReauthContext,
+} from './types';
+export {
+  DEFAULT_RETRY_POLICY,
+  computeBackoffDelay,
+  type RetryPolicy,
+} from './retry';
 // M1-S1 — encrypted persistence core (additive). Two SessionStorage backends
 // (the AES-GCM-256 key is always non-extractable + stored in IndexedDB; only the
 // ciphertext blob location varies) plus the versioned session envelope, a

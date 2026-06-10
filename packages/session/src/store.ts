@@ -18,8 +18,10 @@ import {
   type CIP0103StatusEvent,
 } from '@partylayer/core';
 import { createMemoryStorage, type SessionStorage } from './storage';
+import { computeBackoffDelay, type RetryPolicy } from './retry';
 import type {
   SessionAccount,
+  SessionEvent,
   SessionState,
   SessionStore,
   SessionStoreOptions,
@@ -66,8 +68,79 @@ export function createSessionStore(
   const storage: SessionStorage = options.storage ?? createMemoryStorage();
   const storageKey = options.storageKey ?? DEFAULT_STORAGE_KEY;
 
+  // ── M1-S2 resilience config (ADDITIVE; opt-in, preserves legacy behavior) ───
+  // reconnect omitted/false ⇒ DISABLED (no behavior change for existing
+  // consumers); a RetryPolicy enables exponential-backoff reconnect on TRANSIENT
+  // disconnects only.
+  const reconnectPolicy: RetryPolicy | null = options.reconnect ? options.reconnect : null;
+  const expiry = options.expiry;
+  const pendingQueueSize = expiry?.pendingQueueSize ?? 32;
+
   let state: SessionState = INITIAL_STATE;
   const listeners = new Set<() => void>();
+
+  // Structured resilience event emitter (distinct from the state-change `listeners`).
+  const eventListeners = new Map<SessionEvent['type'], Set<(e: SessionEvent) => void>>();
+  function emit(event: SessionEvent): void {
+    eventListeners.get(event.type)?.forEach((h) => {
+      try {
+        h(event);
+      } catch {
+        // a faulty event subscriber must not break the store
+      }
+    });
+  }
+
+  // Distinguishes an EXPLICIT user disconnect (never reconnect) from a transient
+  // provider-driven drop (`statusChanged(false)`). Set true only by disconnect().
+  let explicitDisconnect = false;
+
+  // Reconnect backoff state.
+  let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
+  let reconnectAttempt = 0;
+  let lastReconnectError: Error | null = null;
+
+  function cancelReconnect(): void {
+    if (reconnectTimer != null) {
+      clearTimeout(reconnectTimer);
+      reconnectTimer = null;
+    }
+    reconnectAttempt = 0;
+    lastReconnectError = null;
+  }
+
+  // Expiry / graceful re-auth state.
+  let expiryTimer: ReturnType<typeof setTimeout> | null = null;
+  let reauthInProgress = false;
+  const pending: Array<{
+    run: () => Promise<unknown>;
+    resolve: (v: unknown) => void;
+    reject: (e: unknown) => void;
+  }> = [];
+
+  function disarmExpiry(): void {
+    if (expiryTimer != null) {
+      clearTimeout(expiryTimer);
+      expiryTimer = null;
+    }
+  }
+  function armExpiry(): void {
+    disarmExpiry();
+    if (!expiry?.ttlMs || expiry.ttlMs <= 0) return;
+    expiryTimer = setTimeout(() => {
+      void handleExpiry();
+    }, expiry.ttlMs);
+  }
+  function drainPending(): void {
+    const items = pending.splice(0, pending.length);
+    for (const it of items) it.run().then(it.resolve, it.reject);
+  }
+  function rejectPending(cause: Error): void {
+    const items = pending.splice(0, pending.length);
+    for (const it of items) {
+      it.reject(new Error('Session re-authentication failed; queued operation aborted', { cause }));
+    }
+  }
 
   function notify(): void {
     for (const listener of listeners) {
@@ -134,12 +207,18 @@ export function createSessionStore(
         lastError: null,
       });
     } else {
+      // M1-S2: a TRANSIENT drop is a provider-driven `statusChanged(false)` while
+      // we held an active session and the user did NOT call `disconnect()`.
+      const wasActive = state.status === 'connected' || state.status === 'reconnecting';
       setState({
         status: 'disconnected',
         account: null,
         accounts: [],
         networkId: null,
       });
+      if (reconnectPolicy && !explicitDisconnect && wasActive && reconnectTimer == null) {
+        scheduleReconnect();
+      }
     }
   };
 
@@ -163,6 +242,81 @@ export function createSessionStore(
   provider.on(CIP0103_EVENTS.STATUS_CHANGED, onStatusChanged);
   provider.on(CIP0103_EVENTS.ACCOUNTS_CHANGED, onAccountsChanged);
   provider.on('chainChanged', onChainChanged);
+
+  // ── M1-S2 reconnect (exponential backoff) ───────────────────────────────────
+  // Triggered ONLY by a transient drop (see onStatusChanged). Cancelled by an
+  // explicit disconnect or a successful (re)connect. Gives up after maxAttempts.
+  function scheduleReconnect(): void {
+    if (!reconnectPolicy) return;
+    const attempt = reconnectAttempt + 1;
+    if (attempt > reconnectPolicy.maxAttempts) {
+      emit({ type: 'reconnect:gaveup', attempts: reconnectPolicy.maxAttempts, lastError: lastReconnectError });
+      cancelReconnect();
+      setState({ status: 'disconnected' }); // terminal
+      return;
+    }
+    reconnectAttempt = attempt;
+    const delayMs = computeBackoffDelay(reconnectPolicy, attempt);
+    setState({ status: 'reconnecting' });
+    emit({ type: 'reconnect:scheduled', attempt, delayMs });
+    reconnectTimer = setTimeout(() => {
+      void runReconnect(attempt);
+    }, delayMs);
+  }
+
+  async function runReconnect(attempt: number): Promise<void> {
+    reconnectTimer = null;
+    if (explicitDisconnect) return; // cancelled while the timer was pending
+    emit({ type: 'reconnect:attempt', attempt });
+    try {
+      const status = await provider.request<CIP0103StatusEvent>({ method: 'status' });
+      if (status?.connection?.isConnected === true) {
+        let accounts: SessionAccount[] = [];
+        try {
+          accounts = await provider.request<CIP0103Account[]>({ method: 'listAccounts' });
+        } catch {
+          accounts = [];
+        }
+        cancelReconnect();
+        setState({
+          status: 'connected',
+          accounts,
+          account: pickPrimary(accounts),
+          networkId: status?.network?.networkId ?? state.networkId,
+          lastError: null,
+        });
+        await ensureNetworkId();
+        armExpiry();
+        emit({ type: 'reconnect:succeeded', attempt });
+        return;
+      }
+      lastReconnectError = new Error('reconnect attempt did not establish a connection');
+    } catch (err) {
+      lastReconnectError = toError(err);
+    }
+    if (!explicitDisconnect) scheduleReconnect(); // next attempt / give-up
+  }
+
+  // ── M1-S2 runtime expiry → graceful re-auth ─────────────────────────────────
+  async function handleExpiry(): Promise<void> {
+    expiryTimer = null;
+    const expiredAt = new Date().getTime();
+    emit({ type: 'session:expired', expiredAt });
+    // Not an explicit user disconnect — model as re-authenticating.
+    setState({ status: 'reconnecting' });
+    if (!expiry?.onReauthRequired) return;
+    reauthInProgress = true;
+    try {
+      await expiry.onReauthRequired({ reason: 'expired', expiredAt });
+      reauthInProgress = false;
+      drainPending(); // resume queued intent on the fresh session
+      armExpiry(); // re-arm for the new session lifetime
+    } catch (err) {
+      reauthInProgress = false;
+      rejectPending(toError(err));
+      setState({ status: 'disconnected', lastError: toError(err) });
+    }
+  }
 
   // ── restore/init implementation ─────────────────────────────────────────────
   // Closure-captured so `init()` and `restore()` both delegate here WITHOUT
@@ -194,6 +348,7 @@ export function createSessionStore(
         });
         await ensureNetworkId(); // WC fallback when status omitted network
         await persistConnected();
+        armExpiry(); // M1-S2: arm runtime expiry for the restored session
       } else {
         setState({
           status: 'disconnected',
@@ -230,6 +385,10 @@ export function createSessionStore(
     },
 
     async connect(params) {
+      // M1-S2: a fresh user-initiated connect clears any prior explicit-disconnect
+      // intent and cancels any in-flight reconnect backoff.
+      explicitDisconnect = false;
+      cancelReconnect();
       setState({ status: 'connecting', lastError: null });
       try {
         await provider.request({ method: 'connect', params });
@@ -239,6 +398,7 @@ export function createSessionStore(
         if (state.status !== 'connected') setState({ status: 'connected' });
         await ensureNetworkId(); // WC fallback when status omitted network
         await persistConnected();
+        armExpiry(); // M1-S2: arm the runtime expiry timer for this session
         return state;
       } catch (err) {
         // Surface as lastError without crashing the caller (e.g. user rejected).
@@ -253,6 +413,11 @@ export function createSessionStore(
     },
 
     async disconnect() {
+      // M1-S2: EXPLICIT user intent — never auto-reconnect after this; cancel any
+      // pending backoff + expiry timer.
+      explicitDisconnect = true;
+      cancelReconnect();
+      disarmExpiry();
       try {
         await provider.request({ method: 'disconnect' });
       } catch (err) {
@@ -280,10 +445,43 @@ export function createSessionStore(
       return provider;
     },
 
+    on(eventType, handler) {
+      let set = eventListeners.get(eventType);
+      if (!set) {
+        set = new Set();
+        eventListeners.set(eventType, set);
+      }
+      set.add(handler);
+      return () => {
+        eventListeners.get(eventType)?.delete(handler);
+      };
+    },
+
+    async enqueue<T>(op: () => Promise<T>): Promise<T> {
+      // No re-auth in flight → run immediately.
+      if (!reauthInProgress) return op();
+      // Bounded queue: overflow rejects with a clear, actionable error.
+      if (pending.length >= pendingQueueSize) {
+        throw new Error(
+          `Session re-auth in progress: pending queue full (max ${pendingQueueSize})`,
+        );
+      }
+      return new Promise<T>((resolve, reject) => {
+        pending.push({
+          run: op as () => Promise<unknown>,
+          resolve: resolve as (v: unknown) => void,
+          reject,
+        });
+      });
+    },
+
     destroy() {
       provider.removeListener(CIP0103_EVENTS.STATUS_CHANGED, onStatusChanged);
       provider.removeListener(CIP0103_EVENTS.ACCOUNTS_CHANGED, onAccountsChanged);
       provider.removeListener('chainChanged', onChainChanged);
+      cancelReconnect();
+      disarmExpiry();
+      eventListeners.clear();
       listeners.clear();
     },
   };

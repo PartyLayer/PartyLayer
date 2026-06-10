@@ -164,3 +164,70 @@ version, or an expired snapshot.
 | SCENARIO-2 | reconcile snapshot vs live status → structured diff (no crash) | n/a (pure) |
 | SCENARIO-3 | corrupt / wrong-key / unknown-version / expired → `null` + cleared | both |
 | (inv) | per-write IV uniqueness; key non-extractability; localStorage zero key material | both |
+
+## Resilience: reconnect + expiry re-auth (M1-S2)
+
+**Additive** — opt-in via `SessionStoreOptions`; omitting them preserves the
+legacy behavior exactly.
+
+```ts
+const store = createSessionStore(provider, {
+  reconnect: { baseDelayMs: 500, factor: 2, maxDelayMs: 30_000, maxAttempts: 5 },
+  expiry: { ttlMs: 60 * 60_000, onReauthRequired: async () => { await reconnect(); } },
+});
+store.on('reconnect:scheduled', (e) => console.log(`retry #${e.attempt} in ${e.delayMs}ms`));
+store.on('session:expired', () => showReauthPrompt());
+
+// New ops during re-auth: queued, resumed on success, rejected on failure/overflow.
+const receipt = await store.enqueue(() => submitTx());
+```
+
+### Automatic reconnect (exponential backoff)
+
+Fires **only on a TRANSIENT disconnect** — a provider-driven
+`statusChanged(isConnected:false)` while a session was active that was **not** an
+explicit `store.disconnect()`. **Never** reconnects after a user disconnect.
+
+| `RetryPolicy` field | Default | Meaning |
+|---|---|---|
+| `baseDelayMs` | `500` | delay before retry #1 |
+| `factor` | `2` | `delay = base * factor^(attempt-1)` |
+| `maxDelayMs` | `30000` | cap on any single delay |
+| `maxAttempts` | `5` | give up after this many |
+| `jitter?` | `false` | randomize each delay into [50%,100%] (opt-in) |
+
+Events: `reconnect:scheduled {attempt, delayMs}` → `reconnect:attempt {attempt}` →
+`reconnect:succeeded {attempt}` (state restored) **or** `reconnect:gaveup
+{attempts, lastError}` (terminal `disconnected`). `reconnect` omitted or `false`
+⇒ disabled.
+
+### Runtime expiry → graceful re-auth
+
+When `expiry.ttlMs` is set, an active session arms a timer; on expiry the store
+emits `session:expired {expiredAt}` and invokes `onReauthRequired({reason, expiredAt})`.
+During re-auth, operations submitted via **`store.enqueue(op)`** are held in a
+**bounded** queue (`pendingQueueSize`, default `32`):
+
+- re-auth **succeeds** → queued ops resume (in order) on the fresh session;
+- re-auth **fails** → queued ops reject with a clear error;
+- queue **overflow** → that op rejects immediately with a clear error.
+
+#### Honest limit (no overclaiming)
+
+This preserves **queued intent + session context** across re-auth. It does **NOT**
+resurrect a transaction already handed to the wallet — once a request is inside
+the wallet, its fate is the wallet's. `enqueue` is for operations you route
+through the store, not for in-flight wallet prompts.
+
+### Session lifecycle scenarios (now 7 of the grant's ≥8)
+
+| ID | Scenario |
+|---|---|
+| SCENARIO-1 | persist → reload → restore (both backends) |
+| SCENARIO-2 | reconcile snapshot vs live → structured diff |
+| SCENARIO-3 | corrupt / wrong-key / unknown-version / expired → null + cleared |
+| SCENARIO-4 | runtime expiry → `session:expired` + `onReauthRequired` + state preserved → resume |
+| SCENARIO-5 | transient disconnect → backoff at exact offsets (incl. cap) → success restores |
+| SCENARIO-6 | maxAttempts exhausted → `reconnect:gaveup` (terminal); manual cancel mid-backoff |
+| SCENARIO-7 | enqueue during re-auth → resume / overflow / re-auth-failure |
+| invariant | explicit user disconnect NEVER schedules a reconnect |

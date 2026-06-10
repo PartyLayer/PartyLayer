@@ -4,6 +4,7 @@
 
 import type { CIP0103Account, CIP0103Provider } from '@partylayer/core';
 import type { SessionStorage } from './storage';
+import type { RetryPolicy } from './retry';
 
 /**
  * Connection status state machine.
@@ -65,7 +66,54 @@ export interface SessionStoreOptions {
   storage?: SessionStorage;
   /** Storage key used for the auto-reconnect marker. */
   storageKey?: string;
+  /**
+   * M1-S2: automatic reconnect with exponential backoff on TRANSIENT disconnects
+   * (a `statusChanged(isConnected:false)` that was NOT an explicit
+   * `store.disconnect()`). A `RetryPolicy` enables it; `false` disables it;
+   * omitted ⇒ the default policy (enabled). NEVER fires after a user disconnect.
+   */
+  reconnect?: RetryPolicy | false;
+  /**
+   * M1-S2: runtime session-expiry → graceful re-auth. When `ttlMs` is set, an
+   * active session arms a timer; on expiry the store emits `session:expired` and
+   * invokes `onReauthRequired`. New operations submitted through
+   * {@link SessionStore.enqueue} during re-auth are held in a bounded queue
+   * (`pendingQueueSize`, default 32), resumed on success or rejected on
+   * failure/overflow.
+   */
+  expiry?: ExpiryOptions;
 }
+
+/** M1-S2 expiry / graceful re-auth configuration. */
+export interface ExpiryOptions {
+  /** Time-to-live (ms from connect/restore) after which the session expires at runtime. */
+  ttlMs?: number;
+  /**
+   * App-supplied re-auth hook invoked on runtime expiry. Perform a fresh connect
+   * here; resolve to resume queued operations, reject to drain-reject them.
+   */
+  onReauthRequired?: (ctx: ReauthContext) => Promise<void> | void;
+  /** Max operations held in the pending queue during re-auth. Default 32. */
+  pendingQueueSize?: number;
+}
+
+/** Context passed to {@link ExpiryOptions.onReauthRequired}. */
+export interface ReauthContext {
+  readonly reason: 'expired';
+  /** Epoch-ms at which expiry fired. */
+  readonly expiredAt: number;
+}
+
+/**
+ * Structured resilience events (M1-S2). Subscribe via {@link SessionStore.on}.
+ * `delayMs`/`attempt` let UIs surface backoff progress; `attempt` is 1-based.
+ */
+export type SessionEvent =
+  | { readonly type: 'reconnect:scheduled'; readonly attempt: number; readonly delayMs: number }
+  | { readonly type: 'reconnect:attempt'; readonly attempt: number }
+  | { readonly type: 'reconnect:succeeded'; readonly attempt: number }
+  | { readonly type: 'reconnect:gaveup'; readonly attempts: number; readonly lastError: Error | null }
+  | { readonly type: 'session:expired'; readonly expiredAt: number };
 
 /**
  * Framework-agnostic session manager. Subscribable for `useSyncExternalStore`
@@ -91,6 +139,21 @@ export interface SessionStore {
   init(): Promise<SessionState>;
   /** The underlying CIP-0103 provider. */
   getProvider(): CIP0103Provider;
+  /**
+   * M1-S2: subscribe to structured resilience events (reconnect lifecycle +
+   * session expiry). Returns an unsubscribe function. Distinct from
+   * {@link subscribe} (which is the state-change notifier for
+   * `useSyncExternalStore`).
+   */
+  on(event: SessionEvent['type'], handler: (event: SessionEvent) => void): () => void;
+  /**
+   * M1-S2: run an operation, queuing it (bounded) if a re-auth is in progress —
+   * resumed after re-auth succeeds, rejected on overflow or re-auth failure.
+   * When no re-auth is in progress it runs immediately. Preserves QUEUED intent
+   * + session context across re-auth; a tx already inside the wallet cannot be
+   * resurrected (explicit limit — see README).
+   */
+  enqueue<T>(op: () => Promise<T>): Promise<T>;
   /** Tear down: remove all provider listeners and internal subscribers. */
   destroy(): void;
 }
