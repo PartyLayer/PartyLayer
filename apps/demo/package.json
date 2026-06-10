@@ -9,7 +9,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "typecheck": "tsc --noEmit -p tsconfig.typecheck.json"
   },
   "dependencies": {
     "@partylayer/react": "workspace:^",
@@ -25,7 +26,8 @@
     "@walletconnect/types": "^2.23.8",
     "next": "^14.0.0",
     "react": "^18.2.0",
-    "react-dom": "^18.2.0"
+    "react-dom": "^18.2.0",
+    "@partylayer/session": "workspace:^"
   },
   "devDependencies": {
     "@types/node": "^20.11.0",

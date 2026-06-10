@@ -1,8 +1,11 @@
 'use client';
 
-import { useState, useRef, useEffect, useCallback, type ReactNode } from 'react';
+import { useState, useRef, useEffect, useCallback, useMemo, type ReactNode } from 'react';
 import Link from 'next/link';
-import { PartyLayerKit, WalletModal, useSession, useDisconnect, truncatePartyId } from '@partylayer/react';
+// M1-S4: useClientSession = the legacy SDK-layer getter (partyId/walletId here);
+// useAccount = the new reactive session-store hook (the live session indicator).
+import { PartyLayerKit, WalletModal, useClientSession, useDisconnect, truncatePartyId, useAccount } from '@partylayer/react';
+import { createEncryptedIndexedDBStorage, DEFAULT_RETRY_POLICY, type SessionStoreOptions } from '@partylayer/session';
 import { buildDemoAdapters } from '../lib/canton-demo-adapter';
 import { sortByCanonicalOrder, CANONICAL_WALLET_ORDER } from '../lib/wallet-order';
 import { useBreakpoint, responsive } from './hooks/useBreakpoint';
@@ -419,9 +422,41 @@ const navLinks = [
   { label: 'FAQ', href: '#faq' },
 ];
 
+/**
+ * M1-S4 live session indicator — small + unobtrusive. Reads the NEW reactive
+ * session-store hook (`useAccount`) so every Vercel preview is a live integration
+ * test of the session layer (status + primary party + networkId chip). Hidden
+ * when fully disconnected.
+ */
+function SessionIndicator() {
+  const { status, party, networkId, isConnected } = useAccount();
+  if (status === 'disconnected') return null; // unobtrusive when there's no live session
+  const color = isConnected ? '#10B981' : '#F59E0B'; // connecting/reconnecting → amber
+  return (
+    <div
+      title={`session: ${status}`}
+      style={{
+        display: 'inline-flex', alignItems: 'center', gap: 8,
+        padding: '4px 10px', borderRadius: 999,
+        border: '1px solid rgba(148,163,184,0.3)', fontSize: 12,
+        fontFamily: 'ui-sans-serif, system-ui, sans-serif',
+      }}
+    >
+      <span style={{ width: 7, height: 7, borderRadius: '50%', background: color }} />
+      <span style={{ textTransform: 'capitalize' }}>{status}</span>
+      {party && (
+        <span style={{ fontFamily: 'ui-monospace, monospace', opacity: 0.8 }}>{truncatePartyId(party, 6)}</span>
+      )}
+      {networkId && (
+        <span style={{ padding: '1px 6px', borderRadius: 6, background: 'rgba(148,163,184,0.15)' }}>{networkId}</span>
+      )}
+    </div>
+  );
+}
+
 function Nav({ onConnect }: { onConnect: () => void }) {
   const bp = useBreakpoint();
-  const session = useSession();
+  const session = useClientSession();
   const { disconnect } = useDisconnect();
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -474,6 +509,9 @@ function Nav({ onConnect }: { onConnect: () => void }) {
             ))}
           </div>
         )}
+
+        {/* M1-S4: live reactive session indicator (the new session layer, on the apex). */}
+        <SessionIndicator />
 
         {isConnected ? (
           /* ── Connected: dropdown button ── */
@@ -1814,12 +1852,34 @@ export default function Home() {
   const [mounted, setMounted] = useState(false);
   useEffect(() => { setMounted(true); }, []);
 
+  // M1-S4: the apex adopts the full session layer — encrypted IndexedDB
+  // persistence, default auto-reconnect, and multi-tab sync. Memoized so the
+  // shared store isn't rebuilt every render. Constructed client-side only (the
+  // Kit is mounted-gated below); the storage object is lazy (no IDB at build).
+  const sessionOptions = useMemo<Partial<SessionStoreOptions>>(
+    () => ({
+      storage: createEncryptedIndexedDBStorage(),
+      persistSnapshot: true,
+      reconnect: DEFAULT_RETRY_POLICY,
+      broadcast: true,
+    }),
+    [],
+  );
+
   // Show loading skeleton until client-side JS hydrates.
   // PartyLayerKit needs browser APIs (window.canton.*) so we can't render it on server.
   if (!mounted) return <LoadingSkeleton />;
 
   return (
-    <PartyLayerKit network="devnet" appName="PartyLayer" walletIcons={WALLET_LOGOS} walletOrder={CANONICAL_WALLET_ORDER} adapters={buildDemoAdapters()} registryUrl="/registry">
+    <PartyLayerKit
+      network="devnet"
+      appName="PartyLayer"
+      walletIcons={WALLET_LOGOS}
+      walletOrder={CANONICAL_WALLET_ORDER}
+      adapters={buildDemoAdapters()}
+      registryUrl="/registry"
+      sessionOptions={sessionOptions}
+    >
       <LandingContent />
     </PartyLayerKit>
   );

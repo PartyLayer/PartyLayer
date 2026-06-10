@@ -87,6 +87,9 @@ importers:
       '@partylayer/sdk':
         specifier: workspace:^
         version: link:../../packages/sdk
+      '@partylayer/session':
+        specifier: workspace:^
+        version: link:../../packages/session
       '@walletconnect/sign-client':
         specifier: ^2.23.8
         version: 2.23.9(typescript@5.9.3)(zod@4.4.3)

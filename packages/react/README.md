@@ -403,3 +403,48 @@ export default function App() {
 ## License
 
 MIT
+
+## Session hooks (M1-S4)
+
+`useSession` / `useAccount` / `useAccountEffect` are thin React bindings over the
+`@partylayer/session` store, created by `PartyLayerProvider` / `PartyLayerKit`.
+SSR-safe (no `window`/BroadcastChannel at module or hook scope).
+
+```tsx
+const { status, account, networkId, connect, disconnect, on } = useSession();
+const { address, isConnected, chain } = useAccount();
+useAccountEffect({
+  onConnect: ({ account }) => {/* … */},
+  onDisconnect: () => {/* … */},
+  onPartyChanged: ({ previous, current }) => {/* invalidate caches */},
+});
+```
+
+Adopt the session layer via `PartyLayerKit`:
+```tsx
+<PartyLayerKit … sessionOptions={{
+  storage: createEncryptedIndexedDBStorage(), // @partylayer/session
+  persistSnapshot: true,
+  reconnect: DEFAULT_RETRY_POLICY,
+  broadcast: true,                            // multi-tab sync
+}}>…</PartyLayerKit>
+```
+
+### ⚠️ BREAKING (M1-S4): `useSession` re-pointed
+`useSession()` is now the **reactive session-store** hook (`UseSessionReturn`:
+live `SessionState` + `connect`/`disconnect`/`restore`/`on`). The previous
+SDK-layer getter (`(): Session | null`) is preserved **verbatim** as
+**`useClientSession()`**.
+
+| Before | After |
+|---|---|
+| `const session = useSession(); session?.partyId` | `const session = useClientSession(); session?.partyId` |
+| (new) reactive state + actions | `const { status, account, connect } = useSession()` |
+
+### React ↔ planned Vue composable parity (seeds S5)
+| React (`@partylayer/react`) | Planned Vue (`@partylayer/vue`) |
+|---|---|
+| `useSession()` | `useSession()` |
+| `useAccount()` | `useAccount()` |
+| `useAccountEffect()` | `onAccountEffect()` (watch-based) |
+| `useClientSession()` (legacy) | — (not ported) |

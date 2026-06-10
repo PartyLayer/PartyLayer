@@ -7,10 +7,11 @@
  * untouched; the two coexist until the M2 react v2 unification.
  */
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import { useSyncExternalStore } from 'react';
 import type {
   SessionAccount,
+  SessionEvent,
   SessionState,
   SessionStatus,
 } from '@partylayer/session';
@@ -100,6 +101,71 @@ export function useAccount(): UseAccountReturn {
   return deriveAccount(snapshot);
 }
 
+/**
+ * Reactive session: the full `SessionState` (live, via `useSyncExternalStore`)
+ * plus the store's actions and the resilience/sync event subscription.
+ *
+ * M1-S4 NOTE — this is the NEW meaning of `useSession()`. The previous SDK-layer
+ * getter (`return context.session`) is preserved VERBATIM as `useClientSession()`.
+ * Migration: `useSession()` (old) → `useClientSession()`.
+ *
+ * SSR-safe: with no store (server / outside provider) it returns the stable
+ * disconnected snapshot and no-op actions; no `window`/BroadcastChannel access.
+ */
+export interface UseSessionReturn extends SessionState {
+  isConnected: boolean;
+  isConnecting: boolean;
+  isReconnecting: boolean;
+  isDisconnected: boolean;
+  /** Connect via the store (CIP-0103 `connect`). */
+  connect(params?: Record<string, unknown>): Promise<SessionState>;
+  /** Disconnect via the store (never auto-reconnects after). */
+  disconnect(): Promise<void>;
+  /** Restore/rehydrate from the live provider + persisted marker/snapshot. */
+  restore(): Promise<SessionState>;
+  /** Subscribe to a structured resilience/sync event (narrowed by `event`). */
+  on<T extends SessionEvent['type']>(
+    event: T,
+    handler: (event: Extract<SessionEvent, { type: T }>) => void,
+  ): () => void;
+}
+
+export function useSession(): UseSessionReturn {
+  const { store } = usePartyLayerContext();
+
+  const snapshot = useSyncExternalStore<SessionState>(
+    store ? store.subscribe : noopSubscribe,
+    store ? store.getSnapshot : getDisconnectedSnapshot,
+    getDisconnectedSnapshot,
+  );
+
+  // Actions are stable per-store (memoized) so consumers can depend on them.
+  const actions = useMemo(
+    () => ({
+      connect: (params?: Record<string, unknown>): Promise<SessionState> =>
+        store ? store.connect(params) : Promise.resolve(DISCONNECTED_SNAPSHOT),
+      disconnect: (): Promise<void> => (store ? store.disconnect() : Promise.resolve()),
+      restore: (): Promise<SessionState> =>
+        store ? store.restore() : Promise.resolve(DISCONNECTED_SNAPSHOT),
+      on: <T extends SessionEvent['type']>(
+        event: T,
+        handler: (event: Extract<SessionEvent, { type: T }>) => void,
+      ): (() => void) =>
+        store ? store.on(event, handler as (e: SessionEvent) => void) : () => {},
+    }),
+    [store],
+  );
+
+  return {
+    ...snapshot,
+    isConnected: snapshot.status === 'connected',
+    isConnecting: snapshot.status === 'connecting',
+    isReconnecting: snapshot.status === 'reconnecting',
+    isDisconnected: snapshot.status === 'disconnected',
+    ...actions,
+  };
+}
+
 export interface UseAccountEffectParameters {
   /** Fired on a transition INTO `connected` (from disconnected/connecting/reconnecting). */
   onConnect?: (data: {
@@ -109,6 +175,11 @@ export interface UseAccountEffectParameters {
   }) => void;
   /** Fired on a transition `connected → disconnected`. */
   onDisconnect?: () => void;
+  /**
+   * M1-S4: fired when the active PRIMARY party changes (the session
+   * `party:changed` event — a true switch, not a list reorder).
+   */
+  onPartyChanged?: (data: { previous: string | null; current: string | null }) => void;
 }
 
 /**
@@ -157,6 +228,16 @@ export function useAccountEffect(
       }
     });
 
-    return unsubscribe;
+    // M1-S4: party-switch side-effect via the store's structured event.
+    const unsubscribeParty = store.on('party:changed', (e) => {
+      if (e.type === 'party:changed') {
+        paramsRef.current.onPartyChanged?.({ previous: e.previous, current: e.current });
+      }
+    });
+
+    return () => {
+      unsubscribe();
+      unsubscribeParty();
+    };
   }, [store]);
 }
