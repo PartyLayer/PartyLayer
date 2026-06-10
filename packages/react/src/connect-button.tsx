@@ -9,7 +9,7 @@
  */
 
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { useSession, useConnect, useDisconnect } from './hooks';
+import { useClientSession, useConnect, useDisconnect } from './hooks';
 import { useTheme } from './theme';
 import { WalletModal } from './modal';
 
@@ -79,7 +79,7 @@ export function ConnectButton({
   style,
   showDisconnect = true,
 }: ConnectButtonProps) {
-  const session = useSession();
+  const session = useClientSession();
   const { isConnecting } = useConnect();
   const { disconnect } = useDisconnect();
   const theme = useTheme();

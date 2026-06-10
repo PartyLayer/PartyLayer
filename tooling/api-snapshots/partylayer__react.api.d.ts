@@ -31,7 +31,15 @@ import {
   DiscoveredProvider,
   Cip0103StatusForDetection,
 } from '@partylayer/sdk';
-import { SessionStore, SessionAccount, SessionStatus, SessionStorage } from '@partylayer/session';
+import {
+  SessionStoreOptions,
+  SessionStore,
+  SessionAccount,
+  SessionStatus,
+  SessionState,
+  SessionEvent,
+  SessionStorage,
+} from '@partylayer/session';
 import * as _partylayer_core from '@partylayer/core';
 export { RegistryStatus } from '@partylayer/registry-client';
 
@@ -55,10 +63,18 @@ interface PartyLayerProviderProps {
   children: React.ReactNode;
   /** Network identifier (kept for backward compat; no longer used for native synthesis). */
   network?: string;
+  /**
+   * M1-S4: session-store options merged into the shared store
+   * (`reconnect`, `expiry`, `broadcast`, `persistSnapshot`, `onInvalidate`,
+   * `storage`). Omitted ⇒ today's default (localStorage marker, no
+   * reconnect/broadcast). A provided `storage` overrides the default.
+   */
+  sessionOptions?: Partial<SessionStoreOptions>;
 }
 declare function PartyLayerProvider({
   client,
   children,
+  sessionOptions,
 }: PartyLayerProviderProps): react_jsx_runtime.JSX.Element;
 
 /**
@@ -74,9 +90,14 @@ declare function useWallets(): {
   error: Error | null;
 };
 /**
- * Hook to get active session
+ * Hook to get the active SDK-layer session object.
+ *
+ * @deprecated Renamed from `useSession`. As of `@partylayer/react` M1-S4,
+ * `useSession()` is the reactive session-store hook (`UseSessionReturn`); this
+ * legacy SDK-layer getter is preserved VERBATIM under `useClientSession()`.
+ * Migrate `useSession()` → `useClientSession()` if you want the old getter.
  */
-declare function useSession(): Session | null;
+declare function useClientSession(): Session | null;
 /**
  * Hook to get registry status
  */
@@ -217,6 +238,13 @@ interface PartyLayerKitProps {
    * to the end. Sorts within the CIP-0103 Native / Available sections.
    */
   walletOrder?: readonly string[];
+  /**
+   * M1-S4: session-store options forwarded to `PartyLayerProvider`
+   * (`reconnect`, `expiry`, `broadcast`, `persistSnapshot`, `storage`,
+   * `onInvalidate`). Lets the app opt into encrypted persistence, auto-reconnect,
+   * and multi-tab sync. Omitted ⇒ today's defaults.
+   */
+  sessionOptions?: Partial<SessionStoreOptions>;
 }
 declare function PartyLayerKit({
   network,
@@ -228,6 +256,7 @@ declare function PartyLayerKit({
   theme,
   walletIcons,
   walletOrder,
+  sessionOptions,
 }: PartyLayerKitProps): react_jsx_runtime.JSX.Element;
 
 interface WalletModalProps {
@@ -420,6 +449,42 @@ interface UseAccountReturn {
  * SSR-safe — `getServerSnapshot` returns a stable disconnected snapshot.
  */
 declare function useAccount(): UseAccountReturn;
+/**
+ * Reactive session: the full `SessionState` (live, via `useSyncExternalStore`)
+ * plus the store's actions and the resilience/sync event subscription.
+ *
+ * M1-S4 NOTE — this is the NEW meaning of `useSession()`. The previous SDK-layer
+ * getter (`return context.session`) is preserved VERBATIM as `useClientSession()`.
+ * Migration: `useSession()` (old) → `useClientSession()`.
+ *
+ * SSR-safe: with no store (server / outside provider) it returns the stable
+ * disconnected snapshot and no-op actions; no `window`/BroadcastChannel access.
+ */
+interface UseSessionReturn extends SessionState {
+  isConnected: boolean;
+  isConnecting: boolean;
+  isReconnecting: boolean;
+  isDisconnected: boolean;
+  /** Connect via the store (CIP-0103 `connect`). */
+  connect(params?: Record<string, unknown>): Promise<SessionState>;
+  /** Disconnect via the store (never auto-reconnects after). */
+  disconnect(): Promise<void>;
+  /** Restore/rehydrate from the live provider + persisted marker/snapshot. */
+  restore(): Promise<SessionState>;
+  /** Subscribe to a structured resilience/sync event (narrowed by `event`). */
+  on<T extends SessionEvent['type']>(
+    event: T,
+    handler: (
+      event: Extract<
+        SessionEvent,
+        {
+          type: T;
+        }
+      >
+    ) => void
+  ): () => void;
+}
+declare function useSession(): UseSessionReturn;
 interface UseAccountEffectParameters {
   /** Fired on a transition INTO `connected` (from disconnected/connecting/reconnecting). */
   onConnect?: (data: {
@@ -429,6 +494,11 @@ interface UseAccountEffectParameters {
   }) => void;
   /** Fired on a transition `connected → disconnected`. */
   onDisconnect?: () => void;
+  /**
+   * M1-S4: fired when the active PRIMARY party changes (the session
+   * `party:changed` event — a true switch, not a list reorder).
+   */
+  onPartyChanged?: (data: { previous: string | null; current: string | null }) => void;
 }
 /**
  * Fire side-effects on session status transitions — no render churn.
@@ -467,6 +537,7 @@ export {
   ThemeProvider,
   type UseAccountEffectParameters,
   type UseAccountReturn,
+  type UseSessionReturn,
   type WalletIconMap,
   WalletModal,
   type WalletModalProps,
@@ -480,6 +551,7 @@ export {
   useAccount,
   useAccountEffect,
   usePartyLayer as useCantonConnect,
+  useClientSession,
   useConnect,
   useDisconnect,
   useLedgerApi,

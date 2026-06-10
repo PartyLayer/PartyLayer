@@ -12,8 +12,8 @@ import { createMockWallet } from '@partylayer/testing';
 import type { CIP0103Provider } from '@partylayer/core';
 import type { PartyLayerClient } from '@partylayer/sdk';
 import { PartyLayerProvider } from '../context';
-import { useAccount, useAccountEffect } from '../session-hooks';
-import { useSession } from '../hooks';
+import { useAccount, useAccountEffect, useSession } from '../session-hooks';
+import { useClientSession } from '../hooks';
 
 const STATUS_CHANGED = 'statusChanged';
 const ACCOUNTS_CHANGED = 'accountsChanged';
@@ -244,7 +244,8 @@ describe('useAccountEffect', () => {
   });
 });
 
-describe('useSession (existing SDK-layer hook) — backward compatibility', () => {
+// M1-S4: the legacy SDK-layer getter is preserved VERBATIM under useClientSession.
+describe('useClientSession (legacy SDK-layer getter) — behavior preserved under new name', () => {
   it('still returns the SDK session from context, independent of the new store', async () => {
     const provider = createMockWallet();
     const handlers: Record<string, (e: unknown) => void> = {};
@@ -257,16 +258,80 @@ describe('useSession (existing SDK-layer hook) — backward compatibility', () =
       },
     });
 
-    const { result } = renderHook(() => useSession(), { wrapper: wrapperFor(client) });
+    const { result } = renderHook(() => useClientSession(), { wrapper: wrapperFor(client) });
 
     // Initially null (load() resolved getActiveSession → null).
     await waitFor(() => expect(result.current).toBeNull());
 
-    // The SDK-layer event still drives useSession (unchanged behavior).
+    // The SDK-layer event still drives it (unchanged behavior).
     act(() => {
       handlers['session:connected']?.({ type: 'session:connected', session: sdkSession });
     });
 
     expect(result.current).toEqual(sdkSession);
+  });
+});
+
+// M1-S4: the NEW useSession is the reactive session-store hook.
+describe('useSession (M1-S4 reactive session-store hook)', () => {
+  it('exposes reactive SessionState + bound actions; reflects connect/disconnect', async () => {
+    const provider = createMockWallet();
+    const { result } = renderHook(() => useSession(), { wrapper: wrapperFor(fakeClient(provider)) });
+
+    await waitFor(() => expect(result.current.status).toBe('disconnected'));
+    expect(result.current.isDisconnected).toBe(true);
+    expect(typeof result.current.connect).toBe('function');
+    expect(typeof result.current.disconnect).toBe('function');
+    expect(typeof result.current.restore).toBe('function');
+    expect(typeof result.current.on).toBe('function');
+
+    act(() => {
+      provider.emit(STATUS_CHANGED, { connection: { isConnected: true }, network: { networkId: 'canton:da-mainnet' } });
+      provider.emit(ACCOUNTS_CHANGED, [mkAccount('party::live')]);
+    });
+    await waitFor(() => expect(result.current.status).toBe('connected'));
+    expect(result.current.isConnected).toBe(true);
+    expect(result.current.account?.partyId).toBe('party::live');
+    expect(result.current.networkId).toBe('canton:da-mainnet');
+
+    act(() => {
+      provider.emit(STATUS_CHANGED, { connection: { isConnected: false } });
+    });
+    await waitFor(() => expect(result.current.status).toBe('disconnected'));
+  });
+
+  it('SSR-safe: getServerSnapshot is the stable disconnected snapshot; actions never throw', () => {
+    // useSession feeds getDisconnectedSnapshot as getServerSnapshot (no window /
+    // BroadcastChannel access on the server). Here we assert the safety contract:
+    // every action is callable and resolves/returns without throwing.
+    const provider = createMockWallet();
+    const { result } = renderHook(() => useSession(), { wrapper: wrapperFor(fakeClient(provider)) });
+    expect(['disconnected', 'reconnecting']).toContain(result.current.status); // mount restore may be in-flight
+    expect(result.current.disconnect()).toBeInstanceOf(Promise);
+    expect(result.current.connect()).toBeInstanceOf(Promise);
+    expect(result.current.restore()).toBeInstanceOf(Promise);
+    const off = result.current.on('party:changed', () => {});
+    expect(typeof off).toBe('function');
+    off();
+  });
+});
+
+describe('useAccountEffect — onPartyChanged (M1-S4)', () => {
+  it('fires onPartyChanged on a primary-party switch', async () => {
+    const provider = createMockWallet();
+    const onPartyChanged = vi.fn();
+    renderHook(() => useAccountEffect({ onPartyChanged }), { wrapper: wrapperFor(fakeClient(provider)) });
+
+    // establish a primary, then switch it
+    act(() => {
+      provider.emit(STATUS_CHANGED, { connection: { isConnected: true }, network: { networkId: 'canton:da-mainnet' } });
+      provider.emit(ACCOUNTS_CHANGED, [mkAccount('party::a')]);
+    });
+    act(() => {
+      provider.emit(ACCOUNTS_CHANGED, [mkAccount('party::b')]); // switch a → b
+    });
+    await waitFor(() =>
+      expect(onPartyChanged).toHaveBeenCalledWith({ previous: 'party::a', current: 'party::b' }),
+    );
   });
 });

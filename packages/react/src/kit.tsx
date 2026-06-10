@@ -11,6 +11,7 @@
 import { useMemo, useEffect, useRef, createContext, useContext } from 'react';
 import { createPartyLayer } from '@partylayer/sdk';
 import type { PartyLayerClient, WalletAdapter, AdapterClass, NetworkId } from '@partylayer/sdk';
+import type { SessionStoreOptions } from '@partylayer/session';
 import { PartyLayerProvider } from './context';
 import { ThemeProvider } from './theme';
 import type { PartyLayerTheme } from './theme';
@@ -90,6 +91,13 @@ export interface PartyLayerKitProps {
    * to the end. Sorts within the CIP-0103 Native / Available sections.
    */
   walletOrder?: readonly string[];
+  /**
+   * M1-S4: session-store options forwarded to `PartyLayerProvider`
+   * (`reconnect`, `expiry`, `broadcast`, `persistSnapshot`, `storage`,
+   * `onInvalidate`). Lets the app opt into encrypted persistence, auto-reconnect,
+   * and multi-tab sync. Omitted ⇒ today's defaults.
+   */
+  sessionOptions?: Partial<SessionStoreOptions>;
 }
 
 // ─── Component ───────────────────────────────────────────────────────────────
@@ -104,6 +112,7 @@ export function PartyLayerKit({
   theme = 'light',
   walletIcons = {},
   walletOrder,
+  sessionOptions,
 }: PartyLayerKitProps) {
   // Stable reference for adapters array to avoid re-creating client on every render
   const adaptersRef = useRef(adapters);
@@ -136,7 +145,7 @@ export function PartyLayerKit({
     <WalletIconsContext.Provider value={walletIcons}>
       <WalletOrderContext.Provider value={walletOrder}>
         <ThemeProvider theme={themeValue}>
-          <PartyLayerProvider client={client} network={network}>
+          <PartyLayerProvider client={client} network={network} sessionOptions={sessionOptions}>
             {children}
           </PartyLayerProvider>
         </ThemeProvider>

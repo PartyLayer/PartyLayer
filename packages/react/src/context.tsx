@@ -25,7 +25,7 @@ import type {
   Session,
   WalletInfo,
 } from '@partylayer/sdk';
-import { createSessionStore, type SessionStore } from '@partylayer/session';
+import { createSessionStore, type SessionStore, type SessionStoreOptions } from '@partylayer/session';
 import { createLocalStorage } from './session-storage';
 
 interface PartyLayerContextValue {
@@ -61,11 +61,19 @@ interface PartyLayerProviderProps {
   children: React.ReactNode;
   /** Network identifier (kept for backward compat; no longer used for native synthesis). */
   network?: string;
+  /**
+   * M1-S4: session-store options merged into the shared store
+   * (`reconnect`, `expiry`, `broadcast`, `persistSnapshot`, `onInvalidate`,
+   * `storage`). Omitted ⇒ today's default (localStorage marker, no
+   * reconnect/broadcast). A provided `storage` overrides the default.
+   */
+  sessionOptions?: Partial<SessionStoreOptions>;
 }
 
 export function PartyLayerProvider({
   client,
   children,
+  sessionOptions,
 }: PartyLayerProviderProps) {
   const [session, setSession] = useState<Session | null>(null);
   const [wallets, setWallets] = useState<WalletInfo[]>([]);
@@ -77,13 +85,23 @@ export function PartyLayerProvider({
   // paint. Recreated if the `client` prop changes. The mount effect below runs
   // init()/destroy(); on a StrictMode remount the ref is nulled by cleanup so
   // the render-phase guard rebuilds a fresh, re-subscribed store.
+  // Re-create the store if the client OR the session options change.
+  const sessionOptionsRef = useRef(sessionOptions);
   const storeRef = useRef<{ client: PartyLayerClient; store: SessionStore } | null>(null);
-  if (storeRef.current === null || storeRef.current.client !== client) {
+  if (
+    storeRef.current === null ||
+    storeRef.current.client !== client ||
+    sessionOptionsRef.current !== sessionOptions
+  ) {
     storeRef.current?.store.destroy();
+    sessionOptionsRef.current = sessionOptions;
     storeRef.current = {
       client,
+      // Default storage = SSR-safe localStorage; caller-supplied options (incl. a
+      // custom `storage`, reconnect/broadcast/persistSnapshot) override/extend it.
       store: createSessionStore(client.asProvider(), {
         storage: createLocalStorage(),
+        ...sessionOptions,
       }),
     };
   }

@@ -22,12 +22,15 @@ export type { PartyLayerTheme } from './theme';
 // Native CIP-0103 adapter (for advanced usage)
 export { NativeCIP0103Adapter, createNativeAdapter, createSyntheticWalletInfo } from './native-cip0103-adapter';
 
-// Session hooks (Step 6b) — NEW, additive. Backed by @partylayer/session.
-// The existing useSession (SDK-layer) is unchanged and coexists with these.
-export { useAccount, useAccountEffect } from './session-hooks';
+// Session hooks — backed by @partylayer/session. M1-S4: `useSession` is now the
+// reactive session-store hook (UseSessionReturn); the legacy SDK-layer getter is
+// preserved VERBATIM as `useClientSession` (via `export * from './hooks'`).
+// Migrate `useSession()` (old) → `useClientSession()`. BREAKING note in changeset.
+export { useAccount, useAccountEffect, useSession } from './session-hooks';
 export type {
   UseAccountReturn,
   UseAccountEffectParameters,
+  UseSessionReturn,
   SessionChain,
 } from './session-hooks';
 // Browser localStorage adapter for the session store (SSR-safe).
