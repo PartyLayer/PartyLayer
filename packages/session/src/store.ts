@@ -302,9 +302,15 @@ export function createSessionStore(
     expiryTimer = null;
     const expiredAt = new Date().getTime();
     emit({ type: 'session:expired', expiredAt });
-    // Not an explicit user disconnect — model as re-authenticating.
+    if (!expiry?.onReauthRequired) {
+      // No re-auth hook configured → expiry is TERMINAL for this session. Land
+      // in 'disconnected' (not 'reconnecting' — there is nothing to reconnect
+      // to) with an explanatory error, so the app isn't trapped mid-state.
+      setState({ status: 'disconnected', lastError: new Error('Session expired') });
+      return;
+    }
+    // Re-auth hook present → model as re-authenticating while it runs.
     setState({ status: 'reconnecting' });
-    if (!expiry?.onReauthRequired) return;
     reauthInProgress = true;
     try {
       await expiry.onReauthRequired({ reason: 'expired', expiredAt });

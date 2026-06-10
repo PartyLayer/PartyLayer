@@ -197,6 +197,19 @@ describe('SCENARIO-4: runtime expiry → session:expired + onReauthRequired + re
     expect(store.getSnapshot().account?.partyId).toBe('party::a');
     store.destroy();
   });
+
+  it('expiry with NO onReauthRequired hook lands in disconnected (not stuck reconnecting)', async () => {
+    const p = mockProvider();
+    const store = makeStore(p, { expiry: { ttlMs: 10_000 } }); // no hook
+    const events = collect(store);
+    await establishConnected(store, p);
+
+    await vi.advanceTimersByTimeAsync(10_000); // expiry fires
+    expect(events.some((e) => e.type === 'session:expired')).toBe(true); // still emitted
+    expect(store.getSnapshot().status).toBe('disconnected'); // terminal, not 'reconnecting'
+    expect(store.getSnapshot().lastError?.message).toMatch(/expired/i);
+    store.destroy();
+  });
 });
 
 describe('SCENARIO-7: enqueue during re-auth — resume / overflow / failure', () => {
