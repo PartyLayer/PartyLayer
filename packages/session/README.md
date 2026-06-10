@@ -231,3 +231,60 @@ through the store, not for in-flight wallet prompts.
 | SCENARIO-6 | maxAttempts exhausted → `reconnect:gaveup` (terminal); manual cancel mid-backoff |
 | SCENARIO-7 | enqueue during re-auth → resume / overflow / re-auth-failure |
 | invariant | explicit user disconnect NEVER schedules a reconnect |
+
+## Multi-tab sync + party/network invalidation (M1-S3)
+
+**Additive + opt-in.** Origin-bound `BroadcastChannel` sync, party-switch +
+network-change detection with an invalidation hook, and optional full-snapshot
+persistence.
+
+```ts
+const store = createSessionStore(provider, {
+  broadcast: true,                 // sync across tabs (default channel)
+  persistSnapshot: true,           // rewrite the S1 snapshot on party/network change
+  onInvalidate: ({ type, previous, current }) => queryClient.invalidateQueries(),
+});
+store.on('party:changed', (e) => console.log(`party ${e.previous} → ${e.current}`));
+store.on('network:changed', (e) => console.log(`network ${e.previous} → ${e.current}`));
+```
+
+### Multi-tab (BroadcastChannel)
+
+`broadcast: true` opens an **origin-bound** channel (`partylayer.session.sync::<origin>::<storageKey>`,
+the S1 `originTag` pattern); pass `{ channelFactory }` to customize (tests inject
+an in-memory hub). A **disconnect in one tab propagates to all tabs**; party/network
+updates propagate too. A RECEIVING tab applies the change **without
+rebroadcasting** (loop-safe — verified: BroadcastChannel never echoes to the
+sender). When BroadcastChannel is **unavailable** (SSR / Node) it is a **graceful
+no-op** — single-tab behavior is unchanged.
+
+### Party-switch
+
+On `accountsChanged`, the store compares the **primary** `partyId`. A change from
+a prior non-null primary emits `party:changed {previous, current}`, calls
+`onInvalidate`, and (with `persistSnapshot`) rewrites the persisted snapshot. A
+**list reorder that keeps the same primary is NOT a switch** (no event).
+
+### Network / synchronizer change
+
+A `statusChanged.network` (or `chainChanged`) `networkId` delta emits
+`network:changed {previous, current}`, calls `onInvalidate`, and rewrites the
+snapshot. (Cache wiring — React-Query — lands in S4/S6; the session layer only
+emits + invalidates.)
+
+### `persistSnapshot`
+
+When `true`, the store persists the **full S1 session envelope** at `storageKey`
+(rewritten on party/network change) instead of the legacy `'1'` marker. Default
+`false` (marker behavior preserved — purely additive).
+
+### Session lifecycle scenarios (now 11 — past the grant's ≥8 threshold)
+
+| ID | Scenario |
+|---|---|
+| 1–3 | persist/restore, reconcile, corrupt/wrong-key/unknown-version/expired (S1) |
+| 4–7 | expiry re-auth, reconnect backoff, give-up/cancel, enqueue queue (S2) |
+| SCENARIO-8 | disconnect in tab A → tab B disconnected, **no rebroadcast** |
+| SCENARIO-9 | party switch → `party:changed` + snapshot rewrite; reorder → no event |
+| SCENARIO-10 | network change → `network:changed` + `onInvalidate` + snapshot update |
+| SCENARIO-11 | no BroadcastChannel → single-tab still works (graceful no-op) |

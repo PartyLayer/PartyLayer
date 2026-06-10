@@ -44,6 +44,18 @@ export {
   computeBackoffDelay,
   type RetryPolicy,
 } from './retry';
+// M1-S3 — multi-tab sync (BroadcastChannel, origin-bound) + party-switch /
+// network-change invalidation (additive, opt-in).
+export type { InvalidationEvent } from './types';
+export {
+  openSyncChannel,
+  defaultChannelFactory,
+  type BroadcastOptions,
+  type BroadcastChannelLike,
+  type BroadcastEnvelope,
+  type ChannelFactory,
+  type SyncChannel,
+} from './broadcast';
 // M1-S1 — encrypted persistence core (additive). Two SessionStorage backends
 // (the AES-GCM-256 key is always non-extractable + stored in IndexedDB; only the
 // ciphertext blob location varies) plus the versioned session envelope, a

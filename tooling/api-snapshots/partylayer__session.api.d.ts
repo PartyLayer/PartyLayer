@@ -59,6 +59,50 @@ declare function computeBackoffDelay(
   rand?: () => number
 ): number;
 
+/** Minimal structural subset of BroadcastChannel we depend on. */
+interface BroadcastChannelLike {
+  postMessage(data: unknown): void;
+  close(): void;
+  onmessage: ((ev: { data: unknown }) => void) | null;
+}
+/** Factory for a channel; return `null` when broadcasting is unavailable. */
+type ChannelFactory = (name: string) => BroadcastChannelLike | null;
+/** Multi-tab options. `channelFactory` defaults to the global BroadcastChannel. */
+interface BroadcastOptions {
+  /** Override the channel factory (tests inject an in-memory hub). */
+  channelFactory?: ChannelFactory;
+}
+/** Versioned cross-tab message. `kind` selects how a receiver applies it. */
+interface BroadcastEnvelope {
+  readonly v: 1;
+  readonly kind: 'disconnect' | 'party' | 'network';
+  readonly partyId?: string | null;
+  readonly networkId?: string | null;
+}
+/** Default factory: the global BroadcastChannel, or `null` (SSR/Node-without-BC). */
+declare const defaultChannelFactory: ChannelFactory;
+/** A live multi-tab sync channel (or a no-op when unavailable). */
+interface SyncChannel {
+  /** True when a real channel is backing this (false ⇒ graceful no-op). */
+  readonly active: boolean;
+  /** Broadcast to OTHER tabs (never echoes to this sender). */
+  post(env: BroadcastEnvelope): void;
+  /** Register the receive handler (one per channel). */
+  onMessage(handler: (env: BroadcastEnvelope) => void): void;
+  /** Close + detach. */
+  close(): void;
+}
+/**
+ * Open an origin-bound, key-scoped sync channel. Name = the S1 `originTag`
+ * pattern + the store's storage key, so two tabs of the SAME origin+session
+ * share one channel and different origins never cross.
+ */
+declare function openSyncChannel(
+  storageKey: string,
+  options?: BroadcastOptions,
+  explicitOrigin?: string
+): SyncChannel;
+
 /**
  * Public types for the framework-agnostic session core.
  */
@@ -132,6 +176,31 @@ interface SessionStoreOptions {
    * failure/overflow.
    */
   expiry?: ExpiryOptions;
+  /**
+   * M1-S3: multi-tab sync via BroadcastChannel. `true` enables it with the
+   * default (global) channel; an object customizes the channel factory (tests
+   * inject an in-memory hub). Omitted/`false` ⇒ disabled (single-tab). Graceful
+   * no-op when BroadcastChannel is unavailable (SSR / Node). Origin-bound.
+   */
+  broadcast?: boolean | BroadcastOptions;
+  /**
+   * M1-S3: persist the FULL session snapshot (S1 envelope) at `storageKey`,
+   * rewriting it on party/network change, instead of the legacy `'1'` marker.
+   * Default `false` (legacy marker behavior preserved — additive).
+   */
+  persistSnapshot?: boolean;
+  /**
+   * M1-S3: invalidation hook called on a party-switch or network change — the
+   * point where consumer cache invalidation (React-Query) wires in at S4/S6.
+   * The session layer only emits + invalidates here.
+   */
+  onInvalidate?: (event: InvalidationEvent) => void | Promise<void>;
+}
+/** M1-S3 invalidation payload (party-switch or network change). */
+interface InvalidationEvent {
+  readonly type: 'party:changed' | 'network:changed';
+  readonly previous: string | null;
+  readonly current: string | null;
 }
 /** M1-S2 expiry / graceful re-auth configuration. */
 interface ExpiryOptions {
@@ -177,6 +246,16 @@ type SessionEvent =
   | {
       readonly type: 'session:expired';
       readonly expiredAt: number;
+    }
+  | {
+      readonly type: 'party:changed';
+      readonly previous: string | null;
+      readonly current: string | null;
+    }
+  | {
+      readonly type: 'network:changed';
+      readonly previous: string | null;
+      readonly current: string | null;
     };
 /**
  * Framework-agnostic session manager. Subscribable for `useSyncExternalStore`
@@ -334,10 +413,15 @@ declare function reconcileSession(
 ): ReconcileResult;
 
 export {
+  type BroadcastChannelLike,
+  type BroadcastEnvelope,
+  type BroadcastOptions,
   CURRENT_SESSION_ENVELOPE_VERSION,
+  type ChannelFactory,
   DEFAULT_RETRY_POLICY,
   type EncryptedStorageOptions,
   type ExpiryOptions,
+  type InvalidationEvent,
   type LiveSessionStatus,
   type MaybePromise,
   type PersistedSessionSnapshot,
@@ -352,14 +436,17 @@ export {
   type SessionStorage,
   type SessionStore,
   type SessionStoreOptions,
+  type SyncChannel,
   computeBackoffDelay,
   createEncryptedIndexedDBStorage,
   createEncryptedLocalStorage,
   createMemoryStorage,
   createSessionStore,
   decodeSessionEnvelope,
+  defaultChannelFactory,
   encodeSessionEnvelope,
   migrateSessionEnvelope,
+  openSyncChannel,
   reconcileSession,
   restoreSession,
 };

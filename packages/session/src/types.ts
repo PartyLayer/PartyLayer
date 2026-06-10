@@ -5,6 +5,7 @@
 import type { CIP0103Account, CIP0103Provider } from '@partylayer/core';
 import type { SessionStorage } from './storage';
 import type { RetryPolicy } from './retry';
+import type { BroadcastOptions } from './broadcast';
 
 /**
  * Connection status state machine.
@@ -82,6 +83,32 @@ export interface SessionStoreOptions {
    * failure/overflow.
    */
   expiry?: ExpiryOptions;
+  /**
+   * M1-S3: multi-tab sync via BroadcastChannel. `true` enables it with the
+   * default (global) channel; an object customizes the channel factory (tests
+   * inject an in-memory hub). Omitted/`false` ⇒ disabled (single-tab). Graceful
+   * no-op when BroadcastChannel is unavailable (SSR / Node). Origin-bound.
+   */
+  broadcast?: boolean | BroadcastOptions;
+  /**
+   * M1-S3: persist the FULL session snapshot (S1 envelope) at `storageKey`,
+   * rewriting it on party/network change, instead of the legacy `'1'` marker.
+   * Default `false` (legacy marker behavior preserved — additive).
+   */
+  persistSnapshot?: boolean;
+  /**
+   * M1-S3: invalidation hook called on a party-switch or network change — the
+   * point where consumer cache invalidation (React-Query) wires in at S4/S6.
+   * The session layer only emits + invalidates here.
+   */
+  onInvalidate?: (event: InvalidationEvent) => void | Promise<void>;
+}
+
+/** M1-S3 invalidation payload (party-switch or network change). */
+export interface InvalidationEvent {
+  readonly type: 'party:changed' | 'network:changed';
+  readonly previous: string | null;
+  readonly current: string | null;
 }
 
 /** M1-S2 expiry / graceful re-auth configuration. */
@@ -113,7 +140,10 @@ export type SessionEvent =
   | { readonly type: 'reconnect:attempt'; readonly attempt: number }
   | { readonly type: 'reconnect:succeeded'; readonly attempt: number }
   | { readonly type: 'reconnect:gaveup'; readonly attempts: number; readonly lastError: Error | null }
-  | { readonly type: 'session:expired'; readonly expiredAt: number };
+  | { readonly type: 'session:expired'; readonly expiredAt: number }
+  // M1-S3 — multi-tab / party-switch / network-change.
+  | { readonly type: 'party:changed'; readonly previous: string | null; readonly current: string | null }
+  | { readonly type: 'network:changed'; readonly previous: string | null; readonly current: string | null };
 
 /**
  * Framework-agnostic session manager. Subscribable for `useSyncExternalStore`

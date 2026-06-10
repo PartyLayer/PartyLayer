@@ -19,7 +19,10 @@ import {
 } from '@partylayer/core';
 import { createMemoryStorage, type SessionStorage } from './storage';
 import { computeBackoffDelay, type RetryPolicy } from './retry';
+import { openSyncChannel, type BroadcastEnvelope, type SyncChannel } from './broadcast';
+import { encodeSessionEnvelope, type PersistedSessionSnapshot } from './session-envelope';
 import type {
+  InvalidationEvent,
   SessionAccount,
   SessionEvent,
   SessionState,
@@ -142,6 +145,68 @@ export function createSessionStore(
     }
   }
 
+  // ── M1-S3 multi-tab + party/network invalidation (ADDITIVE; opt-in) ─────────
+  const persistSnapshot = options.persistSnapshot === true;
+  const onInvalidate = options.onInvalidate;
+  let connectedAt = 0; // epoch-ms of the active connect/restore (for the snapshot)
+  // RECEIVING-tab loop-prevention: while applying a remote broadcast, suppress
+  // re-broadcasting (defensive — applyRemote also bypasses the provider handlers).
+  let applyingRemote = false;
+
+  const sync: SyncChannel = options.broadcast
+    ? openSyncChannel(storageKey, typeof options.broadcast === 'object' ? options.broadcast : {})
+    : { active: false, post() {}, onMessage() {}, close() {} };
+
+  function buildSnapshot(): PersistedSessionSnapshot {
+    return {
+      account: state.account,
+      accounts: state.accounts,
+      networkId: state.networkId,
+      connectedAt,
+    };
+  }
+
+  function handlePartyChanged(previous: string | null, current: string | null): void {
+    emit({ type: 'party:changed', previous, current });
+    void onInvalidate?.({ type: 'party:changed', previous, current } as InvalidationEvent);
+    void persistConnected(); // rewrite the persisted snapshot for the new party
+    if (!applyingRemote) sync.post({ v: 1, kind: 'party', partyId: current });
+  }
+
+  function handleNetworkChanged(previous: string | null, current: string | null): void {
+    emit({ type: 'network:changed', previous, current });
+    void onInvalidate?.({ type: 'network:changed', previous, current } as InvalidationEvent);
+    void persistConnected(); // rewrite the persisted snapshot for the new network
+    if (!applyingRemote) sync.post({ v: 1, kind: 'network', networkId: current });
+  }
+
+  /** Apply a broadcast from ANOTHER tab WITHOUT rebroadcasting (loop-safe). */
+  function applyRemote(env: BroadcastEnvelope): void {
+    applyingRemote = true;
+    try {
+      if (env.kind === 'disconnect') {
+        explicitDisconnect = true;
+        cancelReconnect();
+        disarmExpiry();
+        setState({ status: 'disconnected', account: null, accounts: [], networkId: null });
+        void clearConnected();
+      } else if (env.kind === 'party') {
+        const previous = state.account?.partyId ?? null;
+        const match = state.accounts.find((a) => a.partyId === env.partyId) ?? null;
+        setState({ account: match ?? state.account });
+        emit({ type: 'party:changed', previous, current: env.partyId ?? null });
+      } else if (env.kind === 'network') {
+        const previous = state.networkId;
+        setState({ networkId: env.networkId ?? null });
+        emit({ type: 'network:changed', previous, current: env.networkId ?? null });
+      }
+    } finally {
+      applyingRemote = false;
+    }
+  }
+
+  sync.onMessage(applyRemote);
+
   function notify(): void {
     for (const listener of listeners) {
       try {
@@ -162,7 +227,9 @@ export function createSessionStore(
 
   async function persistConnected(): Promise<void> {
     try {
-      await storage.setItem(storageKey, '1');
+      // M1-S3: when snapshot persistence is on, write the full S1 envelope (and
+      // rewrite it on party/network change); otherwise the legacy '1' marker.
+      await storage.setItem(storageKey, persistSnapshot ? encodeSessionEnvelope(buildSnapshot()) : '1');
     } catch {
       // Persistence is best-effort; never block the session on storage errors.
     }
@@ -201,11 +268,13 @@ export function createSessionStore(
     const evt = args[0] as CIP0103StatusEvent | undefined;
     const connected = evt?.connection?.isConnected === true;
     if (connected) {
-      setState({
-        status: 'connected',
-        networkId: evt?.network?.networkId ?? state.networkId,
-        lastError: null,
-      });
+      const previousNetwork = state.networkId;
+      const nextNetwork = evt?.network?.networkId ?? state.networkId;
+      setState({ status: 'connected', networkId: nextNetwork, lastError: null });
+      // M1-S3 network change: a non-null prior network changed to a new one.
+      if (previousNetwork !== null && nextNetwork !== null && previousNetwork !== nextNetwork) {
+        handleNetworkChanged(previousNetwork, nextNetwork);
+      }
     } else {
       // M1-S2: a TRANSIENT drop is a provider-driven `statusChanged(false)` while
       // we held an active session and the user did NOT call `disconnect()`.
@@ -227,7 +296,14 @@ export function createSessionStore(
     const accounts: SessionAccount[] = Array.isArray(incoming)
       ? (incoming as CIP0103Account[])
       : [];
+    const previous = state.account?.partyId ?? null;
     setState({ accounts, account: pickPrimary(accounts) });
+    const current = state.account?.partyId ?? null;
+    // M1-S3 party SWITCH: the PRIMARY partyId changed from a prior non-null value.
+    // A list reorder that keeps the same primary is NOT a switch (no event).
+    if (previous !== null && previous !== current) {
+      handlePartyChanged(previous, current);
+    }
   };
 
   // Network changes: today derived from `statusChanged.network` (the WC adapter
@@ -236,7 +312,13 @@ export function createSessionStore(
   // updates flow through the same field with no further changes here.
   const onChainChanged: CIP0103EventListener = (...args: unknown[]) => {
     const net = args[0] as CIP0103Network | undefined;
-    if (net?.networkId) setState({ networkId: net.networkId });
+    if (net?.networkId) {
+      const previous = state.networkId;
+      setState({ networkId: net.networkId });
+      if (previous !== null && previous !== net.networkId) {
+        handleNetworkChanged(previous, net.networkId);
+      }
+    }
   };
 
   provider.on(CIP0103_EVENTS.STATUS_CHANGED, onStatusChanged);
@@ -352,6 +434,7 @@ export function createSessionStore(
           networkId: status?.network?.networkId ?? null,
           lastError: null,
         });
+        connectedAt = new Date().getTime(); // M1-S3: stamp for the persisted snapshot
         await ensureNetworkId(); // WC fallback when status omitted network
         await persistConnected();
         armExpiry(); // M1-S2: arm runtime expiry for the restored session
@@ -402,6 +485,7 @@ export function createSessionStore(
         // normally already moved us to 'connected'; assert it defensively in
         // case a provider does not emit on connect.
         if (state.status !== 'connected') setState({ status: 'connected' });
+        connectedAt = new Date().getTime(); // M1-S3: stamp for the persisted snapshot
         await ensureNetworkId(); // WC fallback when status omitted network
         await persistConnected();
         armExpiry(); // M1-S2: arm the runtime expiry timer for this session
@@ -436,6 +520,8 @@ export function createSessionStore(
           networkId: null,
         });
         await clearConnected();
+        // M1-S3: propagate the disconnect to all other tabs (the named example).
+        if (!applyingRemote) sync.post({ v: 1, kind: 'disconnect' });
       }
     },
 
@@ -487,6 +573,7 @@ export function createSessionStore(
       provider.removeListener('chainChanged', onChainChanged);
       cancelReconnect();
       disarmExpiry();
+      sync.close(); // M1-S3: close the multi-tab channel
       eventListeners.clear();
       listeners.clear();
     },
