@@ -13,6 +13,14 @@
 
 // Public API
 export { createPartyLayer, PartyLayerClient } from './client';
+// A2 — announce discovery: dynamic adapter for announce-only wallets without a
+// first-party adapter (canonical providerId `browser:ext:<id>`, provider.md).
+export {
+  GenericAnnounceAdapter,
+  announcedWalletId,
+  ANNOUNCED_WALLET_ID_PREFIX,
+  type GenericAnnounceAdapterArgs,
+} from './announce-adapter';
 // Backward compatibility aliases
 export { createPartyLayer as createCantonConnect, PartyLayerClient as CantonConnectClient } from './client';
 // Internal API (for adapter registration - will be hidden in future)

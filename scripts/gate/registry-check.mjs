@@ -143,6 +143,35 @@ for (const { channel, path } of channels) {
       console.log(`✓ [${channel}] "${id}" retains cip0103.native: true`);
     }
   }
+
+  // 3. provider.id DISJOINTNESS (A2 systemic guard).
+  // The identity bridge maps an announced `provider.id` to exactly one wallet.
+  // If two wallets claim the same `provider.id`, an announce could route to the
+  // wrong wallet (the original Send↔Console swap: Send's matcher held Console's
+  // id `lpnf…`). Enforce that every wallet's `providerDetection` provider.id
+  // value set is pairwise DISJOINT across the channel — permanently.
+  const providerIdOwners = new Map(); // provider.id -> wallet id
+  for (const w of registry.wallets ?? []) {
+    for (const m of w.providerDetection?.matchers ?? []) {
+      if (m.field !== 'provider.id' || m.match !== 'exact') continue;
+      for (const value of m.values ?? []) {
+        const owner = providerIdOwners.get(value);
+        if (owner && owner !== w.id) {
+          console.error(
+            `✗ [${channel}] provider.id "${value}" is claimed by BOTH "${owner}" ` +
+              `and "${w.id}" — provider.id sets must be disjoint (announce routing ` +
+              `would be ambiguous). This is the Send↔Console swap class.`,
+          );
+          failed = true;
+        } else {
+          providerIdOwners.set(value, w.id);
+        }
+      }
+    }
+  }
+  if (!failed) {
+    console.log(`✓ [${channel}] provider.id ownership is pairwise disjoint`);
+  }
 }
 
 if (failed) {

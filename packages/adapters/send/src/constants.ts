@@ -1,29 +1,41 @@
 import type { ProviderDetection } from '@partylayer/core';
 
 /**
- * Send Canton Wallet extension IDs.
+ * Send Canton Wallet extension ID.
  *
- * Send's runtime-injected CIP-103 provider reports its identity at
- * `window.canton.request({ method: 'status' }).provider.id`. The value
- * observed in production differs from the public Chrome Web Store
- * listing ID, so both are listed here. New IDs (e.g., from rebrands or
- * separate distribution channels) can be appended to this list without
- * code changes elsewhere.
+ * Send announces (canonical `canton:announceProvider`) with
+ * `detail.id == detail.target == 'ldmohiccoioolenadmogclhoklmanpgi'`, and its
+ * injected provider reports the same id at `status().provider.id`.
+ *
+ * INCIDENT CORRECTION (A2): this constant previously held
+ * `'lpnfhpbpmlobjlgkdmnjieeihjmihhjd'`, which live diagnostics + Console
+ * Wallet's own extension source proved is **Console's** id, not Send's. That
+ * stale value put Console's id in Send's accepted-id set → Console's announce
+ * matched Send's `acceptedIds` → `doResolveChannel` bound `{ target: lpnf… }` →
+ * Console's content-script target gate passed → a *Send* click opened the
+ * *Console* popup (the original swap; whether it surfaced depended on announce
+ * race order). Console's id (`lpnf…`) is now ELIMINATED from every Send
+ * constant/matcher; Send's id↔matcher set is its own id only.
  */
-export const SEND_PRODUCTION_EXTENSION_ID = 'lpnfhpbpmlobjlgkdmnjieeihjmihhjd';
-export const SEND_LEGACY_EXTENSION_ID = 'ldmohiccoioolenadmogclhoklmanpgi';
+export const SEND_PRODUCTION_EXTENSION_ID = 'ldmohiccoioolenadmogclhoklmanpgi';
 
-export const SEND_KNOWN_EXTENSION_IDS = [
-  SEND_PRODUCTION_EXTENSION_ID,
-  SEND_LEGACY_EXTENSION_ID,
-] as const;
+/**
+ * @deprecated No distinct "legacy" Send build exists — the previous value
+ * (`lpnf…`) was Console's id, removed in the A2 incident correction. Aliased to
+ * {@link SEND_PRODUCTION_EXTENSION_ID} to keep the exported symbol stable for
+ * source-compat. Use {@link SEND_PRODUCTION_EXTENSION_ID}.
+ */
+export const SEND_LEGACY_EXTENSION_ID = SEND_PRODUCTION_EXTENSION_ID;
+
+/** Every id that legitimately identifies Send (Console's id is NOT one). */
+export const SEND_KNOWN_EXTENSION_IDS = [SEND_PRODUCTION_EXTENSION_ID] as const;
 
 /**
  * @deprecated Use SEND_PRODUCTION_EXTENSION_ID or SEND_KNOWN_EXTENSION_IDS.
  * Retained for backward source-compatibility with consumers that import
  * the old name. Will be removed in a future major.
  */
-export const SEND_KERNEL_ID = SEND_LEGACY_EXTENSION_ID;
+export const SEND_KERNEL_ID = SEND_PRODUCTION_EXTENSION_ID;
 
 /**
  * Built-in fallback detection patterns, mirroring the canonical Send

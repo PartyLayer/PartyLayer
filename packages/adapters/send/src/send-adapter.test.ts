@@ -35,6 +35,7 @@ import {
 // (signTransaction stub assertions, mapSigilryError 4200 case).
 
 import {
+  FOREIGN_KERNEL_ID,
   REAL_LIST_ACCOUNTS,
   REAL_PRIMARY_ACCOUNT,
   REAL_STATUS,
@@ -170,6 +171,24 @@ describe('SendAdapter: announce-based detection', () => {
   it('connect() throws SendNotInstalledError when Send does not announce', async () => {
     installEmptyWindow();
     await expect(adapter.connect(ctx)).rejects.toBeInstanceOf(SendNotInstalledError);
+  });
+
+  // ── A2 incident regression: announce-order race + never bind Console's id ──
+  it('does NOT accept Console\'s announce id (lpnf…) as Send — never binds it', async () => {
+    // The ONLY announce reaching discovery carries Console's id. Pre-A2 this
+    // matched Send's acceptedIds (which wrongly held lpnf…) → a Send click bound
+    // Console's channel → Console opened. Post-correction Send rejects it.
+    installMockCanton({ announceId: FOREIGN_KERNEL_ID });
+    await expect(adapter.detectInstalled()).resolves.toMatchObject({ installed: false });
+    await expect(adapter.connect(ctx)).rejects.toBeInstanceOf(SendNotInstalledError);
+  });
+
+  it('binds Send\'s OWN channel (ldmo…) regardless of announce order', async () => {
+    // Whether Console announces first or not, Send resolves to its own id.
+    const channel = installMockCanton({ announceId: SEND_KERNEL_ID }); // ldmo…
+    await expect(adapter.detectInstalled()).resolves.toMatchObject({ installed: true });
+    await adapter.connect(ctx);
+    expect(channel.request).toHaveBeenCalledWith({ method: 'connect' });
   });
 
   it('signMessage / submitTransaction / ledgerApi all throw when Send does not announce', async () => {

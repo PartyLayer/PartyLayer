@@ -35,7 +35,13 @@ import {
 } from '@partylayer/core';
 import { RegistryClient } from '@partylayer/registry-client';
 import type { RegistryStatus } from '@partylayer/registry-client';
-import { createProviderBridge } from '@partylayer/provider';
+import {
+  createProviderBridge,
+  createExtensionChannelProvider,
+  discoverProviders,
+} from '@partylayer/provider';
+import { findMatchingWalletInfo } from '@partylayer/core';
+import { GenericAnnounceAdapter } from './announce-adapter';
 import {
   DEFAULT_REGISTRY_URL,
   type PartyLayerConfig,
@@ -88,6 +94,8 @@ export class PartyLayerClient {
   private crypto: import('@partylayer/core').CryptoAdapter;
   private storage: import('@partylayer/core').StorageAdapter;
   private telemetry?: import('@partylayer/core').TelemetryAdapter;
+  /** Cached announce-discovery picker entries (one-shot; cleared by refreshDiscovery). */
+  private announceEntriesCache: WalletInfo[] | null = null;
   private origin: string;
 
   constructor(config: PartyLayerConfig) {
@@ -229,6 +237,11 @@ export class PartyLayerClient {
       } as WalletInfo);
     }
 
+    // A2: aggregate canton:announceProvider wallets (announce ∪ namespace scan),
+    // bridging known ids to existing entries and surfacing unknown ids as
+    // dynamic, target-scoped entries. No-op (byte-identical) with zero announcers.
+    registryWallets = await this.aggregateAnnouncedWallets(registryWallets);
+
     // Filter by capabilities
     if (filter?.requiredCapabilities) {
       return registryWallets.filter((walletInfo) =>
@@ -244,6 +257,95 @@ export class PartyLayerClient {
     }
 
     return registryWallets;
+  }
+
+  /**
+   * Whether announce discovery is active: explicit `discovery.announce`, else
+   * ON in the browser and OFF under SSR (no `window`). Canonical: provider.md.
+   */
+  private get announceEnabled(): boolean {
+    if (typeof window === 'undefined') return false;
+    return this.config.discovery?.announce ?? true;
+  }
+
+  /**
+   * Clear the cached announce round-trip so the next `listWallets()` re-runs the
+   * `canton:requestProvider` handshake (e.g. after a wallet is installed).
+   */
+  refreshDiscovery(): void {
+    this.announceEntriesCache = null;
+  }
+
+  /**
+   * Aggregate `canton:announceProvider` wallets into the picker list (A2).
+   *
+   * One-shot cached per client (refresh via {@link refreshDiscovery}); SSR-skipped.
+   * For each discovered provider (announce ∪ `window.canton` scan, deduped):
+   *   - if its id matches a known wallet's `providerDetection` (provider.id) it
+   *     IS that wallet — no new entry (identity bridge: Console's `lpnf…` → the
+   *     `console` entry, Send's `ldmo…` → the `send` entry);
+   *   - otherwise it is surfaced as a dynamic `browser:ext:<id>` entry routed to
+   *     its own extension `target`, with a {@link GenericAnnounceAdapter}
+   *     registered so a click connects through that target ONLY (no shared slot).
+   * With zero announcers this returns `base` unchanged.
+   */
+  private async aggregateAnnouncedWallets(base: WalletInfo[]): Promise<WalletInfo[]> {
+    if (!this.announceEnabled) return base;
+
+    if (this.announceEntriesCache === null) {
+      try {
+        const discovered = await discoverProviders({
+          timeoutMs: this.config.discovery?.announceTimeoutMs,
+          // Working provider over the announce target channel; G4 (provider.md):
+          // target defaults to id when omitted — never a shared slot.
+          createProvider: (a) =>
+            createExtensionChannelProvider({ target: a.target ?? a.id }),
+        });
+
+        const entries: WalletInfo[] = [];
+        for (const d of discovered) {
+          // Identity bridge: does a known wallet claim this provider id?
+          const known = findMatchingWalletInfo(
+            { provider: { id: d.id } } as unknown as Parameters<
+              typeof findMatchingWalletInfo
+            >[0],
+            base,
+          );
+          if (known) continue; // known wallet → existing entry/adapter; no dup
+
+          // Unknown announced wallet → dynamic, target-scoped entry + adapter.
+          const adapter = new GenericAnnounceAdapter({
+            announceId: d.id,
+            name: d.name,
+            icon: d.icon,
+            provider: d.provider,
+          });
+          this.adapters.set(adapter.walletId, adapter);
+          entries.push({
+            walletId: adapter.walletId,
+            name: adapter.name,
+            website: '',
+            icons: d.icon ? { sm: d.icon, md: d.icon, lg: d.icon } : {},
+            capabilities: adapter.getCapabilities(),
+            adapter: { packageName: 'announced', versionRange: '*' },
+            docs: [],
+            networks: [this.config.network || 'devnet'],
+            channel: 'stable',
+          } as WalletInfo);
+        }
+        this.announceEntriesCache = entries;
+      } catch {
+        // Discovery failure must never block listing the registry/adapters.
+        this.announceEntriesCache = [];
+      }
+    }
+
+    if (this.announceEntriesCache.length === 0) return base;
+    const ids = new Set(base.map((w) => String(w.walletId)));
+    return [
+      ...base,
+      ...this.announceEntriesCache.filter((w) => !ids.has(String(w.walletId))),
+    ];
   }
 
   /** Active network-enforcement policy (default 'guard'). */
