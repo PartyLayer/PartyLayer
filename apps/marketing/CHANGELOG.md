@@ -1,5 +1,16 @@
 # @partylayer/marketing
 
+## 0.1.3
+
+### Patch Changes
+
+- Updated dependencies [27e5b68]
+- Updated dependencies [27e5b68]
+- Updated dependencies [76972de]
+  - @partylayer/sdk@0.7.0
+  - @partylayer/adapter-send@1.1.1
+  - @partylayer/react@0.6.1
+
 ## 0.1.2
 
 ### Patch Changes
