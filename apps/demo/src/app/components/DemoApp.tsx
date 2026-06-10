@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import {
   useWallets,
-  useSession,
+  useClientSession,
   useConnect,
   useDisconnect,
   useSignMessage,
@@ -14,7 +14,7 @@ import { useTelemetry } from '../context/TelemetryContext';
 
 export function DemoApp() {
   const { wallets, isLoading: walletsLoading } = useWallets();
-  const session = useSession();
+  const session = useClientSession();
   const { isConnecting, error: connectError } = useConnect();
   const { disconnect, isDisconnecting } = useDisconnect();
   const { signMessage, isSigning, error: signError } = useSignMessage();

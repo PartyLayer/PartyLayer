@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { PartyLayerProvider, useSession, useConnect, useDisconnect, useLedgerApi } from '@partylayer/react';
+import { PartyLayerProvider, useClientSession, useConnect, useDisconnect, useLedgerApi } from '@partylayer/react';
 import { createPartyLayer } from '@partylayer/sdk';
 import type { PartyLayerClient } from '@partylayer/sdk';
 
@@ -14,7 +14,7 @@ import type { PartyLayerClient } from '@partylayer/sdk';
 const DEFAULT_TEMPLATE_ID = '#splice-amulet:Splice.Amulet:Amulet';
 
 function WalletBalance() {
-  const session = useSession();
+  const session = useClientSession();
   const { connect, isConnecting } = useConnect();
   const { disconnect } = useDisconnect();
   const { ledgerApi, isLoading, error } = useLedgerApi();

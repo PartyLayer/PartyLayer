@@ -1,8 +1,8 @@
-import { useSession, useDisconnect } from '@partylayer/react';
+import { useClientSession, useDisconnect } from '@partylayer/react';
 import './SessionInfo.css';
 
 function SessionInfo() {
-  const session = useSession();
+  const session = useClientSession();
   const { disconnect, isDisconnecting } = useDisconnect();
 
   if (!session) {

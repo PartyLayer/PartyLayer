@@ -4,7 +4,7 @@ import { useState, useEffect, createContext, useContext } from 'react';
 import {
   PartyLayerKit,
   ConnectButton,
-  useSession,
+  useClientSession,
   useWallets,
   useSignMessage,
   usePartyLayer,
@@ -110,7 +110,7 @@ function DemoContent() {
   const bp = useBreakpoint();
   const c = useTokens();
   const shadow = c.shadow;
-  const session = useSession();
+  const session = useClientSession();
   const { wallets, isLoading } = useWallets();
   const { signMessage, isSigning, error: signError } = useSignMessage();
   const client = usePartyLayer();

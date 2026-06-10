@@ -1,0 +1,5 @@
+{
+  "//": "App-graph typecheck mirroring `next build` (M1-S4 gate-gap closure). Excludes Playwright e2e specs (compiled by Playwright's own pipeline, not Next) so the gate catches app-code type errors like the DemoApp.tsx useSession regression.",
+  "extends": "./tsconfig.json",
+  "exclude": ["node_modules", "e2e", "playwright.config.ts"]
+}
