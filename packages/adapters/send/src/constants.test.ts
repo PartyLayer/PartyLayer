@@ -54,22 +54,35 @@ describe('SEND_BUILTIN_DETECTION', () => {
 });
 
 describe('Send extension ID exports', () => {
-  it('SEND_KERNEL_ID still resolves to the legacy extension ID (deprecated alias)', () => {
+  // A2 incident correction: live diagnostics + Console Wallet's own extension
+  // source proved `lpnf…` is CONSOLE's id, not Send's. Send's real id is `ldmo…`.
+  const CONSOLE_EXTENSION_ID = 'lpnfhpbpmlobjlgkdmnjieeihjmihhjd';
+
+  it('SEND_KERNEL_ID still resolves to the (deprecated) alias', () => {
     expect(SEND_KERNEL_ID).toBe(SEND_LEGACY_EXTENSION_ID);
   });
 
-  it('SEND_KNOWN_EXTENSION_IDS contains both production and legacy', () => {
-    expect(SEND_KNOWN_EXTENSION_IDS).toEqual([
-      SEND_PRODUCTION_EXTENSION_ID,
-      SEND_LEGACY_EXTENSION_ID,
-    ]);
+  it('SEND_KNOWN_EXTENSION_IDS is Send\'s id only (Console\'s id removed)', () => {
+    expect(SEND_KNOWN_EXTENSION_IDS).toEqual([SEND_PRODUCTION_EXTENSION_ID]);
   });
 
-  it('production and legacy IDs are distinct', () => {
-    expect(SEND_PRODUCTION_EXTENSION_ID).not.toBe(SEND_LEGACY_EXTENSION_ID);
+  it('production ID is the verified Send extension id', () => {
+    expect(SEND_PRODUCTION_EXTENSION_ID).toBe('ldmohiccoioolenadmogclhoklmanpgi');
   });
 
-  it('production ID matches the observed runtime value', () => {
-    expect(SEND_PRODUCTION_EXTENSION_ID).toBe('lpnfhpbpmlobjlgkdmnjieeihjmihhjd');
+  it('legacy alias now equals production (no distinct legacy Send build exists)', () => {
+    expect(SEND_LEGACY_EXTENSION_ID).toBe(SEND_PRODUCTION_EXTENSION_ID);
+  });
+
+  // ── Cross-wallet guard (the original-swap regression) ─────────────────────
+  it('NO Send constant or matcher contains Console\'s extension id', () => {
+    expect(SEND_KNOWN_EXTENSION_IDS as readonly string[]).not.toContain(CONSOLE_EXTENSION_ID);
+    expect(SEND_PRODUCTION_EXTENSION_ID).not.toBe(CONSOLE_EXTENSION_ID);
+    expect(SEND_LEGACY_EXTENSION_ID).not.toBe(CONSOLE_EXTENSION_ID);
+    expect(SEND_KERNEL_ID).not.toBe(CONSOLE_EXTENSION_ID);
+    for (const m of SEND_BUILTIN_DETECTION.matchers) {
+      if ('values' in m) expect(m.values).not.toContain(CONSOLE_EXTENSION_ID);
+      if ('value' in m) expect(m.value).not.toBe(CONSOLE_EXTENSION_ID);
+    }
   });
 });

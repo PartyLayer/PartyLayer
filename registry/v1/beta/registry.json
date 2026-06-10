@@ -30,6 +30,12 @@
         "windowProperty": "consoleWallet"
       },
       "sdkVersion": ">=0.1.0",
+      "providerDetection": {
+        "transport": "window.canton",
+        "matchers": [
+          { "field": "provider.id", "match": "exact", "values": ["lpnfhpbpmlobjlgkdmnjieeihjmihhjd"] }
+        ]
+      },
       "cip0103": {
         "native": true,
         "evidence": "https://www.npmjs.com/package/@console-wallet/dapp-sdk",

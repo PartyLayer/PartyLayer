@@ -25,6 +25,11 @@ import {
   TxReceipt,
   LedgerApiParams,
   LedgerApiResult,
+  CIP0103Provider,
+  CapabilityKey,
+  AdapterDetectResult,
+  AdapterContext,
+  AdapterConnectResult,
 } from '@partylayer/core';
 export {
   AdapterConnectResult,
@@ -257,6 +262,28 @@ interface PartyLayerConfig {
   /** Registry public keys for signature verification (ed25519) */
   registryPublicKeys?: string[];
   /**
+   * EIP-6963-style announce discovery — the canonical Canton provider contract
+   * (`canton:requestProvider` → `canton:announceProvider`, see provider.md).
+   *
+   * When enabled, `listWallets()` aggregates announced CIP-0103 wallets with
+   * the `window.canton` namespace scan, the registry, and registered adapters:
+   *   - an announced id matching a registered/registry wallet's
+   *     `providerDetection` (provider.id) maps to that adapter — NO duplicate
+   *     picker entry (e.g. Console's announce `lpnf…` → the Console adapter);
+   *   - an UNKNOWN announced id surfaces as a dynamic entry routed to its own
+   *     extension `target` (collision-proof; future announce-capable wallets
+   *     appear with zero code changes).
+   *
+   * Default ON in the browser; ALWAYS skipped under SSR (`typeof window` guard).
+   * With zero announcers, `listWallets()` output is byte-identical to before.
+   */
+  discovery?: {
+    /** Aggregate `canton:announceProvider` wallets. @default true (in browser) */
+    announce?: boolean;
+    /** Announce-collection window in ms. @default 300 (canonical ~300ms) */
+    announceTimeoutMs?: number;
+  };
+  /**
    * Telemetry configuration or adapter
    *
    * Can be either:
@@ -422,6 +449,8 @@ declare class PartyLayerClient {
   private crypto;
   private storage;
   private telemetry?;
+  /** Cached announce-discovery picker entries (one-shot; cleared by refreshDiscovery). */
+  private announceEntriesCache;
   private origin;
   constructor(config: PartyLayerConfig);
   /**
@@ -452,6 +481,30 @@ declare class PartyLayerClient {
    * List available wallets
    */
   listWallets(filter?: WalletFilter): Promise<WalletInfo[]>;
+  /**
+   * Whether announce discovery is active: explicit `discovery.announce`, else
+   * ON in the browser and OFF under SSR (no `window`). Canonical: provider.md.
+   */
+  private get announceEnabled();
+  /**
+   * Clear the cached announce round-trip so the next `listWallets()` re-runs the
+   * `canton:requestProvider` handshake (e.g. after a wallet is installed).
+   */
+  refreshDiscovery(): void;
+  /**
+   * Aggregate `canton:announceProvider` wallets into the picker list (A2).
+   *
+   * One-shot cached per client (refresh via {@link refreshDiscovery}); SSR-skipped.
+   * For each discovered provider (announce ∪ `window.canton` scan, deduped):
+   *   - if its id matches a known wallet's `providerDetection` (provider.id) it
+   *     IS that wallet — no new entry (identity bridge: Console's `lpnf…` → the
+   *     `console` entry, Send's `ldmo…` → the `send` entry);
+   *   - otherwise it is surfaced as a dynamic `browser:ext:<id>` entry routed to
+   *     its own extension `target`, with a {@link GenericAnnounceAdapter}
+   *     registered so a click connects through that target ONLY (no shared slot).
+   * With zero announcers this returns `base` unchanged.
+   */
+  private aggregateAnnouncedWallets;
   /** Active network-enforcement policy (default 'guard'). */
   private get enforcement();
   /**
@@ -575,6 +628,67 @@ declare class PartyLayerClient {
 declare function createPartyLayer(config: PartyLayerConfig): PartyLayerClient;
 
 /**
+ * Dynamic adapter for an announced CIP-0103 wallet that has no first-party
+ * PartyLayer adapter.
+ *
+ * Canonical contract (provider.md): after `canton:requestProvider`, wallets
+ * announce `{ id, name?, icon?, target? }`; "the SDK … registers one adapter
+ * per id with providerId `browser:ext:<id>`". This adapter is that registration
+ * for the UNKNOWN case — it delegates every call to a `CIP0103Provider` bound to
+ * the wallet's own extension `target` channel (built by
+ * `createExtensionChannelProvider({ target: announced.target ?? announced.id })`).
+ * Because the channel is target-scoped, a click on this entry can ONLY ever
+ * reach the wallet that announced it — never a shared `window.canton` slot or
+ * another wallet (the A2 collision guarantee), and future announce-capable
+ * Canton wallets light up with zero code changes.
+ *
+ * KNOWN wallets (Console, Send, …) never use this class — the SDK's identity
+ * bridge maps their announce id to their existing adapter via `providerDetection`.
+ */
+
+/** Canonical providerId prefix for an announced extension (provider.md: `browser:ext:<id>`). */
+declare const ANNOUNCED_WALLET_ID_PREFIX = 'browser:ext:';
+/** Build the canonical SDK walletId for an announced extension id. */
+declare function announcedWalletId(announceId: string): WalletId;
+interface GenericAnnounceAdapterArgs {
+  /** The announced extension id (== announce `detail.id`). */
+  announceId: string;
+  /** Display name from the announce detail (falls back to a derived label). */
+  name?: string;
+  /** Icon (data: URI or URL) from the announce detail. */
+  icon?: string;
+  /** Target-scoped CIP-0103 provider built from the announce (the discovery result). */
+  provider: CIP0103Provider;
+}
+declare class GenericAnnounceAdapter implements WalletAdapter {
+  readonly walletId: WalletId;
+  readonly name: string;
+  /** Icon surfaced to the picker (announce detail). */
+  readonly icon?: string;
+  private readonly provider;
+  constructor(args: GenericAnnounceAdapterArgs);
+  /** Baseline CIP-0103 capabilities every announced wallet must implement. */
+  getCapabilities(): CapabilityKey[];
+  /**
+   * The adapter is only ever constructed for a wallet that just announced, so
+   * its presence is established by the announce handshake itself.
+   */
+  detectInstalled(): Promise<AdapterDetectResult>;
+  connect(ctx: AdapterContext): Promise<AdapterConnectResult>;
+  disconnect(): Promise<void>;
+  signMessage(
+    _ctx: AdapterContext,
+    _session: Session,
+    params: SignMessageParams
+  ): Promise<SignedMessage>;
+  submitTransaction(
+    _ctx: AdapterContext,
+    _session: Session,
+    params: SubmitTransactionParams
+  ): Promise<TxReceipt>;
+}
+
+/**
  * Built-in wallet adapters
  *
  * These adapters are automatically registered when creating a PartyLayer client.
@@ -695,6 +809,7 @@ declare function createTelemetryAdapter(
 ): TelemetryAdapter | undefined;
 
 export {
+  ANNOUNCED_WALLET_ID_PREFIX,
   type AdapterClass,
   PartyLayerClient as CantonConnectClient,
   type PartyLayerConfig as CantonConnectConfig,
@@ -703,6 +818,8 @@ export {
   DEFAULT_REGISTRY_URL,
   type ErrorEvent,
   type EventHandler,
+  GenericAnnounceAdapter,
+  type GenericAnnounceAdapterArgs,
   MetricsTelemetryAdapter,
   PartyLayerClient,
   type PartyLayerConfig,
@@ -715,6 +832,7 @@ export {
   type TxStatusEvent,
   type WalletFilter,
   PartyLayerClient as _PartyLayerClientInternal,
+  announcedWalletId,
   createPartyLayer as createCantonConnect,
   createPartyLayer,
   createTelemetryAdapter,

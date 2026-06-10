@@ -14,7 +14,7 @@
  * exact "Send missed today" production bug.
  */
 
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { CIP0103Provider } from '@partylayer/core';
 import {
   discoverAnnouncedProviders,
@@ -23,6 +23,25 @@ import {
   isCIP0103Provider,
   type AnnouncedWallet,
 } from '../discovery';
+
+// Capture the `target` the DEFAULT announce→provider factory routes to.
+// (The existing tests inject `createProvider` and never hit the real factory,
+// so mocking extension-channel here only affects the G4 default-factory tests.)
+vi.mock('../extension-channel', () => ({
+  createExtensionChannelProvider: vi.fn((opts?: { target?: string }) => ({
+    __target: opts?.target,
+    request: async () => ({}),
+    on() {
+      return this;
+    },
+    emit() {
+      return true;
+    },
+    removeListener() {
+      return this;
+    },
+  })),
+}));
 
 const REQUEST_EVENT = 'canton:requestProvider';
 const ANNOUNCE_EVENT = 'canton:announceProvider';
@@ -273,5 +292,30 @@ describe('discoverProviders — live Console/Send reality', () => {
     const result = await discoverProviders({ timeoutMs: 0, createProvider: resolveMock });
     const entries = result.filter((r) => r.id === 'canton');
     expect(entries).toHaveLength(1);
+  });
+});
+
+describe('G4 — default factory routes target ?? id (canonical provider.md)', () => {
+  it('an announce WITHOUT target routes its provider to the announce id', async () => {
+    const stop = mockExtension([{ id: 'wallet-no-target', name: 'NoTarget' }]);
+    // No createProvider override → exercises defaultAnnounceProvider.
+    const res = await discoverAnnouncedProviders({ timeoutMs: 0 });
+    stop();
+    expect(res).toHaveLength(1);
+    // target defaulted to id (never a shared/undefined slot).
+    expect((res[0].provider as unknown as { __target?: string }).__target).toBe(
+      'wallet-no-target',
+    );
+  });
+
+  it('an announce WITH an explicit target routes to that target', async () => {
+    const stop = mockExtension([
+      { id: 'wallet-y', name: 'Y', target: 'y-channel' },
+    ]);
+    const res = await discoverAnnouncedProviders({ timeoutMs: 0 });
+    stop();
+    expect((res[0].provider as unknown as { __target?: string }).__target).toBe(
+      'y-channel',
+    );
   });
 });

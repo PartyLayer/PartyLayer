@@ -148,7 +148,29 @@ export interface PartyLayerConfig {
   crypto?: CryptoAdapter;
   /** Registry public keys for signature verification (ed25519) */
   registryPublicKeys?: string[];
-  /** 
+  /**
+   * EIP-6963-style announce discovery — the canonical Canton provider contract
+   * (`canton:requestProvider` → `canton:announceProvider`, see provider.md).
+   *
+   * When enabled, `listWallets()` aggregates announced CIP-0103 wallets with
+   * the `window.canton` namespace scan, the registry, and registered adapters:
+   *   - an announced id matching a registered/registry wallet's
+   *     `providerDetection` (provider.id) maps to that adapter — NO duplicate
+   *     picker entry (e.g. Console's announce `lpnf…` → the Console adapter);
+   *   - an UNKNOWN announced id surfaces as a dynamic entry routed to its own
+   *     extension `target` (collision-proof; future announce-capable wallets
+   *     appear with zero code changes).
+   *
+   * Default ON in the browser; ALWAYS skipped under SSR (`typeof window` guard).
+   * With zero announcers, `listWallets()` output is byte-identical to before.
+   */
+  discovery?: {
+    /** Aggregate `canton:announceProvider` wallets. @default true (in browser) */
+    announce?: boolean;
+    /** Announce-collection window in ms. @default 300 (canonical ~300ms) */
+    announceTimeoutMs?: number;
+  };
+  /**
    * Telemetry configuration or adapter
    * 
    * Can be either:

@@ -216,7 +216,10 @@ export interface AnnounceDiscoveryOptions {
  * the splice-wallet postMessage `target` channel (no external dependency).
  */
 function defaultAnnounceProvider(announced: AnnouncedWallet): CIP0103Provider {
-  return createExtensionChannelProvider({ target: announced.target });
+  // Canonical contract (provider.md): `target` defaults to `id` when omitted —
+  // an announce with no explicit target still routes to the announcing wallet's
+  // own channel, never a shared/last-one-wins slot.
+  return createExtensionChannelProvider({ target: announced.target ?? announced.id });
 }
 
 /**
