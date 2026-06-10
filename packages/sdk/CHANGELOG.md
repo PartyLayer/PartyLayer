@@ -1,5 +1,39 @@
 # @partylayer/sdk
 
+## 0.7.0
+
+### Minor Changes
+
+- 27e5b68: A2: SDK-level announce discovery. `listWallets()` now aggregates
+  `canton:announceProvider` wallets (EIP-6963-style, provider.md) with the
+  `window.canton` namespace scan, the registry, and registered adapters:
+  - a known announced id (matching a wallet's `providerDetection` provider.id)
+    maps to that adapter — no duplicate picker entry (identity bridge);
+  - an UNKNOWN announced id is surfaced as a dynamic `browser:ext:<id>` entry
+    routed to its own extension `target` via the new `GenericAnnounceAdapter`, so
+    future announce-capable Canton wallets appear and route with zero code changes.
+
+  Gated by `discovery: { announce?: boolean }` (default ON in the browser, always
+  skipped under SSR); one-shot cached with a `client.refreshDiscovery()` hook. With
+  zero announcers, `listWallets()` output is unchanged. New exports:
+  `GenericAnnounceAdapter`, `announcedWalletId`, `ANNOUNCED_WALLET_ID_PREFIX`.
+
+### Patch Changes
+
+- 76972de: A2.1: `listWallets()` aggregation now drops injected discovery entries whose
+  identity is UNRESOLVED (`identityResolved === false`) instead of synthesizing a
+  dynamic `browser:ext:<path-id>` entry. This removes the phantom "Canton Wallet"
+  (`browser:ext:canton`) that appeared when Console's bare `window.canton` slot
+  exposed no id and its `status()` probe didn't resolve one — the entry's provider
+  was the slot itself, so clicking it opened Console. The slot's real wallet is
+  represented by its resolved announce entry (bridged to its adapter) instead.
+  Correctness is independent of probe timing.
+- Updated dependencies [27e5b68]
+- Updated dependencies [27e5b68]
+- Updated dependencies [76972de]
+  - @partylayer/provider@0.2.2
+  - @partylayer/adapter-send@1.1.1
+
 ## 0.6.0
 
 ### Minor Changes
