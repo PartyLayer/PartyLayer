@@ -304,6 +304,14 @@ export class PartyLayerClient {
 
         const entries: WalletInfo[] = [];
         for (const d of discovered) {
+          // A2.1: an injected entry whose IDENTITY is UNRESOLVED (it fell back
+          // to the discovery-path id, e.g. an identity-less bare `window.canton`
+          // slot) must NEVER synthesize a picker entry — that produced the live
+          // phantom "Canton Wallet" (browser:ext:canton) whose provider was the
+          // slot itself (clicking it opened Console). A resolvable/announced
+          // wallet represents that slot instead. Correctness is independent of
+          // the status() probe timing.
+          if (d.identityResolved === false) continue;
           // Identity bridge: does a known wallet claim this provider id?
           const known = findMatchingWalletInfo(
             { provider: { id: d.id } } as unknown as Parameters<

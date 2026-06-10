@@ -67,6 +67,24 @@ interface DiscoveredProvider {
   name?: string;
   /** Icon (data: URI or URL) — populated for announce-discovered wallets. */
   icon?: string;
+  /**
+   * Whether this entry's STABLE IDENTITY was resolved (additive; A2.1).
+   *
+   * - announce-discovered entries: always `true` — the announce `id` IS the
+   *   wallet's real extension id (canonical provider.md: announce is the
+   *   discovery path).
+   * - injected (`window.canton` scan) entries: `true` only when a sync
+   *   `provider.id` or a `status().provider.id` probe yielded a real id;
+   *   `false` when discovery fell back to the path id (an identity-LESS bare
+   *   slot, e.g. Console's `{request,on,emit,removeListener,source}` with no id).
+   *
+   * LIVE INCIDENT (partylayer.xyz post-A2): an identity-less bare slot resolved
+   * to the path id `'canton'`; downstream that synthesized a phantom "Canton
+   * Wallet" (`browser:ext:canton`) picker entry whose provider was the slot
+   * itself. Consumers MUST drop unresolved injected entries rather than list
+   * them — correctness must not depend on probe timing.
+   */
+  identityResolved?: boolean;
 }
 /**
  * Check if an object implements the CIP-0103 Provider interface.

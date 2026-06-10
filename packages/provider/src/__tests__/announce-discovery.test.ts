@@ -164,8 +164,10 @@ describe('discoverProviders — dedup + no-regression', () => {
     );
     expect(consoleEntries).toHaveLength(1); // collapsed to one canonical provider
     expect(isCIP0103Provider(consoleEntries[0].provider)).toBe(true);
-    // window.canton instance wins the dedup (discovery-path id is "canton").
-    expect(consoleEntries[0].id).toBe('canton');
+    // A2.1: a RESOLVED injected entry carries its REAL provider id (not the
+    // 'canton' scan path id), so the SDK bridge can match it.
+    expect(consoleEntries[0].id).toBe('console-id');
+    expect(consoleEntries[0].identityResolved).toBe(true);
   });
 
   it('a window.canton-owning wallet that does NOT announce still appears once', async () => {
@@ -254,7 +256,8 @@ describe('discoverProviders — live Console/Send reality', () => {
     );
     expect(consoleEntries).toHaveLength(1); // not twice
     // The kept entry is the direct window.canton provider, not the announce shim.
-    expect(consoleEntries[0].id).toBe('canton');
+    // A2.1: its id is the RESOLVED status id ('lpnf'), not the 'canton' path id.
+    expect(consoleEntries[0].id).toBe('lpnf');
     expect(consoleEntries[0].provider).toBe(injected);
   });
 
@@ -290,8 +293,10 @@ describe('discoverProviders — live Console/Send reality', () => {
   it('a window.canton owner with no id and no announce still appears exactly once', async () => {
     setWindowCanton(consoleLikeInjected('solo'));
     const result = await discoverProviders({ timeoutMs: 0, createProvider: resolveMock });
-    const entries = result.filter((r) => r.id === 'canton');
+    // A2.1: keyed by its RESOLVED status id ('solo'), not the 'canton' path id.
+    const entries = result.filter((r) => r.id === 'solo');
     expect(entries).toHaveLength(1);
+    expect(entries[0].identityResolved).toBe(true);
   });
 });
 
@@ -317,5 +322,58 @@ describe('G4 — default factory routes target ?? id (canonical provider.md)', (
     expect((res[0].provider as unknown as { __target?: string }).__target).toBe(
       'y-channel',
     );
+  });
+});
+
+// ── A2.1: identityResolved flag on discoverProviders entries ──────────────────
+
+/** Bare slot: no sync id, status() resolves with NO provider.id (fast, unresolved). */
+function barSlotNoIdentity(): CIP0103Provider {
+  const p = {
+    source: 'bareSlot',
+    request: async () => ({}), // status() → {} → no provider.id
+    on() {
+      return p;
+    },
+    emit() {
+      return true;
+    },
+    removeListener() {
+      return p;
+    },
+  };
+  return p as unknown as CIP0103Provider;
+}
+
+describe('A2.1 — identityResolved on discoverProviders entries', () => {
+  it('injected slot with a SYNC provider.id → identityResolved true (id = real id)', async () => {
+    setWindowCanton(mockProvider('sync-id'));
+    const result = await discoverProviders({ timeoutMs: 0, createProvider: resolveMock });
+    const entry = result.find((r) => r.id === 'sync-id')!; // rewritten to the real id
+    expect(entry.identityResolved).toBe(true);
+    expect(result.some((r) => r.id === 'canton')).toBe(false); // path id never surfaces
+  });
+
+  it('identity-less slot whose status() yields an id → identityResolved true (id = real id)', async () => {
+    setWindowCanton(consoleLikeInjected('lpnf'));
+    const result = await discoverProviders({ timeoutMs: 0, createProvider: resolveMock });
+    const entry = result.find((r) => r.id === 'lpnf')!; // rewritten to the status id
+    expect(entry.identityResolved).toBe(true);
+    expect(result.some((r) => r.id === 'canton')).toBe(false);
+  });
+
+  it('identity-LESS bare slot (no id, no status id) → identityResolved FALSE (the phantom source)', async () => {
+    setWindowCanton(barSlotNoIdentity());
+    const result = await discoverProviders({ timeoutMs: 0, createProvider: resolveMock });
+    const entry = result.find((r) => r.id === 'canton')!;
+    expect(entry.identityResolved).toBe(false);
+  });
+
+  it('announce-discovered entries are ALWAYS identityResolved (announce id is the real id)', async () => {
+    const stop = mockExtension([{ id: 'announced-x', name: 'X', target: 'announced-x' }]);
+    const result = await discoverProviders({ timeoutMs: 0, createProvider: resolveMock });
+    stop();
+    const a = result.find((r) => r.id === 'announced-x');
+    expect(a?.identityResolved).toBe(true);
   });
 });

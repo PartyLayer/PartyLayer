@@ -25,6 +25,24 @@ export interface DiscoveredProvider {
   name?: string;
   /** Icon (data: URI or URL) — populated for announce-discovered wallets. */
   icon?: string;
+  /**
+   * Whether this entry's STABLE IDENTITY was resolved (additive; A2.1).
+   *
+   * - announce-discovered entries: always `true` — the announce `id` IS the
+   *   wallet's real extension id (canonical provider.md: announce is the
+   *   discovery path).
+   * - injected (`window.canton` scan) entries: `true` only when a sync
+   *   `provider.id` or a `status().provider.id` probe yielded a real id;
+   *   `false` when discovery fell back to the path id (an identity-LESS bare
+   *   slot, e.g. Console's `{request,on,emit,removeListener,source}` with no id).
+   *
+   * LIVE INCIDENT (partylayer.xyz post-A2): an identity-less bare slot resolved
+   * to the path id `'canton'`; downstream that synthesized a phantom "Canton
+   * Wallet" (`browser:ext:canton`) picker entry whose provider was the slot
+   * itself. Consumers MUST drop unresolved injected entries rather than list
+   * them — correctness must not depend on probe timing.
+   */
+  identityResolved?: boolean;
 }
 
 // ─── Well-known injection paths ─────────────────────────────────────────────
@@ -311,9 +329,11 @@ function raceTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
  *      injected provider can NEVER block discovery;
  *   3. else fall back to the discovery-path id.
  */
-async function resolveInjectedKey(d: DiscoveredProvider): Promise<string> {
+async function resolveInjectedKey(
+  d: DiscoveredProvider,
+): Promise<{ key: string; resolved: boolean }> {
   const sync = (d.provider as unknown as { id?: unknown }).id;
-  if (typeof sync === 'string' && sync.length > 0) return sync;
+  if (typeof sync === 'string' && sync.length > 0) return { key: sync, resolved: true };
 
   try {
     const status = await raceTimeout(
@@ -321,11 +341,12 @@ async function resolveInjectedKey(d: DiscoveredProvider): Promise<string> {
       INJECTED_ID_PROBE_TIMEOUT_MS,
     );
     const pid = status?.provider?.id;
-    if (typeof pid === 'string' && pid.length > 0) return pid;
+    if (typeof pid === 'string' && pid.length > 0) return { key: pid, resolved: true };
   } catch {
-    // timeout / throw / non-responsive → fall back to the path id
+    // timeout / throw / non-responsive → fall back to the path id (UNRESOLVED)
   }
-  return d.id;
+  // A2.1: identity-less bare slot — keyed by the path id, but NOT a real identity.
+  return { key: d.id, resolved: false };
 }
 
 /**
@@ -358,18 +379,26 @@ export async function discoverProviders(
   const seen = new Set<string>();
 
   // INJECTED first — the direct window.canton provider wins on duplicate ids.
+  // A2.1: tag identityResolved so consumers can drop identity-less bare slots
+  // (which keyed to the path id) instead of synthesizing a phantom entry.
   injected.forEach((d, i) => {
-    const key = injectedKeys[i];
+    const { key, resolved } = injectedKeys[i];
     if (seen.has(key)) return;
     seen.add(key);
-    out.push(d);
+    // A2.1: when identity RESOLVED, the entry's `id` IS that real provider id —
+    // so the SDK identity-bridge matches the right wallet (e.g. Console's bare
+    // slot status() → "lpnf…" → bridges to console) instead of the discovery
+    // PATH id ("canton") which matches nothing and synthesized the phantom.
+    // When UNRESOLVED it keeps the path id and is flagged so consumers drop it.
+    out.push({ ...d, id: resolved ? key : d.id, identityResolved: resolved });
   });
 
   // ANNOUNCE entries keyed by their own id (no status probe → offline-safe).
+  // The announce id IS the wallet's real identity (provider.md), so resolved.
   for (const d of announcedResults) {
     if (seen.has(d.id)) continue;
     seen.add(d.id);
-    out.push(d);
+    out.push({ ...d, identityResolved: true });
   }
 
   return out;

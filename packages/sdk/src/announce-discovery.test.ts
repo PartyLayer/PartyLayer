@@ -143,6 +143,42 @@ describe('A2 SDK aggregation — listWallets', () => {
   });
 });
 
+describe('A2.1 — identity-less bare slot must NOT synthesize a phantom entry', () => {
+  // Live incident (partylayer.xyz post-A2): Console's bare window.canton slot
+  // exposes no provider.id and its status() probe yields none, so discovery's
+  // injected key falls back to the path id 'canton' (identityResolved=false).
+  // It must NOT become a "Canton Wallet" (browser:ext:canton) picker entry whose
+  // provider is the slot itself (clicking it opens Console). It is dropped;
+  // Console is represented by its resolved announce entry (lpnf…) → the console
+  // adapter via the bridge.
+  it('identity-less bare slot + Console announce ⇒ exactly ONE console entry, zero browser:ext:canton', async () => {
+    discoverMock.mockResolvedValue([
+      { id: 'canton', provider: recorder(), source: 'injected', name: 'Canton Wallet', identityResolved: false },
+      { id: CONSOLE_ID, provider: recorder(), source: 'injected', name: 'Console Wallet', identityResolved: true },
+    ]);
+    const wallets = await makeClient().listWallets({ includeExperimental: true });
+    const ids = wallets.map((w) => String(w.walletId));
+    expect(ids).not.toContain('browser:ext:canton'); // the phantom
+    expect(ids.filter((id) => id === 'console')).toHaveLength(1);
+  });
+
+  it('identity-less bare slot ALONE ⇒ zero generic entries (pre-A2 parity)', async () => {
+    discoverMock.mockResolvedValue([
+      { id: 'canton', provider: recorder(), source: 'injected', name: 'Canton Wallet', identityResolved: false },
+    ]);
+    const wallets = await makeClient().listWallets({ includeExperimental: true });
+    expect(wallets.map((w) => String(w.walletId))).toEqual(['console']); // only the registry console entry
+  });
+
+  it('a RESOLVED unknown injected entry still becomes a dynamic entry (unchanged)', async () => {
+    discoverMock.mockResolvedValue([
+      { id: 'resolvedwallet', provider: recorder(), source: 'injected', name: 'Resolved', identityResolved: true },
+    ]);
+    const ids = (await makeClient().listWallets({ includeExperimental: true })).map((w) => String(w.walletId));
+    expect(ids).toContain('browser:ext:resolvedwallet');
+  });
+});
+
 describe('A2 per-click target isolation (the collision itself)', () => {
   it('two announcers + a foreign slot occupant: each click reaches ONLY its own wallet', async () => {
     const recA = recorder();
