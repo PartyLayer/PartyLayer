@@ -74,12 +74,11 @@ against the live provider before trusting it.
 - `useSyncExternalStore(store.subscribe, store.getSnapshot)` for `useAccount`
   and friends; `store.init()` in an effect on mount; `store.destroy()` on
   unmount.
-- A backward-compatible mapping so the existing `useSession()` (which returns
-  the SDK `Session | null`) keeps working — map the core snapshot
-  (`status`/`account`) onto that shape, or keep `useSession` reading the SDK
-  client while new hooks read the core. (The current React context tracks the
-  SDK-level `session:connected/disconnected/expired` events, a different layer
-  from this core — 6b reconciles them.)
+- As of M1-S4 (`@partylayer/react`), `useSession()` is the reactive hook over
+  this core store (`UseSessionReturn`: `status`/`account`/`networkId` + actions).
+  The legacy SDK `Session | null` getter is preserved as the deprecated
+  `useClientSession()`. (The React context still tracks the SDK-level
+  `session:connected/disconnected/expired` events alongside this core store.)
 - Inject a `localStorage`-backed `SessionStorage` in the browser.
 
 ## pass 2 (LATER)

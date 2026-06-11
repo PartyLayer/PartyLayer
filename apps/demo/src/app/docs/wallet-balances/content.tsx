@@ -37,9 +37,9 @@ export default function WalletBalancesContent() {
 
       <Callout type="note">
         <Strong>Session persistence:</Strong> After a page reload the SDK automatically
-        restores the active session from storage. Your component may mount with{' '}
-        <Code>{'session === null'}</Code> for a moment while the restore runs — always
-        guard with <Code>{'if (!session) return null'}</Code> or render a{' '}
+        restores the active session from storage. Your component may mount{' '}
+        <Code>{'isDisconnected'}</Code> (or <Code>{'reconnecting'}</Code>) for a moment while the
+        restore runs — always guard with <Code>{'if (!isConnected) return null'}</Code> or render a{' '}
         <Code>{'<ConnectButton />'}</Code> fallback. See{' '}
         <a href="/docs/advanced#session-persistence" style={{ color: '#E6B800' }}>Advanced → Session Persistence</a>{' '}
         for per-wallet behavior.
@@ -49,15 +49,15 @@ export default function WalletBalancesContent() {
 
       <H3>Single token balance</H3>
       <CodeBlock language="tsx">{`import { useState, useEffect } from 'react';
-import { useSession, usePartyLayer } from '@partylayer/react';
+import { useAccount, usePartyLayer } from '@partylayer/react';
 
 function TokenBalance({ templateId }: { templateId: string }) {
-  const session = useSession();
+  const { isConnected, party } = useAccount();
   const client = usePartyLayer();
   const [balance, setBalance] = useState<number | null>(null);
 
   useEffect(() => {
-    if (!session) return;
+    if (!isConnected || !party) return;
 
     client.ledgerApi({
       requestMethod: 'POST',
@@ -65,7 +65,7 @@ function TokenBalance({ templateId }: { templateId: string }) {
       body: JSON.stringify({
         filter: {
           filtersByParty: {
-            [session.partyId]: {
+            [party]: {
               inclusive: {
                 templateFilters: [{ templateId }],
               },
@@ -84,7 +84,7 @@ function TokenBalance({ templateId }: { templateId: string }) {
     });
   }, [session, templateId]);
 
-  if (!session) return null;
+  if (!isConnected) return null;
   return <span>{balance ?? '…'}</span>;
 }
 
@@ -100,15 +100,15 @@ function TokenBalance({ templateId }: { templateId: string }) {
 
       <H3>Single token balance with useLedgerApi</H3>
       <CodeBlock language="tsx">{`import { useState } from 'react';
-import { useSession, useLedgerApi } from '@partylayer/react';
+import { useAccount, useLedgerApi } from '@partylayer/react';
 
 function TokenBalance({ templateId }: { templateId: string }) {
-  const session = useSession();
+  const { isConnected, party } = useAccount();
   const { ledgerApi, isLoading, error } = useLedgerApi();
   const [balance, setBalance] = useState<number | null>(null);
 
   const fetchBalance = async () => {
-    if (!session) return;
+    if (!isConnected || !party) return;
 
     const result = await ledgerApi({
       requestMethod: 'POST',
@@ -116,7 +116,7 @@ function TokenBalance({ templateId }: { templateId: string }) {
       body: JSON.stringify({
         filter: {
           filtersByParty: {
-            [session.partyId]: {
+            [party]: {
               inclusive: {
                 templateFilters: [{ templateId }],
               },
@@ -137,7 +137,7 @@ function TokenBalance({ templateId }: { templateId: string }) {
     }
   };
 
-  if (!session) return null;
+  if (!isConnected) return null;
 
   return (
     <div>
@@ -152,7 +152,7 @@ function TokenBalance({ templateId }: { templateId: string }) {
 
       <H3>Multiple tokens in parallel</H3>
       <CodeBlock language="tsx">{`import { useState, useEffect } from 'react';
-import { useSession, usePartyLayer } from '@partylayer/react';
+import { useAccount, usePartyLayer } from '@partylayer/react';
 
 const TOKEN_TEMPLATES = [
   'Splice.Amulet:Amulet',
@@ -160,12 +160,12 @@ const TOKEN_TEMPLATES = [
 ];
 
 function MultiTokenBalances() {
-  const session = useSession();
+  const { isConnected, party } = useAccount();
   const client = usePartyLayer();
   const [balances, setBalances] = useState<Record<string, number>>({});
 
   useEffect(() => {
-    if (!session) return;
+    if (!isConnected || !party) return;
 
     Promise.all(
       TOKEN_TEMPLATES.map((templateId) =>
@@ -176,7 +176,7 @@ function MultiTokenBalances() {
             body: JSON.stringify({
               filter: {
                 filtersByParty: {
-                  [session.partyId]: {
+                  [party]: {
                     inclusive: { templateFilters: [{ templateId }] },
                   },
                 },
@@ -232,7 +232,7 @@ async function getBalance(templateId: string): Promise<number> {
     body: JSON.stringify({
       filter: {
         filtersByParty: {
-          [session.partyId]: {
+          [party]: {
             inclusive: {
               templateFilters: [{ templateId }],
             },

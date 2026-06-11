@@ -99,17 +99,18 @@ const client = createPartyLayer({
         <Code>{'session === null'}</Code> for a tick while restore runs, OR the user may have
         cleared their storage. Always guard:
       </P>
-      <CodeBlock language="tsx">{`import { useSession, ConnectButton } from '@partylayer/react';
+      <CodeBlock language="tsx">{`import { useAccount, ConnectButton } from '@partylayer/react';
 
 function App() {
-  const session = useSession();
+  const { isConnected, status } = useAccount();
 
-  if (!session) {
-    // Either no prior session, restore failed, or still restoring.
+  if (!isConnected) {
+    // status is 'disconnected' | 'connecting' | 'reconnecting' here —
+    // no prior session, restore failed, or still restoring.
     return <ConnectButton />;
   }
 
-  return <YourConnectedUI session={session} />;
+  return <YourConnectedUI />;
 }`}</CodeBlock>
 
       <H3>Custom Storage</H3>

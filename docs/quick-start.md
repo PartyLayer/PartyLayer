@@ -73,7 +73,7 @@ For full control, use hooks directly:
 ```tsx
 import {
   PartyLayerKit,
-  useSession,
+  useAccount,
   useWallets,
   useConnect,
   useDisconnect,
@@ -89,16 +89,16 @@ function App() {
 }
 
 function WalletStatus() {
-  const session = useSession();
+  const { isConnected, party } = useAccount();
   const { wallets, isLoading } = useWallets();
   const { connect, isConnecting } = useConnect();
   const { disconnect } = useDisconnect();
   const { signMessage } = useSignMessage();
 
-  if (session) {
+  if (isConnected) {
     return (
       <div>
-        <p>Connected: {session.partyId}</p>
+        <p>Connected: {party}</p>
         <button onClick={disconnect}>Disconnect</button>
         <button onClick={() => signMessage({ message: 'Hello!' })}>
           Sign Message
