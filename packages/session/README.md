@@ -67,7 +67,7 @@ runtime (Node/RN/browser) and tests are deterministic. The auto-reconnect
 marker is written on connect and cleared on disconnect; `restore()` verifies
 against the live provider before trusting it.
 
-## What Step 6b (React hooks) will need
+## React integration
 
 - A provider source for the hooks (e.g. `client.asProvider()` /
   `createProviderBridge`) to pass to `createSessionStore`.
@@ -81,10 +81,10 @@ against the live provider before trusting it.
   `session:connected/disconnected/expired` events alongside this core store.)
 - Inject a `localStorage`-backed `SessionStorage` in the browser.
 
-## pass 2 (LATER)
+## Future: query-cache integration
 
-A `// pass 2` marker in `src/store.ts` (`restore()`) marks where TanStack Query
-cache wiring will attach. Not built in 6a.
+A marker in `src/store.ts` (`restore()`) notes where TanStack Query cache wiring
+will attach. Not built yet.
 
 ## Encrypted persistence
 
