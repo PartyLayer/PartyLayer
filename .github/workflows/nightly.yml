@@ -82,7 +82,9 @@ jobs:
 
           echo "Installed versions:"
           for p in sdk react provider adapter-send session; do
-            node -e "console.log('  @partylayer/'+'$p', require('@partylayer/'+'$p'+'/package.json').version)"
+            # Read package.json via a direct filesystem path — `require('@partylayer/x/package.json')`
+            # is blocked by the packages' `exports` maps (ERR_PACKAGE_PATH_NOT_EXPORTED).
+            node -e "const fs=require('fs');const n=process.argv[1];const v=JSON.parse(fs.readFileSync('node_modules/@partylayer/'+n+'/package.json','utf8')).version;console.log('  @partylayer/'+n, v)" "$p"
           done
 
           # Smoke: type-check the key public surfaces against the PUBLISHED .d.ts.
