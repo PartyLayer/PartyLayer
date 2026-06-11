@@ -335,3 +335,18 @@ describe('useAccountEffect — onPartyChanged (M1-S4)', () => {
     );
   });
 });
+
+// 1.0: the default storage moved from a plain-localStorage marker to encrypted
+// IndexedDB. The provider best-effort sweeps the stale marker on mount.
+describe('1.0 secure default: legacy localStorage marker cleanup', () => {
+  it('removes the stale plain-localStorage marker on mount (default storage)', async () => {
+    window.localStorage.setItem('partylayer.session.connected', '1');
+    const provider = createMockWallet();
+    render(
+      React.createElement(PartyLayerProvider, { client: fakeClient(provider) }, null),
+    );
+    await waitFor(() =>
+      expect(window.localStorage.getItem('partylayer.session.connected')).toBeNull(),
+    );
+  });
+});

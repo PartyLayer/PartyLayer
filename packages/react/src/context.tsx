@@ -26,7 +26,6 @@ import type {
   WalletInfo,
 } from '@partylayer/sdk';
 import { createSessionStore, type SessionStore, type SessionStoreOptions } from '@partylayer/session';
-import { createLocalStorage } from './session-storage';
 
 interface PartyLayerContextValue {
   client: PartyLayerClient | null;
@@ -97,10 +96,11 @@ export function PartyLayerProvider({
     sessionOptionsRef.current = sessionOptions;
     storeRef.current = {
       client,
-      // Default storage = SSR-safe localStorage; caller-supplied options (incl. a
-      // custom `storage`, reconnect/broadcast/persistSnapshot) override/extend it.
+      // 1.0: no pinned storage — inherit the session default (encrypted
+      // IndexedDB where supported, in-memory otherwise). Apps can still pass an
+      // explicit `storage` (e.g. `createLocalStorage()` or `createMemoryStorage()`)
+      // via `sessionOptions`, which is respected.
       store: createSessionStore(client.asProvider(), {
-        storage: createLocalStorage(),
         ...sessionOptions,
       }),
     };
@@ -108,6 +108,16 @@ export function PartyLayerProvider({
   const store = storeRef.current.store;
 
   useEffect(() => {
+    // Best-effort: when on the default storage (no explicit override), sweep the
+    // pre-1.0 plain-localStorage marker now that the default moved to encrypted
+    // IndexedDB. One removeItem; swallow errors; SSR-safe.
+    if (!sessionOptionsRef.current?.storage && typeof window !== 'undefined') {
+      try {
+        window.localStorage?.removeItem('partylayer.session.connected');
+      } catch {
+        /* ignore */
+      }
+    }
     // Restore/reconnect on mount; tear down on unmount.
     void store.init();
     return () => {

@@ -11,6 +11,26 @@ restore/reconnect, and exposes a subscribable store for React
 > keeps it out of the published-API snapshot gate until 6b/stabilization (same
 > rationale as `@partylayer/testing`). **No React/Vue/DOM code lives here.**
 
+## 1.0 behavior change — secure by default
+
+As of 1.0, **sessions persist encrypted by default.** When you omit `storage`,
+the store uses `createEncryptedIndexedDBStorage()` on platforms that support it
+(IndexedDB + WebCrypto) and falls back to in-memory elsewhere (Node/SSR/test);
+`persistSnapshot` now defaults to `true`, so the full session snapshot — not a
+bare marker — is what's persisted (encrypted, under the default storage).
+
+> Flipping `persistSnapshot` alone over a *plain* default storage would persist
+> session data **unencrypted** — so the encrypted default and `persistSnapshot:
+> true` ship together as the secure-by-default pair.
+
+**Opt out** explicitly:
+
+- `persistSnapshot: false` — keep only the reconnect marker, no snapshot; or
+- `storage: createMemoryStorage()` — no persistence at all.
+
+Passing an explicit `storage` (including a plain `localStorage` adapter) is still
+fully respected — secure-by-default only governs the **omitted** case.
+
 ## Usage
 
 ```ts

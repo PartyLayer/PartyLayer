@@ -21,6 +21,7 @@ import { createMemoryStorage, type SessionStorage } from './storage';
 import { computeBackoffDelay, type RetryPolicy } from './retry';
 import { openSyncChannel, type BroadcastEnvelope, type SyncChannel } from './broadcast';
 import { encodeSessionEnvelope, type PersistedSessionSnapshot } from './session-envelope';
+import { createEncryptedIndexedDBStorage } from './encrypted-storage';
 import type {
   InvalidationEvent,
   SessionAccount,
@@ -31,6 +32,16 @@ import type {
 } from './types';
 
 const DEFAULT_STORAGE_KEY = 'partylayer.session.connected';
+
+/**
+ * Whether the platform can back the encrypted IndexedDB storage (browser-like).
+ * Keyed on actual capability — `indexedDB` + WebCrypto `subtle` — NOT `window`,
+ * so jsdom/happy-dom (window but no IndexedDB) and Node/SSR fall back to memory.
+ * Internal: not exported (no consumer need today).
+ */
+function hasEncryptedStorageCapability(): boolean {
+  return typeof indexedDB !== 'undefined' && !!globalThis.crypto?.subtle;
+}
 
 const INITIAL_STATE: SessionState = {
   status: 'disconnected',
@@ -68,7 +79,13 @@ export function createSessionStore(
   provider: CIP0103Provider,
   options: SessionStoreOptions = {},
 ): SessionStore {
-  const storage: SessionStorage = options.storage ?? createMemoryStorage();
+  // 1.0 secure-by-default: when no storage is supplied, persist to encrypted
+  // IndexedDB where the platform supports it (browser-like), else fall back to
+  // in-memory (Node/SSR/test). Construction is lazy — no IndexedDB/crypto access
+  // until the first read/write — so this is safe to build eagerly.
+  const storage: SessionStorage =
+    options.storage ??
+    (hasEncryptedStorageCapability() ? createEncryptedIndexedDBStorage() : createMemoryStorage());
   const storageKey = options.storageKey ?? DEFAULT_STORAGE_KEY;
 
   // ── resilience config (ADDITIVE; opt-in, preserves legacy behavior) ───
@@ -146,7 +163,9 @@ export function createSessionStore(
   }
 
   // ── multi-tab + party/network invalidation (ADDITIVE; opt-in) ─────────
-  const persistSnapshot = options.persistSnapshot === true;
+  // 1.0 secure-by-default: persist the full (encrypted, under the default
+  // storage) session snapshot unless the caller opts out with `false`.
+  const persistSnapshot = options.persistSnapshot ?? true;
   const onInvalidate = options.onInvalidate;
   let connectedAt = 0; // epoch-ms of the active connect/restore (for the snapshot)
   // RECEIVING-tab loop-prevention: while applying a remote broadcast, suppress
