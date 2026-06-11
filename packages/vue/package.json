@@ -1,0 +1,58 @@
+{
+  "name": "@partylayer/vue",
+  "version": "0.1.0",
+  "description": "Vue 3 composables for PartyLayer sessions",
+  "main": "./dist/index.js",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "clean": "rm -rf dist",
+    "lint": "eslint src --ext .ts",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run --passWithNoTests"
+  },
+  "keywords": [
+    "canton",
+    "wallet",
+    "vue",
+    "composables"
+  ],
+  "author": "PartyLayer Contributors",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/PartyLayer/PartyLayer.git",
+    "directory": "packages/vue"
+  },
+  "homepage": "https://partylayer.xyz",
+  "bugs": {
+    "url": "https://github.com/PartyLayer/PartyLayer/issues"
+  },
+  "peerDependencies": {
+    "vue": ">=3.4.0"
+  },
+  "dependencies": {
+    "@partylayer/core": "workspace:^",
+    "@partylayer/session": "workspace:^"
+  },
+  "devDependencies": {
+    "@partylayer/testing": "workspace:^",
+    "@types/node": "^20.11.0",
+    "@vue/test-utils": "^2.4.6",
+    "happy-dom": "^14.12.0",
+    "typescript": "^5.3.3",
+    "vitest": "^1.2.0",
+    "vue": "^3.4.0"
+  }
+}
