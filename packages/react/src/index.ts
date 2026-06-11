@@ -22,7 +22,7 @@ export type { PartyLayerTheme } from './theme';
 // Native CIP-0103 adapter (for advanced usage)
 export { NativeCIP0103Adapter, createNativeAdapter, createSyntheticWalletInfo } from './native-cip0103-adapter';
 
-// Session hooks — backed by @partylayer/session. M1-S4: `useSession` is now the
+// Session hooks — backed by @partylayer/session. `useSession` is now the
 // reactive session-store hook (UseSessionReturn); the legacy SDK-layer getter is
 // preserved VERBATIM as `useClientSession` (via `export * from './hooks'`).
 // Migrate `useSession()` (old) → `useClientSession()`. BREAKING note in changeset.

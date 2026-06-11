@@ -62,7 +62,7 @@ interface PartyLayerProviderProps {
   /** Network identifier (kept for backward compat; no longer used for native synthesis). */
   network?: string;
   /**
-   * M1-S4: session-store options merged into the shared store
+   * session-store options merged into the shared store
    * (`reconnect`, `expiry`, `broadcast`, `persistSnapshot`, `onInvalidate`,
    * `storage`). Omitted ⇒ today's default (localStorage marker, no
    * reconnect/broadcast). A provided `storage` overrides the default.

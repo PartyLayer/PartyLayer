@@ -2,7 +2,7 @@
 "@partylayer/session": minor
 ---
 
-M1-S2: session resilience (grant Milestone 1, slice 2). ADDITIVE, opt-in.
+Session resilience. ADDITIVE, opt-in.
 
 - **Automatic reconnect** with exponential backoff (`RetryPolicy { baseDelayMs,
   factor, maxDelayMs, maxAttempts, jitter? }`, sane defaults; `reconnect` option

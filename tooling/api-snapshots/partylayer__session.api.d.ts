@@ -28,7 +28,7 @@ interface SessionStorage {
 declare function createMemoryStorage(): SessionStorage;
 
 /**
- * Reconnect retry policy + backoff math (grant Milestone 1, S2).
+ * Reconnect retry policy + backoff math.
  *
  * Pure + deterministic (jitter is opt-in and injectable) so the backoff SCHEDULE
  * can be asserted at exact fake-timer offsets in tests.
@@ -161,14 +161,14 @@ interface SessionStoreOptions {
   /** Storage key used for the auto-reconnect marker. */
   storageKey?: string;
   /**
-   * M1-S2: automatic reconnect with exponential backoff on TRANSIENT disconnects
+   * automatic reconnect with exponential backoff on TRANSIENT disconnects
    * (a `statusChanged(isConnected:false)` that was NOT an explicit
    * `store.disconnect()`). A `RetryPolicy` enables it; `false` disables it;
    * omitted ⇒ the default policy (enabled). NEVER fires after a user disconnect.
    */
   reconnect?: RetryPolicy | false;
   /**
-   * M1-S2: runtime session-expiry → graceful re-auth. When `ttlMs` is set, an
+   * runtime session-expiry → graceful re-auth. When `ttlMs` is set, an
    * active session arms a timer; on expiry the store emits `session:expired` and
    * invokes `onReauthRequired`. New operations submitted through
    * {@link SessionStore.enqueue} during re-auth are held in a bounded queue
@@ -177,32 +177,32 @@ interface SessionStoreOptions {
    */
   expiry?: ExpiryOptions;
   /**
-   * M1-S3: multi-tab sync via BroadcastChannel. `true` enables it with the
+   * multi-tab sync via BroadcastChannel. `true` enables it with the
    * default (global) channel; an object customizes the channel factory (tests
    * inject an in-memory hub). Omitted/`false` ⇒ disabled (single-tab). Graceful
    * no-op when BroadcastChannel is unavailable (SSR / Node). Origin-bound.
    */
   broadcast?: boolean | BroadcastOptions;
   /**
-   * M1-S3: persist the FULL session snapshot (S1 envelope) at `storageKey`,
+   * persist the FULL session snapshot (session envelope) at `storageKey`,
    * rewriting it on party/network change, instead of the legacy `'1'` marker.
    * Default `false` (legacy marker behavior preserved — additive).
    */
   persistSnapshot?: boolean;
   /**
-   * M1-S3: invalidation hook called on a party-switch or network change — the
+   * invalidation hook called on a party-switch or network change — the
    * point where consumer cache invalidation (React-Query) wires in at S4/S6.
    * The session layer only emits + invalidates here.
    */
   onInvalidate?: (event: InvalidationEvent) => void | Promise<void>;
 }
-/** M1-S3 invalidation payload (party-switch or network change). */
+/** invalidation payload (party-switch or network change). */
 interface InvalidationEvent {
   readonly type: 'party:changed' | 'network:changed';
   readonly previous: string | null;
   readonly current: string | null;
 }
-/** M1-S2 expiry / graceful re-auth configuration. */
+/** expiry / graceful re-auth configuration. */
 interface ExpiryOptions {
   /** Time-to-live (ms from connect/restore) after which the session expires at runtime. */
   ttlMs?: number;
@@ -221,7 +221,7 @@ interface ReauthContext {
   readonly expiredAt: number;
 }
 /**
- * Structured resilience events (M1-S2). Subscribe via {@link SessionStore.on}.
+ * Structured resilience events. Subscribe via {@link SessionStore.on}.
  * `delayMs`/`attempt` let UIs surface backoff progress; `attempt` is 1-based.
  */
 type SessionEvent =
@@ -282,14 +282,14 @@ interface SessionStore {
   /** The underlying CIP-0103 provider. */
   getProvider(): CIP0103Provider;
   /**
-   * M1-S2: subscribe to structured resilience events (reconnect lifecycle +
+   * subscribe to structured resilience events (reconnect lifecycle +
    * session expiry). Returns an unsubscribe function. Distinct from
    * {@link subscribe} (which is the state-change notifier for
    * `useSyncExternalStore`).
    */
   on(event: SessionEvent['type'], handler: (event: SessionEvent) => void): () => void;
   /**
-   * M1-S2: run an operation, queuing it (bounded) if a re-auth is in progress —
+   * run an operation, queuing it (bounded) if a re-auth is in progress —
    * resumed after re-auth succeeds, rejected on overflow or re-auth failure.
    * When no re-auth is in progress it runs immediately. Preserves QUEUED intent
    * + session context across re-auth; a tx already inside the wallet cannot be
@@ -331,12 +331,12 @@ declare function createEncryptedLocalStorage(options?: EncryptedStorageOptions):
 
 /**
  * Versioned SESSION payload envelope + migration scaffold + restore/reconcile
- * helpers (grant Milestone 1, S1).
+ * helpers.
  *
  * This is the PLAINTEXT that the encrypted backends persist (compose:
  * `storage.setItem(key, encodeSessionEnvelope(snapshot))`). It carries an
  * explicit `version` so the session SCHEMA can evolve — `migrateSessionEnvelope`
- * is the switch-on-version scaffold that seeds the grant's "schema migration
+ * is the switch-on-version scaffold that seeds the "schema migration
  * helpers" acceptance item. (Distinct from the crypto-envelope format version
  * in crypto.ts, which governs the at-rest ciphertext shape.)
  *

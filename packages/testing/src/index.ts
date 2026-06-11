@@ -9,7 +9,7 @@
  *   - offline helpers       — deterministic, fake-timer-friendly utilities.
  *
  * This package is intentionally `private` for now: its API is still forming
- * and we publish v1.0 at the M1 milestone once pass 2 (session-lifecycle
+ * and we publish v1.0 at the 1.0 milestone once pass 2 (session-lifecycle
  * simulation + TanStack Query test utilities) lands. Keeping it private also
  * keeps it out of the published-API snapshot gate while the surface settles.
  *

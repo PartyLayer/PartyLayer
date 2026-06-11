@@ -2,7 +2,7 @@
 "@partylayer/react": minor
 ---
 
-M1-S4: reactive session hooks + demo wiring.
+Reactive session hooks + demo wiring.
 
 - NEW `useSession()` — reactive `SessionState` + bound actions
   (`connect`/`disconnect`/`restore`) + the narrowed `on(event, handler)` for

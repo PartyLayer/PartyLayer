@@ -1,11 +1,11 @@
 /**
  * Versioned SESSION payload envelope + migration scaffold + restore/reconcile
- * helpers (grant Milestone 1, S1).
+ * helpers.
  *
  * This is the PLAINTEXT that the encrypted backends persist (compose:
  * `storage.setItem(key, encodeSessionEnvelope(snapshot))`). It carries an
  * explicit `version` so the session SCHEMA can evolve — `migrateSessionEnvelope`
- * is the switch-on-version scaffold that seeds the grant's "schema migration
+ * is the switch-on-version scaffold that seeds the "schema migration
  * helpers" acceptance item. (Distinct from the crypto-envelope format version
  * in crypto.ts, which governs the at-rest ciphertext shape.)
  *
