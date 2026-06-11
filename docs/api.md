@@ -264,11 +264,19 @@ function usePartyLayer(): PartyLayerClient
 
 ### useSession
 
-Get the current active session. Returns `null` when disconnected.
+Reactive session state + actions (re-renders on every session change). As of
+M1-S4 this returns `UseSessionReturn`, not the legacy SDK session getter.
 
 ```typescript
-function useSession(): Session | null
+function useSession(): UseSessionReturn
+// { status, account, accounts, networkId, lastError,
+//   isConnected, isConnecting, isReconnecting, isDisconnected,
+//   connect, disconnect, restore, on }
 ```
+
+> The legacy SDK session getter (`Session | null`) is preserved as the
+> deprecated `useClientSession(): Session | null`. Migrate
+> `useSession()` → `useClientSession()` if you need `{ sessionId, walletId, … }`.
 
 ### useWallets
 

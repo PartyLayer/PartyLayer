@@ -71,7 +71,7 @@ export default function TokenTransfersContent() {
 
       <H2 id="react">React (interface-based TransferFactory_Transfer)</H2>
 
-      <CodeBlock language="tsx">{`import { useSession, useLedgerApi } from '@partylayer/react';
+      <CodeBlock language="tsx">{`import { useAccount, useLedgerApi } from '@partylayer/react';
 
 const TRANSFER_FACTORY_INTERFACE =
   '#splice-api-token-transfer-instruction-v1:Splice.Api.Token.TransferInstructionV1:TransferFactory';
@@ -89,11 +89,11 @@ function TransferButton({
   dsoParty: string;               // instrument admin (e.g. DSO on the network)
   receiverPartyId: string;
 }) {
-  const session = useSession();
+  const { isConnected, party } = useAccount();
   const { ledgerApi, isLoading, error } = useLedgerApi();
 
   const handleTransfer = async () => {
-    if (!session) return;
+    if (!isConnected || !party) return;
 
     const nowIso = new Date().toISOString();
     const expiresIso = new Date(Date.now() + 5 * 60_000).toISOString();
@@ -110,7 +110,7 @@ function TransferButton({
             choiceArgument: {
               expectedAdmin: dsoParty,
               transfer: {
-                sender: session.partyId,
+                sender: party,
                 receiver: receiverPartyId,
                 amount: '10.0',
                 instrumentId: { admin: dsoParty, id: 'Amulet' },
@@ -136,7 +136,7 @@ function TransferButton({
       ],
       commandId: crypto.randomUUID(),
       applicationId: 'my-app',
-      actAs: [session.partyId],
+      actAs: [party],
       readAs: [],
     };
 
@@ -252,7 +252,7 @@ await client.ledgerApi({
         The popup closed before you confirmed, or the wallet server returned an empty frame.
         Confirm in the wallet UI and retry. If it persists, double-check the interfaceId has the
         fully-qualified <Code>{'#package:Module:Interface'}</Code> form and that{' '}
-        <Code>{'actAs'}</Code> matches <Code>{'session.partyId'}</Code>.
+        <Code>{'actAs'}</Code> matches the active <Code>{'party'}</Code> (from <Code>{'useAccount()'}</Code>).
       </P>
 
       <H3 id="template-id-format">Template / interface ID format</H3>

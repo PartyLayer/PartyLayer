@@ -93,7 +93,7 @@ function Navbar() {
 
       <Callout type="tip" title="Custom Button">
         If you need full control over the button rendering, use the <Code>{'WalletModal'}</Code> component
-        directly with your own trigger button, plus the <Code>{'useSession'}</Code> and <Code>{'useDisconnect'}</Code> hooks.
+        directly with your own trigger button, plus the <Code>{'useAccount'}</Code> and <Code>{'useDisconnect'}</Code> hooks.
         See <A href="/docs/wallet-modal">WalletModal</A> for details.
       </Callout>
 
@@ -102,17 +102,17 @@ function Navbar() {
         For full control, skip <Code>{'ConnectButton'}</Code> and use hooks directly:
       </P>
       <CodeBlock language="tsx">{`import { useState } from 'react';
-import { WalletModal, useSession, useDisconnect, truncatePartyId } from '@partylayer/react';
+import { WalletModal, useAccount, useDisconnect, truncatePartyId } from '@partylayer/react';
 
 function CustomConnect() {
   const [modalOpen, setModalOpen] = useState(false);
-  const session = useSession();
+  const { isConnected, party } = useAccount();
   const { disconnect } = useDisconnect();
 
-  if (session) {
+  if (isConnected) {
     return (
       <div>
-        <span>{truncatePartyId(String(session.partyId))}</span>
+        <span>{truncatePartyId(String(party))}</span>
         <button onClick={() => disconnect()}>Disconnect</button>
       </div>
     );
