@@ -92,7 +92,7 @@ export interface PartyLayerKitProps {
    */
   walletOrder?: readonly string[];
   /**
-   * M1-S4: session-store options forwarded to `PartyLayerProvider`
+   * session-store options forwarded to `PartyLayerProvider`
    * (`reconnect`, `expiry`, `broadcast`, `persistSnapshot`, `storage`,
    * `onInvalidate`). Lets the app opt into encrypted persistence, auto-reconnect,
    * and multi-tab sync. Omitted ⇒ today's defaults.

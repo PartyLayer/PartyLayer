@@ -127,7 +127,7 @@ if (isConnected) {
 
 > Need the legacy SDK `Session` getter (`{ sessionId, walletId, … }`)? It's
 > preserved as **`useClientSession()`** (deprecated). `useSession()` was
-> re-pointed to the reactive store in M1-S4 — see the migration note below.
+> re-pointed to the reactive store — see the migration note below.
 
 ### `useWallets()`
 
@@ -307,7 +307,7 @@ All hooks and components are fully typed:
 ```typescript
 import type { Session, WalletInfo, UseSessionReturn } from '@partylayer/react';
 
-// Reactive session (M1-S4): state + actions
+// Reactive session: state + actions
 const session: UseSessionReturn = useSession();
 
 // Legacy SDK session getter (deprecated alias)
@@ -411,7 +411,7 @@ export default function App() {
 
 MIT
 
-## Session hooks (M1-S4)
+## Session hooks
 
 `useSession` / `useAccount` / `useAccountEffect` are thin React bindings over the
 `@partylayer/session` store, created by `PartyLayerProvider` / `PartyLayerKit`.
@@ -437,7 +437,7 @@ Adopt the session layer via `PartyLayerKit`:
 }}>…</PartyLayerKit>
 ```
 
-### ⚠️ BREAKING (M1-S4): `useSession` re-pointed
+### ⚠️ BREAKING: `useSession` re-pointed
 `useSession()` is now the **reactive session-store** hook (`UseSessionReturn`:
 live `SessionState` + `connect`/`disconnect`/`restore`/`on`). The previous
 SDK-layer getter (`(): Session | null`) is preserved **verbatim** as

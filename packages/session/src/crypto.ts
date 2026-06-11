@@ -1,13 +1,12 @@
 /**
- * AES-GCM-256 key management + envelope crypto for encrypted session persistence
- * (grant Milestone 1, S1).
+ * AES-GCM-256 key management + envelope crypto for encrypted session persistence.
  *
  * APPROVED DESIGN — CRITICAL INVARIANT (cited per request):
  *   The AES-GCM-256 `CryptoKey` is ALWAYS generated **non-extractable** and is
  *   ALWAYS stored in **IndexedDB** (via structured clone — `localStorage` can
  *   only hold strings and therefore cannot hold a `CryptoKey`). Only the
  *   CIPHERTEXT blob location varies by backend (IndexedDB vs localStorage).
- *   Rationale: the grant promises both backends; key non-extractability is the
+ *   Rationale: both backends are supported; key non-extractability is the
  *   security floor, so the key must never be serialized to a string store.
  *
  * Per-write a fresh random 12-byte IV is generated (never reused) and stored
@@ -37,8 +36,8 @@ function getIndexedDB(): IDBFactory {
 /**
  * Origin-bound namespace. Browsers already partition storage per origin; we
  * additionally embed the origin in every DB/store/key name so this layer never
- * mixes data across origins even within a shared test/runtime global (grant's
- * "origin-bound session isolation"). Falls back to a stable literal off-origin
+ * mixes data across origins even within a shared test/runtime global
+ * (origin-bound session isolation). Falls back to a stable literal off-origin
  * (Node/tests) so naming is deterministic.
  */
 export function originTag(explicit?: string): string {

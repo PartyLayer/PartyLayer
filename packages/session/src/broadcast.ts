@@ -1,5 +1,5 @@
 /**
- * Multi-tab session sync over BroadcastChannel (grant Milestone 1, S3).
+ * Multi-tab session sync over BroadcastChannel.
  *
  * ADDITIVE + opt-in. Origin-bound channel name (the S1 `originTag` pattern), a
  * versioned message envelope, and graceful no-op when BroadcastChannel is

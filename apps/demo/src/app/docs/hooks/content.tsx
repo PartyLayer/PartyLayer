@@ -38,7 +38,7 @@ function Advanced() {
       <H3 id="use-session">useSession</H3>
       <P>
         Reactive session state <Strong>and</Strong> actions. Re-renders on every session change.
-        As of M1-S4 this returns <Code>{'UseSessionReturn'}</Code> (the reactive store), not the
+        This returns <Code>{'UseSessionReturn'}</Code> (the reactive store), not the
         legacy SDK session getter.
       </P>
       <CodeBlock language="tsx">{`import { useSession } from '@partylayer/react';
@@ -65,7 +65,7 @@ function Profile() {
         <Code>{'disconnect'}</Code>, <Code>{'restore'}</Code>, <Code>{'on'}</Code>.
       </P>
       <Callout type="warning">
-        <Strong>Migration (M1-S4):</Strong> <Code>{'useSession()'}</Code> was re-pointed from the
+        <Strong>Migration:</Strong> <Code>{'useSession()'}</Code> was re-pointed from the
         SDK-layer session getter (<Code>{'Session | null'}</Code>) to the reactive store. The old
         getter is preserved VERBATIM as <Code>{'useClientSession()'}</Code> (deprecated) — it still
         returns the <Code>{'Session'}</Code> object (<Code>{'sessionId'}</Code>, <Code>{'walletId'}</Code>,

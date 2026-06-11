@@ -12,7 +12,7 @@
  * via `workspace:^` for its `useAccount` / `useAccountEffect` hooks (Step 6b),
  * and a Vue layer will consume it later. Its public surface is tracked by the
  * regression-gate API snapshot like every other published `@partylayer/*`
- * package. It stays in the 0.x range until the M1 cut, where changesets
+ * package. It stays in the 0.x range until the 1.0 cut, where changesets
  * releases it ahead of `@partylayer/react`.
  *
  * Framework layers (React in `@partylayer/react`, Vue later) consume this core;
@@ -32,7 +32,7 @@ export type {
   SessionStore,
   SessionStoreOptions,
 } from './types';
-// M1-S2 — resilience: automatic reconnect (exponential backoff) + runtime expiry
+// Resilience: automatic reconnect (exponential backoff) + runtime expiry
 // → graceful re-auth with a bounded pending queue (additive).
 export type {
   SessionEvent,
@@ -44,7 +44,7 @@ export {
   computeBackoffDelay,
   type RetryPolicy,
 } from './retry';
-// M1-S3 — multi-tab sync (BroadcastChannel, origin-bound) + party-switch /
+// Multi-tab sync (BroadcastChannel, origin-bound) + party-switch /
 // network-change invalidation (additive, opt-in).
 export type { InvalidationEvent } from './types';
 export {
@@ -56,7 +56,7 @@ export {
   type ChannelFactory,
   type SyncChannel,
 } from './broadcast';
-// M1-S1 — encrypted persistence core (additive). Two SessionStorage backends
+// Encrypted persistence core (additive). Two SessionStorage backends
 // (the AES-GCM-256 key is always non-extractable + stored in IndexedDB; only the
 // ciphertext blob location varies) plus the versioned session envelope, a
 // migration scaffold, and restore/reconcile helpers. See README "Encrypted

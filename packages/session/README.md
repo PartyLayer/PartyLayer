@@ -74,7 +74,7 @@ against the live provider before trusting it.
 - `useSyncExternalStore(store.subscribe, store.getSnapshot)` for `useAccount`
   and friends; `store.init()` in an effect on mount; `store.destroy()` on
   unmount.
-- As of M1-S4 (`@partylayer/react`), `useSession()` is the reactive hook over
+- In `@partylayer/react`, `useSession()` is the reactive hook over
   this core store (`UseSessionReturn`: `status`/`account`/`networkId` + actions).
   The legacy SDK `Session | null` getter is preserved as the deprecated
   `useClientSession()`. (The React context still tracks the SDK-level
@@ -86,7 +86,7 @@ against the live provider before trusting it.
 A `// pass 2` marker in `src/store.ts` (`restore()`) marks where TanStack Query
 cache wiring will attach. Not built in 6a.
 
-## Encrypted persistence (M1-S1)
+## Encrypted persistence
 
 Two **additive** `SessionStorage` backends encrypt the persisted session at rest
 with **AES-GCM-256**, conforming to the existing `SessionStorage` contract
@@ -155,7 +155,7 @@ version, or an expired snapshot.
   layer is **not** a defense against script injection — fix XSS at the source
   (CSP, input handling). No overclaiming.
 
-### Session lifecycle scenarios (grant acceptance seed)
+### Session lifecycle scenarios
 
 | ID | Scenario | Backends |
 |---|---|---|
@@ -164,7 +164,7 @@ version, or an expired snapshot.
 | SCENARIO-3 | corrupt / wrong-key / unknown-version / expired → `null` + cleared | both |
 | (inv) | per-write IV uniqueness; key non-extractability; localStorage zero key material | both |
 
-## Resilience: reconnect + expiry re-auth (M1-S2)
+## Resilience: reconnect + expiry re-auth
 
 **Additive** — opt-in via `SessionStoreOptions`; omitting them preserves the
 legacy behavior exactly.
@@ -218,7 +218,7 @@ resurrect a transaction already handed to the wallet — once a request is insid
 the wallet, its fate is the wallet's. `enqueue` is for operations you route
 through the store, not for in-flight wallet prompts.
 
-### Session lifecycle scenarios (now 7 of the grant's ≥8)
+### Session lifecycle scenarios (7 covered)
 
 | ID | Scenario |
 |---|---|
@@ -231,7 +231,7 @@ through the store, not for in-flight wallet prompts.
 | SCENARIO-7 | enqueue during re-auth → resume / overflow / re-auth-failure |
 | invariant | explicit user disconnect NEVER schedules a reconnect |
 
-## Multi-tab sync + party/network invalidation (M1-S3)
+## Multi-tab sync + party/network invalidation
 
 **Additive + opt-in.** Origin-bound `BroadcastChannel` sync, party-switch +
 network-change detection with an invalidation hook, and optional full-snapshot
@@ -277,7 +277,7 @@ When `true`, the store persists the **full S1 session envelope** at `storageKey`
 (rewritten on party/network change) instead of the legacy `'1'` marker. Default
 `false` (marker behavior preserved — purely additive).
 
-### Session lifecycle scenarios (now 11 — past the grant's ≥8 threshold)
+### Session lifecycle scenarios (11 covered)
 
 | ID | Scenario |
 |---|---|

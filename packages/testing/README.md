@@ -6,7 +6,7 @@ provider**, a **controllable simulated transaction lifecycle**, and
 or live-wallet dependency.
 
 > **Status: `private` (unpublished), v0.1.0.** The API is still forming. We
-> publish **v1.0 at the M1 milestone** once pass 2 lands. Keeping the package
+> publish **v1.0 at the 1.0 milestone** once pass 2 lands. Keeping the package
 > private also keeps it out of the published-API snapshot gate while the
 > surface settles — `scripts/gate/api-snapshot.mjs` only snapshots
 > `"private": false` packages.

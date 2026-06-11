@@ -1,5 +1,5 @@
 /**
- * Reconnect retry policy + backoff math (grant Milestone 1, S2).
+ * Reconnect retry policy + backoff math.
  *
  * Pure + deterministic (jitter is opt-in and injectable) so the backoff SCHEDULE
  * can be asserted at exact fake-timer offsets in tests.
