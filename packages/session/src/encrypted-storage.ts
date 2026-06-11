@@ -1,5 +1,5 @@
 /**
- * Encrypted `SessionStorage` backends (grant Milestone 1, S1).
+ * Encrypted `SessionStorage` backends.
  *
  * Two ADDITIVE implementations of the existing {@link SessionStorage} contract
  * (`getItem`/`setItem`/`removeItem`, MaybePromise-aware) — they encrypt the
@@ -14,7 +14,7 @@
  *
  * RESILIENCE: a corrupted blob, a wrong/rotated key, or an unknown FUTURE crypto
  * envelope version makes `getItem` return `null` and CLEAR that entry — it never
- * throws into application code (grant's restore-safety requirement).
+ * throws into application code (the restore-safety guarantee).
  *
  * These backends are session-shape-agnostic: they encrypt whatever string the
  * store persists. The versioned SESSION payload + migration scaffold lives in

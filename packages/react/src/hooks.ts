@@ -40,9 +40,9 @@ export function useWallets() {
 /**
  * Hook to get the active SDK-layer session object.
  *
- * @deprecated Renamed from `useSession`. As of `@partylayer/react` M1-S4,
- * `useSession()` is the reactive session-store hook (`UseSessionReturn`); this
- * legacy SDK-layer getter is preserved VERBATIM under `useClientSession()`.
+ * @deprecated Renamed from `useSession`. `useSession()` is now the reactive
+ * session-store hook (`UseSessionReturn`); this legacy SDK-layer getter is
+ * preserved VERBATIM under `useClientSession()`.
  * Migrate `useSession()` → `useClientSession()` if you want the old getter.
  */
 export function useClientSession() {

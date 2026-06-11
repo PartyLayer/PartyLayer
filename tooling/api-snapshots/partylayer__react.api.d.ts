@@ -64,7 +64,7 @@ interface PartyLayerProviderProps {
   /** Network identifier (kept for backward compat; no longer used for native synthesis). */
   network?: string;
   /**
-   * M1-S4: session-store options merged into the shared store
+   * session-store options merged into the shared store
    * (`reconnect`, `expiry`, `broadcast`, `persistSnapshot`, `onInvalidate`,
    * `storage`). Omitted ⇒ today's default (localStorage marker, no
    * reconnect/broadcast). A provided `storage` overrides the default.
@@ -92,9 +92,9 @@ declare function useWallets(): {
 /**
  * Hook to get the active SDK-layer session object.
  *
- * @deprecated Renamed from `useSession`. As of `@partylayer/react` M1-S4,
- * `useSession()` is the reactive session-store hook (`UseSessionReturn`); this
- * legacy SDK-layer getter is preserved VERBATIM under `useClientSession()`.
+ * @deprecated Renamed from `useSession`. `useSession()` is now the reactive
+ * session-store hook (`UseSessionReturn`); this legacy SDK-layer getter is
+ * preserved VERBATIM under `useClientSession()`.
  * Migrate `useSession()` → `useClientSession()` if you want the old getter.
  */
 declare function useClientSession(): Session | null;
@@ -239,7 +239,7 @@ interface PartyLayerKitProps {
    */
   walletOrder?: readonly string[];
   /**
-   * M1-S4: session-store options forwarded to `PartyLayerProvider`
+   * session-store options forwarded to `PartyLayerProvider`
    * (`reconnect`, `expiry`, `broadcast`, `persistSnapshot`, `storage`,
    * `onInvalidate`). Lets the app opt into encrypted persistence, auto-reconnect,
    * and multi-tab sync. Omitted ⇒ today's defaults.
@@ -453,7 +453,7 @@ declare function useAccount(): UseAccountReturn;
  * Reactive session: the full `SessionState` (live, via `useSyncExternalStore`)
  * plus the store's actions and the resilience/sync event subscription.
  *
- * M1-S4 NOTE — this is the NEW meaning of `useSession()`. The previous SDK-layer
+ * NOTE — this is the NEW meaning of `useSession()`. The previous SDK-layer
  * getter (`return context.session`) is preserved VERBATIM as `useClientSession()`.
  * Migration: `useSession()` (old) → `useClientSession()`.
  *
@@ -495,7 +495,7 @@ interface UseAccountEffectParameters {
   /** Fired on a transition `connected → disconnected`. */
   onDisconnect?: () => void;
   /**
-   * M1-S4: fired when the active PRIMARY party changes (the session
+   * fired when the active PRIMARY party changes (the session
    * `party:changed` event — a true switch, not a list reorder).
    */
   onPartyChanged?: (data: { previous: string | null; current: string | null }) => void;

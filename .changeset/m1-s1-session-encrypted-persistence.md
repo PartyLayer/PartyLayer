@@ -2,7 +2,7 @@
 "@partylayer/session": minor
 ---
 
-M1-S1: encrypted session persistence core (grant Milestone 1, slice 1). Adds two
+Encrypted session persistence core. Adds two
 ADDITIVE `SessionStorage` backends — `createEncryptedIndexedDBStorage` (default)
 and `createEncryptedLocalStorage` — that encrypt the persisted session at rest
 with AES-GCM-256. The key is always generated non-extractable and always stored

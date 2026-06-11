@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect, useCallback, useMemo, type ReactNode } from 'react';
 import Link from 'next/link';
-// M1-S4: useClientSession = the legacy SDK-layer getter (partyId/walletId here);
+// Note: useClientSession = the legacy SDK-layer getter (partyId/walletId here);
 // useAccount = the new reactive session-store hook (the live session indicator).
 import { PartyLayerKit, WalletModal, useClientSession, useDisconnect, truncatePartyId, useAccount } from '@partylayer/react';
 import { createEncryptedIndexedDBStorage, DEFAULT_RETRY_POLICY, type SessionStoreOptions } from '@partylayer/session';
@@ -423,7 +423,7 @@ const navLinks = [
 ];
 
 /**
- * M1-S4 live session indicator — small + unobtrusive. Reads the NEW reactive
+ * Live session indicator — small + unobtrusive. Reads the NEW reactive
  * session-store hook (`useAccount`) so every Vercel preview is a live integration
  * test of the session layer (status + primary party + networkId chip). Hidden
  * when fully disconnected.
@@ -510,7 +510,7 @@ function Nav({ onConnect }: { onConnect: () => void }) {
           </div>
         )}
 
-        {/* M1-S4: live reactive session indicator (the new session layer, on the apex). */}
+        {/* Note: live reactive session indicator (the new session layer, on the apex). */}
         <SessionIndicator />
 
         {isConnected ? (
@@ -1852,7 +1852,7 @@ export default function Home() {
   const [mounted, setMounted] = useState(false);
   useEffect(() => { setMounted(true); }, []);
 
-  // M1-S4: the apex adopts the full session layer — encrypted IndexedDB
+  // Note: the apex adopts the full session layer — encrypted IndexedDB
   // persistence, default auto-reconnect, and multi-tab sync. Memoized so the
   // shared store isn't rebuilt every render. Constructed client-side only (the
   // Kit is mounted-gated below); the storage object is lazy (no IDB at build).

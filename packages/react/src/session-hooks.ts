@@ -105,7 +105,7 @@ export function useAccount(): UseAccountReturn {
  * Reactive session: the full `SessionState` (live, via `useSyncExternalStore`)
  * plus the store's actions and the resilience/sync event subscription.
  *
- * M1-S4 NOTE — this is the NEW meaning of `useSession()`. The previous SDK-layer
+ * NOTE — this is the NEW meaning of `useSession()`. The previous SDK-layer
  * getter (`return context.session`) is preserved VERBATIM as `useClientSession()`.
  * Migration: `useSession()` (old) → `useClientSession()`.
  *
@@ -176,7 +176,7 @@ export interface UseAccountEffectParameters {
   /** Fired on a transition `connected → disconnected`. */
   onDisconnect?: () => void;
   /**
-   * M1-S4: fired when the active PRIMARY party changes (the session
+   * fired when the active PRIMARY party changes (the session
    * `party:changed` event — a true switch, not a list reorder).
    */
   onPartyChanged?: (data: { previous: string | null; current: string | null }) => void;
@@ -228,7 +228,7 @@ export function useAccountEffect(
       }
     });
 
-    // M1-S4: party-switch side-effect via the store's structured event.
+    // party-switch side-effect via the store's structured event.
     const unsubscribeParty = store.on('party:changed', (e) => {
       if (e.type === 'party:changed') {
         paramsRef.current.onPartyChanged?.({ previous: e.previous, current: e.current });
