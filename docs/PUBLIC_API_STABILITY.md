@@ -80,7 +80,9 @@ client.destroy(): void
 ```typescript
 // All hooks - stable signatures
 usePartyLayer(): PartyLayerClient
-useSession(): Session | null
+useSession(): UseSessionReturn          // M1-S4: reactive store (state + actions)
+useClientSession(): Session | null      // deprecated legacy getter (was useSession)
+useAccount(): UseAccountReturn          // reactive { party, account, status, ... }
 useWallets(): { wallets, isLoading, error }
 useConnect(): { connect, isConnecting, error }
 useDisconnect(): { disconnect, isDisconnecting, error }

@@ -37,33 +37,41 @@ function Advanced() {
 
       <H3 id="use-session">useSession</H3>
       <P>
-        Get the active wallet session. Returns <Code>{'null'}</Code> when disconnected.
-        Automatically updates when the session changes.
+        Reactive session state <Strong>and</Strong> actions. Re-renders on every session change.
+        As of M1-S4 this returns <Code>{'UseSessionReturn'}</Code> (the reactive store), not the
+        legacy SDK session getter.
       </P>
       <CodeBlock language="tsx">{`import { useSession } from '@partylayer/react';
 
 function Profile() {
-  const session = useSession();
+  const { status, account, networkId, isConnected, disconnect } = useSession();
 
-  if (!session) return <p>Not connected</p>;
+  if (!isConnected) return <p>Not connected ({status})</p>;
 
   return (
     <div>
-      <p>Party ID: {session.partyId}</p>
-      <p>Wallet: {session.walletId}</p>
-      <p>Network: {session.network}</p>
-      <p>Capabilities: {session.capabilitiesSnapshot.join(', ')}</p>
+      <p>Party ID: {account?.partyId}</p>
+      <p>Network: {networkId}</p>
+      <button onClick={() => disconnect()}>Disconnect</button>
     </div>
   );
 }`}</CodeBlock>
       <P>
-        <Strong>Return type:</Strong> <Code>{'Session | null'}</Code>
+        <Strong>Return type:</Strong> <Code>{'UseSessionReturn'}</Code> — the reactive{' '}
+        <Code>{'SessionState'}</Code> (<Code>{'status'}</Code>, <Code>{'account'}</Code>,{' '}
+        <Code>{'accounts'}</Code>, <Code>{'networkId'}</Code>, <Code>{'lastError'}</Code>) plus{' '}
+        <Code>{'isConnected'}</Code>/<Code>{'isConnecting'}</Code>/<Code>{'isReconnecting'}</Code>/
+        <Code>{'isDisconnected'}</Code> and the actions <Code>{'connect'}</Code>,{' '}
+        <Code>{'disconnect'}</Code>, <Code>{'restore'}</Code>, <Code>{'on'}</Code>.
       </P>
-      <P>
-        The <Code>{'Session'}</Code> object includes: <Code>{'sessionId'}</Code>, <Code>{'walletId'}</Code>,
-        {' '}<Code>{'partyId'}</Code>, <Code>{'network'}</Code>, <Code>{'createdAt'}</Code>,
-        {' '}<Code>{'expiresAt'}</Code>, <Code>{'origin'}</Code>, <Code>{'capabilitiesSnapshot'}</Code>, <Code>{'metadata'}</Code>.
-      </P>
+      <Callout type="warning">
+        <Strong>Migration (M1-S4):</Strong> <Code>{'useSession()'}</Code> was re-pointed from the
+        SDK-layer session getter (<Code>{'Session | null'}</Code>) to the reactive store. The old
+        getter is preserved VERBATIM as <Code>{'useClientSession()'}</Code> (deprecated) — it still
+        returns the <Code>{'Session'}</Code> object (<Code>{'sessionId'}</Code>, <Code>{'walletId'}</Code>,
+        {' '}<Code>{'partyId'}</Code>, <Code>{'network'}</Code>, …). Migrate{' '}
+        <Code>{'useSession()'}</Code> → <Code>{'useClientSession()'}</Code> if you need that shape.
+      </Callout>
 
       <HR />
 
@@ -243,14 +251,14 @@ function SubmitTx() {
 
       <H3 id="use-ledger-api">useLedgerApi</H3>
       <P>Call the Canton Ledger API through the connected wallet.</P>
-      <CodeBlock language="tsx">{`import { useLedgerApi, useSession } from '@partylayer/react';
+      <CodeBlock language="tsx">{`import { useLedgerApi, useAccount } from '@partylayer/react';
 
 function BalanceQuery() {
-  const session = useSession();
+  const { isConnected, party } = useAccount();
   const { ledgerApi, isLoading, error } = useLedgerApi();
 
   const fetchBalance = async () => {
-    if (!session) return;
+    if (!isConnected || !party) return;
 
     const result = await ledgerApi({
       requestMethod: 'POST',
@@ -258,7 +266,7 @@ function BalanceQuery() {
       body: JSON.stringify({
         filter: {
           filtersByParty: {
-            [session.partyId]: {
+            [party]: {
               inclusive: {
                 templateFilters: [{ templateId: 'Splice.Amulet:Amulet' }],
               },

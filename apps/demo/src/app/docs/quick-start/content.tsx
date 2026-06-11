@@ -178,20 +178,19 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 
       <H2 id="using-hooks">Using Session Data</H2>
       <P>
-        Once connected, access the session from any component with <Code>{'useSession'}</Code>:
+        Once connected, read the session reactively from any component with <Code>{'useAccount'}</Code>:
       </P>
-      <CodeBlock language="tsx">{`import { useSession } from '@partylayer/react';
+      <CodeBlock language="tsx">{`import { useAccount } from '@partylayer/react';
 
 function Profile() {
-  const session = useSession();
+  const { isConnected, status, party, networkId } = useAccount();
 
-  if (!session) return <p>Not connected</p>;
+  if (!isConnected) return <p>Not connected ({status})</p>;
 
   return (
     <div>
-      <p>Party ID: {session.partyId}</p>
-      <p>Wallet: {session.walletId}</p>
-      <p>Network: {session.network}</p>
+      <p>Party ID: {party}</p>
+      <p>Network: {networkId}</p>
     </div>
   );
 }`}</CodeBlock>

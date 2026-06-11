@@ -60,17 +60,17 @@ function App() {
 ### 2. Use Hooks in Your Components
 
 ```tsx
-import { useSession, useConnect, useDisconnect } from '@partylayer/react';
+import { useAccount, useConnect, useDisconnect } from '@partylayer/react';
 
 function WalletButton() {
-  const session = useSession();
+  const { isConnected, party } = useAccount();
   const { connect, isConnecting } = useConnect();
   const { disconnect } = useDisconnect();
 
-  if (session) {
+  if (isConnected) {
     return (
       <div>
-        <p>Connected: {session.partyId}</p>
+        <p>Connected: {party}</p>
         <button onClick={disconnect}>Disconnect</button>
       </div>
     );
@@ -88,14 +88,14 @@ function WalletButton() {
 
 ```tsx
 import { useState } from 'react';
-import { WalletModal, useSession } from '@partylayer/react';
+import { WalletModal, useAccount } from '@partylayer/react';
 
 function ConnectButton() {
   const [isOpen, setIsOpen] = useState(false);
-  const session = useSession();
+  const { isConnected, party } = useAccount();
 
-  if (session) {
-    return <p>Connected: {session.partyId}</p>;
+  if (isConnected) {
+    return <p>Connected: {party}</p>;
   }
 
   return (
@@ -113,17 +113,21 @@ function ConnectButton() {
 
 ### `useSession()`
 
-Returns the current active session or `null` if not connected.
+Reactive session state + actions (`UseSessionReturn`). Re-renders on every
+session change.
 
 ```tsx
-const session = useSession();
+const { status, account, networkId, isConnected, connect, disconnect, on } = useSession();
 
-if (session) {
-  console.log('Party ID:', session.partyId);
-  console.log('Wallet:', session.walletId);
-  console.log('Network:', session.network);
+if (isConnected) {
+  console.log('Party ID:', account?.partyId);
+  console.log('Network:', networkId);
 }
 ```
+
+> Need the legacy SDK `Session` getter (`{ sessionId, walletId, … }`)? It's
+> preserved as **`useClientSession()`** (deprecated). `useSession()` was
+> re-pointed to the reactive store in M1-S4 — see the migration note below.
 
 ### `useWallets()`
 
@@ -301,10 +305,13 @@ export function Providers({ children }: { children: React.ReactNode }) {
 All hooks and components are fully typed:
 
 ```typescript
-import type { Session, WalletInfo } from '@partylayer/react';
+import type { Session, WalletInfo, UseSessionReturn } from '@partylayer/react';
 
-// Session type
-const session: Session | null = useSession();
+// Reactive session (M1-S4): state + actions
+const session: UseSessionReturn = useSession();
+
+// Legacy SDK session getter (deprecated alias)
+const legacy: Session | null = useClientSession();
 
 // Wallet info type
 const { wallets }: { wallets: WalletInfo[] } = useWallets();
@@ -319,7 +326,7 @@ import { useState } from 'react';
 import { createPartyLayer } from '@partylayer/sdk';
 import {
   PartyLayerProvider,
-  useSession,
+  useAccount,
   useWallets,
   useConnect,
   useDisconnect,
@@ -333,19 +340,19 @@ const client = createPartyLayer({
 });
 
 function WalletStatus() {
-  const session = useSession();
+  const { isConnected, party, networkId } = useAccount();
   const { wallets, isLoading } = useWallets();
   const { connect, isConnecting } = useConnect();
   const { disconnect } = useDisconnect();
   const { signMessage, isSigning } = useSignMessage();
   const [modalOpen, setModalOpen] = useState(false);
 
-  if (session) {
+  if (isConnected) {
     return (
       <div>
         <h2>Connected</h2>
-        <p>Party: {session.partyId}</p>
-        <p>Wallet: {session.walletId}</p>
+        <p>Party: {party}</p>
+        <p>Network: {networkId}</p>
         <button
           onClick={() => signMessage({ message: 'Test' })}
           disabled={isSigning}

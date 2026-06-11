@@ -153,7 +153,8 @@ React hooks, components, and theming for easy integration.
 
 **Hooks:**
 - `usePartyLayer()`: Access SDK client instance
-- `useSession()`: Get active session
+- `useSession()`: Reactive session state + actions (`UseSessionReturn`); legacy getter preserved as `useClientSession()` (deprecated)
+- `useAccount()`: Reactive `{ party, account, status, networkId, isConnected, … }`
 - `useWallets()`: Get available wallets (registry + native CIP-0103)
 - `useConnect()`: Connect hook with loading/error state
 - `useDisconnect()`: Disconnect hook
