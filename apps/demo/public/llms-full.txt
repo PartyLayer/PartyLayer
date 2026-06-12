@@ -34,6 +34,35 @@ yarn add @partylayer/sdk @partylayer/react
 pnpm add @partylayer/sdk @partylayer/react
 ```
 
+React Setup:
+
+```
+import { PartyLayerKit, ConnectButton } from '@partylayer/react';
+
+function App() {
+  return (
+    <PartyLayerKit network="devnet" appName="My dApp" theme="auto">
+      <ConnectButton />
+      <YourApp />
+    </PartyLayerKit>
+  );
+}
+```
+
+Vanilla JS:
+
+```
+import { createPartyLayer } from '@partylayer/sdk';
+
+const client = createPartyLayer({
+  network: 'devnet',
+  app: { name: 'My dApp' },
+});
+
+const session = await client.connect({ walletId: 'console' });
+const signed = await client.signMessage({ message: 'Hello!' });
+```
+
 ## FAQ
 
 ### Is PartyLayer open source?
