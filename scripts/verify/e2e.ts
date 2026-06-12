@@ -285,7 +285,11 @@ async function main() {
       // during a recovery wave, wallet-balance-loop's pinned npm range may
       // resolve to a transiently-broken consumer and fail the verify pipeline.
       // The full-tree build runs in .github/workflows/examples.yml on schedule.
-      exec('pnpm -r --filter "@partylayer/*" build', ROOT);
+      //
+      // --workspace-concurrency=1 (serial): tsup `clean: true` makes a parallel
+      // build wipe/rewrite a workspace dep's dist while a dependent's DTS reads
+      // it (the "Could not find a declaration file" race) — examples.yml precedent.
+      exec('pnpm -r --filter "@partylayer/*" --workspace-concurrency=1 build', ROOT);
     });
 
     // Step 3: Verify registry signatures
