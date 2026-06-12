@@ -4,66 +4,75 @@ Factual snapshot of `partylayer.xyz`'s measurable SEO state at the start of the
 SEO foundation work (SEO-S1). This is the **before** picture to measure later
 slices against.
 
-> **Capture status.** The values below marked `[PENDING — capture]` could **not**
-> be measured from the CI/agent environment: Google `site:` counts and SERP
-> positions require an interactive Google session (programmatic Google queries
-> are blocked / need the paid Custom Search API), and the PageSpeed Insights
-> public endpoint returned `Quota exceeded` without an API key. They need a
-> one-time manual capture (browser + PageSpeed UI, or a PSI API key). Each field
-> documents exactly how to capture it so the snapshot is reproducible. Everything
-> else in this PR (sitemap, robots, JSON-LD, registry headers) is independent of
-> these numbers.
+**Capture date/time:** 2026-06-12, ~13:59–14:20 (Europe/Istanbul, UTC+3), real
+browser (Chrome-agent).
+**Locale note:** Captured from a Turkish / Istanbul (Ankara IP, `tr-TR`) browser
+session — SERP results may differ from US/global.
 
-## (a) Google index coverage
+## (a) Google index coverage — `site:partylayer.xyz`
 
-Query `site:partylayer.xyz` in Google (logged-in, incognito to avoid
-personalization) and record the reported result count.
+Observed **3 distinct indexed URLs** (Google displayed **no numeric "About X
+results"** figure for this query — all results fit on a single page with no
+pagination, even with Tools open).
 
-| Metric | Value | Captured |
+| # | Indexed URL | Title |
 |---|---|---|
-| Indexed pages (`site:partylayer.xyz`) | `[PENDING — capture]` | — |
-
-> Method: Google → `site:partylayer.xyz` → read "About N results". Cross-check
-> against Google Search Console → Indexing → Pages (if access exists).
+| 1 | `https://partylayer.xyz` | PartyLayer — One SDK for Every Canton Wallet |
+| 2 | `https://partylayer.xyz/docs` | Introduction - PartyLayer |
+| 3 | `https://docs.partylayer.xyz/…` | REST API Reference — Keyvoy - PartyLayer |
 
 ## (b) PageSpeed Insights — https://partylayer.xyz
 
-Run https://pagespeed.web.dev/ for the URL, both form factors (or the PSI API
-with a key: `…/pagespeedonline/v5/runPagespeed?url=…&strategy=mobile`).
+Report timestamp: 12 Haz 2026 13:59:26 (Lighthouse category scores).
 
-| Form factor | Performance | LCP | CLS | TBT | Captured |
-|---|---|---|---|---|---|
-| Mobile | `[PENDING — capture]` | `[PENDING]` | `[PENDING]` | `[PENDING]` | — |
-| Desktop | `[PENDING — capture]` | `[PENDING]` | `[PENDING]` | `[PENDING]` | — |
-
-> Attempted from CI via the anonymous PSI API → `Quota exceeded for quota metric
-> 'Queries'`. Capture via the PSI web UI, or set a `PAGESPEED_API_KEY` and re-run.
+| Form factor | Performance | Accessibility | Best Practices | SEO |
+|---|:---:|:---:|:---:|:---:|
+| Mobile | 77 | 79 | 96 | 100 |
+| Desktop | 96 | 89 | 96 | 100 |
 
 ## (c) SERP positions
 
-For each query, record PartyLayer's best position in Google's top 50
-(incognito, no personalization, default region). Record **absent** if not in the
-top 50.
+PartyLayer's best position for each query, scanned across the top ~30 organic
+results (3 pages). **Scope: `partylayer.xyz` only** — a result on another domain
+(e.g. `github.com/PartyLayer`) is recorded as `absent` for this site (see
+Findings).
 
-| # | Query | Position | Captured |
-|---|---|---|---|
-| 1 | `canton wallet sdk` | `[PENDING]` | — |
-| 2 | `canton network wallet integration` | `[PENDING]` | — |
-| 3 | `cip-0103` | `[PENDING]` | — |
-| 4 | `cip 0103 wallet` | `[PENDING]` | — |
-| 5 | `canton dapp sdk` | `[PENDING]` | — |
-| 6 | `canton wallet adapter` | `[PENDING]` | — |
-| 7 | `connect wallet canton` | `[PENDING]` | — |
-| 8 | `canton network sdk` | `[PENDING]` | — |
-| 9 | `partylayer` | `[PENDING]` | — |
-| 10 | `canton wallet abstraction` | `[PENDING]` | — |
+| # | Query | Position |
+|---|---|---|
+| 1 | `canton wallet sdk` | absent (top 30) |
+| 2 | `canton network wallet integration` | absent (top 30) |
+| 3 | `cip-0103` | absent (top 30) |
+| 4 | `cip 0103 wallet` | absent (top 30) |
+| 5 | `canton dapp sdk` | absent (top 30) |
+| 6 | `canton wallet adapter` | absent (top 30) |
+| 7 | `connect wallet canton` | absent (top 30) |
+| 8 | `canton network sdk` | absent (top 30) |
+| 9 | `partylayer` | **#1**, page 1, `/` (also **#4**, page 1, `/docs/introduction`) |
+| 10 | `canton wallet abstraction` | absent (top 30) |
 
-> Method: per query, count organic results to PartyLayer's first appearance
-> (1-indexed); ignore ads. `absent` if not present in the first 50 organic
-> results.
+## Capture method notes
+
+- **SERP pagination:** Google no longer honors `num=30` (single-page large result
+  sets), so each query was captured across **three pages** via `start=0`, `start=10`,
+  `start=20` (top ~30 organic results per query).
+- **`site:` count:** Google shows **no numeric result count** for small domains;
+  the figure here is the **observed total of distinct URLs** returned (3), not a
+  reported "About X results" number.
+
+## Findings
+
+1. **`docs.partylayer.xyz` is indexed serving Keyvoy content under the PartyLayer
+   brand** (result #3 above: "REST API Reference — Keyvoy - PartyLayer"). This
+   conflates a different product's docs with PartyLayer in the index. **Flagged
+   for the domain-decision slice** — direction already decided: **Keyvoy docs will
+   be separated out, and `partylayer.xyz/docs` is the canonical PartyLayer
+   documentation.**
+2. **`github.com/PartyLayer` ranks on page 1** for two queries where
+   `partylayer.xyz` is absent (queries 4 `cip 0103 wallet` and 10 `canton wallet
+   abstraction`). The org's GitHub presence is capturing intent the site itself
+   is not yet ranking for — a content/authority gap for later slices.
 
 ---
 
-_Scaffold authored 2026-06-12 by the SEO-S1 PR. Fill the `[PENDING]` cells with a
-one-time manual/API capture so this file is the dated "before" baseline; do not
-backfill an estimated date._
+_Baseline captured 2026-06-12 (real browser). This dated "before" snapshot
+pre-dates the SEO-S2 render fix._
