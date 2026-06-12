@@ -9,6 +9,18 @@
   Access-Control-Expose-Headers: ETag, Last-Modified, Cache-Control
   Cache-Control: public, max-age=300
   Content-Type: application/json; charset=utf-8
+  X-Robots-Tag: noindex
+
+# registry.json — short freshness window. Listed AFTER /*.json so this
+# Cache-Control overrides the 300s default for this file (later rule wins).
+/registry.json
+  Access-Control-Allow-Origin: *
+  Access-Control-Allow-Methods: GET, HEAD, OPTIONS
+  Access-Control-Allow-Headers: Accept, If-None-Match, Content-Type
+  Access-Control-Expose-Headers: ETag, Last-Modified, Cache-Control
+  Cache-Control: public, max-age=60
+  Content-Type: application/json; charset=utf-8
+  X-Robots-Tag: noindex
 
 # Signature files
 /*.sig
@@ -17,6 +29,7 @@
   Access-Control-Allow-Headers: Accept, If-None-Match, Content-Type
   Cache-Control: public, max-age=300
   Content-Type: application/json; charset=utf-8
+  X-Robots-Tag: noindex
 
 # Health check
 /health.json

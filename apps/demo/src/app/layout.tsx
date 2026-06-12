@@ -85,27 +85,24 @@ const organizationJsonLd = {
   '@type': 'Organization',
   name: 'PartyLayer',
   url: 'https://partylayer.xyz',
-  logo: 'https://partylayer.xyz/favicon-new.svg',
+  // Raster (PNG) absolute URL — Google's logo structured data requires a raster.
+  logo: 'https://partylayer.xyz/logo.png',
   sameAs: [
-    'https://github.com/PartyLayer/PartyLayer',
+    'https://github.com/PartyLayer',
     'https://x.com/partylayerkit',
-    'https://www.npmjs.com/package/@partylayer/sdk',
+    'https://www.npmjs.com/org/partylayer',
   ],
 };
 
 const softwareJsonLd = {
   '@context': 'https://schema.org',
   '@type': 'SoftwareApplication',
-  name: 'PartyLayer SDK',
+  name: 'PartyLayer',
+  url: 'https://partylayer.xyz',
   applicationCategory: 'DeveloperApplication',
-  operatingSystem: 'Cross-platform',
-  offers: {
-    '@type': 'Offer',
-    price: '0',
-    priceCurrency: 'USD',
-  },
+  operatingSystem: 'Web',
   description:
-    'Open-source wallet integration SDK for Canton Network dApps. Supports Console Wallet, 5N Loop, Cantor8, Nightly, and Bron.',
+    'CIP-0103 compliant wallet integration SDK for the Canton Network — registry-backed, verified wallets, and a clean developer experience.',
 };
 
 export default function RootLayout({
