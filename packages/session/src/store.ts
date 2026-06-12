@@ -115,6 +115,13 @@ export function createSessionStore(
   // provider-driven drop (`statusChanged(false)`). Set true only by disconnect().
   let explicitDisconnect = false;
 
+  // Idempotency guard for "this connection has been persisted". The connect()
+  // and restore() paths AND the provider-event path (statusChanged/accountsChanged)
+  // may all observe the same connect; only the first establishes (persists) it.
+  // Cleared on any transition into 'disconnected' (see setState) so the NEXT
+  // connection persists afresh.
+  let connectionPersisted = false;
+
   // Reconnect backoff state.
   let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
   let reconnectAttempt = 0;
@@ -240,6 +247,11 @@ export function createSessionStore(
   function setState(patch: Partial<MutableState>): void {
     const next: SessionState = { ...state, ...patch };
     if (statesEqual(state, next)) return;
+    // A transition INTO 'disconnected' ends the current connection: clear the
+    // persist guard so the next established connection writes a fresh snapshot.
+    if (next.status === 'disconnected' && state.status !== 'disconnected') {
+      connectionPersisted = false;
+    }
     state = next;
     notify();
   }
@@ -259,6 +271,44 @@ export function createSessionStore(
       await storage.removeItem(storageKey);
     } catch {
       // ignore
+    }
+  }
+
+  // The in-flight (or settled) establish promise for the CURRENT connection, so
+  // callers that lose the idempotency race still AWAIT the same persist instead
+  // of racing past it. Replaced on each new connection; irrelevant once cleared.
+  let establishInFlight: Promise<void> | null = null;
+
+  /**
+   * Mark the session ESTABLISHED — stamp `connectedAt`, persist the snapshot,
+   * and arm runtime expiry — EXACTLY ONCE per connection. Idempotent via
+   * `connectionPersisted`: connect(), restore(), and the provider-event path may
+   * each observe the same connect, but only the first establishes it; the others
+   * await the in-flight promise (so `await store.connect()` still resolves only
+   * after the write completes). This is what makes a session persist the moment
+   * it connects (secure-by-default), not just after the first reload or a switch.
+   */
+  function establishConnection(): Promise<void> {
+    if (connectionPersisted) return establishInFlight ?? Promise.resolve();
+    connectionPersisted = true;
+    connectedAt = new Date().getTime(); // stamp for the persisted snapshot
+    establishInFlight = (async () => {
+      await persistConnected();
+      armExpiry();
+    })();
+    return establishInFlight;
+  }
+
+  /**
+   * Provider-event persistence trigger: the FIRST moment the store holds BOTH a
+   * 'connected' status AND a primary account, persist — regardless of which CIP
+   * event arrived first (statusChanged or accountsChanged). Covers connects the
+   * store only OBSERVES (driven by the SDK / another layer, never via its own
+   * connect()). The `establishConnection` guard makes replays a no-op.
+   */
+  function persistOnFirstConnect(): void {
+    if (state.status === 'connected' && state.account != null) {
+      void establishConnection();
     }
   }
 
@@ -294,6 +344,7 @@ export function createSessionStore(
       if (previousNetwork !== null && nextNetwork !== null && previousNetwork !== nextNetwork) {
         handleNetworkChanged(previousNetwork, nextNetwork);
       }
+      persistOnFirstConnect(); // persist if accounts already arrived (status-after-accounts order)
     } else {
       // a TRANSIENT drop is a provider-driven `statusChanged(false)` while
       // we held an active session and the user did NOT call `disconnect()`.
@@ -323,6 +374,7 @@ export function createSessionStore(
     if (previous !== null && previous !== current) {
       handlePartyChanged(previous, current);
     }
+    persistOnFirstConnect(); // persist on the FIRST account when already 'connected' (accounts-after-status order)
   };
 
   // Network changes: today derived from `statusChanged.network` (the WC adapter
@@ -453,10 +505,8 @@ export function createSessionStore(
           networkId: status?.network?.networkId ?? null,
           lastError: null,
         });
-        connectedAt = new Date().getTime(); // stamp for the persisted snapshot
         await ensureNetworkId(); // WC fallback when status omitted network
-        await persistConnected();
-        armExpiry(); // arm runtime expiry for the restored session
+        await establishConnection(); // stamp + persist + arm (guarded, once)
       } else {
         setState({
           status: 'disconnected',
@@ -504,10 +554,10 @@ export function createSessionStore(
         // normally already moved us to 'connected'; assert it defensively in
         // case a provider does not emit on connect.
         if (state.status !== 'connected') setState({ status: 'connected' });
-        connectedAt = new Date().getTime(); // stamp for the persisted snapshot
         await ensureNetworkId(); // WC fallback when status omitted network
-        await persistConnected();
-        armExpiry(); // arm the runtime expiry timer for this session
+        // Guarded: if the provider's connect-time events already established the
+        // session via persistOnFirstConnect, this is a no-op (no double write).
+        await establishConnection(); // stamp + persist + arm (once)
         return state;
       } catch (err) {
         // Surface as lastError without crashing the caller (e.g. user rejected).
