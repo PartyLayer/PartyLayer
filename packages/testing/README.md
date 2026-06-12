@@ -1,18 +1,14 @@
-# @partylayer/testing (pass 1)
+# @partylayer/testing
 
-Offline test foundation for PartyLayer. Provides a **mock CIP-0103 wallet
-provider**, a **controllable simulated transaction lifecycle**, and
-**deterministic offline helpers** so unit/integration tests run with no DevNet
-or live-wallet dependency.
+Offline test foundation for PartyLayer: a **mock CIP-0103 wallet provider** with
+configurable failure scenarios, a **controllable transaction lifecycle**, a
+**session-lifecycle harness** over the real `@partylayer/session` store, **TanStack
+Query** test utilities, and **browser/e2e primitives** — so unit, integration, and
+real-browser tests run with no DevNet or live-wallet dependency.
 
-> **Status: `private` (unpublished), v0.1.0.** The API is still forming. We
-> publish **v1.0 at the 1.0 milestone** once pass 2 lands. Keeping the package
-> private also keeps it out of the published-API snapshot gate while the
-> surface settles — `scripts/gate/api-snapshot.mjs` only snapshots
-> `"private": false` packages.
-
-This is the test target for `@partylayer/session`, the native-path work, the
-WalletConnect work, and the `create-partylayer-app` templates.
+The TanStack Query utilities live in the `@partylayer/testing/query` subpath
+(`@tanstack/query-core` is an optional peer) so the main entry stays
+dependency-free for non-Query consumers.
 
 ## A. Mock CIP-0103 wallet — `createMockWallet(config?)`
 
@@ -92,9 +88,54 @@ rec.stop();
 Optional `delays` use `setTimeout`, so `vi.useFakeTimers()` +
 `vi.advanceTimersByTimeAsync()` give tests full control over time.
 
-## Extension points for pass 2 (LATER)
+## D. Session-lifecycle harness — `createSessionHarness(config?)`
 
-Pass 2 — **after `@partylayer/session` exists** — adds session-lifecycle
-simulation and TanStack Query test utilities on top of these primitives. It is
-intentionally **not** built here. The `// pass 2` notes in `src/lifecycle.ts`
-mark where the cumulative-flag / query-cache wiring will hook in.
+Drives a **real** `@partylayer/session` store through a controllable provider, so
+each scenario exercises the store's own machinery (no synthetic shortcuts).
+
+```ts
+import { createSessionHarness } from '@partylayer/testing';
+import { vi } from 'vitest';
+
+vi.useFakeTimers();
+const h = createSessionHarness({ ttlMs: 30_000, onReauthRequired, advanceTimers: vi.advanceTimersByTimeAsync });
+await h.connect();
+await h.expire();             // advances the store's REAL expiry timer → session:expired
+h.switchParty('party::b');    // real accountsChanged → party:changed
+h.dropConnection();           // real statusChanged(false) → transient reconnect
+const tabB = h.openTab();     // a 2nd store sharing the broadcast hub (multi-tab)
+h.destroy(); tabB.destroy();  // per-harness teardown (children are separate)
+```
+
+`expire()` advances the store's real `setTimeout`-based expiry — it never emits a
+fake `session:expired`, so pass `advanceTimers` (e.g. `vi.advanceTimersByTimeAsync`)
+and install fake timers.
+
+## E. Offline composition — `createOfflineHarness({ wallet?, session? })`
+
+Wires a mock wallet to a real session store, fully offline:
+
+```ts
+import { createOfflineHarness } from '@partylayer/testing';
+const { provider, store, destroy } = createOfflineHarness({ wallet: { partyId: 'party::a' } });
+```
+
+## F. TanStack Query utilities — `@partylayer/testing/query`
+
+```ts
+import {
+  createTestQueryClient, getQueryState, expectInvalidated, trackOptimisticRollback, createQueryHarness,
+} from '@partylayer/testing/query';
+
+const qc = createTestQueryClient();                     // no retries, gcTime 0
+const t = trackOptimisticRollback<number>(qc, ['count']);
+t.apply(99); /* assert */ t.rollback(); /* assert restore */
+const h = createQueryHarness({ wallet, session, query }); // offline harness + QueryClient
+```
+
+## G. Browser / e2e primitives
+
+Framework-agnostic script strings (no Playwright dependency) for a real-browser
+smoke (`mockWalletInjectionScript()`, `idbEntryCountScript(db)`, `sessionKeyDbName(origin)`),
+injected via Playwright's `page.addInitScript` / `page.evaluate`. The smoke itself
+lives in `apps/demo/e2e` and runs nightly.

@@ -1,8 +1,7 @@
 {
   "name": "@partylayer/testing",
   "version": "0.1.2",
-  "private": true,
-  "description": "Offline test utilities for PartyLayer: mock CIP-0103 provider, simulated transaction lifecycle, and deterministic helpers (pass 1)",
+  "description": "Offline test utilities for PartyLayer: mock CIP-0103 provider with failure scenarios, transaction + session lifecycle simulation, TanStack Query helpers, and browser/e2e primitives",
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",
   "types": "./dist/index.d.ts",
@@ -11,6 +10,11 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.mjs",
       "require": "./dist/index.js"
+    },
+    "./query": {
+      "types": "./dist/query.d.ts",
+      "import": "./dist/query.mjs",
+      "require": "./dist/query.js"
     }
   },
   "files": [
@@ -43,10 +47,20 @@
   },
   "dependencies": {
     "@partylayer/core": "workspace:^",
-    "@partylayer/provider": "workspace:^"
+    "@partylayer/provider": "workspace:^",
+    "@partylayer/session": "workspace:^"
+  },
+  "peerDependencies": {
+    "@tanstack/query-core": ">=5.0.0"
+  },
+  "peerDependenciesMeta": {
+    "@tanstack/query-core": {
+      "optional": true
+    }
   },
   "devDependencies": {
     "@partylayer/conformance-runner": "workspace:^",
+    "@tanstack/query-core": "^5.0.0",
     "@types/node": "^20.11.0",
     "tsup": "^8.0.0",
     "typescript": "^5.3.3",

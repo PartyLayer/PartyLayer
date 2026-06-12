@@ -12,6 +12,13 @@
 
 import { CIP0103_EVENTS } from '@partylayer/core';
 import type { CIP0103Provider, CIP0103TxChangedEvent } from '@partylayer/core';
+import {
+  createSessionStore,
+  createMemoryStorage,
+  type SessionStore,
+  type SessionStoreOptions,
+} from '@partylayer/session';
+import { createMockWallet, type MockWalletConfig } from './mock-wallet';
 
 export interface TxEventRecorder {
   /** All `txChanged` events captured, in emission order. */
@@ -51,4 +58,34 @@ export async function connectMock(
   provider: CIP0103Provider,
 ): Promise<{ isConnected: boolean }> {
   return provider.request<{ isConnected: boolean }>({ method: 'connect' });
+}
+
+/** A fully offline mock wallet + session store, wired together. */
+export interface OfflineHarness {
+  readonly provider: CIP0103Provider;
+  readonly store: SessionStore;
+  destroy(): void;
+}
+
+/**
+ * Compose a mock CIP-0103 wallet and a real `@partylayer/session` store with NO
+ * network/DevNet. `wallet` configures the mock (failure scenarios, delays,
+ * party); `session` overrides store options (storage defaults to in-memory).
+ * For TanStack Query-inclusive composition, see `@partylayer/testing/query`.
+ */
+export function createOfflineHarness(
+  config: { wallet?: MockWalletConfig; session?: Partial<SessionStoreOptions> } = {},
+): OfflineHarness {
+  const provider = createMockWallet(config.wallet);
+  const store = createSessionStore(provider, {
+    storage: createMemoryStorage(),
+    ...config.session,
+  });
+  return {
+    provider,
+    store,
+    destroy() {
+      store.destroy();
+    },
+  };
 }

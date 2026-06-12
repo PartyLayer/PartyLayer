@@ -21,9 +21,9 @@
  * NOTE — 'confirming' has no CIP-0103 `txChanged` status: the spec's tx union
  * goes signed → executed with no intermediate "confirming" state. We still
  * model `isConfirming` as the post-signed waiting window because the session
- * layer surfaces it as a UI flag.
- *   // pass 2: the @partylayer/session lifecycle simulation will build on this
- *   // controller (cumulative flags, query-cache wiring). Do not add it here.
+ * layer surfaces it as a UI flag. The session-lifecycle harness
+ * (`createSessionHarness`) and the TanStack Query utilities
+ * (`@partylayer/testing/query`) build on top of this controller.
  */
 
 import { CIP0103_EVENTS } from '@partylayer/core';

@@ -8,7 +8,7 @@
  */
 import 'fake-indexeddb/auto';
 import { afterEach, describe, expect, it } from 'vitest';
-import { createMockWallet } from '@partylayer/testing';
+import { createMockWallet } from './local-mock';
 import type { CIP0103Provider } from '@partylayer/core';
 import { createSessionStore } from '../store';
 import { createMemoryStorage } from '../storage';

@@ -9,13 +9,17 @@ name: Nightly Assurance
 # (validate:publish runs PRE-publish, against the workspace — it cannot see a
 # post-publish npm-resolution break, a missing `dist`, or a bad `exports` map).
 #
-# So this workflow runs nightly (and on demand) with two independent jobs:
+# So this workflow runs nightly (and on demand) with three independent jobs:
 #   1. gate-main          — the full gate on a clean checkout of main (drift).
 #   2. npm-consumer-canary — install the PUBLISHED @partylayer/* from npm into a
 #                            CLEAN dir with NO workspace links, and tsc-compile a
 #                            smoke file against the surfaces users import. This is
 #                            the ONLY check that exercises exactly what `npm i`
 #                            gives a downstream user.
+#   3. session-persistence-e2e — a real-browser (Chromium) smoke of the
+#                            secure-by-default session: connect → encrypted
+#                            IndexedDB → reload-restore → multi-tab. Nightly +
+#                            on-demand only (NOT PR-gated — flakiness risk).
 #
 # Scope discipline: this does NOT touch examples.yml (monorepo build canary) or
 # apps/marketing. Distinct purpose, distinct file.
@@ -146,3 +150,36 @@ jobs:
           echo "\`validate:publish\` cannot see post-publish: a broken \`exports\` map," >> $GITHUB_STEP_SUMMARY
           echo "a missing \`dist\`, an unresolvable dependency, or a .d.ts that no longer" >> $GITHUB_STEP_SUMMARY
           echo "type-checks for downstream consumers." >> $GITHUB_STEP_SUMMARY
+
+  session-persistence-e2e:
+    name: Session persistence e2e (real browser)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+      - name: Install (frozen)
+        run: pnpm install --frozen-lockfile
+      - name: Build workspace packages
+        run: pnpm -r --filter "@partylayer/*" build
+      - name: Install Playwright Chromium
+        run: pnpm --filter partylayer-demo exec playwright install --with-deps chromium
+      - name: Session persistence smoke
+        run: pnpm --filter partylayer-demo exec playwright test session-persistence
+      - name: Summary
+        if: always()
+        run: |
+          echo "## Nightly — session persistence e2e" >> $GITHUB_STEP_SUMMARY
+          echo "Status: ${{ job.status }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Real-browser (Chromium) smoke of the 1.0 secure-by-default session:" >> $GITHUB_STEP_SUMMARY
+          echo "connect → encrypted IndexedDB persistence → page reload → restore →" >> $GITHUB_STEP_SUMMARY
+          echo "multi-tab. Uses @partylayer/testing browser primitives. Nightly +" >> $GITHUB_STEP_SUMMARY
+          echo "on-demand only — NOT PR-gated (real-browser flakiness risk)." >> $GITHUB_STEP_SUMMARY

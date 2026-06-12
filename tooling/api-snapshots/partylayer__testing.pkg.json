@@ -1,0 +1,21 @@
+{
+  "exports": {
+    ".": {
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    },
+    "./query": {
+      "import": "./dist/query.mjs",
+      "require": "./dist/query.js",
+      "types": "./dist/query.d.ts"
+    }
+  },
+  "main": "./dist/index.js",
+  "module": "./dist/index.mjs",
+  "name": "@partylayer/testing",
+  "peerDependencies": {
+    "@tanstack/query-core": ">=5.0.0"
+  },
+  "types": "./dist/index.d.ts"
+}
