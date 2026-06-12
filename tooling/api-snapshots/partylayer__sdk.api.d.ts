@@ -128,6 +128,7 @@ export { ConsoleAdapter } from '@partylayer/adapter-console';
 export { LoopAdapter } from '@partylayer/adapter-loop';
 export { NightlyAdapter } from '@partylayer/adapter-nightly';
 export { SendAdapter } from '@partylayer/adapter-send';
+export { WalleyAdapter, WalleyAdapterConfig } from '@partylayer/adapter-walley';
 
 /**
  * Configuration types for PartyLayer SDK
@@ -709,6 +710,8 @@ declare class GenericAnnounceAdapter implements WalletAdapter {
  * - SendAdapter: Send Canton Wallet (passkey / WebAuthn-PRF, beta) — also
  *     injects at `window.canton`; the adapter's kernel.id guard keeps it
  *     and Console-spec wallets from claiming each other's provider.
+ * - WalleyAdapter: Walley self-custodial wallet (passkey / WebAuthn-PRF) —
+ *     hosted web wallet reached via a popup JSON-RPC bridge.
  *
  * Note: ConsoleAdapter defaults to 'combined' mode which supports both browser
  * extension and mobile wallet connect (QR code / deep link). To restrict to

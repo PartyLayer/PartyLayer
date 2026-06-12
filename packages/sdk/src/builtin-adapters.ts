@@ -11,6 +11,7 @@ import { LoopAdapter } from '@partylayer/adapter-loop';
 import { Cantor8Adapter } from '@partylayer/adapter-cantor8';
 import { NightlyAdapter } from '@partylayer/adapter-nightly';
 import { SendAdapter } from '@partylayer/adapter-send';
+import { WalleyAdapter } from '@partylayer/adapter-walley';
 
 // Note: BronAdapter requires OAuth config and is not included by default.
 // Import it separately: import { BronAdapter } from '@partylayer/adapter-bron';
@@ -29,6 +30,8 @@ import { SendAdapter } from '@partylayer/adapter-send';
  * - SendAdapter: Send Canton Wallet (passkey / WebAuthn-PRF, beta) — also
  *     injects at `window.canton`; the adapter's kernel.id guard keeps it
  *     and Console-spec wallets from claiming each other's provider.
+ * - WalleyAdapter: Walley self-custodial wallet (passkey / WebAuthn-PRF) —
+ *     hosted web wallet reached via a popup JSON-RPC bridge.
  *
  * Note: ConsoleAdapter defaults to 'combined' mode which supports both browser
  * extension and mobile wallet connect (QR code / deep link). To restrict to
@@ -44,13 +47,15 @@ export function getBuiltinAdapters(): WalletAdapter[] {
     new Cantor8Adapter(),   // Cantor8 - deep link transport
     new NightlyAdapter(),   // Nightly - multichain wallet (injected)
     new SendAdapter(),      // Send - passkey-based, kernel.id-guarded window.canton
+    new WalleyAdapter(),    // Walley - self-custodial passkey wallet, popup bridge
   ];
 }
 
 /**
  * Built-in adapter classes (for advanced usage)
  */
-export { ConsoleAdapter, LoopAdapter, Cantor8Adapter, NightlyAdapter, SendAdapter };
+export { ConsoleAdapter, LoopAdapter, Cantor8Adapter, NightlyAdapter, SendAdapter, WalleyAdapter };
+export type { WalleyAdapterConfig } from '@partylayer/adapter-walley';
 
 /**
  * Re-export Console adapter types for convenience

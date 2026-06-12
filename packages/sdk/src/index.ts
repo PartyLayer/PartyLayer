@@ -113,8 +113,12 @@ export {
   NightlyAdapter,
   BronAdapter,
   SendAdapter,
+  WalleyAdapter,
   getBuiltinAdapters,
 } from './builtin-adapters';
+
+// Re-export Walley adapter config types (for advanced usage)
+export type { WalleyAdapterConfig } from './builtin-adapters';
 
 // Re-export Bron adapter config types (for advanced usage)
 export type {
