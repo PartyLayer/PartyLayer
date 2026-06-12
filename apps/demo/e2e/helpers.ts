@@ -35,12 +35,34 @@ export async function connectToMockWallet(page: Page): Promise<void> {
 /**
  * Assert the UI is in "connected" state.
  *
- * The ConnectButton hides "Connect Wallet" and shows a truncated partyId with a green dot.
+ * POSITIVE assertion: the Nav's connected indicator — the partyId chip that
+ * toggles the session dropdown — is visible. The prior version asserted the
+ * ABSENCE of any `/Connect Wallet/i` button page-wide, which is doctrinally
+ * fragile: it collided with the *permanent* DemoCTA "Connect Wallet" CTA (a
+ * modal-opener that is always visible regardless of session state), so once the
+ * Nav button transitioned to connected, `.first()` resolved to that CTA and the
+ * absence check failed even though the session was fully connected. Asserting
+ * the connected state directly (it is PRESENT) cannot collide with unrelated
+ * CTAs and is the more honest signal.
  */
 export async function assertConnected(page: Page): Promise<void> {
-  // "Connect Wallet" button should no longer be visible
-  const connectBtn = page.getByRole('button', { name: /Connect Wallet/i }).first();
-  await expect(connectBtn).not.toBeVisible({ timeout: 5000 });
+  // Scope to the Nav header so the page's permanent "Connect Wallet" CTAs (which
+  // live in <main>) can never interfere.
+  const nav = page.locator('header').first();
+
+  // Connected ⇒ the Nav renders the partyId chip (a button whose label is the
+  // truncated partyId). The mock wallet's id is `party::demo-user-…`, and
+  // truncatePartyId keeps the leading `party:` segment, so the chip's accessible
+  // name contains `party:`. Generous timeout: restore-after-reload and new-tab
+  // restore are async (the prior hardcoded 5s was tighter than the spec's own
+  // 10s restore waits).
+  const partyChip = nav.getByRole('button', { name: /party:/i });
+  await expect(partyChip).toBeVisible({ timeout: 10_000 });
+
+  // And the Nav's own connect button is gone (nav-scoped, so this does NOT
+  // collide with the permanent CTAs elsewhere on the page).
+  const navConnectBtn = nav.getByRole('button', { name: /connect wallet/i });
+  await expect(navConnectBtn).toHaveCount(0);
 }
 
 /**
