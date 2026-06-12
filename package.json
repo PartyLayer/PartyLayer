@@ -25,6 +25,7 @@
     "registry:verify": "tsx scripts/registry/verify.ts",
     "verify:e2e": "tsx scripts/verify/e2e.ts",
     "gate": "pnpm gate:build && pnpm typecheck && pnpm lint && pnpm gate:test && pnpm gate:conformance && pnpm gate:api && pnpm gate:registry",
+    "//gate:build": "Serial (--workspace-concurrency=1): the parallel -r build can start a dependent package (e.g. testing) before a workspace dep (session) has flushed its .d.ts, an intermittent DTS-resolution race; serial enforces topological order deterministically. Reinstall after dependency edits keeps the graph correct — this is belt-and-suspenders (cf. examples.yml serialization precedent).",
     "gate:build": "pnpm -r --filter \"@partylayer/*\" --workspace-concurrency=1 build",
     "gate:test": "CI=true pnpm -r test",
     "gate:conformance": "node scripts/gate/conformance-native.mjs",
