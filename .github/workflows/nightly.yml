@@ -78,10 +78,11 @@ jobs:
             @partylayer/provider@latest \
             @partylayer/adapter-send@latest \
             @partylayer/session@latest \
+            @partylayer/vue@latest \
             typescript@^5
 
           echo "Installed versions:"
-          for p in sdk react provider adapter-send session; do
+          for p in sdk react provider adapter-send session vue; do
             # Read package.json via a direct filesystem path — `require('@partylayer/x/package.json')`
             # is blocked by the packages' `exports` maps (ERR_PACKAGE_PATH_NOT_EXPORTED).
             node -e "const fs=require('fs');const n=process.argv[1];const v=JSON.parse(fs.readFileSync('node_modules/@partylayer/'+n+'/package.json','utf8')).version;console.log('  @partylayer/'+n, v)" "$p"
@@ -107,25 +108,26 @@ jobs:
           cat > smoke.ts <<'TS'
           // Surfaces a downstream consumer imports. Compiles against PUBLISHED .d.ts.
           import { createPartyLayer, GenericAnnounceAdapter } from '@partylayer/sdk';
-          import { createSessionStore } from '@partylayer/session';
+          // 1.0: encrypted-storage default + the session store, now PUBLISHED.
+          import { createSessionStore, createEncryptedIndexedDBStorage } from '@partylayer/session';
           import { createProviderBridge } from '@partylayer/provider';
-          // Touch react + adapter-send so resolution + types are validated too.
-          import type { WalletModalProps } from '@partylayer/react';
+          // React 0.7.0 reactive session hook + a component prop type.
+          import { useSession, type WalletModalProps } from '@partylayer/react';
           import { SendAdapter } from '@partylayer/adapter-send';
-
-          // NOTE: createEncryptedIndexedDBStorage / createSessionStore resilience +
-          // multi-tab (M1-S1..S3) are MERGED on main but NOT YET PUBLISHED
-          // (@partylayer/session@latest is still 0.2.1). Add the encrypted-storage
-          // import here the moment @partylayer/session ships the M1 release — the
-          // canary will then guard that surface for real consumers too.
-          //   import { createEncryptedIndexedDBStorage } from '@partylayer/session';
+          // Vue 0.1.0 composables + provisioning.
+          import { useSession as useVueSession, useAccount as useVueAccount, provideSessionStore } from '@partylayer/vue';
 
           export const _surfaces = [
             createPartyLayer,
             GenericAnnounceAdapter,
             createSessionStore,
+            createEncryptedIndexedDBStorage,
             createProviderBridge,
+            useSession,
             SendAdapter,
+            useVueSession,
+            useVueAccount,
+            provideSessionStore,
           ] as const;
           export type _ModalProps = WalletModalProps;
           TS
