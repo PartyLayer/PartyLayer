@@ -83,10 +83,12 @@ jobs:
             @partylayer/adapter-send@latest \
             @partylayer/session@latest \
             @partylayer/vue@latest \
+            @partylayer/testing@latest \
+            @tanstack/query-core@^5 \
             typescript@^5
 
           echo "Installed versions:"
-          for p in sdk react provider adapter-send session vue; do
+          for p in sdk react provider adapter-send session vue testing; do
             # Read package.json via a direct filesystem path — `require('@partylayer/x/package.json')`
             # is blocked by the packages' `exports` maps (ERR_PACKAGE_PATH_NOT_EXPORTED).
             node -e "const fs=require('fs');const n=process.argv[1];const v=JSON.parse(fs.readFileSync('node_modules/@partylayer/'+n+'/package.json','utf8')).version;console.log('  @partylayer/'+n, v)" "$p"
@@ -120,6 +122,9 @@ jobs:
           import { SendAdapter } from '@partylayer/adapter-send';
           // Vue 0.1.0 composables + provisioning.
           import { useSession as useVueSession, useAccount as useVueAccount, provideSessionStore } from '@partylayer/vue';
+          // Testing 1.0 — BOTH entry points: main (session harness) + the /query subpath.
+          import { createSessionHarness } from '@partylayer/testing';
+          import { createTestQueryClient } from '@partylayer/testing/query';
 
           export const _surfaces = [
             createPartyLayer,
@@ -132,6 +137,8 @@ jobs:
             useVueSession,
             useVueAccount,
             provideSessionStore,
+            createSessionHarness,
+            createTestQueryClient,
           ] as const;
           export type _ModalProps = WalletModalProps;
           TS
