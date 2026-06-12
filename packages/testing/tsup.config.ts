@@ -1,7 +1,7 @@
 import { defineConfig } from 'tsup';
 
 export default defineConfig({
-  entry: ['src/index.ts'],
+  entry: ['src/index.ts', 'src/query.ts'],
   format: ['cjs', 'esm'],
   dts: {
     compilerOptions: {
@@ -13,4 +13,5 @@ export default defineConfig({
   sourcemap: true,
   splitting: false,
   treeshake: true,
+  external: ['@tanstack/query-core', '@partylayer/session', '@partylayer/core', '@partylayer/provider'],
 });
