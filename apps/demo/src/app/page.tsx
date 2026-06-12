@@ -1,11 +1,11 @@
 'use client';
 
-import { useState, useRef, useEffect, useCallback, useMemo, type ReactNode } from 'react';
+import { useState, useRef, useEffect, useCallback, type ReactNode } from 'react';
 import Link from 'next/link';
 // Note: useClientSession = the legacy SDK-layer getter (partyId/walletId here);
 // useAccount = the new reactive session-store hook (the live session indicator).
 import { PartyLayerKit, WalletModal, useClientSession, useDisconnect, truncatePartyId, useAccount } from '@partylayer/react';
-import { createEncryptedIndexedDBStorage, DEFAULT_RETRY_POLICY, type SessionStoreOptions } from '@partylayer/session';
+import { DEFAULT_RETRY_POLICY, type SessionStoreOptions } from '@partylayer/session';
 import { buildDemoAdapters } from '../lib/canton-demo-adapter';
 import { sortByCanonicalOrder, CANONICAL_WALLET_ORDER } from '../lib/wallet-order';
 import { useBreakpoint, responsive } from './hooks/useBreakpoint';
@@ -1831,48 +1831,27 @@ function LandingContent() {
   );
 }
 
-/* ─── Loading Skeleton (shown during SSR + hydration) ─────────────────── */
-
-function LoadingSkeleton() {
-  return (
-    <div style={{
-      minHeight: '100vh', display: 'flex', flexDirection: 'column',
-      alignItems: 'center', justifyContent: 'center', gap: 16,
-      background: '#FFFFFF', fontFamily: t.font,
-    }}>
-      <img src="/favicon-new.svg" alt="" width={48} height={48} style={{ opacity: 0.7 }} />
-      <div style={{
-        width: 32, height: 32, border: `3px solid ${t.muted2}`,
-        borderTopColor: t.brand500, borderRadius: '50%',
-        animation: 'plSpin .7s linear infinite',
-      }} />
-      <style>{`@keyframes plSpin { to { transform: rotate(360deg); } }`}</style>
-    </div>
-  );
-}
+// Apex session config. Only NON-DEFAULT options are set:
+//   • reconnect — exponential-backoff reconnect on transient drops (the store
+//     default is DISABLED).
+//   • broadcast — multi-tab session sync (the store default is OFF).
+// storage + persistSnapshot are intentionally OMITTED: the 1.0 capability-detected
+// default already yields encrypted IndexedDB in the browser and in-memory on the
+// server (Node/SSR), so the apex prerenders cleanly with no storage probing — and
+// the Kit's pre-1.0 localStorage-marker sweep only runs when no explicit storage is
+// pinned. Module-level constant → referentially stable (the Kit rebuilds the store
+// when sessionOptions changes identity), so no useMemo needed.
+const APEX_SESSION_OPTIONS: Partial<SessionStoreOptions> = {
+  reconnect: DEFAULT_RETRY_POLICY,
+  broadcast: true,
+};
 
 export default function Home() {
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => { setMounted(true); }, []);
-
-  // Note: the apex adopts the full session layer — encrypted IndexedDB
-  // persistence, default auto-reconnect, and multi-tab sync. Memoized so the
-  // shared store isn't rebuilt every render. Constructed client-side only (the
-  // Kit is mounted-gated below); the storage object is lazy (no IDB at build).
-  const sessionOptions = useMemo<Partial<SessionStoreOptions>>(
-    () => ({
-      storage: createEncryptedIndexedDBStorage(),
-      persistSnapshot: true,
-      reconnect: DEFAULT_RETRY_POLICY,
-      broadcast: true,
-    }),
-    [],
-  );
-
-  // Show loading skeleton until client-side JS hydrates.
-  // PartyLayerKit needs browser APIs (window.canton.*) so we can't render it on server.
-  if (!mounted) return <LoadingSkeleton />;
-
+  // No mount gate: PartyLayerKit renders server-side in its disconnected state
+  // (session restore runs in a mount effect, not during render — so the first
+  // client render matches the server's disconnected paint, no hydration mismatch).
+  // This lets the apex (H1, hero, all static copy) paint from the server for SEO,
+  // and removes the prior loading-skeleton flash.
   return (
     <PartyLayerKit
       network="devnet"
@@ -1881,7 +1860,7 @@ export default function Home() {
       walletOrder={CANONICAL_WALLET_ORDER}
       adapters={buildDemoAdapters()}
       registryUrl="/registry"
-      sessionOptions={sessionOptions}
+      sessionOptions={APEX_SESSION_OPTIONS}
     >
       <LandingContent />
     </PartyLayerKit>
