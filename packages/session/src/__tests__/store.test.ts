@@ -16,7 +16,7 @@ import {
   createMockWallet,
   createTransactionLifecycle,
   recordTxEvents,
-} from '@partylayer/testing';
+} from './local-mock';
 import { createSessionStore } from '../store';
 
 function account(partyId: string, primary = true): CIP0103Account {

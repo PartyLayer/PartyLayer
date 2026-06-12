@@ -632,9 +632,6 @@ importers:
         specifier: workspace:^
         version: link:../core
     devDependencies:
-      '@partylayer/testing':
-        specifier: workspace:^
-        version: link:../testing
       '@types/node':
         specifier: ^20.11.0
         version: 20.19.30
