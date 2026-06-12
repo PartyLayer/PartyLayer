@@ -1,5 +1,47 @@
 # @partylayer/react
 
+## 0.7.0
+
+### Minor Changes
+
+- 88006e3: Reactive session hooks + demo wiring.
+  - NEW `useSession()` — reactive `SessionState` + bound actions
+    (`connect`/`disconnect`/`restore`) + the narrowed `on(event, handler)` for
+    resilience/sync events. Backed by `@partylayer/session` via context. SSR-safe.
+  - `useAccountEffect` gains `onPartyChanged({ previous, current })` (the
+    `party:changed` switch event).
+  - `PartyLayerProvider`/`PartyLayerKit` gain `sessionOptions?: Partial<SessionStoreOptions>`
+    (forward reconnect/expiry/broadcast/persistSnapshot/storage to the store).
+  - apps/demo (private) adopts the session layer on the apex: encrypted IndexedDB
+    persistence + persistSnapshot + default reconnect + multi-tab + a live
+    `<SessionIndicator>`.
+
+  ⚠️ BREAKING: `useSession`'s return type changed from the SDK-layer session
+  getter (`Session | null`) to `UseSessionReturn` (reactive state + actions). The
+  legacy getter is preserved VERBATIM as **`useClientSession()`** —
+  migration: `useSession()` → `useClientSession()`.
+
+- 767b694: Adopt the session 1.0 secure-by-default storage.
+
+  `PartyLayerProvider`/`PartyLayerKit` no longer pin a plain `localStorage` marker
+  as the default session storage. With no `sessionOptions.storage`, the provider
+  now inherits the `@partylayer/session` default — encrypted IndexedDB snapshots
+  where supported, in-memory otherwise.
+
+  Behavior change: default session persistence moves from an unencrypted
+  plain-`localStorage` marker to encrypted IndexedDB snapshots. On mount under the
+  default storage, the provider makes a best-effort removal of the stale pre-1.0
+  `localStorage` marker. Apps that explicitly pass `sessionOptions.storage` (e.g.
+  `createLocalStorage()` or `createMemoryStorage()`) are unaffected.
+
+### Patch Changes
+
+- Updated dependencies [60d2205]
+- Updated dependencies [ae3e889]
+- Updated dependencies [63a9ac5]
+- Updated dependencies [767b694]
+  - @partylayer/session@1.0.0
+
 ## 0.6.1
 
 ### Patch Changes

@@ -1,5 +1,13 @@
 # @partylayer/marketing
 
+## 0.1.4
+
+### Patch Changes
+
+- Updated dependencies [88006e3]
+- Updated dependencies [767b694]
+  - @partylayer/react@0.7.0
+
 ## 0.1.3
 
 ### Patch Changes
