@@ -34,7 +34,13 @@ jobs:
         # a borked transitive @partylayer/*) cannot block a recovery PR's
         # CI. Full-tree build runs in .github/workflows/examples.yml on
         # schedule and on-demand.
-        run: pnpm -r --filter "@partylayer/*" build
+        #
+        # --workspace-concurrency=1 (serial) is REQUIRED, not tidiness: tsup uses
+        # `clean: true`, so a parallel build can wipe/rewrite a workspace dep's
+        # dist while a dependent's DTS reads it (intermittent "Could not find a
+        # declaration file" race) — same precedent as examples.yml. Serial
+        # enforces topological order deterministically.
+        run: pnpm -r --filter "@partylayer/*" --workspace-concurrency=1 build
 
       - name: Validate publish coherence
         run: pnpm validate:publish
