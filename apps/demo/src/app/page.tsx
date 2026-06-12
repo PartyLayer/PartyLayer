@@ -510,9 +510,6 @@ function Nav({ onConnect }: { onConnect: () => void }) {
           </div>
         )}
 
-        {/* Note: live reactive session indicator (the new session layer, on the apex). */}
-        <SessionIndicator />
-
         {isConnected ? (
           /* ── Connected: dropdown button ── */
           <div ref={dropdownRef} style={{ position: 'relative' }}>
@@ -1570,6 +1567,12 @@ function DemoCTA({ onConnect }: { onConnect: () => void }) {
                 </svg>
                 Connect Wallet
               </button>
+
+              {/* Live session indicator — shown here, in the interactive demo, only
+                  while connected (where developers exercise the session features). */}
+              <div style={{ marginTop: 16, display: 'flex', justifyContent: 'center' }}>
+                <SessionIndicator />
+              </div>
 
               <p style={{ marginTop: 16, fontSize: 12, color: t.slate400 }}>
                 Select a wallet, see the connecting animation, and get a success confirmation
