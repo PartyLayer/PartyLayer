@@ -1,0 +1,21 @@
+# PartyLayer
+
+> CIP-0103 compliant wallet integration SDK for Canton Network — registry-backed, verified wallets, one unified API.
+
+## Docs
+
+- [Introduction](https://partylayer.xyz/docs/introduction)
+- [Installation](https://partylayer.xyz/docs/installation)
+- [Quick Start](https://partylayer.xyz/docs/quick-start)
+- [PartyLayer Kit](https://partylayer.xyz/docs/partylayer-kit)
+- [Connect Button](https://partylayer.xyz/docs/connect-button)
+- [Wallet Modal](https://partylayer.xyz/docs/wallet-modal)
+- [Theming](https://partylayer.xyz/docs/theming)
+- [Hooks](https://partylayer.xyz/docs/hooks)
+- [Send Wallet](https://partylayer.xyz/docs/wallets/send)
+
+## Resources
+
+- [GitHub](https://github.com/PartyLayer/PartyLayer)
+- [npm (@partylayer)](https://www.npmjs.com/org/partylayer)
+- [X](https://x.com/partylayerkit)

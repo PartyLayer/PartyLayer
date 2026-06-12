@@ -1,0 +1,108 @@
+# PartyLayer
+
+> CIP-0103 compliant wallet integration SDK for Canton Network — registry-backed, verified wallets, one unified API.
+
+## Overview
+
+One SDK for every Canton wallet.
+
+CIP-0103 compliant wallet integration for Canton — registry-backed, verified wallets, and a clean developer experience.
+
+## Supported wallets
+
+All verified wallets in the Canton ecosystem, unified behind a single interface.
+
+- **Console Wallet** — Official Console Wallet for Canton Network — transport: Extension + Mobile
+- **Send** — Passkey-based Canton wallet (mainnet) — transport: Injected (window.canton)
+- **5N Loop** — 5N Loop Wallet for Canton Network — transport: QR Code / Popup
+- **WalletConnect** — Connect any WalletConnect-compatible Canton wallet — transport: WalletConnect
+- **Cantor8 (C8)** — Cantor8 Wallet for Canton Network — transport: Deep Link
+- **Nightly** — Multichain wallet with native Canton support — transport: Injected
+- **Bron** — Enterprise wallet for Canton Network — transport: OAuth2 / API
+
+## Quickstart
+
+Install:
+
+```
+npm install @partylayer/sdk @partylayer/react
+
+# or with yarn
+yarn add @partylayer/sdk @partylayer/react
+
+# or with pnpm
+pnpm add @partylayer/sdk @partylayer/react
+```
+
+React Setup:
+
+```
+import { PartyLayerKit, ConnectButton } from '@partylayer/react';
+
+function App() {
+  return (
+    <PartyLayerKit network="devnet" appName="My dApp" theme="auto">
+      <ConnectButton />
+      <YourApp />
+    </PartyLayerKit>
+  );
+}
+```
+
+Vanilla JS:
+
+```
+import { createPartyLayer } from '@partylayer/sdk';
+
+const client = createPartyLayer({
+  network: 'devnet',
+  app: { name: 'My dApp' },
+});
+
+const session = await client.connect({ walletId: 'console' });
+const signed = await client.signMessage({ message: 'Hello!' });
+```
+
+## FAQ
+
+### Is PartyLayer open source?
+
+Yes! PartyLayer is fully open source under the MIT license. You can view the source code, submit issues, and contribute on GitHub. We believe in transparency and community-driven development.
+
+### How does registry verification work?
+
+The wallet registry is a cryptographically signed JSON manifest containing metadata for each verified wallet. The SDK fetches this registry and validates signatures before displaying wallets to users. This prevents phishing attacks where malicious apps impersonate legitimate wallets.
+
+### Which networks are supported?
+
+PartyLayer supports all Canton networks including mainnet, testnet, and devnet environments. The SDK automatically detects the connected network and adapts accordingly. Each wallet adapter handles network-specific connection logic.
+
+### What error codes should I handle?
+
+Common error codes include WALLET_NOT_INSTALLED (wallet app not detected), USER_REJECTED (user declined connection), SESSION_EXPIRED (session timed out), and TRANSPORT_ERROR (communication failure). All errors are typed and documented in the SDK.
+
+### How is security tested?
+
+We run comprehensive security testing including registry signature verification, session hijacking prevention, and transport layer security. The SDK includes built-in protections against common attack vectors. See our security checklist in the docs.
+
+### How do I add a new wallet to the registry?
+
+Wallet providers can apply for registry inclusion by submitting a pull request to the PartyLayer repository. Requirements include implementing the standard adapter interface, passing conformance tests, and providing wallet metadata. See the wallet-provider-guide in our docs.
+
+## Docs
+
+- [Introduction](https://partylayer.xyz/docs/introduction)
+- [Installation](https://partylayer.xyz/docs/installation)
+- [Quick Start](https://partylayer.xyz/docs/quick-start)
+- [PartyLayer Kit](https://partylayer.xyz/docs/partylayer-kit)
+- [Connect Button](https://partylayer.xyz/docs/connect-button)
+- [Wallet Modal](https://partylayer.xyz/docs/wallet-modal)
+- [Theming](https://partylayer.xyz/docs/theming)
+- [Hooks](https://partylayer.xyz/docs/hooks)
+- [Send Wallet](https://partylayer.xyz/docs/wallets/send)
+
+## Resources
+
+- [GitHub](https://github.com/PartyLayer/PartyLayer)
+- [npm (@partylayer)](https://www.npmjs.com/org/partylayer)
+- [X](https://x.com/partylayerkit)
