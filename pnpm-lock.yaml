@@ -60,6 +60,12 @@ importers:
 
   apps/demo:
     dependencies:
+      '@canton-network/dapp-sdk':
+        specifier: ^0.24.0
+        version: 0.24.0
+      '@k2flabs/walley-dapp-sdk':
+        specifier: ^1.1.0
+        version: 1.1.0(@canton-network/dapp-sdk@0.24.0)
       '@partylayer/adapter-bron':
         specifier: workspace:^
         version: link:../../packages/adapters/bron
@@ -118,6 +124,12 @@ importers:
       '@types/react-dom':
         specifier: ^18.2.0
         version: 18.3.7(@types/react@18.3.27)
+      dotenv:
+        specifier: ^17.2.4
+        version: 17.2.4
+      esbuild:
+        specifier: ^0.27.2
+        version: 0.27.2
       typescript:
         specifier: ^5.3.3
         version: 5.9.3
@@ -852,47 +864,113 @@ packages:
   '@canton-network/core-ledger-client-types@1.4.0':
     resolution: {integrity: sha512-aoPJfeswFc/SuvVdRaMLiZt3c+MVofVdaq8/vZnaHJqQ0P9QQcqK9s5nXYGq/5h9p/YFJTfQGYuU4CGwkE1tsg==}
 
+  '@canton-network/core-ledger-proto@0.22.2':
+    resolution: {integrity: sha512-B7fWq9K13eXE/41XroBm6txNVLv/mtnUP5Z92olOSiXaD4x8fwqcMRSaytOq1Dhi+QTkVhpZpoVYRBhYILI13g==}
+
   '@canton-network/core-ledger-proto@1.4.0':
     resolution: {integrity: sha512-Y804Z+7xMUqGSdKttG4uVOYmki/Zc/svwDUQ0hR74tavDoTXodi25rM3SbdodY1/86MlKrBlMgUohMQMV2O9iA==}
+
+  '@canton-network/core-provider-dapp@0.4.1':
+    resolution: {integrity: sha512-SP6B7UKL5Rp+mfWMZxh5EvEJxO/ywOhF0QliMzZlbmuveATNxLvtdY5toYiZqw8gvDG77LazXemC3WABPRH51g==}
 
   '@canton-network/core-provider-dapp@1.4.0':
     resolution: {integrity: sha512-uQTIpX4zdM1vCMjD9MlUjrNZgvWlC8bmhpekzhmm5wTrFu3aocMz4GAdpG8acaps4HXOOyKShCOPIsbjFMPckg==}
 
+  '@canton-network/core-rpc-errors@0.18.2':
+    resolution: {integrity: sha512-7uMsTQKpvF53SR/0VZVN6uDwRR6Xxn8y9uowIhawSsX0sgcJgT9VdtNlXdWRk7BhE0VkPwR8mIMg7PMzpep4NQ==}
+
+  '@canton-network/core-rpc-errors@0.19.2':
+    resolution: {integrity: sha512-KREVttVApu2egc5jiI3t3N3A8iCwb63SsfkaL3Gl1xLiN+YGjmqEKX+PBO9RLOoQxrkBl4KiDw6ilGxCkX2cNw==}
+
   '@canton-network/core-rpc-errors@1.4.0':
     resolution: {integrity: sha512-umjI1WDIgHGsshBjjCKrsYvR2paAIxQbASS3LUGvvLzA/Z82eKeEF2wrBWb98mhr/rPV/umlFDAttQZePL8Xfg==}
+
+  '@canton-network/core-rpc-transport@0.8.1':
+    resolution: {integrity: sha512-ZUIhB3QN8KT+TEhFxjDYAxjQ/PUg8OwKajzIwaVxFU0SKkUJmac235ckEm8PyAcUq7sYaNpPq2BjBY6hKO4WJg==}
+
+  '@canton-network/core-rpc-transport@0.9.2':
+    resolution: {integrity: sha512-h2KDvuE3ULHLWBL8S+/t3Lu0Af1AohSf/Zkt57VbxhjHzdGqryjK0FcUa3SUN8ugn40knTGZIP5vJ7VVlWgsVg==}
 
   '@canton-network/core-rpc-transport@1.4.0':
     resolution: {integrity: sha512-FWG/WRaAIvP8XKeHfUOehOzL1PUGfM7E2p3Y06oOgU9QRqnkEL2aazuYRzBt+B3zwmntMFkrGYr7AjLPMeCwBg==}
 
+  '@canton-network/core-splice-provider@0.28.1':
+    resolution: {integrity: sha512-Q5kAMU6W+B7EaQAMZCW02x12LgyCBJJimzoihx0x99lC7bEx8E9jqFsFV3XhmGPfY13IZfwmo6IuLdXII63BeQ==}
+
+  '@canton-network/core-splice-provider@0.29.0':
+    resolution: {integrity: sha512-TDip99JwSCUe0efizln10ewtl1GATh74YnBbxnOrelgLv4j7eWcOh6i/hsYy0oHucL5ld8JyrVaBMxv7LzV+/g==}
+
   '@canton-network/core-splice-provider@1.4.0':
     resolution: {integrity: sha512-5fUpaL6AWnzNiXymVy081AlwDo9Iyt7Zyiogbv+aKXsm97pHz+hCJuNKisFK/YMTeae1tg35zceRbdDoUUXEZg==}
+
+  '@canton-network/core-tx-visualizer@0.22.2':
+    resolution: {integrity: sha512-irwr8nZOGzf17MEygmjRTVENk/ZJ+QP7/cAY4Vvo05TGpMw0hKxx73uRs62bqCT5bRq3WKFr+BE4DWML4WuO8A==}
 
   '@canton-network/core-tx-visualizer@1.4.0':
     resolution: {integrity: sha512-cZomJKN2ZxwoLhUrmGJcBELI9uM/bRZkEp40zU79gML7L+TjV6+8M2axs3XGBzdL6Jo9B5Of5p+NJLQK+FxDpg==}
 
+  '@canton-network/core-types@0.22.1':
+    resolution: {integrity: sha512-yhCHmd6ASPtm5A/oh2r20orcq46uZrvBM1wXE2OMSYU5qAZshNhCGvHgt4ep2X14cEUm1V3odJnGzgKDM34GIg==}
+
+  '@canton-network/core-types@0.23.2':
+    resolution: {integrity: sha512-QD1BJ7+vHiBy7B/edTq3PHL5uEr0VqWqw6EqLJo6SAuI8RKmifxz6WqVkBdwwG0XD/Yjnexhl9GRYzRcPGPYGQ==}
+
   '@canton-network/core-types@1.4.0':
     resolution: {integrity: sha512-tpaIWsxyIOyF/n55KZWpRT+ByWmLTaDWU/qCEdFXEKrwPDcTYdg4hBD37iXLcmn135FUx4XXPiP/8DzWtNuSlw==}
+
+  '@canton-network/core-wallet-auth@0.23.1':
+    resolution: {integrity: sha512-+o2l7jb4D1TZqAaU0t2scNAz5k5CpA8A+cB3DcAxslbmxDj0He03NfsKkIiVt416VhWvr9WoyM5FI6mpJuhtJQ==}
 
   '@canton-network/core-wallet-auth@1.4.0':
     resolution: {integrity: sha512-+DcVVQgp/d5Ue3nPcuiQnLoGp1z9OiMvMw8i51kJBW00EMDEsp+jQT6NKJrJjdrJGXcOHp+3cJxWIAE3EXe7mg==}
 
+  '@canton-network/core-wallet-dapp-remote-rpc-client@0.21.1':
+    resolution: {integrity: sha512-5cOu+KNd/12IGYTMJzFGLd/o535IbF9B2ItWQzgcfCkVg7Bghfsh0vyjDF7sWM5+eXgfXspqQh+tLiDv2QMjzw==}
+
+  '@canton-network/core-wallet-dapp-remote-rpc-client@0.22.0':
+    resolution: {integrity: sha512-7bpr+iCmeAlv9D6c3AeVDJBg16b7ZBEVa27/n1BVMs75jEfeR2Pljr81AbM0TnPI7/mDFmkxuv7mjIZ8GWJ5GA==}
+
   '@canton-network/core-wallet-dapp-remote-rpc-client@1.4.0':
     resolution: {integrity: sha512-uW4w0EScYa4VDw86cz4IDu6IhtYBjCktcERpf4EL++v+LoN1Rpj7pMlsCiE9t6O5ecO7PnAl3H8tZ5uRnlkm0g==}
+
+  '@canton-network/core-wallet-dapp-rpc-client@0.27.1':
+    resolution: {integrity: sha512-VkZWv6WLqJRtJ7dZzm9Cnlw1mLW4RiLSjxNPoJ0zIVgaVEkZyF3DL/w1jIWXGglQP7bx5cYzSlQ8ckGWSWuXOg==}
+
+  '@canton-network/core-wallet-dapp-rpc-client@0.28.0':
+    resolution: {integrity: sha512-AT8Hg5VPzyMH6wPy5YBGs7cdV2pI4p9jo/MYA65xSSahKb/ZwqocU4AW+m3hNNB+33xl+n5jX0/rMxM9uejDDw==}
 
   '@canton-network/core-wallet-dapp-rpc-client@1.4.0':
     resolution: {integrity: sha512-KpeWG9kF4aKbbdlI/BD4xVzlQZBNqKPtKbt17REvixF4bx8rdzts3lPpdwwZgeO9ZrfOi8rAtaa9GLlipNHKFw==}
 
+  '@canton-network/core-wallet-discovery@0.4.1':
+    resolution: {integrity: sha512-F23dO/tWgoyd4uTuL59+q0DFcahXg2FQ0Ce8tVgWzjKPIDNMrt1oO8tizh7UbAsABxSWtzL6IvPBr9ANbRb90g==}
+
+  '@canton-network/core-wallet-discovery@0.5.0':
+    resolution: {integrity: sha512-+qiNW3EJfS46yr6wNwk83jWHkFQQNlHQj71XDnrVj5h+rSrtALhBJZMN4RIJV2Zo24APm7LlfyPZXq1RORVHSg==}
+
   '@canton-network/core-wallet-discovery@1.4.0':
     resolution: {integrity: sha512-aaRBGg2F0/cqlhGGj/AmfO8TB18k4jujMJikuRwmLmhhwvGAxuERiCSmMW7Q3eoyRgyZ/lhh4z/AQMlB6CHNlw==}
+
+  '@canton-network/core-wallet-store@0.26.1':
+    resolution: {integrity: sha512-nkAdGKuReKDfGKy41p+NZfqlWZxzNV+4TpvO/LTPKf+IfSp0m6qRC6PdyxOTSyhmuFSts+H98AscAuhIA+yHmw==}
 
   '@canton-network/core-wallet-store@1.5.0':
     resolution: {integrity: sha512-vZzNCMy1KSeHRpq/iH2fEmzTzl5LMBVK6P/W8e60o1gc1+z4AhE7xKhLSqVsRwYY02x5IjyfVuZi9c8uuw/vZg==}
 
+  '@canton-network/core-wallet-ui-components@0.27.1':
+    resolution: {integrity: sha512-CCDAi96QUKYp1qMAZgYq2Ei0ahOaQ8qIwlJB4R0RNCLVBTPnQl4qX7zn+oReALYQ8EtH7EQvYzC+/V9eiuS8dw==}
+
   '@canton-network/core-wallet-ui-components@1.6.0':
     resolution: {integrity: sha512-zqq0Kj3hGXnblCAzR+xTSRAiasJL7oVUG36jUArj+yG49oJ5D34ZyfAxgh5mKiSR7xqipJJOwHjHFecyD72kjQ==}
 
+  '@canton-network/core-wallet-user-rpc-client@0.27.1':
+    resolution: {integrity: sha512-0gfhGao4xjWo8Acua2HLxQyaLARJzOdaAuV5ekF/btPQY/KTY8IJCFkoDD6PwVsr3ML+odHctwlFmli5dJfUXA==}
+
   '@canton-network/core-wallet-user-rpc-client@1.5.0':
     resolution: {integrity: sha512-Muy+J6m5xz9PPI3BHDKOawGbpabkU4ehta73cEl6SoOGsBfJTPYSKsN8WHcfu0apBeIK7BfYFVSFlOYBJN2ghw==}
+
+  '@canton-network/dapp-sdk@0.24.0':
+    resolution: {integrity: sha512-XihSbhh2c1YGg19ksFZ+qvH5PWyjhLopDikA1KRQQvAa2v6N1qwhEKNkCSaVOf00vE01umrUdue1dokZ4lKQ7g==}
 
   '@canton-network/dapp-sdk@1.2.0':
     resolution: {integrity: sha512-mK24M1ucRT0t1ybyBLr2u3YoJX3PdAUctQKDm2UCDYou5wLC5LFDFEzYaQZuAIktX7QUVoCnoHuXnvPLOfzkKw==}
@@ -1378,6 +1456,11 @@ packages:
 
   '@jridgewell/trace-mapping@0.3.31':
     resolution: {integrity: sha512-zzNR+SdQSDJzc8joaeP8QQoCQr8NuYx2dIIytl1QeBEZHJ9uW6hebsrYgbz8hJwUQao3TWCMtmfV8Nu1twOLAw==}
+
+  '@k2flabs/walley-dapp-sdk@1.1.0':
+    resolution: {integrity: sha512-RqiC/VQLg+2YMqmYq3+ZFtKnqNxOwDLiC4X0qmH/vVmvlpPsWrrxWZ4PEvPA4FHK+odA0EQT+7QqbOKgvlgjhg==}
+    peerDependencies:
+      '@canton-network/dapp-sdk': ^0.24.0
 
   '@lit-labs/ssr-dom-shim@1.6.0':
     resolution: {integrity: sha512-VHb0ALPMTlgKjM6yIxxoQNnpKyUKLD04VzeQdsiXkMqkvYlAHxq9glGLmgbb889/1GsohSOAjvQYoiBppXFqrQ==}
@@ -3463,6 +3546,9 @@ packages:
   json-parse-better-errors@1.0.2:
     resolution: {integrity: sha512-mrqyZKfX5EhL7hvqcV6WG1yYjnjeuYDzDhhcAAUrq8Po85NBQBJP+ZDUT75qZQ98IkUoBqdkExkukOU7Ts2wrw==}
 
+  json-rpc-2.0@1.7.1:
+    resolution: {integrity: sha512-JqZjhjAanbpkXIzFE7u8mE/iFblawwlXtONaCvRqI+pyABVz7B4M1EUNpyVW+dZjqgQ2L5HFmZCmOCgUKm00hg==}
+
   json-schema-to-openapi-schema@0.4.0:
     resolution: {integrity: sha512-/DY8s4l28M5ZIJBhmcUFWbZChJV5v7RCA7RMVxubyD1l5KwIceUq6+EUnqQ2q3wh/2D3Zn8bNSeAu1i2X+sMHQ==}
     deprecated: This package is no longer maintained. Use @openapi-contrib/json-schema-to-openapi-schema instead.
@@ -4904,6 +4990,10 @@ packages:
     resolution: {integrity: sha512-pMZTvIkT1d+TFGvDOqodOclx0QWkkgi6Tdoa8gC8ffGAAqz9pzPTZWAybbsHHoED/ztMtkv/VoYTYyShUn81hA==}
     engines: {node: '>= 0.4.0'}
 
+  uuid@11.1.1:
+    resolution: {integrity: sha512-vIYxrBCC/N/K+Js3qSN88go7kIfNPssr/hHCesKCQNAjmgvYS2oqr69kIufEG+O4+PfezOH4EbIeHCfFov8ZgQ==}
+    hasBin: true
+
   uuid@14.0.0:
     resolution: {integrity: sha512-Qo+uWgilfSmAhXCMav1uYFynlQO7fMFiMVZsQqZRMIXp0O7rR7qjkj+cPvBHLgBqi960QCoo/PH2/6ZtVqKvrg==}
     hasBin: true
@@ -5307,10 +5397,23 @@ snapshots:
       openapi-fetch: 0.17.0
       pino: 10.3.1
 
+  '@canton-network/core-ledger-proto@0.22.2':
+    dependencies:
+      '@protobuf-ts/runtime': 2.11.1
+      '@protobuf-ts/runtime-rpc': 2.11.1
+
   '@canton-network/core-ledger-proto@1.4.0':
     dependencies:
       '@protobuf-ts/runtime': 2.11.1
       '@protobuf-ts/runtime-rpc': 2.11.1
+
+  '@canton-network/core-provider-dapp@0.4.1':
+    dependencies:
+      '@canton-network/core-rpc-transport': 0.8.1
+      '@canton-network/core-splice-provider': 0.28.1
+      '@canton-network/core-types': 0.22.1
+      '@canton-network/core-wallet-dapp-remote-rpc-client': 0.21.1
+      '@canton-network/core-wallet-dapp-rpc-client': 0.27.1
 
   '@canton-network/core-provider-dapp@1.4.0':
     dependencies:
@@ -5321,16 +5424,52 @@ snapshots:
       '@canton-network/core-wallet-dapp-remote-rpc-client': 1.4.0
       '@canton-network/core-wallet-dapp-rpc-client': 1.4.0
 
+  '@canton-network/core-rpc-errors@0.18.2':
+    dependencies:
+      '@metamask/rpc-errors': 7.0.3
+    transitivePeerDependencies:
+      - supports-color
+
+  '@canton-network/core-rpc-errors@0.19.2':
+    dependencies:
+      '@metamask/rpc-errors': 7.0.3
+    transitivePeerDependencies:
+      - supports-color
+
   '@canton-network/core-rpc-errors@1.4.0':
     dependencies:
       '@metamask/rpc-errors': 7.0.3
     transitivePeerDependencies:
       - supports-color
 
+  '@canton-network/core-rpc-transport@0.8.1':
+    dependencies:
+      '@canton-network/core-types': 0.22.1
+      uuid: 11.1.1
+
+  '@canton-network/core-rpc-transport@0.9.2':
+    dependencies:
+      '@canton-network/core-types': 0.23.2
+      uuid: 11.1.1
+
   '@canton-network/core-rpc-transport@1.4.0':
     dependencies:
       '@canton-network/core-types': 1.4.0
       uuid: 14.0.0
+
+  '@canton-network/core-splice-provider@0.28.1':
+    dependencies:
+      '@canton-network/core-rpc-transport': 0.8.1
+      '@canton-network/core-types': 0.22.1
+      '@canton-network/core-wallet-dapp-remote-rpc-client': 0.21.1
+      '@canton-network/core-wallet-dapp-rpc-client': 0.27.1
+
+  '@canton-network/core-splice-provider@0.29.0':
+    dependencies:
+      '@canton-network/core-rpc-transport': 0.9.2
+      '@canton-network/core-types': 0.23.2
+      '@canton-network/core-wallet-dapp-remote-rpc-client': 0.22.0
+      '@canton-network/core-wallet-dapp-rpc-client': 0.28.0
 
   '@canton-network/core-splice-provider@1.4.0':
     dependencies:
@@ -5339,17 +5478,42 @@ snapshots:
       '@canton-network/core-wallet-dapp-remote-rpc-client': 1.4.0
       '@canton-network/core-wallet-dapp-rpc-client': 1.4.0
 
+  '@canton-network/core-tx-visualizer@0.22.2':
+    dependencies:
+      '@canton-network/core-ledger-proto': 0.22.2
+      '@types/node': 25.9.2
+      camelcase-keys: 10.0.2
+
   '@canton-network/core-tx-visualizer@1.4.0':
     dependencies:
       '@canton-network/core-ledger-proto': 1.4.0
       '@types/node': 25.9.2
       camelcase-keys: 10.0.2
 
+  '@canton-network/core-types@0.22.1':
+    dependencies:
+      uuid: 11.1.1
+      zod: 4.4.3
+
+  '@canton-network/core-types@0.23.2':
+    dependencies:
+      uuid: 11.1.1
+      zod: 4.4.3
+
   '@canton-network/core-types@1.4.0':
     dependencies:
       '@daml/types': 3.5.1
       uuid: 14.0.0
       zod: 4.4.3
+
+  '@canton-network/core-wallet-auth@0.23.1':
+    dependencies:
+      '@canton-network/core-rpc-errors': 0.18.2
+      '@canton-network/core-types': 0.22.1
+      jose: 6.2.3
+      zod: 4.4.3
+    transitivePeerDependencies:
+      - supports-color
 
   '@canton-network/core-wallet-auth@1.4.0':
     dependencies:
@@ -5360,10 +5524,34 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
+  '@canton-network/core-wallet-dapp-remote-rpc-client@0.21.1':
+    dependencies:
+      '@canton-network/core-rpc-transport': 0.8.1
+      '@canton-network/core-types': 0.22.1
+      lodash: 4.18.1
+
+  '@canton-network/core-wallet-dapp-remote-rpc-client@0.22.0':
+    dependencies:
+      '@canton-network/core-rpc-transport': 0.9.2
+      '@canton-network/core-types': 0.23.2
+      lodash: 4.18.1
+
   '@canton-network/core-wallet-dapp-remote-rpc-client@1.4.0':
     dependencies:
       '@canton-network/core-rpc-transport': 1.4.0
       '@canton-network/core-types': 1.4.0
+      lodash: 4.18.1
+
+  '@canton-network/core-wallet-dapp-rpc-client@0.27.1':
+    dependencies:
+      '@canton-network/core-rpc-transport': 0.8.1
+      '@canton-network/core-types': 0.22.1
+      lodash: 4.18.1
+
+  '@canton-network/core-wallet-dapp-rpc-client@0.28.0':
+    dependencies:
+      '@canton-network/core-rpc-transport': 0.9.2
+      '@canton-network/core-types': 0.23.2
       lodash: 4.18.1
 
   '@canton-network/core-wallet-dapp-rpc-client@1.4.0':
@@ -5372,16 +5560,48 @@ snapshots:
       '@canton-network/core-types': 1.4.0
       lodash: 4.18.1
 
+  '@canton-network/core-wallet-discovery@0.4.1':
+    dependencies:
+      '@canton-network/core-splice-provider': 0.28.1
+      '@canton-network/core-types': 0.22.1
+      '@canton-network/core-wallet-dapp-rpc-client': 0.27.1
+
+  '@canton-network/core-wallet-discovery@0.5.0':
+    dependencies:
+      '@canton-network/core-splice-provider': 0.29.0
+      '@canton-network/core-types': 0.23.2
+      '@canton-network/core-wallet-dapp-rpc-client': 0.28.0
+
   '@canton-network/core-wallet-discovery@1.4.0':
     dependencies:
       '@canton-network/core-splice-provider': 1.4.0
       '@canton-network/core-types': 1.4.0
       '@canton-network/core-wallet-dapp-rpc-client': 1.4.0
 
+  '@canton-network/core-wallet-store@0.26.1':
+    dependencies:
+      '@canton-network/core-wallet-auth': 0.23.1
+      zod: 4.4.3
+    transitivePeerDependencies:
+      - supports-color
+
   '@canton-network/core-wallet-store@1.5.0':
     dependencies:
       '@canton-network/core-wallet-auth': 1.4.0
       zod: 4.4.3
+    transitivePeerDependencies:
+      - supports-color
+
+  '@canton-network/core-wallet-ui-components@0.27.1':
+    dependencies:
+      '@canton-network/core-tx-visualizer': 0.22.2
+      '@canton-network/core-types': 0.22.1
+      '@canton-network/core-wallet-auth': 0.23.1
+      '@canton-network/core-wallet-store': 0.26.1
+      '@canton-network/core-wallet-user-rpc-client': 0.27.1
+      '@popperjs/core': 2.11.8
+      bootstrap: 5.3.8(@popperjs/core@2.11.8)
+      lit: 3.3.3
     transitivePeerDependencies:
       - supports-color
 
@@ -5398,11 +5618,29 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
+  '@canton-network/core-wallet-user-rpc-client@0.27.1':
+    dependencies:
+      '@canton-network/core-rpc-transport': 0.8.1
+      '@canton-network/core-types': 0.22.1
+      lodash: 4.18.1
+
   '@canton-network/core-wallet-user-rpc-client@1.5.0':
     dependencies:
       '@canton-network/core-rpc-transport': 1.4.0
       '@canton-network/core-types': 1.4.0
       lodash: 4.18.1
+
+  '@canton-network/dapp-sdk@0.24.0':
+    dependencies:
+      '@canton-network/core-provider-dapp': 0.4.1
+      '@canton-network/core-splice-provider': 0.28.1
+      '@canton-network/core-types': 0.22.1
+      '@canton-network/core-wallet-dapp-remote-rpc-client': 0.21.1
+      '@canton-network/core-wallet-dapp-rpc-client': 0.27.1
+      '@canton-network/core-wallet-discovery': 0.4.1
+      '@canton-network/core-wallet-ui-components': 0.27.1
+    transitivePeerDependencies:
+      - supports-color
 
   '@canton-network/dapp-sdk@1.2.0(@walletconnect/sign-client@2.23.9(typescript@5.9.3)(zod@4.4.3))(@walletconnect/types@2.23.9)':
     dependencies:
@@ -5859,6 +6097,18 @@ snapshots:
     dependencies:
       '@jridgewell/resolve-uri': 3.1.2
       '@jridgewell/sourcemap-codec': 1.5.5
+
+  '@k2flabs/walley-dapp-sdk@1.1.0(@canton-network/dapp-sdk@0.24.0)':
+    dependencies:
+      '@canton-network/core-rpc-errors': 0.19.2
+      '@canton-network/core-splice-provider': 0.29.0
+      '@canton-network/core-types': 0.23.2
+      '@canton-network/core-wallet-dapp-rpc-client': 0.28.0
+      '@canton-network/core-wallet-discovery': 0.5.0
+      '@canton-network/dapp-sdk': 0.24.0
+      json-rpc-2.0: 1.7.1
+    transitivePeerDependencies:
+      - supports-color
 
   '@lit-labs/ssr-dom-shim@1.6.0': {}
 
@@ -8327,6 +8577,8 @@ snapshots:
 
   json-parse-better-errors@1.0.2: {}
 
+  json-rpc-2.0@1.7.1: {}
+
   json-schema-to-openapi-schema@0.4.0:
     dependencies:
       '@cloudflare/json-schema-walker': 0.1.1
@@ -9789,6 +10041,8 @@ snapshots:
   util-deprecate@1.0.2: {}
 
   utils-merge@1.0.1: {}
+
+  uuid@11.1.1: {}
 
   uuid@14.0.0: {}
 

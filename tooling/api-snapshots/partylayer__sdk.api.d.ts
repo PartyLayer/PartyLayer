@@ -49,6 +49,7 @@ export {
   MetricName,
   MetricsPayload,
   NetworkId,
+  OfficialProviderAdapter,
   OriginNotAllowedError,
   PartyId,
   PartyLayerError,
@@ -75,6 +76,7 @@ export {
   WalletNotFoundError,
   WalletNotInstalledError,
   errorMetricName,
+  isOfficialProviderAdapter,
 } from '@partylayer/core';
 import { RegistryClient, RegistryStatus } from '@partylayer/registry-client';
 export {
@@ -786,7 +788,10 @@ declare class GenericDiscoveryAdapter implements WalletAdapter {
   /** Lazily resolved from `official.provider()` — NOT at construction (SSR-safe). */
   private providerInstance;
   constructor(args: GenericDiscoveryAdapterArgs);
-  /** Lazily obtain (and cache) the official provider — deferred off the init/SSR path. */
+  /** Lazily obtain (and cache) the official provider — deferred off the init/SSR path.
+   *  `official.provider()` is typed `OfficialProvider` (loose `request` so real
+   *  official adapters are assignable); it is call-compatible with CIP0103Provider
+   *  (the bridge only ever calls `request({ method, params })`). */
   private get provider();
   /**
    * Baseline CIP-0103 capabilities. NEVER includes `'events'`: popup/remote

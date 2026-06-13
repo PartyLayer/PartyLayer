@@ -10,7 +10,7 @@
 
 import { useMemo, useEffect, useRef, createContext, useContext } from 'react';
 import { createPartyLayer } from '@partylayer/sdk';
-import type { PartyLayerClient, WalletAdapter, AdapterClass, NetworkId } from '@partylayer/sdk';
+import type { PartyLayerClient, WalletAdapter, AdapterClass, OfficialProviderAdapter, NetworkId } from '@partylayer/sdk';
 import type { SessionStoreOptions } from '@partylayer/session';
 import { PartyLayerProvider } from './context';
 import { ThemeProvider } from './theme';
@@ -80,8 +80,12 @@ export interface PartyLayerKitProps {
    *
    * For Bron (enterprise OAuth), pass explicitly:
    *   adapters={[...getBuiltinAdapters(), new BronAdapter(config)]}
+   *
+   * Also accepts an official @canton-network ProviderAdapter
+   * (`OfficialProviderAdapter`, e.g. `new WalleyAdapter({ host })`) — the SDK
+   * auto-bridges it via GenericDiscoveryAdapter (popup/remote wallets).
    */
-  adapters?: (WalletAdapter | AdapterClass)[];
+  adapters?: (WalletAdapter | AdapterClass | OfficialProviderAdapter)[];
   /** Theme preset or custom theme object (default: 'light') */
   theme?: 'light' | 'dark' | 'auto' | PartyLayerTheme;
   /** Custom wallet icon URLs by walletId */

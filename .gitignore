@@ -10,10 +10,12 @@ build/
 .turbo/
 *.tsbuildinfo
 
-# Environment
+# Environment — ignore ALL .env variants (secrets like the Walley devnet
+# recovery phrase live here); keep only the committed .example templates.
 .env
-.env.local
-.env.*.local
+.env.*
+!.env.example
+!.env.*.example
 
 # IDE
 .vscode/
@@ -65,3 +67,6 @@ apps/metrics-backend/
 # AI assistant config
 .claude/
 .vercel/
+
+# Test-only Walley E2E harness build artifact
+apps/demo/e2e/walley-harness/bundle.js

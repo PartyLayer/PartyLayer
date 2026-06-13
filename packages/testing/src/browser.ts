@@ -92,3 +92,13 @@ export function idbEntryCountScript(dbName: string): string {
 export function sessionKeyDbName(origin: string): string {
   return `partylayer-session-key::${origin}`;
 }
+
+/**
+ * The origin-bound IndexedDB name the encrypted session DATA (ciphertext
+ * envelope) store uses for a given origin — counterpart to
+ * {@link sessionKeyDbName}. Lets an E2E assert BOTH encrypted stores
+ * materialized after a connect (the AES key AND the encrypted snapshot).
+ */
+export function sessionDataDbName(origin: string): string {
+  return `partylayer-session-data::${origin}`;
+}
