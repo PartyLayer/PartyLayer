@@ -1,5 +1,12 @@
 # @partylayer/session
 
+## 1.0.4
+
+### Patch Changes
+
+- Updated dependencies [bef0ac6]
+  - @partylayer/core@0.8.0
+
 ## 1.0.3
 
 ### Patch Changes
