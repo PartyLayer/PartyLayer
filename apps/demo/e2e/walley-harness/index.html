@@ -1,0 +1,17 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Walley E2E harness (test-only)</title>
+  </head>
+  <body>
+    <!--
+      TEST-ONLY harness. Built + served ONLY by the Playwright walley webServer
+      (esbuild). NEVER part of the prod Next bundle (lives under e2e/, not
+      apps/demo/src/app) and NEVER wired into the live demo config.
+    -->
+    <div id="root"></div>
+    <script type="module" src="/bundle.js"></script>
+  </body>
+</html>

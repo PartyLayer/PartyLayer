@@ -8,6 +8,10 @@ import { defineConfig, devices } from '@playwright/test';
  */
 export default defineConfig({
   testDir: './e2e',
+  // Real-wallet integration specs (*.e2e.spec.ts) run only via their own config
+  // (playwright.walley.config.ts) — they need a real wallet + secret, so they're
+  // excluded from the default mock-based run.
+  testIgnore: '**/*.e2e.spec.ts',
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,

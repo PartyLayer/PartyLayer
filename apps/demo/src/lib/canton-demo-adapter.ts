@@ -38,7 +38,8 @@ import {
   type SignedMessage,
   type WalletAdapter,
 } from '@partylayer/core';
-import { getBuiltinAdapters } from '@partylayer/sdk';
+import { getBuiltinAdapters, type OfficialProviderAdapter } from '@partylayer/sdk';
+import { WalleyAdapter } from '@k2flabs/walley-dapp-sdk';
 import { buildWalletConnectAdapter } from './walletconnect-demo';
 import { sortByCanonicalOrder } from './wallet-order';
 
@@ -190,13 +191,23 @@ export class CantonDemoWalletAdapter implements WalletAdapter {
  * CantonDemoWalletAdapter so the fixture-backed test wallet surfaces
  * in the picker.
  */
-export function buildDemoAdapters(): WalletAdapter[] {
+export function buildDemoAdapters(): (WalletAdapter | OfficialProviderAdapter)[] {
   // Opt-in WalletConnect (live mobile-wallet scan). Registering it surfaces
   // "WalletConnect" in the picker; its dapp-sdk barrel only loads at connect.
-  const adapters: WalletAdapter[] = [...getBuiltinAdapters(), buildWalletConnectAdapter()];
+  const adapters: (WalletAdapter | OfficialProviderAdapter)[] = [
+    ...getBuiltinAdapters(),
+    buildWalletConnectAdapter(),
+    // Walley — popup/remote wallet on devnet. Supplied as its OWN official
+    // @canton-network ProviderAdapter; the SDK auto-bridges it via
+    // GenericDiscoveryAdapter (no @partylayer/adapter-walley). Validated against
+    // real dev.walley.cc by the walley E2E.
+    new WalleyAdapter({ host: 'https://dev.walley.cc' }),
+  ];
   if (process.env.NODE_ENV !== 'production') {
     adapters.push(new CantonDemoWalletAdapter());
   }
   // Canonical order shared across every demo-rendered wallet list.
-  return sortByCanonicalOrder(adapters, (a) => String(a.walletId));
+  return sortByCanonicalOrder(adapters, (a) =>
+    String((a as { walletId?: unknown }).walletId ?? (a as OfficialProviderAdapter).providerId),
+  );
 }
