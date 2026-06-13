@@ -5,6 +5,7 @@ import {
   fromCAIP2Network,
   isValidCAIP2,
   detectNetworkMismatch,
+  isRecognizedNetwork,
 } from './network';
 
 describe('CANTON_NETWORKS', () => {
@@ -84,14 +85,64 @@ describe('detectNetworkMismatch', () => {
   it('returns null when the networks are normalize-equal (no false positive)', () => {
     expect(detectNetworkMismatch('devnet', 'canton:da-devnet')).toBeNull();
     expect(detectNetworkMismatch('devnet', 'devnet')).toBeNull();
+    expect(detectNetworkMismatch('canton:da-mainnet', 'mainnet')).toBeNull();
   });
 
-  it('returns null for unrecognized/custom networks (conservative skip)', () => {
-    expect(detectNetworkMismatch('devnet', 'someCustom')).toBeNull(); // → canton:someCustom, not well-known
-    expect(detectNetworkMismatch('devnet', 'eip155:1')).toBeNull(); // recognized CAIP-2 but not a known Canton id
+  // ── The fail-open fix: a recognized expected vs an UNRECOGNIZED-but-different
+  //    actual (e.g. canton:unknown, as popup/remote wallets report) is a
+  //    MISMATCH — NOT silently accepted. The full matrix: ───────────────────────
+  it('FLAGS known-vs-unknown (canton:unknown — the observed Walley case)', () => {
+    expect(detectNetworkMismatch('mainnet', 'canton:unknown')).toEqual({
+      expected: 'canton:da-mainnet',
+      actual: 'canton:unknown',
+    });
+    // symmetric: unknown expected vs known actual
+    expect(detectNetworkMismatch('canton:unknown', 'mainnet')).toEqual({
+      expected: 'canton:unknown',
+      actual: 'canton:da-mainnet',
+    });
   });
 
-  it('returns null when a side is unparseable', () => {
-    expect(detectNetworkMismatch('devnet', 'this-reference-is-way-too-long-to-be-valid-caip2')).toBeNull();
+  it('FLAGS known-vs-custom / cross-namespace different networks', () => {
+    expect(detectNetworkMismatch('devnet', 'someCustom')).toEqual({
+      expected: 'canton:da-devnet',
+      actual: 'canton:someCustom',
+    });
+    expect(detectNetworkMismatch('devnet', 'eip155:1')).toEqual({
+      expected: 'canton:da-devnet',
+      actual: 'eip155:1',
+    });
+  });
+
+  it('returns null when two UNRECOGNIZED values are EQUAL (same network — false-positive guard)', () => {
+    // The control: two equal canton:unknown must NOT refuse (same-network restore).
+    expect(detectNetworkMismatch('canton:unknown', 'canton:unknown')).toBeNull();
+    expect(detectNetworkMismatch('someCustom', 'someCustom')).toBeNull();
+  });
+
+  it('unparseable input falls back to raw comparison (equal→null, different→mismatch; never fail-open)', () => {
+    const longRef = 'this-reference-is-way-too-long-to-be-valid-caip2';
+    // different → mismatch (no fail-open)
+    expect(detectNetworkMismatch('devnet', longRef)).toEqual({
+      expected: 'canton:da-devnet',
+      actual: longRef,
+    });
+    // equal unparseable → same network → null
+    expect(detectNetworkMismatch(longRef, longRef)).toBeNull();
+  });
+});
+
+describe('isRecognizedNetwork', () => {
+  it('recognizes well-known Canton networks (short + CAIP-2)', () => {
+    for (const n of ['devnet', 'testnet', 'mainnet', 'local']) {
+      expect(isRecognizedNetwork(n)).toBe(true);
+    }
+    expect(isRecognizedNetwork('canton:da-mainnet')).toBe(true);
+  });
+  it('does NOT recognize canton:unknown / other namespaces / unparseable', () => {
+    expect(isRecognizedNetwork('canton:unknown')).toBe(false); // the Walley report
+    expect(isRecognizedNetwork('someCustom')).toBe(false); // → canton:someCustom
+    expect(isRecognizedNetwork('eip155:1')).toBe(false);
+    expect(isRecognizedNetwork('')).toBe(false);
   });
 });

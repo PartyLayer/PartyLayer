@@ -81,25 +81,60 @@ export function isValidCAIP2(networkId: string): boolean {
 const KNOWN_CAIP2 = new Set(Object.values(CANTON_NETWORKS));
 
 /**
- * Detect a confident, recognized, DIFFERENT-network mismatch between an
- * `expected` (dApp-configured) and `actual` (wallet-reported) network.
+ * Whether `networkId` normalizes to a recognized, well-known Canton network
+ * (mainnet/testnet/devnet/local, in short or CAIP-2 form). `canton:unknown`,
+ * other-namespace ids, and unparseable values are NOT recognized.
  *
- * Conservative by design — returns `null` (no mismatch) unless BOTH networks
- * normalize to recognized well-known Canton CAIP-2 ids AND differ. Unparseable
- * or unrecognized/custom networks → `null` (never a false positive).
+ * Used by the SDK's discovery-adapter bridge to decide whether a
+ * wallet-reported network is trustworthy or should fall back to the dApp's
+ * configured network (so an unrecognized report like `canton:unknown` never
+ * overrides a known `ctx.network`).
+ */
+export function isRecognizedNetwork(networkId: string): boolean {
+  try {
+    return KNOWN_CAIP2.has(toCAIP2Network(networkId).networkId);
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Detect a DIFFERENT-network mismatch between an `expected` (dApp-configured)
+ * and `actual` (wallet-reported) network.
+ *
+ * Rule: normalize both (short→CAIP-2 where possible), then compare.
+ *   - EQUAL  → `null` (no mismatch) — same network, INCLUDING two equal
+ *     unrecognized values (e.g. both `canton:unknown`). This protects a
+ *     legitimate same-network restore from a false positive.
+ *   - UNEQUAL → mismatch. This INCLUDES a recognized network vs an
+ *     unrecognized-but-different one (e.g. `canton:da-mainnet` vs
+ *     `canton:unknown`): we do NOT fail open. A wallet reporting an unknown
+ *     network that differs from the dApp's configured network is treated as a
+ *     mismatch (refused under enforcement), not silently accepted.
+ *
+ * Unparseable inputs fall back to a RAW string comparison (same equality rule),
+ * so an exotic-but-different network can never slip through as "no mismatch".
+ *
+ * NOTE: this is intentionally stricter than the prior behavior, which returned
+ * `null` whenever either side was not a well-known CAIP-2 id (a fail-open that
+ * let a wallet on an unknown network silently restore/transact against a
+ * different configured network — the `canton:unknown` case observed with
+ * popup/remote wallets). The SDK feeds this a recognized network on the normal
+ * path (see the bridge's network capture), so the legitimate same-network flow
+ * stays silent.
  */
 export function detectNetworkMismatch(
   expected: string,
   actual: string,
 ): { expected: string; actual: string } | null {
-  let ne: string;
-  let na: string;
-  try {
-    ne = toCAIP2Network(expected).networkId;
-    na = toCAIP2Network(actual).networkId;
-  } catch {
-    return null;
-  }
-  if (!KNOWN_CAIP2.has(ne) || !KNOWN_CAIP2.has(na)) return null; // unrecognized/custom → skip
+  const normalize = (v: string): string => {
+    try {
+      return toCAIP2Network(v).networkId;
+    } catch {
+      return v; // unparseable → compare raw (never fail open on difference)
+    }
+  };
+  const ne = normalize(expected);
+  const na = normalize(actual);
   return ne === na ? null : { expected: ne, actual: na };
 }
