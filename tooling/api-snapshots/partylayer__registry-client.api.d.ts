@@ -5,6 +5,7 @@
 // ----------------------------------------------------------------------------
 import {
   NetworkId,
+  AdapterTransport,
   ProviderDetection,
   Cip0103Support,
   WalletInfo,
@@ -77,7 +78,19 @@ interface RegistryWalletEntry {
   adapter: {
     /** Adapter type/name */
     type: string;
-    /** Adapter-specific configuration */
+    /**
+     * How the SDK obtains this wallet's provider. Optional + additive — when
+     * omitted the SDK uses today's behavior (injected `window.canton` scan /
+     * announce). `'discovery-adapter'` routes the entry through the generic
+     * official-adapter bridge: the SDK matches an app-supplied
+     * `OfficialProviderAdapter` whose `providerId` equals `config.providerId`.
+     * No wallet-specific adapter package is involved.
+     */
+    transport?: AdapterTransport;
+    /**
+     * Adapter-specific configuration. For `transport: 'discovery-adapter'`,
+     * `config.providerId` (string) keys the app-supplied official adapter.
+     */
     config?: Record<string, unknown>;
   };
   /** Installation detection hints */

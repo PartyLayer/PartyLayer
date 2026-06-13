@@ -134,6 +134,23 @@ interface Cip0103Support {
   since?: string;
 }
 /**
+ * How the SDK obtains a wallet's provider for a registry entry.
+ *
+ * - `'injected'`          — `window.canton.*` scanning (the implicit default
+ *                           behavior when `transport` is omitted).
+ * - `'announce'`          — CIP-0103 `canton:announceProvider` discovery.
+ * - `'discovery-adapter'` — the provider comes from an app-supplied
+ *                           `OfficialProviderAdapter` (the official
+ *                           `@canton-network/core-wallet-discovery`
+ *                           `ProviderAdapter` shape), bridged generically by
+ *                           the SDK. For popup/remote wallets that neither
+ *                           inject `window.canton` nor announce. No
+ *                           wallet-specific adapter package is involved.
+ *
+ * Additive + optional: older registries omit it and keep today's behavior.
+ */
+type AdapterTransport = 'injected' | 'announce' | 'discovery-adapter';
+/**
  * Wallet information from registry
  */
 interface WalletInfo {
@@ -473,6 +490,148 @@ declare function mapUnknownErrorToPartyLayerError(
 ): PartyLayerError;
 
 /**
+ * CIP-0103 dApp Standard — Canonical Type Definitions
+ *
+ * These types are the verbatim representation of the CIP-0103 specification.
+ * They live in @partylayer/core so both @partylayer/provider and @partylayer/sdk
+ * can reference them without circular dependencies.
+ *
+ * Reference: https://github.com/canton-foundation/cips/blob/main/cip-0103/cip-0103.md
+ *
+ * IMPORTANT: Do not add PartyLayer-specific fields or aliases.
+ * These types represent the standard exactly.
+ */
+type CIP0103EventListener<T = unknown> = (...args: T[]) => void;
+type CIP0103RequestParams = unknown[] | Record<string, unknown>;
+interface CIP0103RequestPayload {
+  method: string;
+  params?: CIP0103RequestParams;
+}
+interface CIP0103Provider {
+  request<T = unknown>(args: CIP0103RequestPayload): Promise<T>;
+  on<T = unknown>(event: string, listener: CIP0103EventListener<T>): CIP0103Provider;
+  emit<T = unknown>(event: string, ...args: T[]): boolean;
+  removeListener<T = unknown>(
+    event: string,
+    listenerToRemove: CIP0103EventListener<T>
+  ): CIP0103Provider;
+}
+interface CIP0103ConnectResult {
+  isConnected: boolean;
+  reason?: string;
+  isNetworkConnected?: boolean;
+  networkReason?: string;
+  /** Async wallet extension: URL for user to complete connection */
+  userUrl?: string;
+}
+interface CIP0103Network {
+  /** CAIP-2 network identifier, e.g. "canton:da-mainnet" */
+  networkId: string;
+  /** JSON Ledger API endpoint (if available) */
+  ledgerApi?: string;
+  /** Access token for Ledger API (if available) */
+  accessToken?: string;
+}
+type CIP0103AccountStatus = 'initializing' | 'allocated';
+interface CIP0103Account {
+  primary: boolean;
+  partyId: string;
+  status: CIP0103AccountStatus;
+  hint: string;
+  publicKey: string;
+  namespace: string;
+  /** CAIP-2 network identifier */
+  networkId: string;
+  signingProviderId: string;
+}
+type CIP0103ProviderType = 'browser' | 'desktop' | 'mobile' | 'remote';
+interface CIP0103ProviderInfo {
+  id: string;
+  /** dApp API version */
+  version: string;
+  providerType: CIP0103ProviderType;
+}
+interface CIP0103StatusEvent {
+  connection: CIP0103ConnectResult;
+  provider: CIP0103ProviderInfo;
+  network?: CIP0103Network;
+  session?: {
+    accessToken: string;
+    userId: string;
+  };
+}
+type CIP0103TxStatus = 'pending' | 'signed' | 'executed' | 'failed';
+interface CIP0103TxPendingPayload {
+  status: 'pending';
+  commandId: string;
+}
+interface CIP0103TxSignedPayload {
+  status: 'signed';
+  commandId: string;
+  payload: {
+    signature: string;
+    signedBy: string;
+    party: string;
+  };
+}
+interface CIP0103TxExecutedPayload {
+  status: 'executed';
+  commandId: string;
+  payload: {
+    updateId: string;
+    completionOffset: number;
+  };
+}
+interface CIP0103TxFailedPayload {
+  status: 'failed';
+  commandId: string;
+}
+type CIP0103TxChangedEvent =
+  | CIP0103TxPendingPayload
+  | CIP0103TxSignedPayload
+  | CIP0103TxExecutedPayload
+  | CIP0103TxFailedPayload;
+interface CIP0103LedgerApiRequest {
+  requestMethod: 'GET' | 'POST' | 'PUT' | 'DELETE';
+  resource: string;
+  body?: string;
+}
+interface CIP0103LedgerApiResponse {
+  response: string;
+}
+interface CIP0103SignMessageRequest {
+  message: string;
+}
+interface CIP0103ProviderRpcError {
+  code: number;
+  message: string;
+  data?: unknown;
+}
+declare const CIP0103_METHODS: {
+  readonly CONNECT: 'connect';
+  readonly DISCONNECT: 'disconnect';
+  readonly IS_CONNECTED: 'isConnected';
+  readonly STATUS: 'status';
+  readonly GET_ACTIVE_NETWORK: 'getActiveNetwork';
+  readonly LIST_ACCOUNTS: 'listAccounts';
+  readonly GET_PRIMARY_ACCOUNT: 'getPrimaryAccount';
+  readonly SIGN_MESSAGE: 'signMessage';
+  readonly PREPARE_EXECUTE: 'prepareExecute';
+  readonly LEDGER_API: 'ledgerApi';
+};
+type CIP0103Method = (typeof CIP0103_METHODS)[keyof typeof CIP0103_METHODS];
+/** All mandatory method names as an array (useful for conformance testing) */
+declare const CIP0103_MANDATORY_METHODS: readonly CIP0103Method[];
+declare const CIP0103_EVENTS: {
+  readonly STATUS_CHANGED: 'statusChanged';
+  readonly ACCOUNTS_CHANGED: 'accountsChanged';
+  readonly TX_CHANGED: 'txChanged';
+  /** Emitted when async connect completes */
+  readonly CONNECTED: 'connected';
+};
+type CIP0103Event = (typeof CIP0103_EVENTS)[keyof typeof CIP0103_EVENTS];
+
+/**
  * Wallet adapter interface contract
  *
  * All wallet adapters must implement this interface.
@@ -753,6 +912,49 @@ interface WalletAdapter {
    */
   on?(event: AdapterEventName, handler: (payload: unknown) => void): () => void;
 }
+/**
+ * Structural ("duck-type") match for the official
+ * `@canton-network/core-wallet-discovery` `ProviderAdapter` shape.
+ *
+ * We deliberately do NOT import `@canton-network/*` (mirroring the stance in
+ * `@partylayer/provider`'s extension-channel) — the standard's SHAPE is the
+ * contract, not its package. An app supplies a concrete instance (e.g.
+ * `new WalleyAdapter()`) and the SDK bridges it generically via
+ * `GenericDiscoveryAdapter`, so a popup/remote wallet that neither injects
+ * `window.canton` nor announces can still be hosted by the generic layer with
+ * NO wallet-specific adapter package. Any standards-compliant wallet shipping
+ * this shape inherits the capability.
+ *
+ * `provider()` returns a `CIP0103Provider` (the official `Provider<RpcTypes>`
+ * already exposes `request`/`on`/`emit`/`removeListener`); the host/network are
+ * baked into the app-supplied adapter at construction, so the bridge never sees
+ * or sets them.
+ */
+interface OfficialProviderAdapter {
+  /** Stable provider identity (e.g. "walley"). */
+  readonly providerId: string;
+  /** Display name (e.g. "Walley"). */
+  readonly name: string;
+  /** Provider transport kind, if surfaced ('browser' | 'desktop' | 'mobile' | 'remote'). */
+  readonly type?: string;
+  /** Branding icon (URL or data URI), if surfaced. */
+  readonly icon?: string;
+  /** Install/availability probe — popup-free. */
+  detect(): Promise<boolean>;
+  /** The live provider (CIP-0103-shaped: request/on/emit/removeListener). */
+  provider(): CIP0103Provider;
+  /** Optional session restore (returns a restored provider, or null). */
+  restore?(): Promise<CIP0103Provider | null>;
+  /** Optional teardown. */
+  teardown?(): void;
+}
+/**
+ * Structural guard for {@link OfficialProviderAdapter}. Checks only the
+ * required surface (`providerId` string + `detect`/`provider` functions); the
+ * returned `provider()` value is separately validated against the
+ * `CIP0103Provider` duck-type by the consumer.
+ */
+declare function isOfficialProviderAdapter(value: unknown): value is OfficialProviderAdapter;
 /**
  * Check if adapter supports required capabilities
  * Throws CapabilityNotSupportedError if not supported
@@ -1117,148 +1319,6 @@ declare function createMetricsPayload(data: {
 }): MetricsPayload;
 
 /**
- * CIP-0103 dApp Standard — Canonical Type Definitions
- *
- * These types are the verbatim representation of the CIP-0103 specification.
- * They live in @partylayer/core so both @partylayer/provider and @partylayer/sdk
- * can reference them without circular dependencies.
- *
- * Reference: https://github.com/canton-foundation/cips/blob/main/cip-0103/cip-0103.md
- *
- * IMPORTANT: Do not add PartyLayer-specific fields or aliases.
- * These types represent the standard exactly.
- */
-type CIP0103EventListener<T = unknown> = (...args: T[]) => void;
-type CIP0103RequestParams = unknown[] | Record<string, unknown>;
-interface CIP0103RequestPayload {
-  method: string;
-  params?: CIP0103RequestParams;
-}
-interface CIP0103Provider {
-  request<T = unknown>(args: CIP0103RequestPayload): Promise<T>;
-  on<T = unknown>(event: string, listener: CIP0103EventListener<T>): CIP0103Provider;
-  emit<T = unknown>(event: string, ...args: T[]): boolean;
-  removeListener<T = unknown>(
-    event: string,
-    listenerToRemove: CIP0103EventListener<T>
-  ): CIP0103Provider;
-}
-interface CIP0103ConnectResult {
-  isConnected: boolean;
-  reason?: string;
-  isNetworkConnected?: boolean;
-  networkReason?: string;
-  /** Async wallet extension: URL for user to complete connection */
-  userUrl?: string;
-}
-interface CIP0103Network {
-  /** CAIP-2 network identifier, e.g. "canton:da-mainnet" */
-  networkId: string;
-  /** JSON Ledger API endpoint (if available) */
-  ledgerApi?: string;
-  /** Access token for Ledger API (if available) */
-  accessToken?: string;
-}
-type CIP0103AccountStatus = 'initializing' | 'allocated';
-interface CIP0103Account {
-  primary: boolean;
-  partyId: string;
-  status: CIP0103AccountStatus;
-  hint: string;
-  publicKey: string;
-  namespace: string;
-  /** CAIP-2 network identifier */
-  networkId: string;
-  signingProviderId: string;
-}
-type CIP0103ProviderType = 'browser' | 'desktop' | 'mobile' | 'remote';
-interface CIP0103ProviderInfo {
-  id: string;
-  /** dApp API version */
-  version: string;
-  providerType: CIP0103ProviderType;
-}
-interface CIP0103StatusEvent {
-  connection: CIP0103ConnectResult;
-  provider: CIP0103ProviderInfo;
-  network?: CIP0103Network;
-  session?: {
-    accessToken: string;
-    userId: string;
-  };
-}
-type CIP0103TxStatus = 'pending' | 'signed' | 'executed' | 'failed';
-interface CIP0103TxPendingPayload {
-  status: 'pending';
-  commandId: string;
-}
-interface CIP0103TxSignedPayload {
-  status: 'signed';
-  commandId: string;
-  payload: {
-    signature: string;
-    signedBy: string;
-    party: string;
-  };
-}
-interface CIP0103TxExecutedPayload {
-  status: 'executed';
-  commandId: string;
-  payload: {
-    updateId: string;
-    completionOffset: number;
-  };
-}
-interface CIP0103TxFailedPayload {
-  status: 'failed';
-  commandId: string;
-}
-type CIP0103TxChangedEvent =
-  | CIP0103TxPendingPayload
-  | CIP0103TxSignedPayload
-  | CIP0103TxExecutedPayload
-  | CIP0103TxFailedPayload;
-interface CIP0103LedgerApiRequest {
-  requestMethod: 'GET' | 'POST' | 'PUT' | 'DELETE';
-  resource: string;
-  body?: string;
-}
-interface CIP0103LedgerApiResponse {
-  response: string;
-}
-interface CIP0103SignMessageRequest {
-  message: string;
-}
-interface CIP0103ProviderRpcError {
-  code: number;
-  message: string;
-  data?: unknown;
-}
-declare const CIP0103_METHODS: {
-  readonly CONNECT: 'connect';
-  readonly DISCONNECT: 'disconnect';
-  readonly IS_CONNECTED: 'isConnected';
-  readonly STATUS: 'status';
-  readonly GET_ACTIVE_NETWORK: 'getActiveNetwork';
-  readonly LIST_ACCOUNTS: 'listAccounts';
-  readonly GET_PRIMARY_ACCOUNT: 'getPrimaryAccount';
-  readonly SIGN_MESSAGE: 'signMessage';
-  readonly PREPARE_EXECUTE: 'prepareExecute';
-  readonly LEDGER_API: 'ledgerApi';
-};
-type CIP0103Method = (typeof CIP0103_METHODS)[keyof typeof CIP0103_METHODS];
-/** All mandatory method names as an array (useful for conformance testing) */
-declare const CIP0103_MANDATORY_METHODS: readonly CIP0103Method[];
-declare const CIP0103_EVENTS: {
-  readonly STATUS_CHANGED: 'statusChanged';
-  readonly ACCOUNTS_CHANGED: 'accountsChanged';
-  readonly TX_CHANGED: 'txChanged';
-  /** Emitted when async connect completes */
-  readonly CONNECTED: 'connected';
-};
-type CIP0103Event = (typeof CIP0103_EVENTS)[keyof typeof CIP0103_EVENTS];
-
-/**
  * CAIP-2 Network Identity Utilities
  *
  * All CIP-0103 network identifiers use CAIP-2 format: "namespace:reference"
@@ -1566,6 +1626,7 @@ export {
   type AdapterDetectResult,
   type AdapterEventName,
   type AdapterMetadata,
+  type AdapterTransport,
   CANTON_NETWORKS,
   type CIP0103Account,
   type CIP0103AccountStatus,
@@ -1617,6 +1678,7 @@ export {
   MockTransport,
   type NetworkId,
   NetworkMismatchError,
+  type OfficialProviderAdapter,
   OriginNotAllowedError,
   type PartyId,
   PartyLayerError,
@@ -1671,6 +1733,7 @@ export {
   hashForPrivacy,
   installGuard,
   isCip0103Native,
+  isOfficialProviderAdapter,
   isSessionExpired,
   isValidCAIP2,
   mapUnknownErrorToPartyLayerError,

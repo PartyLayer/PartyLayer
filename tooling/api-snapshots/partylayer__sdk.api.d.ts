@@ -7,6 +7,7 @@ import * as _partylayer_core from '@partylayer/core';
 import {
   WalletAdapter,
   NetworkId,
+  OfficialProviderAdapter,
   StorageAdapter,
   CryptoAdapter,
   TelemetryAdapter,
@@ -254,7 +255,7 @@ interface PartyLayerConfig {
    * });
    * ```
    */
-  adapters?: (WalletAdapter | AdapterClass)[];
+  adapters?: (WalletAdapter | AdapterClass | OfficialProviderAdapter)[];
   /** Storage adapter (default: browser localStorage-based encrypted) */
   storage?: StorageAdapter;
   /** Crypto adapter (default: WebCrypto) */
@@ -442,6 +443,13 @@ type EventHandler<T extends PartyLayerEvent = PartyLayerEvent> = (event: T) => v
 declare class PartyLayerClient {
   private config;
   private adapters;
+  /**
+   * Pre-resolved connect plans for popup/remote (GenericDiscoveryAdapter)
+   * wallets, warmed on `listWallets()` (which the modal calls on open) so a
+   * subsequent click can connect gesture-synchronously. Consumed (deleted) on
+   * use and cleared on disconnect; a cold miss falls back to the normal path.
+   */
+  private readonly warmPlans;
   private eventHandlers;
   private activeSession;
   readonly registryClient: RegistryClient;
@@ -523,6 +531,44 @@ declare class PartyLayerClient {
    * Connect to a wallet
    */
   connect(options?: ConnectOptions): Promise<Session>;
+  /**
+   * Pre-resolve everything `adapter.connect()` needs WITHOUT calling it: wallet
+   * selection, origin-allowlist + capability + install guards, and the adapter
+   * context. `prefetchedWallets` (passed during warm-up from `listWallets`)
+   * avoids a recursive `listWallets()` call.
+   */
+  private resolveConnectPlan;
+  /**
+   * Invoke `adapter.connect()` (its FIRST statement — no await precedes it) and
+   * build / persist / emit the session. Separated from plan resolution so the
+   * popup-safe fast-path can call it gesture-synchronously.
+   */
+  private completeConnect;
+  /**
+   * PUBLIC popup-safe primitive: pre-resolve a connect plan ahead of the user
+   * gesture; the returned `connect()` invokes `adapter.connect()` as its first
+   * statement (no await precedes it) so a popup/remote wallet's `window.open`
+   * survives the gesture. For consumers driving such a wallet outside the modal
+   * (the modal gets this for free via the `listWallets` warm-up + `connect()`).
+   */
+  prepareConnect(options?: ConnectOptions): Promise<{
+    walletId: WalletId;
+    connect: (o?: ConnectOptions) => Promise<Session>;
+  }>;
+  /**
+   * Background warm-up of connect plans for popup/remote
+   * (`GenericDiscoveryAdapter`) wallets. Popup-free — `resolveConnectPlan` only
+   * runs read/guard probes. Skips already-warm entries; never throws.
+   */
+  private warmDiscoveryPlans;
+  /**
+   * SYNCHRONOUS fast-path: if a fresh warm plan exists for a popup/remote wallet
+   * — and `options` carries no plan-affecting guards — consume it and START
+   * `completeConnect` immediately, reaching `adapter.connect()` with no awaits.
+   * Returns the in-flight Session promise, or null to fall back to the normal
+   * path (e.g. cold cache, or a non-discovery wallet).
+   */
+  private tryFastConnect;
   /**
    * Disconnect from wallet
    */
@@ -689,6 +735,81 @@ declare class GenericAnnounceAdapter implements WalletAdapter {
 }
 
 /**
+ * Generic bridge from an official `@canton-network/core-wallet-discovery`
+ * `ProviderAdapter` (matched structurally as `OfficialProviderAdapter`) to our
+ * `WalletAdapter` contract.
+ *
+ * This is the GENERIC host for popup/remote Canton wallets that neither inject
+ * `window.canton` nor announce via `canton:announceProvider` (e.g. Walley): the
+ * app supplies the wallet's OWN official adapter instance in `config.adapters`,
+ * and the SDK auto-wraps it here. There is NO wallet-specific package in our
+ * codebase — any standards-compliant wallet shipping the official ProviderAdapter
+ * shape inherits this path. We deliberately do NOT import `@canton-network/*`
+ * (mirroring `@partylayer/provider`'s extension-channel); the standard's SHAPE
+ * is the contract.
+ *
+ * Sibling to `GenericAnnounceAdapter`: both delegate every call to a
+ * `CIP0103Provider`. The difference is the source — here the provider comes from
+ * the official adapter's `provider()` (obtained LAZILY so SDK init stays
+ * SSR-safe; the wallet's `provider()` may touch `window`).
+ *
+ * Host/network are baked into the app-supplied official adapter at construction
+ * (e.g. `new WalleyAdapter({ host: 'https://dev.walley.cc' })`), so the bridge
+ * never sees or sets them.
+ *
+ * Eventless note: the official provider exposes `on`/`emit`/`removeListener`
+ * but popup/remote wallets typically never emit. The session layer restores via
+ * `status`/`listAccounts` polling + persists on fresh connect, so this is
+ * tolerated; `getCapabilities()` therefore NEVER returns `'events'`.
+ */
+
+interface GenericDiscoveryAdapterArgs {
+  /** App-supplied official adapter (e.g. `new WalleyAdapter({ host })`). */
+  official: OfficialProviderAdapter;
+  /**
+   * SDK walletId for this wallet. Defaults to `toWalletId(official.providerId)`
+   * so it aligns with the registry entry whose `id` equals the provider id
+   * (the convention for `transport: 'discovery-adapter'` entries). Pass
+   * explicitly to bind to a different registry id.
+   */
+  walletId?: WalletId;
+  /** Display name override (falls back to the official adapter's name). */
+  name?: string;
+  /** Icon override (falls back to the official adapter's icon). */
+  icon?: string;
+}
+declare class GenericDiscoveryAdapter implements WalletAdapter {
+  readonly walletId: WalletId;
+  readonly name: string;
+  readonly icon?: string;
+  private readonly official;
+  /** Lazily resolved from `official.provider()` — NOT at construction (SSR-safe). */
+  private providerInstance;
+  constructor(args: GenericDiscoveryAdapterArgs);
+  /** Lazily obtain (and cache) the official provider — deferred off the init/SSR path. */
+  private get provider();
+  /**
+   * Baseline CIP-0103 capabilities. NEVER includes `'events'`: popup/remote
+   * wallets expose the event surface but do not emit (truthfulness doctrine).
+   */
+  getCapabilities(): CapabilityKey[];
+  /** Install/availability probe — delegated to the official adapter (popup-free). */
+  detectInstalled(): Promise<AdapterDetectResult>;
+  connect(ctx: AdapterContext): Promise<AdapterConnectResult>;
+  disconnect(): Promise<void>;
+  signMessage(
+    _ctx: AdapterContext,
+    _session: Session,
+    params: SignMessageParams
+  ): Promise<SignedMessage>;
+  submitTransaction(
+    _ctx: AdapterContext,
+    _session: Session,
+    params: SubmitTransactionParams
+  ): Promise<TxReceipt>;
+}
+
+/**
  * Built-in wallet adapters
  *
  * These adapters are automatically registered when creating a PartyLayer client.
@@ -820,6 +941,8 @@ export {
   type EventHandler,
   GenericAnnounceAdapter,
   type GenericAnnounceAdapterArgs,
+  GenericDiscoveryAdapter,
+  type GenericDiscoveryAdapterArgs,
   MetricsTelemetryAdapter,
   PartyLayerClient,
   type PartyLayerConfig,
