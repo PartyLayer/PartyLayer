@@ -21,6 +21,7 @@ import {
   TxReceipt,
   WalletAdapter,
   AdapterClass,
+  OfficialProviderAdapter,
   WalletId,
   CIP0103Provider,
   CapabilityKey,
@@ -227,8 +228,12 @@ interface PartyLayerKitProps {
    *
    * For Bron (enterprise OAuth), pass explicitly:
    *   adapters={[...getBuiltinAdapters(), new BronAdapter(config)]}
+   *
+   * Also accepts an official @canton-network ProviderAdapter
+   * (`OfficialProviderAdapter`, e.g. `new WalleyAdapter({ host })`) — the SDK
+   * auto-bridges it via GenericDiscoveryAdapter (popup/remote wallets).
    */
-  adapters?: (WalletAdapter | AdapterClass)[];
+  adapters?: (WalletAdapter | AdapterClass | OfficialProviderAdapter)[];
   /** Theme preset or custom theme object (default: 'light') */
   theme?: 'light' | 'dark' | 'auto' | PartyLayerTheme;
   /** Custom wallet icon URLs by walletId */
