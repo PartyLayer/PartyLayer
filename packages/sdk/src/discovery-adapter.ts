@@ -77,10 +77,13 @@ export class GenericDiscoveryAdapter implements WalletAdapter {
     this.icon = args.icon ?? args.official.icon;
   }
 
-  /** Lazily obtain (and cache) the official provider — deferred off the init/SSR path. */
+  /** Lazily obtain (and cache) the official provider — deferred off the init/SSR path.
+   *  `official.provider()` is typed `OfficialProvider` (loose `request` so real
+   *  official adapters are assignable); it is call-compatible with CIP0103Provider
+   *  (the bridge only ever calls `request({ method, params })`). */
   private get provider(): CIP0103Provider {
     if (this.providerInstance === null) {
-      this.providerInstance = this.official.provider();
+      this.providerInstance = this.official.provider() as unknown as CIP0103Provider;
     }
     return this.providerInstance;
   }

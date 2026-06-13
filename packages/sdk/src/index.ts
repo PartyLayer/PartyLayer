@@ -82,6 +82,7 @@ export type { ErrorCode } from '@partylayer/core';
 // Re-export adapter types (for adapter developers)
 export type {
   WalletAdapter,
+  OfficialProviderAdapter,
   AdapterContext,
   AdapterDetectResult,
   AdapterConnectResult,
@@ -91,6 +92,9 @@ export type {
   LedgerApiParams,
   LedgerApiResult,
 } from '@partylayer/core';
+// The structural guard for the above (apps rarely need it, but it's part of the
+// official-adapter contract the bridge consumes).
+export { isOfficialProviderAdapter } from '@partylayer/core';
 
 // Re-export registry status type
 export type { RegistryStatus } from '@partylayer/registry-client';
