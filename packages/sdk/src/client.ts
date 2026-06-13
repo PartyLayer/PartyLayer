@@ -82,13 +82,33 @@ import type {
 const SESSION_STORAGE_KEY = 'active_session';
 
 /**
+ * Pre-resolved inputs for `adapter.connect()`, produced by `resolveConnectPlan`.
+ * When pre-warmed (see `warmPlans`), the popup-safe fast-path can reach
+ * `adapter.connect()` with ZERO awaits so a popup/remote wallet's `window.open`
+ * survives the user gesture (no Safari popup-block).
+ */
+interface ConnectPlan {
+  selectedWallet: WalletInfo;
+  adapter: WalletAdapter;
+  ctx: AdapterContext;
+  isNativeWallet: boolean;
+}
+
+/**
  * PartyLayer Client
- * 
+ *
  * Main client interface for dApps to interact with Canton wallets.
  */
 export class PartyLayerClient {
   private config: PartyLayerConfig;
   private adapters = new Map<WalletId, WalletAdapter>();
+  /**
+   * Pre-resolved connect plans for popup/remote (GenericDiscoveryAdapter)
+   * wallets, warmed on `listWallets()` (which the modal calls on open) so a
+   * subsequent click can connect gesture-synchronously. Consumed (deleted) on
+   * use and cleared on disconnect; a cold miss falls back to the normal path.
+   */
+  private readonly warmPlans = new Map<WalletId, ConnectPlan>();
   private eventHandlers = new Map<string, Set<EventHandler>>();
   private activeSession: Session | null = null;
   public readonly registryClient: RegistryClient; // Expose for React hooks
@@ -252,6 +272,12 @@ export class PartyLayerClient {
     // dynamic, target-scoped entries. No-op (byte-identical) with zero announcers.
     registryWallets = await this.aggregateAnnouncedWallets(registryWallets);
 
+    // Popup-safe warm-up: pre-resolve connect plans for popup/remote
+    // (GenericDiscoveryAdapter) wallets in the background so a later click can
+    // reach adapter.connect() gesture-synchronously. Fire-and-forget; never
+    // blocks listing. No-op when there are no such adapters (e.g. today).
+    void this.warmDiscoveryPlans(registryWallets);
+
     // Filter by capabilities
     if (filter?.requiredCapabilities) {
       return registryWallets.filter((walletInfo) =>
@@ -398,170 +424,21 @@ export class PartyLayerClient {
   async connect(options?: ConnectOptions): Promise<Session> {
     // Track connect attempt
     this.telemetry?.increment?.(METRICS.WALLET_CONNECT_ATTEMPTS);
-    
+
     try {
-      // Get available wallets
-      const wallets = await this.listWallets({
-        requiredCapabilities: options?.requiredCapabilities,
-        includeExperimental: true,
-      });
+      // Popup-safe fast-path: a pre-warmed plan for a popup/remote
+      // (GenericDiscoveryAdapter) wallet lets us reach adapter.connect() with
+      // ZERO awaits, so the wallet's window.open survives the user gesture.
+      // `tryFastConnect` is SYNCHRONOUS — when it returns a promise,
+      // completeConnect has already invoked adapter.connect() in this call stack.
+      const fast = this.tryFastConnect(options);
+      if (fast) return await fast;
 
-      // Filter by allowWallets
-      let availableWallets = wallets;
-      if (options?.allowWallets) {
-        availableWallets = wallets.filter((w) =>
-          options.allowWallets!.includes(w.walletId)
-        );
-      }
-
-      // Select wallet
-      let selectedWallet: WalletInfo;
-      let isNativeWallet = false;
-      if (options?.walletId) {
-        const found = availableWallets.find(
-          (w) => w.walletId === options.walletId
-        );
-        if (found) {
-          selectedWallet = found;
-        } else {
-          // Fallback: check if a native CIP-0103 adapter is registered
-          const nativeAdapter = this.adapters.get(options.walletId);
-          if (nativeAdapter) {
-            isNativeWallet = true;
-            selectedWallet = {
-              walletId: options.walletId,
-              name: nativeAdapter.name,
-              website: '',
-              icons: {},
-              capabilities: nativeAdapter.getCapabilities(),
-              adapter: { packageName: 'native-cip0103', versionRange: '*' },
-              docs: [],
-              networks: [this.config.network],
-              channel: 'stable' as const,
-              metadata: { source: 'native-cip0103' },
-            };
-          } else {
-            throw new WalletNotFoundError(String(options.walletId));
-          }
-        }
-      } else if (availableWallets.length === 0) {
-        throw new WalletNotFoundError('No wallets available');
-      } else {
-        selectedWallet = availableWallets[0];
-      }
-
-      // Get adapter
-      const adapter = this.adapters.get(selectedWallet.walletId);
-      if (!adapter) {
-        throw new WalletNotFoundError(String(selectedWallet.walletId));
-      }
-
-      // Check origin allowlist (skip for native CIP-0103 wallets and
-      // adapter-merged wallets that aren't in the registry)
-      if (!isNativeWallet) {
-        try {
-          const walletEntry = await this.registryClient.getWalletEntry(String(selectedWallet.walletId));
-          if (walletEntry.originAllowlist && walletEntry.originAllowlist.length > 0) {
-            if (!walletEntry.originAllowlist.includes(this.origin)) {
-              const { OriginNotAllowedError } = await import('@partylayer/core');
-              throw new OriginNotAllowedError(
-                this.origin,
-                walletEntry.originAllowlist
-              );
-            }
-          }
-        } catch (e) {
-          // Wallet not in registry (adapter-merged) — skip origin check
-          if (!(e instanceof WalletNotFoundError)) {
-            throw e;
-          }
-        }
-      }
-
-      // Check capabilities
-      if (options?.requiredCapabilities) {
-        capabilityGuard(adapter, options.requiredCapabilities as CapabilityKey[]);
-      }
-
-      // Check installation
-      await installGuard(adapter);
-
-      // Create adapter context
-      const ctx = this.createAdapterContext();
-
-      // Connect
-      // Default timeout: 2 minutes for QR code/popup based wallets
-      const timeoutMs = options?.timeoutMs || 120000;
-      const connectPromise = adapter.connect(ctx, {
-        timeoutMs,
-        partyId: undefined,
-        preferInstalled: options?.preferInstalled,
-        onDisplayUri: options?.onDisplayUri,
-      });
-
-      const timeoutPromise = new Promise<never>((_, reject) => {
-        setTimeout(() => {
-          reject(new Error(`Connection timed out after ${timeoutMs}ms - user did not complete wallet connection`));
-        }, timeoutMs);
-      });
-
-      const result = await Promise.race([connectPromise, timeoutPromise]);
-
-      // Create session
-      const session: Session = {
-        sessionId: toSessionId(`session_${Date.now()}_${Math.random().toString(36).substring(2, 15)}`),
-        walletId: selectedWallet.walletId,
-        partyId: result.partyId,
-        // The wallet's reported network (adapters that read the live wallet —
-        // e.g. Console via getActiveNetwork — surface the actual network here;
-        // echo-only adapters report ctx.network === config.network). Used for
-        // mismatch detection; falls back to the configured network.
-        network: (result.session.network ?? this.config.network) as NetworkId,
-        createdAt: Date.now(),
-        expiresAt: result.session.expiresAt,
-        origin: this.origin,
-        capabilitiesSnapshot: result.capabilities,
-        metadata: result.session.metadata as Record<string, string> | undefined,
-      };
-
-      // Network-mismatch detection: the wallet connected on a different network
-      // than the dApp is configured for. Always detected + flagged + emitted;
-      // 'strict' blocks the connect, 'guard'/'off' let it proceed.
-      const mismatch = this.networkMismatch(session);
-      if (mismatch) {
-        session.networkMismatch = mismatch;
-        this.emit('session:networkMismatch', {
-          type: 'session:networkMismatch',
-          sessionId: session.sessionId,
-          expected: mismatch.expected,
-          actual: mismatch.actual,
-          enforced: this.enforcement !== 'off',
-        });
-        if (this.enforcement === 'strict') {
-          throw new NetworkMismatchError(mismatch.expected, mismatch.actual);
-        }
-      }
-
-      // Persist session
-      await this.persistSession(session);
-
-      // Set active session
-      this.activeSession = session;
-
-      // Update registry status (may have changed during fetch)
-      this.updateRegistryStatus();
-
-      // Track successful connection
-      this.telemetry?.increment?.(METRICS.WALLET_CONNECT_SUCCESS);
-      this.telemetry?.increment?.(METRICS.SESSIONS_CREATED);
-
-      // Emit event
-      this.emit('session:connected', {
-        type: 'session:connected',
-        session,
-      });
-
-      return session;
+      // Normal path (every existing wallet — injected/announce — comes here):
+      // resolve the plan (the awaited guards) then connect. Behavior-identical
+      // to the pre-fast-path connect.
+      const plan = await this.resolveConnectPlan(options);
+      return await this.completeConnect(plan, options);
     } catch (err) {
       const timeoutMs = options?.timeoutMs || 30000;
       const error = mapUnknownErrorToPartyLayerError(err, {
@@ -572,6 +449,246 @@ export class PartyLayerClient {
       this.emit('error', { type: 'error', error });
       throw error;
     }
+  }
+
+  /**
+   * Pre-resolve everything `adapter.connect()` needs WITHOUT calling it: wallet
+   * selection, origin-allowlist + capability + install guards, and the adapter
+   * context. `prefetchedWallets` (passed during warm-up from `listWallets`)
+   * avoids a recursive `listWallets()` call.
+   */
+  private async resolveConnectPlan(
+    options?: ConnectOptions,
+    prefetchedWallets?: WalletInfo[],
+  ): Promise<ConnectPlan> {
+    // Get available wallets
+    const wallets =
+      prefetchedWallets ??
+      (await this.listWallets({
+        requiredCapabilities: options?.requiredCapabilities,
+        includeExperimental: true,
+      }));
+
+    // Filter by allowWallets
+    let availableWallets = wallets;
+    if (options?.allowWallets) {
+      availableWallets = wallets.filter((w) =>
+        options.allowWallets!.includes(w.walletId)
+      );
+    }
+
+    // Select wallet
+    let selectedWallet: WalletInfo;
+    let isNativeWallet = false;
+    if (options?.walletId) {
+      const found = availableWallets.find(
+        (w) => w.walletId === options.walletId
+      );
+      if (found) {
+        selectedWallet = found;
+      } else {
+        // Fallback: check if a native CIP-0103 adapter is registered
+        const nativeAdapter = this.adapters.get(options.walletId);
+        if (nativeAdapter) {
+          isNativeWallet = true;
+          selectedWallet = {
+            walletId: options.walletId,
+            name: nativeAdapter.name,
+            website: '',
+            icons: {},
+            capabilities: nativeAdapter.getCapabilities(),
+            adapter: { packageName: 'native-cip0103', versionRange: '*' },
+            docs: [],
+            networks: [this.config.network],
+            channel: 'stable' as const,
+            metadata: { source: 'native-cip0103' },
+          };
+        } else {
+          throw new WalletNotFoundError(String(options.walletId));
+        }
+      }
+    } else if (availableWallets.length === 0) {
+      throw new WalletNotFoundError('No wallets available');
+    } else {
+      selectedWallet = availableWallets[0];
+    }
+
+    // Get adapter
+    const adapter = this.adapters.get(selectedWallet.walletId);
+    if (!adapter) {
+      throw new WalletNotFoundError(String(selectedWallet.walletId));
+    }
+
+    // Check origin allowlist (skip for native CIP-0103 wallets and
+    // adapter-merged wallets that aren't in the registry)
+    if (!isNativeWallet) {
+      try {
+        const walletEntry = await this.registryClient.getWalletEntry(String(selectedWallet.walletId));
+        if (walletEntry.originAllowlist && walletEntry.originAllowlist.length > 0) {
+          if (!walletEntry.originAllowlist.includes(this.origin)) {
+            const { OriginNotAllowedError } = await import('@partylayer/core');
+            throw new OriginNotAllowedError(
+              this.origin,
+              walletEntry.originAllowlist
+            );
+          }
+        }
+      } catch (e) {
+        // Wallet not in registry (adapter-merged) — skip origin check
+        if (!(e instanceof WalletNotFoundError)) {
+          throw e;
+        }
+      }
+    }
+
+    // Check capabilities
+    if (options?.requiredCapabilities) {
+      capabilityGuard(adapter, options.requiredCapabilities as CapabilityKey[]);
+    }
+
+    // Check installation
+    await installGuard(adapter);
+
+    // Create adapter context
+    const ctx = this.createAdapterContext();
+
+    return { selectedWallet, adapter, ctx, isNativeWallet };
+  }
+
+  /**
+   * Invoke `adapter.connect()` (its FIRST statement — no await precedes it) and
+   * build / persist / emit the session. Separated from plan resolution so the
+   * popup-safe fast-path can call it gesture-synchronously.
+   */
+  private async completeConnect(plan: ConnectPlan, options?: ConnectOptions): Promise<Session> {
+    const { selectedWallet, adapter, ctx } = plan;
+
+    // Connect
+    // Default timeout: 2 minutes for QR code/popup based wallets
+    const timeoutMs = options?.timeoutMs || 120000;
+    const connectPromise = adapter.connect(ctx, {
+      timeoutMs,
+      partyId: undefined,
+      preferInstalled: options?.preferInstalled,
+      onDisplayUri: options?.onDisplayUri,
+    });
+
+    const timeoutPromise = new Promise<never>((_, reject) => {
+      setTimeout(() => {
+        reject(new Error(`Connection timed out after ${timeoutMs}ms - user did not complete wallet connection`));
+      }, timeoutMs);
+    });
+
+    const result = await Promise.race([connectPromise, timeoutPromise]);
+
+    // Create session
+    const session: Session = {
+      sessionId: toSessionId(`session_${Date.now()}_${Math.random().toString(36).substring(2, 15)}`),
+      walletId: selectedWallet.walletId,
+      partyId: result.partyId,
+      // The wallet's reported network (adapters that read the live wallet —
+      // e.g. Console via getActiveNetwork — surface the actual network here;
+      // echo-only adapters report ctx.network === config.network). Used for
+      // mismatch detection; falls back to the configured network.
+      network: (result.session.network ?? this.config.network) as NetworkId,
+      createdAt: Date.now(),
+      expiresAt: result.session.expiresAt,
+      origin: this.origin,
+      capabilitiesSnapshot: result.capabilities,
+      metadata: result.session.metadata as Record<string, string> | undefined,
+    };
+
+    // Network-mismatch detection: the wallet connected on a different network
+    // than the dApp is configured for. Always detected + flagged + emitted;
+    // 'strict' blocks the connect, 'guard'/'off' let it proceed.
+    const mismatch = this.networkMismatch(session);
+    if (mismatch) {
+      session.networkMismatch = mismatch;
+      this.emit('session:networkMismatch', {
+        type: 'session:networkMismatch',
+        sessionId: session.sessionId,
+        expected: mismatch.expected,
+        actual: mismatch.actual,
+        enforced: this.enforcement !== 'off',
+      });
+      if (this.enforcement === 'strict') {
+        throw new NetworkMismatchError(mismatch.expected, mismatch.actual);
+      }
+    }
+
+    // Persist session
+    await this.persistSession(session);
+
+    // Set active session
+    this.activeSession = session;
+
+    // Update registry status (may have changed during fetch)
+    this.updateRegistryStatus();
+
+    // Track successful connection
+    this.telemetry?.increment?.(METRICS.WALLET_CONNECT_SUCCESS);
+    this.telemetry?.increment?.(METRICS.SESSIONS_CREATED);
+
+    // Emit event
+    this.emit('session:connected', {
+      type: 'session:connected',
+      session,
+    });
+
+    return session;
+  }
+
+  /**
+   * PUBLIC popup-safe primitive: pre-resolve a connect plan ahead of the user
+   * gesture; the returned `connect()` invokes `adapter.connect()` as its first
+   * statement (no await precedes it) so a popup/remote wallet's `window.open`
+   * survives the gesture. For consumers driving such a wallet outside the modal
+   * (the modal gets this for free via the `listWallets` warm-up + `connect()`).
+   */
+  async prepareConnect(
+    options?: ConnectOptions,
+  ): Promise<{ walletId: WalletId; connect: (o?: ConnectOptions) => Promise<Session> }> {
+    const plan = await this.resolveConnectPlan(options);
+    return {
+      walletId: plan.selectedWallet.walletId,
+      connect: (o?: ConnectOptions) => this.completeConnect(plan, o ?? options),
+    };
+  }
+
+  /**
+   * Background warm-up of connect plans for popup/remote
+   * (`GenericDiscoveryAdapter`) wallets. Popup-free — `resolveConnectPlan` only
+   * runs read/guard probes. Skips already-warm entries; never throws.
+   */
+  private async warmDiscoveryPlans(wallets: WalletInfo[]): Promise<void> {
+    for (const [walletId, adapter] of this.adapters) {
+      if (!(adapter instanceof GenericDiscoveryAdapter)) continue;
+      if (this.warmPlans.has(walletId)) continue;
+      try {
+        const plan = await this.resolveConnectPlan({ walletId }, wallets);
+        this.warmPlans.set(walletId, plan);
+      } catch {
+        // best-effort; a failed warm-up just falls back to the normal path.
+      }
+    }
+  }
+
+  /**
+   * SYNCHRONOUS fast-path: if a fresh warm plan exists for a popup/remote wallet
+   * — and `options` carries no plan-affecting guards — consume it and START
+   * `completeConnect` immediately, reaching `adapter.connect()` with no awaits.
+   * Returns the in-flight Session promise, or null to fall back to the normal
+   * path (e.g. cold cache, or a non-discovery wallet).
+   */
+  private tryFastConnect(options?: ConnectOptions): Promise<Session> | null {
+    const walletId = options?.walletId;
+    if (!walletId) return null;
+    // Plan-affecting options must re-resolve (guards) → no fast-path.
+    if (options?.requiredCapabilities || options?.allowWallets) return null;
+    const plan = this.warmPlans.get(walletId);
+    if (!plan) return null;
+    this.warmPlans.delete(walletId); // one-shot; re-warmed on the next listWallets
+    return this.completeConnect(plan, options);
   }
 
   /**
@@ -593,6 +710,8 @@ export class PartyLayerClient {
       await this.removeSession(sessionId);
 
       this.activeSession = null;
+      // Drop any pre-warmed connect plans; they re-warm on the next listWallets.
+      this.warmPlans.clear();
 
       this.emit('session:disconnected', {
         type: 'session:disconnected',
