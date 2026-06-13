@@ -83,6 +83,8 @@ export type { ErrorCode } from '@partylayer/core';
 export type {
   WalletAdapter,
   OfficialProviderAdapter,
+  OfficialAdapterFactory,
+  NetworkHosts,
   AdapterContext,
   AdapterDetectResult,
   AdapterConnectResult,
@@ -92,9 +94,9 @@ export type {
   LedgerApiParams,
   LedgerApiResult,
 } from '@partylayer/core';
-// The structural guard for the above (apps rarely need it, but it's part of the
-// official-adapter contract the bridge consumes).
-export { isOfficialProviderAdapter } from '@partylayer/core';
+// The structural guards for the above (apps rarely need them, but they are part
+// of the official-adapter contract the bridge consumes).
+export { isOfficialProviderAdapter, isOfficialAdapterFactory } from '@partylayer/core';
 
 // Re-export registry status type
 export type { RegistryStatus } from '@partylayer/registry-client';
