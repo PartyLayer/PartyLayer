@@ -416,6 +416,62 @@ export function isOfficialProviderAdapter(
 }
 
 /**
+ * Network→host mapping for a discovery-adapter wallet. This is DATA — it lives
+ * in the registry entry's `adapter.networkHosts` — so the generic bridge can
+ * resolve `networkHosts[activeNetwork]` with NO wallet URL hardcoded in SDK or
+ * app code. A developer writes `<PartyLayerKit network="mainnet">` and the host
+ * is looked up from the wallet's own entry.
+ *
+ * Partial: a wallet need not support every network (e.g. mainnet-only). A
+ * missing key is a CLEAR failure at connect (the unsupported network is named),
+ * never a silent wrong-network fallback.
+ */
+export type NetworkHosts = Partial<Record<NetworkId, string>>;
+
+/**
+ * Factory form of an official ProviderAdapter. Instead of a pre-constructed
+ * instance with a baked host, the app supplies `create(host)` so the bridge can
+ * construct the official adapter with a NETWORK-RESOLVED host at connect time.
+ *
+ * Why a factory and not re-hosting an instance: official adapters (e.g. Walley)
+ * seal `host` at construction (`private host`, no setter), so a pre-built
+ * instance cannot be re-pointed at another network's host. The factory is the
+ * only clean path to network-driven host resolution.
+ *
+ * `create(host)` MUST be synchronous and side-effect-light (just construct the
+ * adapter) — the bridge calls it on the popup-safe gesture path, so any awaited
+ * work before the wallet's `window.open` would break gesture survival. The host
+ * is pre-resolved during warm-up; `create` only builds the instance.
+ */
+export interface OfficialAdapterFactory {
+  /** Stable provider identity (e.g. "walley") — matches the registry entry id / `config.providerId`. */
+  readonly providerId: string;
+  /** Construct the official adapter bound to `host`. Synchronous; no awaited work. */
+  create(host: string): OfficialProviderAdapter;
+  /** Display-name override (else the constructed adapter's `name`). */
+  readonly name?: string;
+  /** Icon override (else the constructed adapter's `icon`). */
+  readonly icon?: string;
+}
+
+/**
+ * Structural guard for {@link OfficialAdapterFactory}. Distinguishes the factory
+ * form (`create` function) from a pre-constructed {@link OfficialProviderAdapter}
+ * instance (`provider` function) in `config.adapters`.
+ */
+export function isOfficialAdapterFactory(
+  value: unknown,
+): value is OfficialAdapterFactory {
+  if (typeof value !== 'object' || value === null) return false;
+  const a = value as Record<string, unknown>;
+  return (
+    typeof a.providerId === 'string' &&
+    a.providerId.length > 0 &&
+    typeof a.create === 'function'
+  );
+}
+
+/**
  * Check if adapter supports required capabilities
  * Throws CapabilityNotSupportedError if not supported
  */
