@@ -7,6 +7,7 @@ import type {
   WalletId,
   WalletAdapter,
   OfficialProviderAdapter,
+  OfficialAdapterFactory,
 } from '@partylayer/core';
 import type {
   StorageAdapter,
@@ -146,7 +147,12 @@ export interface PartyLayerConfig {
    * });
    * ```
    */
-  adapters?: (WalletAdapter | AdapterClass | OfficialProviderAdapter)[];
+  adapters?: (
+    | WalletAdapter
+    | AdapterClass
+    | OfficialProviderAdapter
+    | OfficialAdapterFactory
+  )[];
   /** Storage adapter (default: browser localStorage-based encrypted) */
   storage?: StorageAdapter;
   /** Crypto adapter (default: WebCrypto) */

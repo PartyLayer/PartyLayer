@@ -10,7 +10,7 @@
 
 import { useMemo, useEffect, useRef, createContext, useContext } from 'react';
 import { createPartyLayer } from '@partylayer/sdk';
-import type { PartyLayerClient, WalletAdapter, AdapterClass, OfficialProviderAdapter, NetworkId } from '@partylayer/sdk';
+import type { PartyLayerClient, WalletAdapter, AdapterClass, OfficialProviderAdapter, OfficialAdapterFactory, NetworkId } from '@partylayer/sdk';
 import type { SessionStoreOptions } from '@partylayer/session';
 import { PartyLayerProvider } from './context';
 import { ThemeProvider } from './theme';
@@ -83,9 +83,17 @@ export interface PartyLayerKitProps {
    *
    * Also accepts an official @canton-network ProviderAdapter
    * (`OfficialProviderAdapter`, e.g. `new WalleyAdapter({ host })`) — the SDK
-   * auto-bridges it via GenericDiscoveryAdapter (popup/remote wallets).
+   * auto-bridges it via GenericDiscoveryAdapter (popup/remote wallets) — or an
+   * `OfficialAdapterFactory` (`{ providerId, create(host) }`), whose host the SDK
+   * resolves from the registry entry's `networkHosts[network]` so you set
+   * `network="…"` and never hardcode a wallet URL.
    */
-  adapters?: (WalletAdapter | AdapterClass | OfficialProviderAdapter)[];
+  adapters?: (
+    | WalletAdapter
+    | AdapterClass
+    | OfficialProviderAdapter
+    | OfficialAdapterFactory
+  )[];
   /** Theme preset or custom theme object (default: 'light') */
   theme?: 'light' | 'dark' | 'auto' | PartyLayerTheme;
   /** Custom wallet icon URLs by walletId */

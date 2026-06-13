@@ -83,7 +83,12 @@
           "properties": {
             "type": { "type": "string", "minLength": 1 },
             "requiresConfig": { "type": "boolean" },
-            "config": { "type": "object" }
+            "config": { "type": "object" },
+            "networkHosts": {
+              "type": "object",
+              "minProperties": 1,
+              "additionalProperties": { "type": "string", "minLength": 1 }
+            }
           }
         },
         "installation": { "type": "object" },

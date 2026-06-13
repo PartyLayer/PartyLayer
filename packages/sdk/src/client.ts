@@ -34,6 +34,7 @@ import {
   capabilityGuard,
   installGuard,
   isOfficialProviderAdapter,
+  isOfficialAdapterFactory,
 } from '@partylayer/core';
 import { RegistryClient } from '@partylayer/registry-client';
 import type { RegistryStatus } from '@partylayer/registry-client';
@@ -154,8 +155,16 @@ export class PartyLayerClient {
       if (typeof adapterOrClass === 'function') {
         // It's a class - instantiate it
         adapter = new (adapterOrClass as new () => import('@partylayer/core').WalletAdapter)();
+      } else if (isOfficialAdapterFactory(adapterOrClass)) {
+        // Generic bridge, FACTORY form: the app supplies `create(host)` instead
+        // of a pre-built instance, so the bridge constructs the official adapter
+        // with a host resolved from the registry's `adapter.networkHosts` for
+        // the active network (no wallet URL in app/SDK code). networkHosts is
+        // injected during the warm phase (see resolveConnectPlan). Checked
+        // before the instance form: a factory has `create` (no `provider`).
+        adapter = new GenericDiscoveryAdapter({ factory: adapterOrClass });
       } else if (isOfficialProviderAdapter(adapterOrClass)) {
-        // Generic bridge: an app-supplied official @canton-network
+        // Generic bridge, INSTANCE form: an app-supplied official @canton-network
         // core-wallet-discovery ProviderAdapter (e.g. `new WalleyAdapter()`).
         // Wrapped into our WalletAdapter contract with NO wallet-specific
         // package. Disjoint from WalletAdapter (which has no providerId/detect/
@@ -588,6 +597,27 @@ export class PartyLayerClient {
 
     // Create adapter context
     const ctx = this.createAdapterContext();
+
+    // Factory-based discovery adapters: inject the registry's networkHosts and
+    // pre-resolve the official adapter for the active network DURING this async
+    // phase. completeConnect (which the popup-safe fast-path can reach
+    // gesture-synchronously) then calls adapter.connect() with NO awaits before
+    // window.open. resolveOfficial throws a CLEAR error if the wallet has no
+    // host for ctx.network (never a silent wrong-network host).
+    if (adapter instanceof GenericDiscoveryAdapter && adapter.usesFactory()) {
+      let networkHosts = {};
+      try {
+        const entry = await this.registryClient.getWalletEntry(
+          String(selectedWallet.walletId),
+        );
+        networkHosts = entry.adapter?.networkHosts ?? {};
+      } catch {
+        // Not in the registry — leave empty; resolveOfficial throws a clear,
+        // network-named error rather than silently using a wrong host.
+      }
+      adapter.setNetworkHosts(networkHosts);
+      adapter.resolveOfficial(ctx.network);
+    }
 
     return { selectedWallet, adapter, ctx, isNativeWallet };
   }
@@ -1079,6 +1109,40 @@ export class PartyLayerClient {
       // Check origin
       if (session.origin !== this.origin) {
         return null;
+      }
+
+      // Network gate (generic, ALL wallets) — runs BEFORE any adapter handoff.
+      // The persisted session carries its network (our network-aware envelope);
+      // validate it against the configured network. Without this, a
+      // discovery-adapter session takes the "restore as-is" path below
+      // (GenericDiscoveryAdapter has no adapter.restore), silently reviving e.g.
+      // a devnet identity on a mainnet app — and the official adapter's restore
+      // is silent, so the connect-time mismatch check never fires. Under
+      // enforcement we REFUSE + clear; under 'off' we restore but flag (mirrors
+      // the connect-time mismatch behavior).
+      const mismatch = this.networkMismatch(session);
+      if (mismatch) {
+        this.emit('session:networkMismatch', {
+          type: 'session:networkMismatch',
+          sessionId: session.sessionId,
+          expected: mismatch.expected,
+          actual: mismatch.actual,
+          enforced: this.enforcement !== 'off',
+        });
+        if (this.enforcement !== 'off') {
+          this.logger.warn('Refused session restore — network mismatch', {
+            expected: mismatch.expected,
+            actual: mismatch.actual,
+          });
+          await this.removeSession(session.sessionId);
+          this.emit('session:expired', {
+            type: 'session:expired',
+            sessionId: session.sessionId,
+          });
+          return null;
+        }
+        // 'off': proceed with restore but flag the mismatch on the session.
+        session.networkMismatch = mismatch;
       }
 
       // Try to restore with adapter

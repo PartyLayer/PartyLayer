@@ -17,6 +17,7 @@ import type {
   AdapterTransport,
   CapabilityKey,
   Cip0103Support,
+  NetworkHosts,
   NetworkId,
   ProviderDetection,
   WalletInfo,
@@ -88,6 +89,17 @@ export interface RegistryWalletEntry {
      * `config.providerId` (string) keys the app-supplied official adapter.
      */
     config?: Record<string, unknown>;
+    /**
+     * Network→host mapping for `transport: 'discovery-adapter'` wallets. DATA,
+     * not code: the generic bridge resolves `networkHosts[activeNetwork]` at
+     * connect time and constructs the app-supplied official adapter (factory
+     * form) with it — so no wallet URL is hardcoded in SDK or app code, and an
+     * app simply sets `<PartyLayerKit network="…">`. Optional + additive: absent
+     * ⇒ the app must supply an explicit host (a pre-constructed instance); a
+     * network missing from the map is a CLEAR connect-time failure naming the
+     * unsupported network, never a silent wrong-network fallback.
+     */
+    networkHosts?: NetworkHosts;
   };
   /** Installation detection hints */
   installation?: {
@@ -254,6 +266,19 @@ export function validateWalletEntry(
     transport === 'announce' ||
     transport === 'discovery-adapter';
 
+  // networkHosts (when present) must be an object of string hosts keyed by
+  // network — a malformed map would otherwise surface as a runtime connect
+  // failure rather than a registry-integrity failure.
+  const networkHosts = adapter?.networkHosts;
+  const networkHostsValid =
+    networkHosts === undefined ||
+    (typeof networkHosts === 'object' &&
+      networkHosts !== null &&
+      !Array.isArray(networkHosts) &&
+      Object.values(networkHosts as Record<string, unknown>).every(
+        (h) => typeof h === 'string' && h.length > 0,
+      ));
+
   return (
     typeof e.id === 'string' &&
     typeof e.name === 'string' &&
@@ -264,6 +289,7 @@ export function validateWalletEntry(
     adapter !== null &&
     typeof adapter.type === 'string' &&
     transportValid &&
+    networkHostsValid &&
     (e.originAllowlist === undefined || Array.isArray(e.originAllowlist))
   );
 }
