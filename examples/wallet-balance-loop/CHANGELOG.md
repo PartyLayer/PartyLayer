@@ -1,5 +1,16 @@
 # wallet-balance-loop-example
 
+## 1.0.6
+
+### Patch Changes
+
+- Updated dependencies [6efe375]
+- Updated dependencies [4c53396]
+- Updated dependencies [adaff8e]
+- Updated dependencies [adaff8e]
+  - @partylayer/sdk@0.8.0
+  - @partylayer/react@0.8.0
+
 ## 1.0.5
 
 ### Patch Changes

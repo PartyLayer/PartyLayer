@@ -1,5 +1,32 @@
 # @partylayer/sdk
 
+## 0.8.0
+
+### Minor Changes
+
+- 6efe375: Add `GenericDiscoveryAdapter` — a generic bridge that hosts an app-supplied official `@canton-network/core-wallet-discovery` `ProviderAdapter` (e.g. Walley) as a standard wallet, with NO wallet-specific package and no `@canton-network/*` dependency. `config.adapters` now also accepts an `OfficialProviderAdapter`; the SDK auto-detects and wraps it. The official `provider()` is obtained lazily (SSR-safe) and `getCapabilities()` never reports `events` (popup/remote wallets expose the event surface but do not emit).
+
+  Also adds a popup-safe connect fast-path: a new public `prepareConnect()` primitive plus background warm-up (on `listWallets`) so a popup/remote wallet's `window.open` is reached synchronously from the user gesture (no Safari popup-block). The normal injected/announce connect path is behavior-unchanged; cold-cache discovery connects fall back to it.
+
+- 4c53396: `listWallets()` now hides `transport: 'discovery-adapter'` registry entries whose matching adapter is NOT registered. A discovery-adapter wallet's provider is supplied by the app (an official ProviderAdapter the SDK bridges under `toWalletId(providerId)`); without it the entry can only fail on click. So such an entry surfaces only when its adapter is present — preventing a broken wallet from appearing for consumers who didn't wire it. No-op when the registry is unavailable or has no discovery-adapter entries; normal (injected/announce) entries are never affected.
+- adaff8e: Export `OfficialProviderAdapter` (type) and `isOfficialProviderAdapter` (guard) — the official `@canton-network/core-wallet-discovery` ProviderAdapter contract that `config.adapters` accepts and `GenericDiscoveryAdapter` bridges. Needed so consumers (and `@partylayer/react`'s Kit prop) can name the type they already pass.
+
+### Patch Changes
+
+- Updated dependencies [6efe375]
+- Updated dependencies [6efe375]
+- Updated dependencies [adaff8e]
+- Updated dependencies [adaff8e]
+  - @partylayer/core@0.6.0
+  - @partylayer/registry-client@0.4.0
+  - @partylayer/adapter-bron@0.2.13
+  - @partylayer/adapter-cantor8@0.2.13
+  - @partylayer/adapter-console@0.3.7
+  - @partylayer/adapter-loop@0.3.10
+  - @partylayer/adapter-nightly@0.2.12
+  - @partylayer/adapter-send@1.1.2
+  - @partylayer/provider@0.2.3
+
 ## 0.7.0
 
 ### Minor Changes

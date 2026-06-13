@@ -1,5 +1,18 @@
 # @partylayer/registry-client
 
+## 0.4.0
+
+### Minor Changes
+
+- 6efe375: Add the optional, additive `adapter.transport` field to registry wallet entries (`AdapterTransport`). Absent ⇒ unchanged behavior. `'discovery-adapter'` routes an entry through the SDK's generic official-adapter bridge (matched to an app-supplied `OfficialProviderAdapter` by `adapter.config.providerId`). `validateWalletEntry` now asserts the transport enum when present.
+- adaff8e: Decouple the `events` capability from `transactionStatus`. Registry entries now declare an explicit, optional `capabilities.events` flag (emits CIP-0103 provider events); `registryEntryToWalletInfo` derives the `events` capability from THAT, not from `transactionStatus` (which only means the wallet can report tx status). A wallet that can await a tx commit but never emits events (e.g. a popup/remote wallet) no longer falsely advertises `events`. Additive + back-compat: entries without the flag simply don't get the `events` capability.
+
+### Patch Changes
+
+- Updated dependencies [6efe375]
+- Updated dependencies [adaff8e]
+  - @partylayer/core@0.6.0
+
 ## 0.3.3
 
 ### Patch Changes
