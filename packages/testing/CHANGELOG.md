@@ -1,5 +1,19 @@
 # @partylayer/testing
 
+## 1.1.0
+
+### Minor Changes
+
+- adaff8e: Add `sessionDataDbName(origin)` — the origin-bound IndexedDB name for the encrypted session DATA (ciphertext envelope) store, counterpart to `sessionKeyDbName`. Lets an E2E assert BOTH encrypted stores (the AES key and the encrypted snapshot) materialized after a connect.
+
+### Patch Changes
+
+- Updated dependencies [6efe375]
+- Updated dependencies [adaff8e]
+  - @partylayer/core@0.6.0
+  - @partylayer/provider@0.2.3
+  - @partylayer/session@1.0.2
+
 ## 1.0.0
 
 ### Major Changes

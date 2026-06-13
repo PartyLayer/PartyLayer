@@ -1,5 +1,22 @@
 # @partylayer/react
 
+## 0.8.0
+
+### Minor Changes
+
+- adaff8e: `PartyLayerKit`'s `adapters` prop now also accepts an official `@canton-network` ProviderAdapter (`OfficialProviderAdapter`, e.g. `new WalleyAdapter({ host })`). The SDK auto-bridges it via `GenericDiscoveryAdapter`, so apps can offer popup/remote wallets (like Walley) without a wallet-specific package and without a cast.
+
+### Patch Changes
+
+- Updated dependencies [6efe375]
+- Updated dependencies [6efe375]
+- Updated dependencies [4c53396]
+- Updated dependencies [adaff8e]
+- Updated dependencies [adaff8e]
+  - @partylayer/registry-client@0.4.0
+  - @partylayer/sdk@0.8.0
+  - @partylayer/session@1.0.2
+
 ## 0.7.0
 
 ### Minor Changes
