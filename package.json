@@ -29,7 +29,7 @@
     "gate:build": "pnpm -r --filter \"@partylayer/*\" --workspace-concurrency=1 build",
     "gate:test": "CI=true pnpm -r test",
     "gate:conformance": "node scripts/gate/conformance-native.mjs",
-    "gate:api": "node scripts/gate/api-snapshot.mjs",
+    "gate:api": "node --test scripts/gate/api-normalize.test.mjs && node scripts/gate/api-snapshot.mjs",
     "gate:api:update": "node scripts/gate/api-snapshot.mjs --update",
     "gate:registry": "node scripts/gate/registry-check.mjs",
     "changeset": "changeset",
