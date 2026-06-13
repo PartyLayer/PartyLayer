@@ -28,7 +28,6 @@ import {
   CapabilityNotSupportedError,
   WalletNotInstalledError,
 } from './errors';
-import type { CIP0103Provider } from './cip0103-types';
 
 /**
  * Adapter detection result
@@ -355,6 +354,29 @@ export interface WalletAdapter {
  * baked into the app-supplied adapter at construction, so the bridge never sees
  * or sets them.
  */
+/**
+ * The provider surface returned by an {@link OfficialProviderAdapter} —
+ * `request` + the EventEmitter trio (`on`/`emit`/`removeListener`).
+ *
+ * Intentionally LOOSE (`any`-typed args): the official `@canton-network`
+ * `Provider<RpcTypes>` types `request` as generic over its OWN method literals
+ * (`request<M extends keyof RpcTypes>(args: RequestArgs<RpcTypes, M>)`), which
+ * is NOT structurally assignable to our string-method `CIP0103Provider.request`
+ * — even though it's call-compatible at runtime (the bridge only ever calls
+ * `request({ method, params })`). Loosening the args lets a real official
+ * adapter satisfy this shape; the bridge treats it as a `CIP0103Provider` at the
+ * call site. Without this, consumers couldn't pass e.g. `new WalleyAdapter()`
+ * without a cast.
+ */
+/* eslint-disable @typescript-eslint/no-explicit-any */
+export interface OfficialProvider {
+  request(args: any): Promise<any>;
+  on(event: string, listener: (...args: any[]) => void): unknown;
+  emit(event: string, ...args: any[]): boolean;
+  removeListener(event: string, listener: (...args: any[]) => void): unknown;
+}
+/* eslint-enable @typescript-eslint/no-explicit-any */
+
 export interface OfficialProviderAdapter {
   /** Stable provider identity (e.g. "walley"). */
   readonly providerId: string;
@@ -366,10 +388,10 @@ export interface OfficialProviderAdapter {
   readonly icon?: string;
   /** Install/availability probe — popup-free. */
   detect(): Promise<boolean>;
-  /** The live provider (CIP-0103-shaped: request/on/emit/removeListener). */
-  provider(): CIP0103Provider;
+  /** The live provider (request + on/emit/removeListener). */
+  provider(): OfficialProvider;
   /** Optional session restore (returns a restored provider, or null). */
-  restore?(): Promise<CIP0103Provider | null>;
+  restore?(): Promise<OfficialProvider | null>;
   /** Optional teardown. */
   teardown?(): void;
 }
