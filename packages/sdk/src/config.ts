@@ -2,7 +2,12 @@
  * Configuration types for PartyLayer SDK
  */
 
-import type { NetworkId, WalletId, WalletAdapter } from '@partylayer/core';
+import type {
+  NetworkId,
+  WalletId,
+  WalletAdapter,
+  OfficialProviderAdapter,
+} from '@partylayer/core';
 import type {
   StorageAdapter,
   CryptoAdapter,
@@ -141,7 +146,7 @@ export interface PartyLayerConfig {
    * });
    * ```
    */
-  adapters?: (WalletAdapter | AdapterClass)[];
+  adapters?: (WalletAdapter | AdapterClass | OfficialProviderAdapter)[];
   /** Storage adapter (default: browser localStorage-based encrypted) */
   storage?: StorageAdapter;
   /** Crypto adapter (default: WebCrypto) */

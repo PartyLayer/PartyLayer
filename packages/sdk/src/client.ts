@@ -32,6 +32,7 @@ import {
   mapUnknownErrorToPartyLayerError,
   capabilityGuard,
   installGuard,
+  isOfficialProviderAdapter,
 } from '@partylayer/core';
 import { RegistryClient } from '@partylayer/registry-client';
 import type { RegistryStatus } from '@partylayer/registry-client';
@@ -42,6 +43,7 @@ import {
 } from '@partylayer/provider';
 import { findMatchingWalletInfo } from '@partylayer/core';
 import { GenericAnnounceAdapter } from './announce-adapter';
+import { GenericDiscoveryAdapter } from './discovery-adapter';
 import {
   DEFAULT_REGISTRY_URL,
   type PartyLayerConfig,
@@ -126,12 +128,20 @@ export class PartyLayerClient {
     for (const adapterOrClass of adaptersToRegister) {
       let adapter: import('@partylayer/core').WalletAdapter;
       
-      // Check if it's a class (function) or instance (object)
+      // Check if it's a class (function), an official ProviderAdapter, or a
+      // WalletAdapter instance.
       if (typeof adapterOrClass === 'function') {
         // It's a class - instantiate it
         adapter = new (adapterOrClass as new () => import('@partylayer/core').WalletAdapter)();
+      } else if (isOfficialProviderAdapter(adapterOrClass)) {
+        // Generic bridge: an app-supplied official @canton-network
+        // core-wallet-discovery ProviderAdapter (e.g. `new WalleyAdapter()`).
+        // Wrapped into our WalletAdapter contract with NO wallet-specific
+        // package. Disjoint from WalletAdapter (which has no providerId/detect/
+        // provider), so this never misclassifies an existing adapter.
+        adapter = new GenericDiscoveryAdapter({ official: adapterOrClass });
       } else {
-        // It's already an instance
+        // It's already a WalletAdapter instance
         adapter = adapterOrClass;
       }
       

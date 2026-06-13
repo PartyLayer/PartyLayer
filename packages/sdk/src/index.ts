@@ -21,6 +21,12 @@ export {
   ANNOUNCED_WALLET_ID_PREFIX,
   type GenericAnnounceAdapterArgs,
 } from './announce-adapter';
+// Generic bridge for an app-supplied official @canton-network core-wallet-discovery
+// ProviderAdapter (e.g. Walley) — popup/remote wallets, no wallet-specific package.
+export {
+  GenericDiscoveryAdapter,
+  type GenericDiscoveryAdapterArgs,
+} from './discovery-adapter';
 // Backward compatibility aliases
 export { createPartyLayer as createCantonConnect, PartyLayerClient as CantonConnectClient } from './client';
 // Internal API (for adapter registration - will be hidden in future)
