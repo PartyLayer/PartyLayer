@@ -7,6 +7,7 @@ import {
   validateRegistry,
   validateWalletEntry,
   registryEntryToMetadata,
+  registryEntryToWalletInfo,
   REGISTRY_SCHEMA_VERSION,
 } from './schema';
 import type { WalletRegistryV1, RegistryWalletEntry } from './schema';
@@ -99,6 +100,34 @@ describe('registry schema validation', () => {
       // capabilities is transformed to CapabilityKey[]
       expect(walletInfo.capabilities).toContain('signMessage');
       expect(walletInfo.capabilities).toContain('signTransaction');
+    });
+  });
+
+  describe('events capability is decoupled from transactionStatus', () => {
+    it('transactionStatus:true alone does NOT imply the events capability', () => {
+      const entry: RegistryWalletEntry = {
+        ...validWalletEntry,
+        capabilities: { ...validWalletEntry.capabilities, transactionStatus: true, events: undefined },
+      };
+      const info = registryEntryToWalletInfo(entry, 'stable');
+      expect(info.capabilities).not.toContain('events');
+      // transactionStatus does still drive submitTransaction-style support, just
+      // not the events flag.
+      expect(info.capabilities).toContain('submitTransaction');
+    });
+
+    it('events is derived ONLY from the explicit capabilities.events flag', () => {
+      const emits = registryEntryToWalletInfo(
+        { ...validWalletEntry, capabilities: { ...validWalletEntry.capabilities, events: true } },
+        'stable',
+      );
+      expect(emits.capabilities).toContain('events');
+
+      const silent = registryEntryToWalletInfo(
+        { ...validWalletEntry, capabilities: { ...validWalletEntry.capabilities, events: false } },
+        'stable',
+      );
+      expect(silent.capabilities).not.toContain('events');
     });
   });
 });

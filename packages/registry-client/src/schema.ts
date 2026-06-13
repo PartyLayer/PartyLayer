@@ -54,11 +54,21 @@ export interface RegistryWalletEntry {
     signMessage: boolean;
     signTransaction: boolean;
     submitTransaction: boolean;
+    /** Can report transaction status (e.g. await commit). NOT the same as
+     *  emitting provider events — see `events`. */
     transactionStatus: boolean;
     switchNetwork: boolean;
     multiParty: boolean;
     mobileConnect?: boolean;
     remoteSigner?: boolean;
+    /**
+     * Emits CIP-0103 provider events (statusChanged/accountsChanged/...).
+     * Optional + additive; defaults to false. Declared ONLY when the wallet
+     * actually emits — popup/remote wallets (e.g. Walley) expose the on/emit
+     * surface but never fire, so they MUST omit/false this. (Decoupled from
+     * `transactionStatus`, which previously — and incorrectly — implied events.)
+     */
+    events?: boolean;
   };
   /** Adapter configuration */
   adapter: {
@@ -275,7 +285,11 @@ export function registryEntryToWalletInfo(
   if (entry.capabilities.submitTransaction) {
     capabilities.push('submitTransaction');
   }
-  if (entry.capabilities.transactionStatus) {
+  // Decoupled: `events` is derived from the EXPLICIT `events` flag — emitting
+  // provider events — NOT from `transactionStatus` (which only means the wallet
+  // can report tx status). A wallet that can await a tx commit but never emits
+  // events (e.g. Walley) no longer falsely claims the `events` capability.
+  if (entry.capabilities.events) {
     capabilities.push('events');
   }
 
