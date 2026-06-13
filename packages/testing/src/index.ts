@@ -59,5 +59,6 @@ export {
   mockWalletInjectionScript,
   idbEntryCountScript,
   sessionKeyDbName,
+  sessionDataDbName,
   type MockWalletInjectionOptions,
 } from './browser';

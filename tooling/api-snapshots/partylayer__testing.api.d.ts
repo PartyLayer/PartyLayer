@@ -201,6 +201,13 @@ declare function mockWalletInjectionScript(options?: MockWalletInjectionOptions)
 declare function idbEntryCountScript(dbName: string): string;
 /** The origin-bound IndexedDB name the session key store uses for a given origin. */
 declare function sessionKeyDbName(origin: string): string;
+/**
+ * The origin-bound IndexedDB name the encrypted session DATA (ciphertext
+ * envelope) store uses for a given origin — counterpart to
+ * {@link sessionKeyDbName}. Lets an E2E assert BOTH encrypted stores
+ * materialized after a connect (the AES key AND the encrypted snapshot).
+ */
+declare function sessionDataDbName(origin: string): string;
 
 export {
   type ChannelHub,
@@ -216,5 +223,6 @@ export {
   createTransactionLifecycle,
   idbEntryCountScript,
   mockWalletInjectionScript,
+  sessionDataDbName,
   sessionKeyDbName,
 };
