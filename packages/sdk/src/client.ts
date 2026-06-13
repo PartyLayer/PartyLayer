@@ -1111,6 +1111,40 @@ export class PartyLayerClient {
         return null;
       }
 
+      // Network gate (generic, ALL wallets) — runs BEFORE any adapter handoff.
+      // The persisted session carries its network (our network-aware envelope);
+      // validate it against the configured network. Without this, a
+      // discovery-adapter session takes the "restore as-is" path below
+      // (GenericDiscoveryAdapter has no adapter.restore), silently reviving e.g.
+      // a devnet identity on a mainnet app — and the official adapter's restore
+      // is silent, so the connect-time mismatch check never fires. Under
+      // enforcement we REFUSE + clear; under 'off' we restore but flag (mirrors
+      // the connect-time mismatch behavior).
+      const mismatch = this.networkMismatch(session);
+      if (mismatch) {
+        this.emit('session:networkMismatch', {
+          type: 'session:networkMismatch',
+          sessionId: session.sessionId,
+          expected: mismatch.expected,
+          actual: mismatch.actual,
+          enforced: this.enforcement !== 'off',
+        });
+        if (this.enforcement !== 'off') {
+          this.logger.warn('Refused session restore — network mismatch', {
+            expected: mismatch.expected,
+            actual: mismatch.actual,
+          });
+          await this.removeSession(session.sessionId);
+          this.emit('session:expired', {
+            type: 'session:expired',
+            sessionId: session.sessionId,
+          });
+          return null;
+        }
+        // 'off': proceed with restore but flag the mismatch on the session.
+        session.networkMismatch = mismatch;
+      }
+
       // Try to restore with adapter
       const adapter = this.adapters.get(session.walletId);
       if (adapter?.restore) {
