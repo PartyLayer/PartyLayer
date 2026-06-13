@@ -58,7 +58,9 @@ function makeStorage(): Storage {
 class NoRestoreMockAdapter implements WalletAdapter {
   readonly walletId = toWalletId('mock-norestore');
   readonly name = 'No-Restore Mock';
-  constructor(private readonly net: 'devnet' | 'testnet' | 'mainnet') {}
+  // `net` is the network the adapter records on the session — including
+  // unrecognized values like 'canton:unknown' (the real popup/remote shape).
+  constructor(private readonly net: string) {}
   getCapabilities() {
     return ['connect', 'disconnect'] as ReturnType<WalletAdapter['getCapabilities']>;
   }
@@ -77,17 +79,27 @@ class NoRestoreMockAdapter implements WalletAdapter {
 const ORIGIN = 'https://test.example.com';
 const WID = toWalletId('mock-norestore');
 
-/** Persist a `devnet` session into `storage` via a first client, then destroy it. */
-async function seedDevnetSession(storage: Storage) {
+/**
+ * Persist a session of `network` into `storage` via a first client (config
+ * defaults to the same network so the connect itself doesn't mismatch), then
+ * destroy it. Pass an unrecognized `network` (e.g. 'canton:unknown') to seed the
+ * real popup/remote shape.
+ */
+async function seedSession(storage: Storage, network: string, config: string = network) {
   const a = createPartyLayer({
-    network: 'devnet',
+    network: config as never,
     app: { name: 'restore-gate', origin: ORIGIN },
     registryUrl: 'https://unused.invalid',
-    adapters: [new NoRestoreMockAdapter('devnet')],
+    adapters: [new NoRestoreMockAdapter(network)],
     storage,
   });
   await a.connect({ walletId: WID });
   await a.destroy();
+}
+
+/** Persist a `devnet` session (back-compat helper for the existing cases). */
+async function seedDevnetSession(storage: Storage) {
+  await seedSession(storage, 'devnet');
 }
 
 describe('restore network-gate (B5)', () => {
@@ -161,6 +173,44 @@ describe('restore network-gate (B5)', () => {
       expected: 'canton:da-mainnet',
       actual: 'canton:da-devnet',
     });
+    await b.destroy();
+  });
+
+  // ── The REAL shape (the consumer-E2E finding): a persisted session whose
+  //    network is the unrecognized 'canton:unknown' (as popup/remote wallets
+  //    reported pre-bridge-fix) must STILL be refused on a different network —
+  //    the prior core fail-open let it through. ────────────────────────────────
+  it("REFUSES a 'canton:unknown' session on a mainnet app (the fail-open fix)", async () => {
+    const storage = makeStorage();
+    await seedSession(storage, 'canton:unknown'); // config also canton:unknown → clean seed
+
+    const b = createPartyLayer({
+      network: 'mainnet',
+      app: { name: 'restore-gate', origin: ORIGIN },
+      registryUrl: 'https://unused.invalid',
+      adapters: [new NoRestoreMockAdapter('mainnet')],
+      storage,
+    });
+    await new Promise((r) => setTimeout(r, 50));
+    expect(await b.getActiveSession()).toBeNull(); // NOT silently restored
+    await b.destroy();
+  });
+
+  it("CONTROL: an equal-network 'canton:unknown' restore still succeeds (false-positive guard)", async () => {
+    const storage = makeStorage();
+    await seedSession(storage, 'canton:unknown');
+
+    const b = createPartyLayer({
+      network: 'canton:unknown' as never, // same (unrecognized) network → must NOT refuse
+      app: { name: 'restore-gate', origin: ORIGIN },
+      registryUrl: 'https://unused.invalid',
+      adapters: [new NoRestoreMockAdapter('canton:unknown')],
+      storage,
+    });
+    await new Promise((r) => setTimeout(r, 50));
+    const restored = await b.getActiveSession();
+    expect(restored).not.toBeNull(); // equal network → restored
+    expect(restored?.networkMismatch).toBeUndefined();
     await b.destroy();
   });
 });

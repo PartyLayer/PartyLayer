@@ -35,11 +35,11 @@ const NETWORK_HOSTS = {
   mainnet: 'https://walley.cc',
 };
 
-function eventlessProvider(): CIP0103Provider {
+function eventlessProvider(reportedNetwork = 'canton:da-devnet'): CIP0103Provider {
   const handlers: Record<string, unknown> = {
     connect: { isConnected: true },
-    getPrimaryAccount: { partyId: 'party::walley-1', networkId: 'canton:da-devnet' },
-    status: { connection: { isConnected: true }, network: { networkId: 'canton:da-devnet' } },
+    getPrimaryAccount: { partyId: 'party::walley-1', networkId: reportedNetwork },
+    status: { connection: { isConnected: true }, network: { networkId: reportedNetwork } },
     disconnect: null,
   };
   const provider: CIP0103Provider = {
@@ -126,6 +126,26 @@ describe('generic network-driven host resolution (OfficialAdapterFactory)', () =
     expect(session.walletId).toBe(WALLEY);
     expect(create).toHaveBeenCalledTimes(1);
     expect(create).toHaveBeenCalledWith(host);
+  });
+
+  it('INTERACTION: a Walley(-shaped) wallet reporting canton:unknown on a devnet app records session.network=devnet and fires NO mismatch flag', async () => {
+    // Angle 2 (bridge fallback) feeds Angle 1 (stricter detect) a RECOGNIZED
+    // network on the normal path: an unrecognized canton:unknown report must NOT
+    // become session.network, so the connect-time mismatch stays silent — the
+    // safety hardening introduces zero noise on the legitimate devnet connect.
+    const provider = eventlessProvider('canton:unknown'); // Walley's real devnet report
+    const official = {
+      providerId: 'walley', name: 'Walley', type: 'browser',
+      detect: vi.fn(async () => true), provider: vi.fn(() => provider),
+    } as unknown as OfficialProviderAdapter;
+    const client = makeClient('devnet', [official]); // instance form, dApp on devnet
+    const mismatches: unknown[] = [];
+    client.on('session:networkMismatch', (e) => mismatches.push(e));
+
+    const session = await client.connect({ walletId: WALLEY });
+    expect(session.network).toBe('devnet'); // recognized ctx, NOT canton:unknown
+    expect(session.networkMismatch).toBeUndefined();
+    expect(mismatches).toHaveLength(0); // no flag on the legitimate devnet connect
   });
 
   it('OVERRIDE: a pre-constructed instance ignores networkHosts (explicit host wins)', async () => {
