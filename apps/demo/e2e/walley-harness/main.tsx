@@ -11,8 +11,6 @@ import { createRoot } from 'react-dom/client';
 import { PartyLayerKit, ConnectButton, useAccount } from '@partylayer/react';
 import { WalleyAdapter } from '@k2flabs/walley-dapp-sdk';
 
-const WALLEY_DEVNET_HOST = 'https://dev.walley.cc';
-
 /**
  * Renders the @partylayer/session store status (`useAccount`) so the E2E can
  * OBSERVE the restore result post-reload (the contested step) without poking
@@ -32,10 +30,13 @@ function App() {
     <PartyLayerKit
       network="devnet"
       appName="Walley E2E"
-      // The SDK (createPartyLayer) accepts + auto-wraps an OfficialProviderAdapter
-      // at runtime (GenericDiscoveryAdapter). The Kit's prop type is narrower
-      // today; STEP-3 widens it for the live demo. Cast is test-harness-only.
-      adapters={[new WalleyAdapter({ host: WALLEY_DEVNET_HOST })] as never}
+      // FACTORY form: no hardcoded host. The SDK resolves it from the registry
+      // entry's adapter.networkHosts[devnet] and constructs the official adapter.
+      // registryUrl points at the harness-served BRANCH registry (serve.mjs), so
+      // this proves end-to-end host-resolution-from-a-registry-entry against the
+      // branch's own data — independent of the production CDN deploy.
+      registryUrl="/registry"
+      adapters={[{ providerId: 'walley', create: (host: string) => new WalleyAdapter({ host }) }]}
     >
       <ConnectButton />
       <SessionStatus />

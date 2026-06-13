@@ -2,9 +2,9 @@
   "metadata": {
     "registryVersion": "1.0.0",
     "schemaVersion": "1.0.0",
-    "publishedAt": "2026-06-13T00:00:00Z",
+    "publishedAt": "2026-06-13T01:00:00Z",
     "channel": "stable",
-    "sequence": 8,
+    "sequence": 9,
     "publisher": "PartyLayer"
   },
   "wallets": [
@@ -193,7 +193,12 @@
       "adapter": {
         "type": "@k2flabs/walley-dapp-sdk",
         "transport": "discovery-adapter",
-        "config": { "providerId": "walley" }
+        "config": { "providerId": "walley" },
+        "networkHosts": {
+          "devnet": "https://dev.walley.cc",
+          "testnet": "https://staging.walley.cc",
+          "mainnet": "https://walley.cc"
+        }
       },
       "sdkVersion": ">=0.8.0",
       "cip0103": {

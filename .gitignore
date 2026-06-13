@@ -70,3 +70,5 @@ apps/metrics-backend/
 
 # Test-only Walley E2E harness build artifact
 apps/demo/e2e/walley-harness/bundle.js
+# Test-only: branch registry copied into the harness servedir by serve.mjs
+apps/demo/e2e/walley-harness/registry/

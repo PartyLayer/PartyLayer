@@ -6,11 +6,24 @@
  * (index.html + the bundled entry) on a local port.
  */
 import * as esbuild from 'esbuild';
+import { cpSync, rmSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, resolve } from 'node:path';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const port = Number(process.env.WALLEY_HARNESS_PORT || 5273);
+
+// Serve the BRANCH's registry to the harness so the factory-form Walley adapter
+// resolves its host from THIS branch's registry entry (adapter.networkHosts) —
+// not the production CDN, which lags until this change deploys. HARNESS-ONLY:
+// the prod demo keeps reading its own registry source (CDN / its mirror); this
+// copy lives only under the harness servedir and is gitignored. The harness
+// PartyLayerKit points registryUrl at the relative "/registry" (same origin),
+// so the SDK fetches /registry/v1/<channel>/registry.json from here.
+const repoRoot = resolve(here, '..', '..', '..', '..');
+const registryDest = resolve(here, 'registry');
+rmSync(registryDest, { recursive: true, force: true });
+cpSync(resolve(repoRoot, 'registry', 'v1'), resolve(registryDest, 'v1'), { recursive: true });
 
 const ctx = await esbuild.context({
   entryPoints: [resolve(here, 'main.tsx')],
