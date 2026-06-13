@@ -25,6 +25,7 @@ import type {
 } from '@partylayer/core';
 import {
   toSessionId,
+  toWalletId,
   WalletNotFoundError,
   CapabilityNotSupportedError,
   NetworkMismatchError,
@@ -267,6 +268,15 @@ export class PartyLayerClient {
       } as WalletInfo);
     }
 
+    // Registry-visibility gating for `discovery-adapter` (popup/remote) entries.
+    // Such a wallet's provider is supplied by the APP (an official
+    // ProviderAdapter the SDK auto-bridges) — it CANNOT work unless that adapter
+    // is registered. So a `discovery-adapter` registry entry must surface ONLY
+    // when the matching adapter is registered; otherwise consumers who didn't
+    // wire it would see the wallet and get a broken click (no adapter → connect
+    // throws WalletNotFoundError). Hide unregistered discovery entries.
+    registryWallets = await this.gateDiscoveryAdapterEntries(registryWallets);
+
     // A2: aggregate canton:announceProvider wallets (announce ∪ namespace scan),
     // bridging known ids to existing entries and surfacing unknown ids as
     // dynamic, target-scoped entries. No-op (byte-identical) with zero announcers.
@@ -293,6 +303,33 @@ export class PartyLayerClient {
     }
 
     return registryWallets;
+  }
+
+  /**
+   * Hide `transport: 'discovery-adapter'` registry entries whose matching
+   * adapter is NOT registered. A discovery-adapter wallet's provider is supplied
+   * by the app (an official ProviderAdapter the SDK bridges under
+   * `toWalletId(providerId)`); without it, clicking the entry can only fail. So
+   * the entry surfaces only when its adapter is present. No-op when the registry
+   * is unavailable (list is already adapters-only) or has no such entries.
+   */
+  private async gateDiscoveryAdapterEntries(wallets: WalletInfo[]): Promise<WalletInfo[]> {
+    let hidden: Set<string> | null = null;
+    try {
+      const registry = await this.registryClient.getRegistry();
+      for (const entry of registry.wallets) {
+        if (entry.adapter?.transport !== 'discovery-adapter') continue;
+        const walletId = toWalletId(entry.id);
+        if (!this.adapters.has(walletId)) {
+          (hidden ??= new Set<string>()).add(String(walletId));
+        }
+      }
+    } catch {
+      // Registry unavailable — nothing registry-sourced to gate.
+      return wallets;
+    }
+    if (!hidden || hidden.size === 0) return wallets;
+    return wallets.filter((w) => !hidden!.has(String(w.walletId)));
   }
 
   /**
