@@ -45,7 +45,7 @@ import type {
   WalletAdapter,
   WalletId,
 } from '@partylayer/core';
-import { toPartyId, toWalletId } from '@partylayer/core';
+import { toPartyId, toWalletId, isRecognizedNetwork } from '@partylayer/core';
 
 export interface GenericDiscoveryAdapterArgs {
   /**
@@ -232,11 +232,22 @@ export class GenericDiscoveryAdapter implements WalletAdapter {
       // status is optional for some wallets — fall through.
     }
 
+    // Network capture: trust the FIRST RECOGNIZED of [wallet-reported, account,
+    // dApp ctx]. A wallet may report an UNRECOGNIZED network (e.g. Walley's
+    // `canton:unknown` on devnet); an unrecognized value must NOT override the
+    // dApp's configured `ctx.network` — otherwise the persisted session.network
+    // is uninterpretable and the network-mismatch gate can't protect it. Falls
+    // back to ctx.network (the dApp's authoritative network) when nothing
+    // recognized is reported.
     const partyId = toPartyId(account.partyId);
+    const network =
+      [reportedNetwork, account.networkId, ctx.network].find(
+        (n): n is string => typeof n === 'string' && isRecognizedNetwork(n),
+      ) ?? ctx.network;
     const session: Partial<Session> = {
       walletId: this.walletId,
       partyId,
-      network: (reportedNetwork ?? account.networkId ?? ctx.network) as NetworkId,
+      network: network as NetworkId,
     };
     return { partyId, session, capabilities: this.getCapabilities() };
   }

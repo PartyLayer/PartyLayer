@@ -136,6 +136,20 @@ describe('GenericDiscoveryAdapter', () => {
     expect(result.session.network).toBe('canton:fallback');
   });
 
+  it('connect IGNORES an UNRECOGNIZED reported network and uses the recognized ctx.network (the Walley canton:unknown case)', async () => {
+    // Walley devnet reports networkId "canton:unknown" via BOTH getPrimaryAccount
+    // and status (observed live). An unrecognized report must NOT override the
+    // dApp's recognized ctx.network — else session.network is uninterpretable and
+    // the mismatch gate can't protect it.
+    const { official } = makeOfficial({}, {
+      getPrimaryAccount: { partyId: 'party::walley', networkId: 'canton:unknown' },
+      status: { connection: { isConnected: true }, network: { networkId: 'canton:unknown' } },
+    });
+    const a = new GenericDiscoveryAdapter({ official });
+    const result = await a.connect({ network: 'devnet' } as unknown as AdapterContext);
+    expect(result.session.network).toBe('devnet'); // recognized ctx wins, NOT canton:unknown
+  });
+
   it('signMessage and submitTransaction delegate to the provider', async () => {
     const { official, providerFactory } = makeOfficial();
     const a = new GenericDiscoveryAdapter({ official });
