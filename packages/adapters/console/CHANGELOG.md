@@ -1,5 +1,12 @@
 # @partylayer/adapter-console
 
+## 0.3.8
+
+### Patch Changes
+
+- Updated dependencies [3285ed8]
+  - @partylayer/core@0.7.0
+
 ## 0.3.7
 
 ### Patch Changes
