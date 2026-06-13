@@ -14,6 +14,7 @@
  */
 
 import type {
+  AdapterTransport,
   CapabilityKey,
   Cip0103Support,
   NetworkId,
@@ -63,7 +64,19 @@ export interface RegistryWalletEntry {
   adapter: {
     /** Adapter type/name */
     type: string;
-    /** Adapter-specific configuration */
+    /**
+     * How the SDK obtains this wallet's provider. Optional + additive — when
+     * omitted the SDK uses today's behavior (injected `window.canton` scan /
+     * announce). `'discovery-adapter'` routes the entry through the generic
+     * official-adapter bridge: the SDK matches an app-supplied
+     * `OfficialProviderAdapter` whose `providerId` equals `config.providerId`.
+     * No wallet-specific adapter package is involved.
+     */
+    transport?: AdapterTransport;
+    /**
+     * Adapter-specific configuration. For `transport: 'discovery-adapter'`,
+     * `config.providerId` (string) keys the app-supplied official adapter.
+     */
     config?: Record<string, unknown>;
   };
   /** Installation detection hints */
@@ -223,15 +236,24 @@ export function validateWalletEntry(
 
   const e = entry as Record<string, unknown>;
 
+  const adapter = e.adapter as Record<string, unknown> | undefined;
+  const transport = adapter?.transport;
+  const transportValid =
+    transport === undefined ||
+    transport === 'injected' ||
+    transport === 'announce' ||
+    transport === 'discovery-adapter';
+
   return (
     typeof e.id === 'string' &&
     typeof e.name === 'string' &&
     Array.isArray(e.supportedNetworks) &&
     typeof e.capabilities === 'object' &&
     e.capabilities !== null &&
-    typeof e.adapter === 'object' &&
-    e.adapter !== null &&
-    typeof (e.adapter as Record<string, unknown>).type === 'string' &&
+    typeof adapter === 'object' &&
+    adapter !== null &&
+    typeof adapter.type === 'string' &&
+    transportValid &&
     (e.originAllowlist === undefined || Array.isArray(e.originAllowlist))
   );
 }

@@ -54,6 +54,28 @@ describe('registry schema validation', () => {
       expect(validateWalletEntry({})).toBe(false);
       expect(validateWalletEntry({ id: 'test' })).toBe(false);
     });
+
+    it('accepts an absent adapter.transport (back-compat default)', () => {
+      expect(validateWalletEntry(validWalletEntry)).toBe(true); // no transport field
+    });
+
+    it('accepts every valid adapter.transport value', () => {
+      for (const transport of ['injected', 'announce', 'discovery-adapter'] as const) {
+        const entry: RegistryWalletEntry = {
+          ...validWalletEntry,
+          adapter: { type: '@k2flabs/walley-dapp-sdk', transport, config: { providerId: 'walley' } },
+        };
+        expect(validateWalletEntry(entry)).toBe(true);
+      }
+    });
+
+    it('rejects an unknown adapter.transport value', () => {
+      const entry = {
+        ...validWalletEntry,
+        adapter: { type: 'test', transport: 'window.canton' }, // not a valid AdapterTransport
+      };
+      expect(validateWalletEntry(entry)).toBe(false);
+    });
   });
 
   describe('validateRegistry', () => {
