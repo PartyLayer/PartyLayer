@@ -1,5 +1,13 @@
 # @partylayer/conformance-runner
 
+## 0.2.2
+
+### Patch Changes
+
+- Updated dependencies [3285ed8]
+  - @partylayer/core@0.7.0
+  - @partylayer/provider@0.2.4
+
 ## 0.2.1
 
 ### Patch Changes

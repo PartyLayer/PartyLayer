@@ -1,5 +1,31 @@
 # @partylayer/sdk
 
+## 0.9.0
+
+### Minor Changes
+
+- 3285ed8: Generic network-driven host resolution for discovery-adapter wallets. `config.adapters` now also accepts an `OfficialAdapterFactory` (`{ providerId, create(host) }`); the SDK bridges it via `GenericDiscoveryAdapter`, resolves `host = registryEntry.adapter.networkHosts[activeNetwork]` during the connect warm phase, and constructs the official adapter with that host — so an app sets `<PartyLayerKit network="mainnet">` and never hardcodes a wallet URL.
+
+  Host resolution + official construction happen synchronously during warm-up (`resolveConnectPlan`), preserving the popup-safe gesture-survival invariant: the prepared/fast connect reaches `adapter.connect()` → `window.open` with no awaited ops. Pre-constructed instances keep working unchanged (explicit host overrides `networkHosts`). A wallet with no host for the active network fails with a clear, network-named error — never a silent wrong-network host.
+
+- 3285ed8: Add a network gate to session restore. `restoreSession` now validates the persisted session's network (our network-aware envelope) against the configured network BEFORE any adapter handoff: under enforcement (`guard`/`strict`) a cross-network session is refused and cleared; under `off` it is restored but flagged with `networkMismatch`.
+
+  This closes a silent stale-network restore: a discovery-adapter session has no `adapter.restore`, so it took the "restore as-is" path with no network check — reviving e.g. a devnet identity on a `network="mainnet"` app (the official adapter's restore is silent, so the connect-time mismatch check never fired). Generic for any wallet whose adapter lacks `restore`.
+
+### Patch Changes
+
+- Updated dependencies [3285ed8]
+- Updated dependencies [3285ed8]
+  - @partylayer/core@0.7.0
+  - @partylayer/registry-client@0.5.0
+  - @partylayer/adapter-bron@0.2.14
+  - @partylayer/adapter-cantor8@0.2.14
+  - @partylayer/adapter-console@0.3.8
+  - @partylayer/adapter-loop@0.3.11
+  - @partylayer/adapter-nightly@0.2.13
+  - @partylayer/adapter-send@1.1.3
+  - @partylayer/provider@0.2.4
+
 ## 0.8.0
 
 ### Minor Changes

@@ -1,5 +1,20 @@
 # @partylayer/react
 
+## 0.9.0
+
+### Minor Changes
+
+- 3285ed8: `PartyLayerKit`'s `adapters` prop now also accepts an `OfficialAdapterFactory` (`{ providerId, create(host) }`). The SDK resolves the host from the wallet's registry entry `networkHosts[network]`, so an app sets `<PartyLayerKit network="mainnet">` and never hardcodes a wallet URL — the same source picks the right host across devnet/testnet/mainnet. The pre-constructed `OfficialProviderAdapter` instance form is unchanged.
+
+### Patch Changes
+
+- Updated dependencies [3285ed8]
+- Updated dependencies [3285ed8]
+- Updated dependencies [3285ed8]
+  - @partylayer/registry-client@0.5.0
+  - @partylayer/sdk@0.9.0
+  - @partylayer/session@1.0.3
+
 ## 0.8.0
 
 ### Minor Changes
