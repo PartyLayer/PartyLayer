@@ -133,6 +133,24 @@ export interface Cip0103Support {
 }
 
 /**
+ * How the SDK obtains a wallet's provider for a registry entry.
+ *
+ * - `'injected'`          — `window.canton.*` scanning (the implicit default
+ *                           behavior when `transport` is omitted).
+ * - `'announce'`          — CIP-0103 `canton:announceProvider` discovery.
+ * - `'discovery-adapter'` — the provider comes from an app-supplied
+ *                           `OfficialProviderAdapter` (the official
+ *                           `@canton-network/core-wallet-discovery`
+ *                           `ProviderAdapter` shape), bridged generically by
+ *                           the SDK. For popup/remote wallets that neither
+ *                           inject `window.canton` nor announce. No
+ *                           wallet-specific adapter package is involved.
+ *
+ * Additive + optional: older registries omit it and keep today's behavior.
+ */
+export type AdapterTransport = 'injected' | 'announce' | 'discovery-adapter';
+
+/**
  * Wallet information from registry
  */
 export interface WalletInfo {

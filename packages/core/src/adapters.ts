@@ -28,6 +28,7 @@ import {
   CapabilityNotSupportedError,
   WalletNotInstalledError,
 } from './errors';
+import type { CIP0103Provider } from './cip0103-types';
 
 /**
  * Adapter detection result
@@ -334,6 +335,62 @@ export interface WalletAdapter {
     event: AdapterEventName,
     handler: (payload: unknown) => void
   ): () => void;
+}
+
+/**
+ * Structural ("duck-type") match for the official
+ * `@canton-network/core-wallet-discovery` `ProviderAdapter` shape.
+ *
+ * We deliberately do NOT import `@canton-network/*` (mirroring the stance in
+ * `@partylayer/provider`'s extension-channel) — the standard's SHAPE is the
+ * contract, not its package. An app supplies a concrete instance (e.g.
+ * `new WalleyAdapter()`) and the SDK bridges it generically via
+ * `GenericDiscoveryAdapter`, so a popup/remote wallet that neither injects
+ * `window.canton` nor announces can still be hosted by the generic layer with
+ * NO wallet-specific adapter package. Any standards-compliant wallet shipping
+ * this shape inherits the capability.
+ *
+ * `provider()` returns a `CIP0103Provider` (the official `Provider<RpcTypes>`
+ * already exposes `request`/`on`/`emit`/`removeListener`); the host/network are
+ * baked into the app-supplied adapter at construction, so the bridge never sees
+ * or sets them.
+ */
+export interface OfficialProviderAdapter {
+  /** Stable provider identity (e.g. "walley"). */
+  readonly providerId: string;
+  /** Display name (e.g. "Walley"). */
+  readonly name: string;
+  /** Provider transport kind, if surfaced ('browser' | 'desktop' | 'mobile' | 'remote'). */
+  readonly type?: string;
+  /** Branding icon (URL or data URI), if surfaced. */
+  readonly icon?: string;
+  /** Install/availability probe — popup-free. */
+  detect(): Promise<boolean>;
+  /** The live provider (CIP-0103-shaped: request/on/emit/removeListener). */
+  provider(): CIP0103Provider;
+  /** Optional session restore (returns a restored provider, or null). */
+  restore?(): Promise<CIP0103Provider | null>;
+  /** Optional teardown. */
+  teardown?(): void;
+}
+
+/**
+ * Structural guard for {@link OfficialProviderAdapter}. Checks only the
+ * required surface (`providerId` string + `detect`/`provider` functions); the
+ * returned `provider()` value is separately validated against the
+ * `CIP0103Provider` duck-type by the consumer.
+ */
+export function isOfficialProviderAdapter(
+  value: unknown,
+): value is OfficialProviderAdapter {
+  if (typeof value !== 'object' || value === null) return false;
+  const a = value as Record<string, unknown>;
+  return (
+    typeof a.providerId === 'string' &&
+    a.providerId.length > 0 &&
+    typeof a.detect === 'function' &&
+    typeof a.provider === 'function'
+  );
 }
 
 /**

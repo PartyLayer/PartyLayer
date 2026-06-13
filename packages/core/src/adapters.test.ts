@@ -9,6 +9,7 @@ import type { WalletAdapter, CapabilityKey } from './adapters';
 import {
   capabilityGuard,
   installGuard,
+  isOfficialProviderAdapter,
   CapabilityNotSupportedError,
   WalletNotInstalledError,
 } from './adapters';
@@ -106,6 +107,54 @@ describe('Adapter Contract', () => {
       const result = await adapter.detectInstalled();
       expect(result).toHaveProperty('installed');
       expect(typeof result.installed).toBe('boolean');
+    });
+  });
+
+  describe('isOfficialProviderAdapter', () => {
+    const provider = {
+      request: async () => undefined,
+      on() { return provider; },
+      emit() { return true; },
+      removeListener() { return provider; },
+    };
+    const official = {
+      providerId: 'walley',
+      name: 'Walley',
+      type: 'browser',
+      detect: async () => true,
+      provider: () => provider,
+      restore: async () => null,
+    };
+
+    it('accepts a structurally-complete official ProviderAdapter', () => {
+      expect(isOfficialProviderAdapter(official)).toBe(true);
+    });
+
+    it('accepts the minimal required surface (providerId + detect + provider)', () => {
+      expect(
+        isOfficialProviderAdapter({
+          providerId: 'x',
+          detect: async () => false,
+          provider: () => provider,
+        }),
+      ).toBe(true);
+    });
+
+    it('rejects missing/empty providerId', () => {
+      expect(isOfficialProviderAdapter({ ...official, providerId: '' })).toBe(false);
+      const { providerId: _omit, ...noId } = official;
+      expect(isOfficialProviderAdapter(noId)).toBe(false);
+    });
+
+    it('rejects when detect or provider is not a function', () => {
+      expect(isOfficialProviderAdapter({ ...official, detect: true })).toBe(false);
+      expect(isOfficialProviderAdapter({ ...official, provider: 'nope' })).toBe(false);
+    });
+
+    it('rejects non-objects', () => {
+      expect(isOfficialProviderAdapter(null)).toBe(false);
+      expect(isOfficialProviderAdapter(undefined)).toBe(false);
+      expect(isOfficialProviderAdapter('walley')).toBe(false);
     });
   });
 });
