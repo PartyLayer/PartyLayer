@@ -21,8 +21,8 @@ name: Nightly Assurance
 #                            IndexedDB → reload-restore → multi-tab. Nightly +
 #                            on-demand only (NOT PR-gated — flakiness risk).
 #
-# Scope discipline: this does NOT touch examples.yml (monorepo build canary) or
-# apps/marketing. Distinct purpose, distinct file.
+# Scope discipline: this does NOT touch examples.yml (monorepo build canary).
+# Distinct purpose, distinct file.
 # ─────────────────────────────────────────────────────────────────────────────
 
 on:
