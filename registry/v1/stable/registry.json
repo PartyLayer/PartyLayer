@@ -2,9 +2,9 @@
   "metadata": {
     "registryVersion": "1.0.0",
     "schemaVersion": "1.0.0",
-    "publishedAt": "2026-06-13T01:00:00Z",
+    "publishedAt": "2026-06-14T00:00:00Z",
     "channel": "stable",
-    "sequence": 9,
+    "sequence": 10,
     "publisher": "PartyLayer"
   },
   "wallets": [
@@ -143,7 +143,7 @@
       "name": "Send",
       "description": "Passkey-based Canton wallet. Mainnet only.",
       "homepage": "https://cantonwallet.com",
-      "icon": "https://registry.partylayer.xyz/wallets/send.svg",
+      "icon": "https://registry.partylayer.xyz/wallets/send-logo.jpg",
       "supportedNetworks": ["mainnet"],
       "capabilities": {
         "signMessage": true,
@@ -180,6 +180,7 @@
       "name": "Walley",
       "description": "Popup/remote Canton wallet (CIP-0103), bridged via its official @k2flabs/walley-dapp-sdk ProviderAdapter — no PartyLayer-specific adapter package.",
       "homepage": "https://walley.cc",
+      "icon": "https://registry.partylayer.xyz/wallets/walley-logo.png",
       "supportedNetworks": ["mainnet", "testnet", "devnet"],
       "capabilities": {
         "signMessage": true,
