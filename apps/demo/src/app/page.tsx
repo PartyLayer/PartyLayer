@@ -409,6 +409,7 @@ const WALLET_LOGOS: Record<string, string> = {
   bron: '/wallets/bron.png',
   nightly: '/wallets/nightly.svg',
   send: '/wallets/send-logo.jpg',
+  walley: '/wallets/walley-logo.png',
   walletconnect: '/wallets/walletconnect.svg',
 };
 
