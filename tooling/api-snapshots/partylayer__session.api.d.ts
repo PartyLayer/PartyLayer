@@ -11,21 +11,26 @@ declare const CURRENT_SESSION_ENVELOPE_VERSION: 1;
 declare const DEFAULT_RETRY_POLICY: RetryPolicy;
 declare const defaultChannelFactory: ChannelFactory;
 declare function computeBackoffDelay(policy: RetryPolicy, attempt: number, rand?: () => number): number;
+declare function createCookieStorage(options?: CookieStorageOptions): SessionStorage;
 declare function createEncryptedIndexedDBStorage(options?: EncryptedStorageOptions): SessionStorage;
 declare function createEncryptedLocalStorage(options?: EncryptedStorageOptions): SessionStorage;
 declare function createMemoryStorage(): SessionStorage;
 declare function createSessionStore(provider: CIP0103Provider, options?: SessionStoreOptions): SessionStore;
 declare function decodeSessionEnvelope(plaintext: string): PersistedSessionSnapshot | null;
+declare function documentCookieAdapter(): CookieAdapter;
 declare function encodeSessionEnvelope(snapshot: PersistedSessionSnapshot): string;
 declare function migrateSessionEnvelope(parsed: unknown): PersistedSessionSnapshot | null;
 declare function openSyncChannel(storageKey: string, options?: BroadcastOptions, explicitOrigin?: string): SyncChannel;
 declare function reconcileSession(snapshot: PersistedSessionSnapshot, live: LiveSessionStatus): ReconcileResult;
 declare function restoreSession(storage: SessionStorage, key: string, now?: number): Promise<PersistedSessionSnapshot | null>;
-export { type BroadcastChannelLike, type BroadcastEnvelope, type BroadcastOptions, CURRENT_SESSION_ENVELOPE_VERSION, type ChannelFactory, DEFAULT_RETRY_POLICY, type EncryptedStorageOptions, type ExpiryOptions, type InvalidationEvent, type LiveSessionStatus, type MaybePromise, type PersistedSessionSnapshot, type ReauthContext, type ReconcileResult, type RetryPolicy, type SessionAccount, type SessionDiff, type SessionEvent, type SessionState, type SessionStatus, type SessionStorage, type SessionStore, type SessionStoreOptions, type SyncChannel, computeBackoffDelay, createEncryptedIndexedDBStorage, createEncryptedLocalStorage, createMemoryStorage, createSessionStore, decodeSessionEnvelope, defaultChannelFactory, encodeSessionEnvelope, migrateSessionEnvelope, openSyncChannel, reconcileSession, restoreSession };
+export { type BroadcastChannelLike, type BroadcastEnvelope, type BroadcastOptions, CURRENT_SESSION_ENVELOPE_VERSION, type ChannelFactory, type CookieAdapter, type CookieSetOptions, type CookieStorageOptions, DEFAULT_RETRY_POLICY, type EncryptedStorageOptions, type ExpiryOptions, type InvalidationEvent, type LiveSessionStatus, type MaybePromise, type PersistedSessionSnapshot, type ReauthContext, type ReconcileResult, type RetryPolicy, type SessionAccount, type SessionDiff, type SessionEvent, type SessionState, type SessionStatus, type SessionStorage, type SessionStore, type SessionStoreOptions, type SyncChannel, computeBackoffDelay, createCookieStorage, createEncryptedIndexedDBStorage, createEncryptedLocalStorage, createMemoryStorage, createSessionStore, decodeSessionEnvelope, defaultChannelFactory, documentCookieAdapter, encodeSessionEnvelope, migrateSessionEnvelope, openSyncChannel, reconcileSession, restoreSession };
 import { CIP0103Account, CIP0103Provider } from '@partylayer/core';
 interface BroadcastChannelLike { postMessage(data: unknown): void; close(): void; onmessage: ((ev: { data: unknown; }) => void) | null; }
 interface BroadcastEnvelope { readonly v: 1; readonly kind: 'disconnect' | 'party' | 'network'; readonly partyId?: string | null; readonly networkId?: string | null; }
 interface BroadcastOptions { channelFactory?: ChannelFactory; }
+interface CookieAdapter { get(name: string): string | null; set(name: string, value: string, options?: CookieSetOptions): void; remove(name: string, options?: CookieSetOptions): void; }
+interface CookieSetOptions { maxAge?: number; path?: string; sameSite?: 'lax' | 'strict' | 'none'; secure?: boolean; expires?: Date; }
+interface CookieStorageOptions { adapter?: CookieAdapter; name?: string; maxAge?: number; path?: string; sameSite?: 'lax' | 'strict' | 'none'; secure?: boolean; }
 interface EncryptedStorageOptions { origin?: string; }
 interface ExpiryOptions { ttlMs?: number; onReauthRequired?: (ctx: ReauthContext) => Promise<void> | void; pendingQueueSize?: number; }
 interface InvalidationEvent { readonly type: 'party:changed' | 'network:changed'; readonly previous: string | null; readonly current: string | null; }
