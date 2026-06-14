@@ -66,6 +66,17 @@ export {
   createEncryptedLocalStorage,
   type EncryptedStorageOptions,
 } from './encrypted-storage';
+// Cookie-backed SessionStorage (additive) — the SSR-friendly backend, readable
+// on both the server (injected adapter) and client (document.cookie). Stores the
+// session envelope PLAINLY (non-secret metadata; re-validated on restore). See
+// the honest threat model in cookie-storage.ts.
+export {
+  createCookieStorage,
+  documentCookieAdapter,
+  type CookieAdapter,
+  type CookieSetOptions,
+  type CookieStorageOptions,
+} from './cookie-storage';
 export {
   encodeSessionEnvelope,
   decodeSessionEnvelope,
