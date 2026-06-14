@@ -341,21 +341,14 @@ async function main() {
     // E2E tests require Playwright and a running browser - skip in CI
     runStep('Run E2E tests (mock mode)', () => {
       const isCI = process.env.CI === 'true';
-      if (isCI) {
-        console.log('  Skipping E2E tests in CI (requires Playwright browser)');
-        report.testResults.e2e = [
-          { name: 'e2e-suite', status: 'skipped', error: 'E2E tests require browser environment' },
-        ];
-        return;
-      }
-      
+      // CI installs Playwright Chromium (ci.yml), so we no longer skip. Per-PR
+      // runs the fast/stable subset (smoke + full connect flow); the FULL mock
+      // suite runs nightly (nightly.yml `mock-e2e`). Locally → the full suite.
+      const cmd = isCI ? 'test:e2e:pr' : 'test:e2e';
       try {
-        exec('cd apps/demo && NEXT_PUBLIC_MOCK_WALLETS=1 pnpm test:e2e', ROOT);
+        exec(`cd apps/demo && NEXT_PUBLIC_MOCK_WALLETS=1 pnpm ${cmd}`, ROOT);
         report.testResults.e2e = [
-          { name: 'smoke', status: 'passed' },
-          { name: 'cantor8-connect', status: 'passed' },
-          { name: 'bron-remote-signer', status: 'passed' },
-          { name: 'session-restore', status: 'passed' },
+          { name: isCI ? 'pr-subset (smoke + connect)' : 'full-suite', status: 'passed' },
         ];
       } catch (error: any) {
         report.testResults.e2e = [
@@ -364,27 +357,12 @@ async function main() {
       }
     });
 
-    // Step 10: Run security tests
-    // Security tests also require Playwright - skip in CI
+    // Step 10: Run security tests (fast + stable → run per-PR AND locally).
     runStep('Run security tests', () => {
-      const isCI = process.env.CI === 'true';
-      if (isCI) {
-        console.log('  Skipping security tests in CI (requires Playwright browser)');
-        report.testResults.security = [
-          { name: 'security-suite', status: 'skipped', error: 'Security tests require browser environment' },
-        ];
-        return;
-      }
-      
       try {
         exec('cd apps/demo && NEXT_PUBLIC_MOCK_WALLETS=1 pnpm test:e2e --grep security', ROOT);
         report.testResults.security = [
-          { name: 'registry-tamper', status: 'passed' },
-          { name: 'downgrade-protection', status: 'passed' },
-          { name: 'origin-allowlist', status: 'passed' },
-          { name: 'state-replay', status: 'passed' },
-          { name: 'callback-origin-spoof', status: 'passed' },
-          { name: 'token-storage', status: 'passed' },
+          { name: 'security-suite', status: 'passed' },
         ];
       } catch (error: any) {
         report.testResults.security = [
