@@ -11,7 +11,7 @@
  * flag. Generic for ANY wallet whose adapter lacks `restore` (the as-is path).
  */
 import { describe, it, expect, vi } from 'vitest';
-import type { WalletAdapter, Storage } from '@partylayer/core';
+import type { WalletAdapter, Storage, PersistedSession, Session } from '@partylayer/core';
 import { toWalletId, toPartyId } from '@partylayer/core';
 
 vi.mock('@console-wallet/dapp-sdk', () => ({
@@ -211,6 +211,94 @@ describe('restore network-gate (B5)', () => {
     const restored = await b.getActiveSession();
     expect(restored).not.toBeNull(); // equal network → restored
     expect(restored?.networkMismatch).toBeUndefined();
+    await b.destroy();
+  });
+});
+
+// ── The gate sits BEFORE both restore branches (adapter.restore AND as-is). The
+//    cases above exercise the as-is path (no-restore adapters, e.g.
+//    GenericDiscoveryAdapter). These pin the HAS-restore branch (injected
+//    adapters like Console/Loop): the gate must refuse a cross-network restore
+//    BEFORE adapter.restore() runs — never handing a stale-network session to
+//    the adapter — while a same-network restore still flows through restore(). ──
+
+const HR_WID = toWalletId('mock-hasrestore');
+
+/** A restorable adapter that RECORDS whether restore() was invoked. */
+class RestoreSpyAdapter implements WalletAdapter {
+  readonly walletId = HR_WID;
+  readonly name = 'Has-Restore Spy';
+  restoreCalled = false;
+  constructor(private readonly net: string) {}
+  getCapabilities() {
+    return ['connect', 'disconnect', 'restore'] as ReturnType<WalletAdapter['getCapabilities']>;
+  }
+  async detectInstalled() { return { installed: true }; }
+  async connect() {
+    return {
+      partyId: toPartyId('party::hasrestore'),
+      session: { walletId: this.walletId, network: this.net, createdAt: Date.now() },
+      capabilities: ['connect'] as ReturnType<WalletAdapter['getCapabilities']>,
+    };
+  }
+  async disconnect() {}
+  async restore(_ctx: unknown, persisted: PersistedSession): Promise<Session | null> {
+    this.restoreCalled = true;
+    return { ...persisted, walletId: this.walletId } as Session;
+  }
+}
+
+/** Seed a `network` session via a has-restore adapter (config = network → clean seed). */
+async function seedHasRestore(storage: Storage, network: string) {
+  const a = createPartyLayer({
+    network: network as never,
+    app: { name: 'restore-gate-hr', origin: ORIGIN },
+    registryUrl: 'https://unused.invalid',
+    adapters: [new RestoreSpyAdapter(network)],
+    storage,
+  });
+  await a.connect({ walletId: HR_WID });
+  await a.destroy();
+}
+
+describe('restore network-gate — has-restore branch (injected-style adapters)', () => {
+  it('REFUSES a cross-network restore BEFORE calling adapter.restore()', async () => {
+    const storage = makeStorage();
+    await seedHasRestore(storage, 'devnet');
+
+    const adapter = new RestoreSpyAdapter('mainnet');
+    const b = createPartyLayer({
+      network: 'mainnet',
+      app: { name: 'restore-gate-hr', origin: ORIGIN },
+      registryUrl: 'https://unused.invalid',
+      adapters: [adapter],
+      storage,
+    });
+    await new Promise((r) => setTimeout(r, 50));
+
+    expect(await b.getActiveSession()).toBeNull(); // devnet identity NOT restored
+    expect(adapter.restoreCalled).toBe(false); // gate refused BEFORE the adapter handoff
+    await b.destroy();
+  });
+
+  it('CONTROL: a same-network restore DOES flow through adapter.restore()', async () => {
+    const storage = makeStorage();
+    await seedHasRestore(storage, 'devnet');
+
+    const adapter = new RestoreSpyAdapter('devnet');
+    const b = createPartyLayer({
+      network: 'devnet',
+      app: { name: 'restore-gate-hr', origin: ORIGIN },
+      registryUrl: 'https://unused.invalid',
+      adapters: [adapter],
+      storage,
+    });
+    await new Promise((r) => setTimeout(r, 50));
+
+    const restored = await b.getActiveSession();
+    expect(restored).not.toBeNull(); // same network → restored
+    expect(restored?.walletId).toBe(HR_WID);
+    expect(adapter.restoreCalled).toBe(true); // restore() WAS used on the allowed path
     await b.destroy();
   });
 });
