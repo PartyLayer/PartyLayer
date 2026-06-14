@@ -19,7 +19,8 @@
   ],
   "scripts": {
     "build": "tsc && tsc --project tsconfig.esm.json",
-    "clean": "rm -rf dist",
+    "clean": "rm -rf dist *.tsbuildinfo",
+    "prepublishOnly": "pnpm run clean && pnpm run build",
     "lint": "eslint src --ext .ts",
     "typecheck": "tsc --noEmit"
   },

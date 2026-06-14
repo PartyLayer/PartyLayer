@@ -1,6 +1,6 @@
 {
   "name": "create-partylayer-app",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Scaffold a PartyLayer dApp (Canton wallet integration) in seconds.",
   "type": "module",
   "bin": {
@@ -13,7 +13,8 @@
   ],
   "scripts": {
     "build": "tsc",
-    "clean": "rm -rf dist"
+    "clean": "rm -rf dist *.tsbuildinfo",
+    "prepublishOnly": "pnpm run clean && pnpm run build"
   },
   "dependencies": {
     "@clack/prompts": "1.5.1",
