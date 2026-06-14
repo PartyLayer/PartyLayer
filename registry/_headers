@@ -34,3 +34,10 @@
 # Health check
 /health.json
   Cache-Control: no-cache
+
+# Wallet icons — served from the registry's own deploy (self-hosted, so the
+# registry is the canonical source for its icons, not coupled to any app). The
+# _worker.js already adds CORS; this just sets a long cache (icons are stable).
+/wallets/*
+  Cache-Control: public, max-age=86400
+  X-Robots-Tag: noindex
