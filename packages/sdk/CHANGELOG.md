@@ -1,5 +1,26 @@
 # @partylayer/sdk
 
+## 0.10.0
+
+### Minor Changes
+
+- bef0ac6: `GenericDiscoveryAdapter` now ignores an UNRECOGNIZED wallet-reported network and falls back to the dApp's configured `ctx.network`. Previously `session.network = reportedNetwork ?? account.networkId ?? ctx.network` let a non-null but unrecognized value win — popup/remote wallets (Walley) report `networkId: "canton:unknown"` on devnet, so the persisted `session.network` became `canton:unknown`, which is uninterpretable and (with the prior core fail-open) silently bypassed the network-mismatch gate, letting a devnet identity restore on a mainnet app.
+
+  Now the bridge picks the first RECOGNIZED of `[reportedNetwork, account.networkId, ctx.network]`, else `ctx.network`. So a Walley devnet connect records `session.network = 'devnet'` — correct, and the restore/connect/tx network-mismatch checks work normally (and stay silent on the legitimate same-network path). Pairs with the core `detectNetworkMismatch` hardening.
+
+### Patch Changes
+
+- Updated dependencies [bef0ac6]
+  - @partylayer/core@0.8.0
+  - @partylayer/adapter-bron@0.2.15
+  - @partylayer/adapter-cantor8@0.2.15
+  - @partylayer/adapter-console@0.3.9
+  - @partylayer/adapter-loop@0.3.12
+  - @partylayer/adapter-nightly@0.2.14
+  - @partylayer/adapter-send@1.1.4
+  - @partylayer/provider@0.2.5
+  - @partylayer/registry-client@0.5.1
+
 ## 0.9.0
 
 ### Minor Changes

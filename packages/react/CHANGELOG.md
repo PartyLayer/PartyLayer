@@ -1,5 +1,14 @@
 # @partylayer/react
 
+## 0.9.1
+
+### Patch Changes
+
+- Updated dependencies [bef0ac6]
+  - @partylayer/sdk@0.10.0
+  - @partylayer/registry-client@0.5.1
+  - @partylayer/session@1.0.4
+
 ## 0.9.0
 
 ### Minor Changes

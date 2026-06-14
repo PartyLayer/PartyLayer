@@ -1,5 +1,12 @@
 # @partylayer/adapter-bron
 
+## 0.2.15
+
+### Patch Changes
+
+- Updated dependencies [bef0ac6]
+  - @partylayer/core@0.8.0
+
 ## 0.2.14
 
 ### Patch Changes

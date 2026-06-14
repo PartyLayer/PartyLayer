@@ -1,5 +1,22 @@
 # @partylayer/marketing
 
+## 0.1.7
+
+### Patch Changes
+
+- Updated dependencies [bef0ac6]
+- Updated dependencies [bef0ac6]
+  - @partylayer/core@0.8.0
+  - @partylayer/sdk@0.10.0
+  - @partylayer/adapter-bron@0.2.15
+  - @partylayer/adapter-cantor8@0.2.15
+  - @partylayer/adapter-console@0.3.9
+  - @partylayer/adapter-loop@0.3.12
+  - @partylayer/adapter-nightly@0.2.14
+  - @partylayer/adapter-send@1.1.4
+  - @partylayer/adapter-walletconnect@0.3.3
+  - @partylayer/react@0.9.1
+
 ## 0.1.6
 
 ### Patch Changes

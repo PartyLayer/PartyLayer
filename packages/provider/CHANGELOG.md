@@ -1,5 +1,12 @@
 # @partylayer/provider
 
+## 0.2.5
+
+### Patch Changes
+
+- Updated dependencies [bef0ac6]
+  - @partylayer/core@0.8.0
+
 ## 0.2.4
 
 ### Patch Changes
