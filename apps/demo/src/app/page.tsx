@@ -4,7 +4,7 @@ import { useState, useRef, useEffect, useCallback, type ReactNode } from 'react'
 import Link from 'next/link';
 // Note: useClientSession = the legacy SDK-layer getter (partyId/walletId here);
 // useAccount = the new reactive session-store hook (the live session indicator).
-import { PartyLayerKit, WalletModal, useClientSession, useDisconnect, truncatePartyId, useAccount } from '@partylayer/react';
+import { PartyLayerKit, WalletModal, useClientSession, useDisconnect, truncatePartyId, useAccount, usePartyLayer } from '@partylayer/react';
 import { DEFAULT_RETRY_POLICY, type SessionStoreOptions } from '@partylayer/session';
 import { buildDemoAdapters } from '../lib/canton-demo-adapter';
 import { sortByCanonicalOrder, CANONICAL_WALLET_ORDER } from '../lib/wallet-order';
@@ -59,6 +59,92 @@ const wallets = sortByCanonicalOrder(
   ],
   (w) => w.id
 );
+
+/* ─── Dynamic supported-wallets source ─────────────────────────────────────
+ * The "supported wallets" cards + the hero's compact strip derive from the
+ * canonical registry (NOT the static `wallets` above, which is only the hero
+ * PREVIEW), so every new registry wallet (e.g. walley) appears automatically.
+ * We use the UNFILTERED registryClient.getRegistry() — not useWallets(), which
+ * network-filters + gates (it would drop Send/mainnet on this devnet demo). The
+ * call is SWR-cached in the client, so the cards + strip share one fetch and
+ * stay in sync. */
+type RegWallet = {
+  id: string;
+  name: string;
+  description?: string;
+  icon?: string;
+  adapter?: { transport?: string };
+  installation?: { windowProperty?: string; deeplink?: string; oauth?: boolean; scriptTag?: string };
+};
+
+/* WalletConnect is NOT a registry entry — it's a relay transport, surfaced live
+ * in the modal. We append it manually so the ecosystem cards + strip MIRROR the
+ * modal (Anıl's consistency call). This is the one explicit, non-registry card;
+ * every registry wallet still auto-appears dynamically. transport 'remote'
+ * matches the adapter's own runtime transport (walletconnect-adapter.ts). */
+const WALLETCONNECT_CARD: RegWallet = {
+  id: 'walletconnect',
+  name: 'WalletConnect',
+  description: 'Connect any WalletConnect-compatible Canton wallet via QR or deep link.',
+  adapter: { transport: 'remote' },
+};
+
+function useRegistryWallets(): RegWallet[] {
+  const client = usePartyLayer();
+  const [list, setList] = useState<RegWallet[]>([]);
+  useEffect(() => {
+    let alive = true;
+    client.registryClient
+      .getRegistry()
+      .then((r) => { if (alive) setList([...((r.wallets ?? []) as RegWallet[]), WALLETCONNECT_CARD]); })
+      .catch(() => { /* offline → empty; the section just renders nothing */ });
+    return () => { alive = false; };
+  }, [client]);
+  return list;
+}
+
+/** Friendly transport label, derived from the registry entry (adapter.transport
+ *  when set — only walley today — else the installation hints). Dynamic: no
+ *  hardcoded per-wallet copy. */
+function transportLabel(w: RegWallet): string {
+  switch (w.adapter?.transport) {
+    case 'discovery-adapter': return 'Popup / remote';
+    case 'remote': return 'Remote / relay';
+    case 'announce': return 'Announce';
+    case 'injected': return 'Injected';
+  }
+  const i = w.installation ?? {};
+  if (i.windowProperty) return 'Injected';
+  if (i.deeplink) return 'Deep link';
+  if (i.oauth) return 'OAuth';
+  if (i.scriptTag) return 'Script';
+  return 'Browser';
+}
+
+/** Description as shown on the ecosystem cards. Strips a trailing network-scope
+ *  sentence ("… Mainnet only.") — the cards are a network-agnostic ecosystem
+ *  overview, so a per-network caveat (only Send carries one today) is confusing
+ *  on the devnet demo. Registry data itself is untouched. */
+function cardDescription(w: RegWallet): string {
+  return (w.description ?? '').replace(/\s*Mainnet only\.?\s*$/i, '').trim();
+}
+
+// Compact wallet strip for the Architecture showcase. Its own component so the
+// useRegistryWallets() hook is in scope (archNodes is a module-level array and
+// cannot call hooks). Registry-derived → stays in sync with the cards below.
+function SupportedWalletsStrip() {
+  const registryWallets = useRegistryWallets();
+  return (
+    <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+      {registryWallets.map(w => (
+        <div key={w.id} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <img src={WALLET_LOGOS[w.id] ?? w.icon} alt={w.name} width={24} height={24} style={{ borderRadius: 6 }} />
+          <span style={{ fontSize: 13, fontWeight: 500, color: t.fg }}>{w.name}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
 
 /* ─── Global Styles (keyframes for pulse animation) ───────────────────── */
 
@@ -759,9 +845,10 @@ function Hero({ onConnect }: { onConnect: () => void }) {
                       Select a wallet to connect to this dapp.
                     </p>
 
-                    {/* Wallet List Preview */}
+                    {/* Wallet List Preview — capped to 4 (the real PartyLayerKit
+                        modal shows ALL wallets; this is just a hero mockup). */}
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                      {wallets.map((wallet, i) => (
+                      {wallets.slice(0, 4).map((wallet, i) => (
                         <button key={wallet.id} onClick={onConnect}
                           style={{
                             display: 'flex', alignItems: 'center', gap: 12, padding: 12,
@@ -922,14 +1009,7 @@ const archNodes: { id: ArchNodeId; label: string; sub: string; icon: ReactNode; 
     detail: (
       <div>
         <div style={{ fontSize: 13, fontWeight: 600, color: t.fg, marginBottom: 8 }}>Supported Wallets</div>
-        <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
-          {wallets.map(w => (
-            <div key={w.id} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <img src={w.logo} alt={w.name} width={24} height={24} style={{ borderRadius: 6 }} />
-              <span style={{ fontSize: 13, fontWeight: 500, color: t.fg }}>{w.name}</span>
-            </div>
-          ))}
-        </div>
+        <SupportedWalletsStrip />
       </div>
     ),
   },
@@ -1276,6 +1356,7 @@ function ProofBar() {
 
 function WalletGrid() {
   const bp = useBreakpoint();
+  const registryWallets = useRegistryWallets(); // dynamic: every registry wallet appears
   return (
     <section id="wallets" style={{ padding: responsive(bp, '56px 0', '64px 0', '80px 0'), borderTop: `1px solid ${t.border}`, fontFamily: t.font }}>
       <div style={{ maxWidth: 1152, margin: '0 auto', padding: '0 24px' }}>
@@ -1290,30 +1371,34 @@ function WalletGrid() {
         </div>
 
         {/* Wallet Cards */}
-        <div style={{ display: 'grid', gridTemplateColumns: responsive(bp, '1fr', 'repeat(2, 1fr)', 'repeat(5, 1fr)'), gap: bp === 'mobile' ? 16 : 24 }}>
-          {wallets.map(wallet => (
-            <CardHover key={wallet.id} style={{ padding: 20, cursor: 'pointer' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: responsive(bp, '1fr', 'repeat(2, minmax(0, 1fr))', 'repeat(5, minmax(0, 1fr))'), gridAutoRows: '1fr', gap: bp === 'mobile' ? 16 : 24 }}>
+          {registryWallets.map(wallet => (
+            <CardHover key={wallet.id} style={{ padding: 20, cursor: 'pointer', height: '100%', minWidth: 0, display: 'flex', flexDirection: 'column' }}>
               {/* Logo */}
               <div style={{ width: 56, height: 56, borderRadius: t.radius.lg, marginBottom: 16, overflow: 'hidden' }}>
-                <img src={wallet.logo} alt={`${wallet.name} logo`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                <img src={WALLET_LOGOS[wallet.id] ?? wallet.icon} alt={`${wallet.name} logo`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
               </div>
 
-              {/* Name & Badge */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-                <h3 style={{ fontSize: 20, fontWeight: 600, lineHeight: 1.4, color: t.fg, margin: 0 }}>{wallet.name}</h3>
-                <span style={{ ...badge.base, ...badge.verified }}>
+              {/* Name & Badge — flexWrap so a long single-word name (e.g.
+                  "WalletConnect") drops the badge to the next line instead of
+                  overflowing the card; badge never shrinks. Robust for any
+                  registry name length. */}
+              <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 8, marginBottom: 8 }}>
+                <h3 style={{ fontSize: 20, fontWeight: 600, lineHeight: 1.4, color: t.fg, margin: 0, minWidth: 0 }}>{wallet.name}</h3>
+                <span style={{ ...badge.base, ...badge.verified, flexShrink: 0 }}>
                   <VerifiedBadge /> Verified
                 </span>
               </div>
 
-              {/* Description */}
-              <p style={{ fontSize: 14, lineHeight: 1.5, color: t.slate500, marginBottom: 12, marginTop: 0 }}>
-                {wallet.desc}
+              {/* Description — flex:1 so the transport row pins to the bottom and
+                  all cards equalize height regardless of description length. */}
+              <p style={{ fontSize: 14, lineHeight: 1.5, color: t.slate500, marginBottom: 12, marginTop: 0, flex: 1 }}>
+                {cardDescription(wallet)}
               </p>
 
               {/* Transport */}
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <span style={{ fontSize: 12, color: t.slate400 }}>{wallet.transport}</span>
+                <span style={{ fontSize: 12, color: t.slate400 }}>{transportLabel(wallet)}</span>
               </div>
             </CardHover>
           ))}
