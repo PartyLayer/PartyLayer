@@ -190,3 +190,41 @@ jobs:
           echo "connect → encrypted IndexedDB persistence → page reload → restore →" >> $GITHUB_STEP_SUMMARY
           echo "multi-tab. Uses @partylayer/testing browser primitives. Nightly +" >> $GITHUB_STEP_SUMMARY
           echo "on-demand only — NOT PR-gated (real-browser flakiness risk)." >> $GITHUB_STEP_SUMMARY
+
+  mock-e2e:
+    name: Mock E2E + security (full demo suite)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+      - name: Install (frozen)
+        run: pnpm install --frozen-lockfile
+      - name: Build workspace packages
+        run: pnpm -r --filter "@partylayer/*" build
+      - name: Install Playwright Chromium
+        run: pnpm --filter partylayer-demo exec playwright install --with-deps chromium
+      - name: Full mock E2E + security suite
+        # The WHOLE demo e2e suite (mock fixture) — every transport, multi-tab,
+        # sign/bridge, theme, the 4 security tests. The per-PR gate runs only the
+        # fast/stable subset (smoke + connect + security via verify:e2e); this
+        # nightly job runs the rest so the broader coverage can't silently rot.
+        run: NEXT_PUBLIC_MOCK_WALLETS=1 pnpm --filter partylayer-demo exec playwright test
+      - name: Summary
+        if: always()
+        run: |
+          echo "## Nightly — mock E2E + security (full suite)" >> $GITHUB_STEP_SUMMARY
+          echo "Status: ${{ job.status }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "The full apps/demo mock-fixture e2e suite (NEXT_PUBLIC_MOCK_WALLETS=1):" >> $GITHUB_STEP_SUMMARY
+          echo "every transport (injected/announce/remote-signer/walletconnect)," >> $GITHUB_STEP_SUMMARY
+          echo "multi-tab, sign-and-bridge, theme, and the 4 security tests. The" >> $GITHUB_STEP_SUMMARY
+          echo "per-PR gate runs only the fast/stable subset (smoke + connect +" >> $GITHUB_STEP_SUMMARY
+          echo "security) — heavier/flakier specs are quarantined to nightly." >> $GITHUB_STEP_SUMMARY
