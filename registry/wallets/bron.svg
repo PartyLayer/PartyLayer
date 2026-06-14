@@ -1,0 +1,6 @@
+<svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Bron - Shield/Security style -->
+  <rect width="48" height="48" rx="12" fill="#059669"/>
+  <path d="M24 12L34 16V24C34 30.6274 29.6274 36.4 24 38C18.3726 36.4 14 30.6274 14 24V16L24 12Z" stroke="white" stroke-width="2" fill="none"/>
+  <path d="M20 24L23 27L28 21" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

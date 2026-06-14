@@ -1,0 +1,7 @@
+<svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Cantor8 (C8) - Infinity/8 symbol style -->
+  <rect width="48" height="48" rx="12" fill="#0F172A"/>
+  <path d="M16 24C16 21.2386 18.2386 19 21 19C23.7614 19 26 21.2386 26 24C26 26.7614 23.7614 29 21 29C18.2386 29 16 26.7614 16 24Z" stroke="#F59E0B" stroke-width="2.5"/>
+  <path d="M22 24C22 21.2386 24.2386 19 27 19C29.7614 19 32 21.2386 32 24C32 26.7614 29.7614 29 27 29C24.2386 29 22 26.7614 22 24Z" stroke="#F59E0B" stroke-width="2.5"/>
+  <text x="24" y="39" font-family="system-ui, sans-serif" font-size="8" font-weight="600" fill="#F59E0B" text-anchor="middle">C8</text>
+</svg>

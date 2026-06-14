@@ -1,0 +1,9 @@
+<svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Console Wallet - Official Digital Asset style -->
+  <rect width="48" height="48" rx="12" fill="#1A1A2E"/>
+  <path d="M14 16C14 14.8954 14.8954 14 16 14H32C33.1046 14 34 14.8954 34 16V32C34 33.1046 33.1046 34 32 34H16C14.8954 34 14 33.1046 14 32V16Z" stroke="#00D4AA" stroke-width="2"/>
+  <path d="M18 20H30" stroke="#00D4AA" stroke-width="2" stroke-linecap="round"/>
+  <path d="M18 24H26" stroke="#00D4AA" stroke-width="2" stroke-linecap="round"/>
+  <path d="M18 28H22" stroke="#00D4AA" stroke-width="2" stroke-linecap="round"/>
+  <circle cx="30" cy="28" r="2" fill="#00D4AA"/>
+</svg>
