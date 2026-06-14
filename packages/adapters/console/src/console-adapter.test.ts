@@ -848,22 +848,29 @@ describe('ConsoleAdapter', () => {
   // =========================================================================
   describe('on', () => {
     it.skipIf(!isBrowser)(
-      'should subscribe to connection status changes',
-      () => {
+      'should subscribe to AND deliver connection status changes',
+      async () => {
         const adapter = new ConsoleAdapter();
         const handler = vi.fn();
         adapter.on('connect', handler);
-        expect(
-          mockConsoleWallet.onConnectionStatusChanged,
-        ).toHaveBeenCalled();
+        // The SDK loads lazily, so the subscription registers one microtask later.
+        await vi.waitFor(() =>
+          expect(mockConsoleWallet.onConnectionStatusChanged).toHaveBeenCalled(),
+        );
+        // The deferred subscription still delivers events to the handler.
+        const cb = mockConsoleWallet.onConnectionStatusChanged.mock.calls[0][0];
+        cb({ isConnected: true });
+        expect(handler).toHaveBeenCalledWith({ isConnected: true });
       },
     );
 
-    it.skipIf(!isBrowser)('should subscribe to tx status changes', () => {
+    it.skipIf(!isBrowser)('should subscribe to tx status changes', async () => {
       const adapter = new ConsoleAdapter();
       const handler = vi.fn();
       adapter.on('txStatus', handler);
-      expect(mockConsoleWallet.onTxStatusChanged).toHaveBeenCalled();
+      await vi.waitFor(() =>
+        expect(mockConsoleWallet.onTxStatusChanged).toHaveBeenCalled(),
+      );
     });
 
     it.skipIf(!isBrowser)('should return unsubscribe function', () => {

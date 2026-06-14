@@ -46,7 +46,20 @@ import {
   CapabilityNotSupportedError,
   mapUnknownErrorToPartyLayerError,
 } from '@partylayer/core';
-import { consoleWallet } from '@console-wallet/dapp-sdk';
+// Lazy, browser-only access to the Console Wallet SDK. A static VALUE import
+// would eagerly init the SDK's localforage storage at module load, which throws
+// "No available storage method found" on the server (SSR). Loading it lazily on
+// first use (client-side) keeps `import '@partylayer/adapter-console'` SSR-safe.
+// The `typeof import(...)` below is a TYPE position only (erased at build) and
+// does not trigger the eager load.
+type ConsoleWalletApi = (typeof import('@console-wallet/dapp-sdk'))['consoleWallet'];
+let consoleWalletPromise: Promise<ConsoleWalletApi> | undefined;
+function getConsoleWallet(): Promise<ConsoleWalletApi> {
+  if (!consoleWalletPromise) {
+    consoleWalletPromise = import('@console-wallet/dapp-sdk').then((m) => m.consoleWallet);
+  }
+  return consoleWalletPromise;
+}
 
 /**
  * Connection target for Console Wallet.
@@ -209,7 +222,7 @@ export class ConsoleAdapter implements WalletAdapter {
 
       if (this.target === 'local') {
         const availability =
-          await consoleWallet.checkExtensionAvailability();
+          await (await getConsoleWallet()).checkExtensionAvailability();
         if (availability.status !== 'installed') {
           throw new WalletNotInstalledError(
             this.walletId,
@@ -229,7 +242,7 @@ export class ConsoleAdapter implements WalletAdapter {
           let extensionAvailable = false;
           try {
             const availability =
-              await consoleWallet.checkExtensionAvailability();
+              await (await getConsoleWallet()).checkExtensionAvailability();
             extensionAvailable = availability.status === 'installed';
           } catch {
             extensionAvailable = false;
@@ -247,7 +260,7 @@ export class ConsoleAdapter implements WalletAdapter {
       });
 
       // Connect with the resolved target — always 'local' or 'remote', never 'combined'
-      const connectResult = await consoleWallet.connect({
+      const connectResult = await (await getConsoleWallet()).connect({
         name: ctx.appName,
         icon: ctx.origin ? `${ctx.origin}/favicon.ico` : undefined,
         target: effectiveTarget,
@@ -270,13 +283,13 @@ export class ConsoleAdapter implements WalletAdapter {
       });
 
       // Get primary account for party ID
-      const account = await consoleWallet.getPrimaryAccount();
+      const account = await (await getConsoleWallet()).getPrimaryAccount();
       const partyIdStr = account?.partyId || `party-${Date.now()}`;
 
       // Get active network
       let networkId = ctx.network;
       try {
-        const network = await consoleWallet.getActiveNetwork();
+        const network = await (await getConsoleWallet()).getActiveNetwork();
         if (network?.id) networkId = network.id;
       } catch {
         // Network query failed — use context network
@@ -286,7 +299,7 @@ export class ConsoleAdapter implements WalletAdapter {
       let providerId: string | undefined;
       let providerType: string | undefined;
       try {
-        const status = await consoleWallet.status();
+        const status = await (await getConsoleWallet()).status();
         providerId = status.provider?.id;
         providerType = status.provider?.providerType;
       } catch {
@@ -326,7 +339,7 @@ export class ConsoleAdapter implements WalletAdapter {
    */
   async disconnect(ctx: AdapterContext, session: Session): Promise<void> {
     try {
-      await consoleWallet.disconnect();
+      await (await getConsoleWallet()).disconnect();
       ctx.logger.debug('Disconnected from Console Wallet', {
         sessionId: session.sessionId,
         transport: this.activeTransport,
@@ -359,12 +372,12 @@ export class ConsoleAdapter implements WalletAdapter {
       if (this.target === 'local' || transportFromSession === 'injected') {
         // Local mode or session was created via extension — verify extension
         const availability =
-          await consoleWallet.checkExtensionAvailability();
+          await (await getConsoleWallet()).checkExtensionAvailability();
         if (availability.status !== 'installed') return null;
       }
 
       // isConnected() checks both extension and relay session state
-      const connectStatus = await consoleWallet.isConnected();
+      const connectStatus = await (await getConsoleWallet()).isConnected();
       if (!connectStatus.isConnected) {
         ctx.logger.debug(
           'Console Wallet not connected, cannot restore',
@@ -384,7 +397,7 @@ export class ConsoleAdapter implements WalletAdapter {
         // Combined: infer from extension availability
         try {
           const availability =
-            await consoleWallet.checkExtensionAvailability();
+            await (await getConsoleWallet()).checkExtensionAvailability();
           this.activeTransport =
             availability.status === 'installed' ? 'injected' : 'remote';
         } catch {
@@ -432,7 +445,7 @@ export class ConsoleAdapter implements WalletAdapter {
           .map((b) => b.toString(16).padStart(2, '0'))
           .join('');
 
-      const result = await consoleWallet.signMessage({
+      const result = await (await getConsoleWallet()).signMessage({
         message: { hex },
         metaData: {
           purpose: 'sign-message',
@@ -477,8 +490,8 @@ export class ConsoleAdapter implements WalletAdapter {
       });
 
       // submitCommands is the SDK's tx signing method
-      const result = await consoleWallet.submitCommands(
-        params.tx as Parameters<typeof consoleWallet.submitCommands>[0],
+      const result = await (await getConsoleWallet()).submitCommands(
+        params.tx as Parameters<ConsoleWalletApi['submitCommands']>[0],
       );
 
       const txHash = `tx_${Date.now()}_${Math.random().toString(36).substring(2, 15)}`;
@@ -514,8 +527,8 @@ export class ConsoleAdapter implements WalletAdapter {
         transport,
       });
 
-      const txData = params.signedTx as Parameters<typeof consoleWallet.submitCommands>[0];
-      const result = await consoleWallet.submitCommands({
+      const txData = params.signedTx as Parameters<ConsoleWalletApi['submitCommands']>[0];
+      const result = await (await getConsoleWallet()).submitCommands({
         ...txData,
         waitForFinalization: 5000,
       });
@@ -562,7 +575,7 @@ export class ConsoleAdapter implements WalletAdapter {
 
       // The Console Wallet SDK may expose ledgerApi directly or via a generic
       // request() method (CIP-0103 standard).
-      const wallet = consoleWallet as unknown as {
+      const wallet = (await getConsoleWallet()) as unknown as {
         ledgerApi?: (p: {
           requestMethod: string;
           resource: string;
@@ -635,15 +648,21 @@ export class ConsoleAdapter implements WalletAdapter {
     switch (event) {
       case 'connect':
       case 'disconnect':
-        consoleWallet.onConnectionStatusChanged((status) => {
-          handler(status);
-        });
+        // Defer the subscription via the cached SDK import (browser-only). The
+        // unsubscribe stays a synchronous no-op — signature unchanged.
+        void getConsoleWallet().then((cw) =>
+          cw.onConnectionStatusChanged((status) => {
+            handler(status);
+          }),
+        );
         return () => {};
 
       case 'txStatus':
-        consoleWallet.onTxStatusChanged((txEvent) => {
-          handler(txEvent);
-        });
+        void getConsoleWallet().then((cw) =>
+          cw.onTxStatusChanged((txEvent) => {
+            handler(txEvent);
+          }),
+        );
         return () => {};
 
       default:
@@ -657,7 +676,7 @@ export class ConsoleAdapter implements WalletAdapter {
   private async detectExtension(): Promise<AdapterDetectResult> {
     try {
       const availability =
-        await consoleWallet.checkExtensionAvailability();
+        await (await getConsoleWallet()).checkExtensionAvailability();
 
       if (availability.status === 'installed') {
         return {
