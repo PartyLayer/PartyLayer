@@ -1,0 +1,50 @@
+{
+  "name": "create-partylayer-app",
+  "version": "0.0.0",
+  "description": "Scaffold a PartyLayer dApp (Canton wallet integration) in seconds.",
+  "type": "module",
+  "bin": {
+    "create-partylayer-app": "./dist/index.js"
+  },
+  "main": "./dist/index.js",
+  "files": [
+    "dist",
+    "templates"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@clack/prompts": "1.5.1",
+    "mri": "1.2.0",
+    "picocolors": "1.1.1"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "typescript": "^5.3.3"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/PartyLayer/PartyLayer.git",
+    "directory": "packages/create-partylayer-app"
+  },
+  "homepage": "https://github.com/PartyLayer/PartyLayer/tree/main/packages/create-partylayer-app",
+  "bugs": {
+    "url": "https://github.com/PartyLayer/PartyLayer/issues"
+  },
+  "license": "MIT",
+  "keywords": [
+    "partylayer",
+    "canton",
+    "wallet",
+    "create",
+    "scaffold",
+    "cli",
+    "dapp",
+    "starter"
+  ]
+}
