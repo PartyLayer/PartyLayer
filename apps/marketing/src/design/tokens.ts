@@ -123,6 +123,14 @@ export const wallets = [
     logo: '/wallets/bron.png',
     homepage: 'https://developer.bron.org',
   },
+  {
+    id: 'walley',
+    name: 'Walley',
+    description: 'Popup/remote Canton wallet (CIP-0103)',
+    transport: 'Popup',
+    logo: '/wallets/walley-logo.png',
+    homepage: 'https://walley.cc',
+  },
 ] as const;
 
 export type WalletId = (typeof wallets)[number]['id'];
