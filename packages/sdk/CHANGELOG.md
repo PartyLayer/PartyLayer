@@ -1,5 +1,24 @@
 # @partylayer/sdk
 
+## 0.10.1
+
+### Patch Changes
+
+- 5546a90: Add `AdapterNotRegisteredError` — an actionable, catchable error when connecting to a popup/remote (`transport: 'discovery-adapter'`) wallet whose app-supplied provider adapter was never registered.
+
+  Previously `connect({ walletId: 'walley' })` for a known-but-unwired discovery wallet threw a bare `WalletNotFoundError` ("Wallet 'walley' not found"), conflating a config gap with a missing wallet. Now the SDK throws `AdapterNotRegisteredError` (code `ADAPTER_NOT_REGISTERED`) with a generic, registry-derived message that tells you how to wire it: `adapters: [{ providerId, create }]`. Distinct from `WalletNotFoundError` so higher-level UIs (e.g. PartyLayerKit) can catch it specifically. Scoped strictly to `discovery-adapter` entries; truly-unknown wallets still throw `WalletNotFoundError`. Maps to JSON-RPC `INVALID_PARAMS` on the provider surface.
+
+- Updated dependencies [5546a90]
+  - @partylayer/core@0.9.0
+  - @partylayer/provider@0.2.6
+  - @partylayer/adapter-bron@0.2.16
+  - @partylayer/adapter-cantor8@0.2.16
+  - @partylayer/adapter-console@0.3.11
+  - @partylayer/adapter-loop@0.3.13
+  - @partylayer/adapter-nightly@0.2.15
+  - @partylayer/adapter-send@1.1.5
+  - @partylayer/registry-client@0.5.2
+
 ## 0.10.0
 
 ### Minor Changes

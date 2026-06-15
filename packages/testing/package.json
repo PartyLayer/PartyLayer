@@ -1,6 +1,6 @@
 {
   "name": "@partylayer/testing",
-  "version": "1.1.2",
+  "version": "1.1.3",
   "description": "Offline test utilities for PartyLayer: mock CIP-0103 provider with failure scenarios, transaction + session lifecycle simulation, TanStack Query helpers, and browser/e2e primitives",
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",
