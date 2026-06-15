@@ -1,5 +1,12 @@
 # @partylayer/adapter-walletconnect
 
+## 0.3.4
+
+### Patch Changes
+
+- Updated dependencies [5546a90]
+  - @partylayer/core@0.9.0
+
 ## 0.3.3
 
 ### Patch Changes

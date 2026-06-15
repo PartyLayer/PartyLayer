@@ -1,5 +1,13 @@
 # @partylayer/vue
 
+## 0.1.4
+
+### Patch Changes
+
+- Updated dependencies [5546a90]
+  - @partylayer/core@0.9.0
+  - @partylayer/session@1.1.1
+
 ## 0.1.3
 
 ### Patch Changes
