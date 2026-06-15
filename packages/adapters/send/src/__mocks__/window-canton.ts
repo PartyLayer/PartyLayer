@@ -19,7 +19,7 @@
 import { vi } from 'vitest';
 
 import type { CIP0103Provider, ProviderDetection } from '@partylayer/core';
-import type { AnnounceDiscoveryOptions, DiscoveredProvider } from '@partylayer/provider';
+import type { WaitForAnnouncedOptions, DiscoveredProvider } from '@partylayer/provider';
 
 import { SEND_KERNEL_ID } from '../constants';
 import { SendProvider } from '../send-provider';
@@ -237,18 +237,23 @@ function consoleAtWindowCanton(): unknown {
   };
 }
 
-/** Injected announce discovery: returns Send's channel entry iff Send "announced". */
-async function sendDiscover(_options?: AnnounceDiscoveryOptions): Promise<DiscoveredProvider[]> {
+/**
+ * Injected resolve-on-arrival: returns Send's channel entry iff Send "announced"
+ * AND it matches the predicate; else null. Mirrors `waitForAnnouncedProvider`.
+ */
+async function sendWaitForProvider(
+  predicate: (p: DiscoveredProvider) => boolean,
+  _options?: WaitForAnnouncedOptions,
+): Promise<DiscoveredProvider | null> {
   discoverCalls += 1;
-  if (!announcedChannel) return [];
-  return [
-    {
-      id: announcedId,
-      provider: announcedChannel as unknown as CIP0103Provider,
-      source: 'injected',
-      name: 'Send',
-    },
-  ];
+  if (!announcedChannel) return null;
+  const entry: DiscoveredProvider = {
+    id: announcedId,
+    provider: announcedChannel as unknown as CIP0103Provider,
+    source: 'injected',
+    name: 'Send',
+  };
+  return predicate(entry) ? entry : null;
 }
 
 /** Number of announce-discovery calls since the last `uninstallMockCanton()`. */
@@ -261,7 +266,11 @@ export function getDiscoverCalls(): number {
  * Use this in place of the real announce handshake in tests.
  */
 export function makeSendProvider(detection?: ProviderDetection): SendProvider {
-  return new SendProvider(detection, { discover: sendDiscover, announceTimeoutMs: 0 });
+  return new SendProvider(detection, {
+    waitForProvider: sendWaitForProvider,
+    announceTimeoutMs: 0,
+    detectTimeoutMs: 0,
+  });
 }
 
 /**

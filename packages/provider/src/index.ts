@@ -51,6 +51,8 @@ export {
   discoverInjectedProviders,
   discoverAnnouncedProviders,
   discoverProviders,
+  subscribeAnnouncedProviders,
+  waitForAnnouncedProvider,
   waitForProvider,
   isCIP0103Provider,
 } from './discovery';
@@ -58,6 +60,8 @@ export type {
   DiscoveredProvider,
   AnnouncedWallet,
   AnnounceDiscoveryOptions,
+  AnnounceSubscribeOptions,
+  WaitForAnnouncedOptions,
 } from './discovery';
 export { createExtensionChannelProvider } from './extension-channel';
 export type { ExtensionChannelOptions } from './extension-channel';

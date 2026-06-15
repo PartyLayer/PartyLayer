@@ -306,6 +306,125 @@ export async function discoverAnnouncedProviders(
   return results;
 }
 
+/** Options for {@link subscribeAnnouncedProviders}. */
+export interface AnnounceSubscribeOptions {
+  /** Build a CIP-0103 provider from an announce. Defaults to the channel provider. */
+  createProvider?: (
+    announced: AnnouncedWallet,
+  ) => CIP0103Provider | Promise<CIP0103Provider>;
+  /** Dispatch `canton:requestProvider` on subscribe to elicit replies (default true). */
+  requestOnSubscribe?: boolean;
+}
+
+/**
+ * PERSISTENT (EIP-6963-style) announce subscription. Mounts a `window` listener
+ * for `canton:announceProvider` that stays up until the returned unsubscribe runs.
+ * Unlike {@link discoverAnnouncedProviders} (a one-shot snapshot that stops
+ * listening after `timeoutMs`), this captures announces that arrive AT ANY TIME —
+ * both LATE (slow/late extension injection, after the request window) and announces
+ * fired on inject BEFORE this subscription. Dispatches `canton:requestProvider`
+ * once on subscribe (unless disabled) to elicit replies. Calls `onProvider` once
+ * per newly-announced id (deduped) whose provider builds + passes the CIP-0103
+ * shape check.
+ *
+ * The caller MUST call the returned unsubscribe to remove the listener (no leak).
+ */
+export function subscribeAnnouncedProviders(
+  onProvider: (provider: DiscoveredProvider) => void,
+  options: AnnounceSubscribeOptions = {},
+): () => void {
+  if (typeof window === 'undefined') return () => {};
+  const make = options.createProvider ?? defaultAnnounceProvider;
+  const seen = new Set<string>();
+
+  const onAnnounce = (event: Event): void => {
+    const detail = (event as CustomEvent).detail as
+      | Record<string, unknown>
+      | undefined;
+    if (!detail) return;
+    const rawId = detail.providerId ?? detail.id;
+    if (typeof rawId !== 'string' || rawId.length === 0) return;
+    if (seen.has(rawId)) return; // dedup announce replies by id
+    seen.add(rawId);
+    const wallet: AnnouncedWallet = {
+      id: rawId,
+      name: typeof detail.name === 'string' ? detail.name : undefined,
+      icon: typeof detail.icon === 'string' ? detail.icon : undefined,
+      target: typeof detail.target === 'string' ? detail.target : undefined,
+    };
+    // Build the provider off the event tick; a wallet whose provider can't be
+    // built (or isn't CIP-0103) is skipped, not fatal — mirrors discoverAnnouncedProviders.
+    void Promise.resolve()
+      .then(() => make(wallet))
+      .then((provider) => {
+        if (!isCIP0103Provider(provider)) return;
+        onProvider({
+          id: wallet.id,
+          provider,
+          source: 'injected',
+          name: wallet.name,
+          icon: wallet.icon,
+        });
+      })
+      .catch(() => {
+        /* unbuildable provider — skip */
+      });
+  };
+
+  window.addEventListener(
+    CANTON_ANNOUNCE_PROVIDER_EVENT,
+    onAnnounce as EventListener,
+  );
+  if (options.requestOnSubscribe !== false) {
+    window.dispatchEvent(new CustomEvent(CANTON_REQUEST_PROVIDER_EVENT));
+  }
+  return () =>
+    window.removeEventListener(
+      CANTON_ANNOUNCE_PROVIDER_EVENT,
+      onAnnounce as EventListener,
+    );
+}
+
+/** Options for {@link waitForAnnouncedProvider}. */
+export interface WaitForAnnouncedOptions extends AnnounceSubscribeOptions {
+  /** Max wait before resolving null (default 3000ms). Resolves EARLY on a match. */
+  timeoutMs?: number;
+}
+
+/**
+ * Resolve the FIRST announced provider matching `predicate` the MOMENT it arrives,
+ * or `null` after `timeoutMs`. Built on {@link subscribeAnnouncedProviders}, so a
+ * LATE announce within the bound is captured (vs a fixed window that returns its
+ * snapshot at a fixed time and misses anything later). Auto-unsubscribes on
+ * resolve/timeout — no lingering listener.
+ */
+export function waitForAnnouncedProvider(
+  predicate: (provider: DiscoveredProvider) => boolean,
+  options: WaitForAnnouncedOptions = {},
+): Promise<DiscoveredProvider | null> {
+  if (typeof window === 'undefined') return Promise.resolve(null);
+  const timeoutMs = options.timeoutMs ?? 3000;
+  return new Promise<DiscoveredProvider | null>((resolve) => {
+    // const holder so the mutual references (finish ↔ unsubscribe/timer) don't
+    // need `let`-assigned-once locals (prefer-const).
+    const h: { done: boolean; unsubscribe: () => void; timer?: ReturnType<typeof setTimeout> } = {
+      done: false,
+      unsubscribe: () => {},
+    };
+    const finish = (value: DiscoveredProvider | null): void => {
+      if (h.done) return;
+      h.done = true;
+      if (h.timer) clearTimeout(h.timer);
+      h.unsubscribe();
+      resolve(value);
+    };
+    h.unsubscribe = subscribeAnnouncedProviders((p) => {
+      if (predicate(p)) finish(p);
+    }, { createProvider: options.createProvider, requestOnSubscribe: options.requestOnSubscribe });
+    h.timer = setTimeout(() => finish(null), timeoutMs);
+  });
+}
+
 /** Max time to spend on the read-only status() id-probe for ONE injected provider. */
 const INJECTED_ID_PROBE_TIMEOUT_MS = 1500;
 

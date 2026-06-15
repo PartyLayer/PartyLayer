@@ -43,6 +43,8 @@ import {
   createProviderBridge,
   createExtensionChannelProvider,
   discoverProviders,
+  subscribeAnnouncedProviders,
+  type DiscoveredProvider,
 } from '@partylayer/provider';
 import { findMatchingWalletInfo } from '@partylayer/core';
 import { GenericAnnounceAdapter } from './announce-adapter';
@@ -121,6 +123,12 @@ export class PartyLayerClient {
   private telemetry?: import('@partylayer/core').TelemetryAdapter;
   /** Cached announce-discovery picker entries (one-shot; cleared by refreshDiscovery). */
   private announceEntriesCache: WalletInfo[] | null = null;
+  // Persistent announce accumulator (option 1): one window subscription mounted
+  // at construction so LATE / inject-time `canton:announceProvider` replies are
+  // captured (not just a one-shot window). Read by aggregateAnnouncedWallets;
+  // torn down in destroy(). Empty → listWallets() output is byte-identical.
+  private readonly announceRegistry = new Map<string, DiscoveredProvider>();
+  private announceUnsubscribe: (() => void) | null = null;
   private origin: string;
 
   constructor(config: PartyLayerConfig) {
@@ -194,6 +202,16 @@ export class PartyLayerClient {
 
     // Emit initial registry status
     this.updateRegistryStatus();
+
+    // Mount the persistent announce accumulator (no-op under SSR; the subscribe
+    // primitive guards on `window`). Captures announces that arrive at any time
+    // since construction — including late/slow extension injection.
+    if (this.announceEnabled) {
+      this.announceUnsubscribe = subscribeAnnouncedProviders(
+        (p) => this.announceRegistry.set(p.id, p),
+        { createProvider: (a) => createExtensionChannelProvider({ target: a.target ?? a.id }) },
+      );
+    }
 
     // Restore session on init
     this.restoreSession().catch((err) => {
@@ -401,13 +419,20 @@ export class PartyLayerClient {
 
     if (this.announceEntriesCache === null) {
       try {
-        const discovered = await discoverProviders({
+        const snapshot = await discoverProviders({
           timeoutMs: this.config.discovery?.announceTimeoutMs,
           // Working provider over the announce target channel; G4 (provider.md):
           // target defaults to id when omitted — never a shared slot.
           createProvider: (a) =>
             createExtensionChannelProvider({ target: a.target ?? a.id }),
         });
+        // Merge the persistent accumulator (late/inject-time announces), deduped
+        // by id; the fresh snapshot takes precedence. Empty registry → identical.
+        const byId = new Map<string, DiscoveredProvider>();
+        for (const d of snapshot) byId.set(d.id, d);
+        for (const d of this.announceRegistry.values())
+          if (!byId.has(d.id)) byId.set(d.id, d);
+        const discovered = [...byId.values()];
 
         const entries: WalletInfo[] = [];
         for (const d of discovered) {
@@ -1059,6 +1084,11 @@ export class PartyLayerClient {
       this.telemetry.flush().catch(() => {});
     }
     
+    // Tear down the persistent announce subscription (remove the window listener).
+    this.announceUnsubscribe?.();
+    this.announceUnsubscribe = null;
+    this.announceRegistry.clear();
+
     this.eventHandlers.clear();
     this.activeSession = null;
   }
