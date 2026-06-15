@@ -22,6 +22,11 @@ export const TEMPLATES: TemplateMeta[] = [
     label: 'Next.js (SSR)',
     hint: 'App Router, server-side session via cookieStorage',
   },
+  {
+    id: 'vue-nuxt-pinia',
+    label: 'Vue + Nuxt + Pinia',
+    hint: 'Nuxt 3 SSR session, PartyLayer session in a Pinia store',
+  },
 ];
 
 export function isTemplateId(value: string): boolean {
