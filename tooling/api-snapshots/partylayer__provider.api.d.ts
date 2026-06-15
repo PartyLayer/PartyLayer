@@ -28,17 +28,20 @@ declare function isCIP0103Provider(obj: unknown): obj is CIP0103Provider;
 declare function methodNotFound(method: string): ProviderRpcError;
 declare function resourceNotFound(message: string, data?: unknown): ProviderRpcError;
 declare function resourceUnavailable(message: string, data?: unknown): ProviderRpcError;
+declare function subscribeAnnouncedProviders(onProvider: (provider: DiscoveredProvider) => void, options?: AnnounceSubscribeOptions): () => void;
 declare function toPartyLayerError(err: ProviderRpcError): PartyLayerError;
 declare function toProviderRpcError(err: unknown): ProviderRpcError;
 declare function transactionRejected(message?: string, data?: unknown): ProviderRpcError;
 declare function unauthorized(message?: string, data?: unknown): ProviderRpcError;
 declare function unsupportedMethod(method: string): ProviderRpcError;
 declare function userRejected(message?: string, data?: unknown): ProviderRpcError;
+declare function waitForAnnouncedProvider(predicate: (provider: DiscoveredProvider) => boolean, options?: WaitForAnnouncedOptions): Promise<DiscoveredProvider | null>;
 declare function waitForProvider(id: string, timeoutMs?: number): Promise<DiscoveredProvider | null>;
 export { CANTON_NETWORKS, CIP0103Account, CIP0103AccountStatus, CIP0103ConnectResult, CIP0103Event, CIP0103EventListener, CIP0103LedgerApiRequest, CIP0103LedgerApiResponse, CIP0103Method, CIP0103Network, CIP0103Provider, CIP0103ProviderInfo, CIP0103ProviderRpcError, CIP0103ProviderType, CIP0103RequestParams, CIP0103RequestPayload, CIP0103SignMessageRequest, CIP0103StatusEvent, CIP0103TxChangedEvent, CIP0103TxExecutedPayload, CIP0103TxFailedPayload, CIP0103TxPendingPayload, CIP0103TxSignedPayload, CIP0103TxStatus, CIP0103_EVENTS, CIP0103_MANDATORY_METHODS, CIP0103_METHODS, fromCAIP2Network, isValidCAIP2, toCAIP2Network } from '@partylayer/core';
-export { type AnnounceDiscoveryOptions, type AnnouncedWallet, type AsyncConnectOptions, type AsyncPrepareExecuteOptions, type BridgeableClient, CIP0103EventBus, type DiscoveredProvider, type ExtensionChannelOptions, JSON_RPC_ERRORS, type MethodHandler, MethodRouter, PartyLayerProvider, type PartyLayerProviderOptions, ProviderRpcError, RPC_ERRORS, chainDisconnected, createExtensionChannelProvider, createProviderBridge, disconnected, discoverAnnouncedProviders, discoverInjectedProviders, discoverProviders, handleAsyncConnect, handleAsyncPrepareExecute, internalError, invalidParams, isCIP0103Provider, methodNotFound, resourceNotFound, resourceUnavailable, toPartyLayerError, toProviderRpcError, transactionRejected, unauthorized, unsupportedMethod, userRejected, waitForProvider };
+export { type AnnounceDiscoveryOptions, type AnnounceSubscribeOptions, type AnnouncedWallet, type AsyncConnectOptions, type AsyncPrepareExecuteOptions, type BridgeableClient, CIP0103EventBus, type DiscoveredProvider, type ExtensionChannelOptions, JSON_RPC_ERRORS, type MethodHandler, MethodRouter, PartyLayerProvider, type PartyLayerProviderOptions, ProviderRpcError, RPC_ERRORS, type WaitForAnnouncedOptions, chainDisconnected, createExtensionChannelProvider, createProviderBridge, disconnected, discoverAnnouncedProviders, discoverInjectedProviders, discoverProviders, handleAsyncConnect, handleAsyncPrepareExecute, internalError, invalidParams, isCIP0103Provider, methodNotFound, resourceNotFound, resourceUnavailable, subscribeAnnouncedProviders, toPartyLayerError, toProviderRpcError, transactionRejected, unauthorized, unsupportedMethod, userRejected, waitForAnnouncedProvider, waitForProvider };
 import { CIP0103Provider, CIP0103RequestPayload, CIP0103EventListener, PartyLayerError, CIP0103ConnectResult, CIP0103TxChangedEvent, CIP0103RequestParams } from '@partylayer/core';
 interface AnnounceDiscoveryOptions { timeoutMs?: number; createProvider?: (announced: AnnouncedWallet) => CIP0103Provider | Promise<CIP0103Provider>; }
+interface AnnounceSubscribeOptions { createProvider?: (announced: AnnouncedWallet) => CIP0103Provider | Promise<CIP0103Provider>; requestOnSubscribe?: boolean; }
 interface AnnouncedWallet { id: string; name?: string; icon?: string; target?: string; }
 interface AsyncConnectOptions { timeoutMs?: number; onUserUrl?: (url: string) => void; }
 interface AsyncPrepareExecuteOptions { timeoutMs?: number; onUserUrl?: (url: string) => void; }
@@ -46,4 +49,5 @@ interface BridgeableClient { connect(options?: unknown): Promise<{ sessionId: un
 interface DiscoveredProvider { id: string; provider: CIP0103Provider; source: 'injected' | 'registry'; isAsync?: boolean; name?: string; icon?: string; identityResolved?: boolean; }
 interface ExtensionChannelOptions { target?: string; timeoutMs?: number; }
 interface PartyLayerProviderOptions { walletProvider?: DiscoveredProvider; asyncTimeoutMs?: number; onUserUrl?: (url: string) => void; }
+interface WaitForAnnouncedOptions extends AnnounceSubscribeOptions { timeoutMs?: number; }
 type MethodHandler<T = unknown> = (walletProvider: CIP0103Provider, params?: CIP0103RequestParams) => Promise<T>;

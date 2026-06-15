@@ -33,7 +33,8 @@ import type {
   ProviderDetection,
 } from '@partylayer/core';
 import {
-  discoverAnnouncedProviders,
+  waitForAnnouncedProvider,
+  type WaitForAnnouncedOptions,
   type AnnounceDiscoveryOptions,
   type DiscoveredProvider,
 } from '@partylayer/provider';
@@ -53,8 +54,22 @@ import type {
   SendStatusResponse,
 } from './types';
 
-/** How long to wait for the `canton:announceProvider` reply. */
-const DEFAULT_ANNOUNCE_TIMEOUT_MS = 500;
+// Split bounds, mirroring the EIP-6963 reference model (wagmi/mipd): readiness
+// is REACTIVE (a persistent listener, here the SDK client's announce
+// accumulator), and only a DELIBERATE one-shot action blocks for long.
+//
+// CONNECT path — a deliberate user action ("connect to Send") with a clear
+// "not installed" failure. Resolve-on-arrival has NO latency penalty when Send
+// announces promptly; the full bound is only spent when Send is genuinely
+// absent, and it tolerates a slow/late extension injection up to 3s.
+const DEFAULT_ANNOUNCE_TIMEOUT_MS = 3000;
+// DETECT path (isInstalled / detectInstalled) — best-effort readiness for a
+// per-wallet indicator. Must NOT stall the UI for seconds when Send is absent,
+// so it is short. The client's persistent accumulator is the real safety net: a
+// late announce (>detect bound) is still captured there and self-corrects
+// listWallets(); connect (3s) then still succeeds. 1000ms catches the common
+// sub-1s late inject without the multi-second stall a shared 3s bound would add.
+const DEFAULT_DETECT_TIMEOUT_MS = 1000;
 
 export interface SendProviderOptions {
   /**
@@ -62,23 +77,46 @@ export interface SendProviderOptions {
    * handshake is skipped and every call routes through this provider.
    */
   provider?: CIP0103Provider;
-  /** Override the announce-collection window (ms). Default 500. */
+  /**
+   * Max wait for Send's announce on the CONNECT/request path (ms); resolves
+   * EARLY on arrival. A deliberate action, so this is generous. Default 3000.
+   */
   announceTimeoutMs?: number;
-  /** Override announce discovery (used by tests). Defaults to the real handshake. */
+  /**
+   * Max wait for Send's announce on the DETECT path (`isInstalled`) (ms);
+   * resolves EARLY on arrival. Best-effort readiness, so this is short — the
+   * client's persistent accumulator catches anything later. Default 1000.
+   */
+  detectTimeoutMs?: number;
+  /** Override announce resolution (resolve-on-arrival). Defaults to the real handshake. */
+  waitForProvider?: (
+    predicate: (p: DiscoveredProvider) => boolean,
+    options?: WaitForAnnouncedOptions,
+  ) => Promise<DiscoveredProvider | null>;
+  /**
+   * @deprecated Use {@link SendProviderOptions.waitForProvider} (resolve-on-arrival).
+   * Legacy one-shot snapshot hook — still honored (wrapped as find-first) for
+   * backward compatibility; superseded because a fixed window can miss a late
+   * announce. Ignored when `waitForProvider` is also supplied.
+   */
   discover?: (options?: AnnounceDiscoveryOptions) => Promise<DiscoveredProvider[]>;
 }
 
 export class SendProvider {
   private readonly detection: ProviderDetection;
   private readonly announceTimeoutMs: number;
-  private readonly discover: (
-    options?: AnnounceDiscoveryOptions,
-  ) => Promise<DiscoveredProvider[]>;
+  private readonly detectTimeoutMs: number;
+  private readonly waitForProvider: (
+    predicate: (p: DiscoveredProvider) => boolean,
+    options?: WaitForAnnouncedOptions,
+  ) => Promise<DiscoveredProvider | null>;
   private readonly injectedProvider?: CIP0103Provider;
 
   private cachedChannel: { target: string; provider: CIP0103Provider } | null = null;
   private channelPromise: Promise<{ target: string; provider: CIP0103Provider } | null> | null =
     null;
+  /** Bound the in-flight `channelPromise` was started with (for bound-aware dedup). */
+  private channelPromiseTimeoutMs = 0;
   private cachedStatus: SendStatusResponse | null = null;
 
   /**
@@ -90,7 +128,19 @@ export class SendProvider {
   constructor(detection?: ProviderDetection, options?: SendProviderOptions) {
     this.detection = detection ?? SEND_BUILTIN_DETECTION;
     this.announceTimeoutMs = options?.announceTimeoutMs ?? DEFAULT_ANNOUNCE_TIMEOUT_MS;
-    this.discover = options?.discover ?? ((o) => discoverAnnouncedProviders(o));
+    this.detectTimeoutMs = options?.detectTimeoutMs ?? DEFAULT_DETECT_TIMEOUT_MS;
+    // Resolve-on-arrival seam. Precedence: explicit waitForProvider > the legacy
+    // one-shot `discover` (wrapped as find-first, backward-compat) > the default
+    // persistent handshake.
+    if (options?.waitForProvider) {
+      this.waitForProvider = options.waitForProvider;
+    } else if (options?.discover) {
+      const legacy = options.discover;
+      this.waitForProvider = (pred, o) =>
+        legacy({ timeoutMs: o?.timeoutMs }).then((entries) => entries.find(pred) ?? null);
+    } else {
+      this.waitForProvider = (pred, o) => waitForAnnouncedProvider(pred, o);
+    }
     this.injectedProvider = options?.provider;
   }
 
@@ -107,25 +157,41 @@ export class SendProvider {
    * announce. Concurrent callers share a single in-flight announce (dedup), so
    * a burst of requests triggers exactly one handshake.
    */
-  private resolveChannel(): Promise<{
+  private resolveChannel(timeoutMs: number): Promise<{
     target: string;
     provider: CIP0103Provider;
   } | null> {
     if (this.cachedChannel) return Promise.resolve(this.cachedChannel);
-    if (this.channelPromise) return this.channelPromise;
+    // Reuse an in-flight handshake only if its bound is at least as generous as
+    // this caller needs — so a quick detect probe (1000ms) in flight never
+    // shortens a connect's full 3000ms budget. A longer-bound caller starts its
+    // own resolve; both only ever set the SAME cachedChannel on success, and a
+    // resolved channel is shared, so the shorter probe still benefits.
+    if (this.channelPromise && this.channelPromiseTimeoutMs >= timeoutMs) {
+      return this.channelPromise;
+    }
 
-    this.channelPromise = this.doResolveChannel()
+    const p: Promise<{ target: string; provider: CIP0103Provider } | null> = this.doResolveChannel(
+      timeoutMs,
+    )
       .then((channel) => {
         if (channel) this.cachedChannel = channel;
         return channel;
       })
       .finally(() => {
-        this.channelPromise = null;
+        // Only clear if WE are still the current in-flight promise (a
+        // longer-bound caller may have replaced us; let it own teardown).
+        if (this.channelPromise === p) {
+          this.channelPromise = null;
+          this.channelPromiseTimeoutMs = 0;
+        }
       });
-    return this.channelPromise;
+    this.channelPromise = p;
+    this.channelPromiseTimeoutMs = timeoutMs;
+    return p;
   }
 
-  private async doResolveChannel(): Promise<{
+  private async doResolveChannel(timeoutMs: number): Promise<{
     target: string;
     provider: CIP0103Provider;
   } | null> {
@@ -135,8 +201,12 @@ export class SendProvider {
     if (typeof window === 'undefined') return null;
 
     const accepted = this.acceptedIds();
-    const entries = await this.discover({ timeoutMs: this.announceTimeoutMs });
-    const match = entries.find((e) => accepted.includes(e.id));
+    // Resolve-on-arrival: returns the instant Send announces a matching id, up
+    // to announceTimeoutMs — so a LATE announce (slow extension inject) is caught,
+    // not missed by a fixed window. null → Send did not announce within the bound.
+    const match = await this.waitForProvider((e) => accepted.includes(e.id), {
+      timeoutMs,
+    });
     if (!match) return null;
     return { target: match.id, provider: match.provider };
   }
@@ -145,7 +215,8 @@ export class SendProvider {
     method: SendRpcMethod,
     params?: unknown,
   ): Promise<T> {
-    const channel = await this.resolveChannel();
+    // Connect/request path — deliberate action, generous bound.
+    const channel = await this.resolveChannel(this.announceTimeoutMs);
     if (!channel) throw new SendNotInstalledError();
     const payload = (
       params === undefined ? { method } : { method, params }
@@ -161,7 +232,9 @@ export class SendProvider {
    */
   async isInstalled(): Promise<boolean> {
     try {
-      return (await this.resolveChannel()) !== null;
+      // Detect path — best-effort readiness, short bound (the SDK client's
+      // persistent accumulator catches any later announce and self-corrects).
+      return (await this.resolveChannel(this.detectTimeoutMs)) !== null;
     } catch {
       return false;
     }
