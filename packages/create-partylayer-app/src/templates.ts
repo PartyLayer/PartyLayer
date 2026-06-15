@@ -27,6 +27,11 @@ export const TEMPLATES: TemplateMeta[] = [
     label: 'Vue + Nuxt + Pinia',
     hint: 'Nuxt 3 SSR session, PartyLayer session in a Pinia store',
   },
+  {
+    id: 'vanilla',
+    label: 'Vanilla TypeScript',
+    hint: 'No framework — Vite + the @partylayer/sdk client API',
+  },
 ];
 
 export function isTemplateId(value: string): boolean {
