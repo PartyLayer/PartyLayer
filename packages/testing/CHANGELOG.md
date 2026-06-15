@@ -1,5 +1,12 @@
 # @partylayer/testing
 
+## 1.1.4
+
+### Patch Changes
+
+- Updated dependencies [a3f2ea4]
+  - @partylayer/provider@0.3.0
+
 ## 1.1.3
 
 ### Patch Changes
