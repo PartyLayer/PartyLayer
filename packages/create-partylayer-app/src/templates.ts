@@ -17,6 +17,11 @@ export const TEMPLATES: TemplateMeta[] = [
     label: 'React + Vite',
     hint: 'React 18, Vite, zero-config PartyLayerKit',
   },
+  {
+    id: 'next-ssr',
+    label: 'Next.js (SSR)',
+    hint: 'App Router, server-side session via cookieStorage',
+  },
 ];
 
 export function isTemplateId(value: string): boolean {
