@@ -123,6 +123,18 @@ const response = await transport.openConnectRequest(
 - ✅ State parameter validation
 - ✅ Popup closed detection
 
+### Session Restore (token-less)
+
+Popup/remote wallets surfaced through the **`discovery-adapter`** transport (e.g.
+Walley) typically **do not provide a reusable session token or public key** — and
+they don't need to. PartyLayer restores their session by **polling the wallet**
+(`status` / `listAccounts`) and persisting on a fresh connect, not by replaying a
+stored credential. Their adapter capabilities never include `events`.
+
+**Don't add your own "no token / no public key" check** in app code — a popup/remote
+wallet legitimately lacks one, and rejecting the connection on that basis breaks an
+otherwise-valid session. Let PartyLayer's poll-based restore handle it.
+
 ## PostMessage Transport
 
 ### Use Case
@@ -260,6 +272,17 @@ Use MockTransport in demo app for E2E tests:
 const adapter = new Cantor8Adapter({
   useMockTransport: process.env.NEXT_PUBLIC_MOCK_WALLETS === '1',
 });
+```
+
+**Playwright: use `domcontentloaded`, not `networkidle`.** The PartyLayer client
+keeps background connections open (provider channels, registry/SWR), so a page
+**never reaches `networkidle`** and `page.goto(url, { waitUntil: 'networkidle' })`
+hangs or captures an empty render. Wait on `'domcontentloaded'` (plus an explicit
+`waitForSelector` / `waitFor` for the element you assert):
+
+```typescript
+await page.goto(url, { waitUntil: 'domcontentloaded' });
+await page.getByRole('button', { name: /Connect Wallet/i }).waitFor();
 ```
 
 ## Best Practices
