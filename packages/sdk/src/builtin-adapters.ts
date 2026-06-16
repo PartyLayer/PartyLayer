@@ -43,7 +43,9 @@ export function getBuiltinAdapters(): WalletAdapter[] {
     new LoopAdapter(),      // 5N Loop - QR code / popup
     new Cantor8Adapter(),   // Cantor8 - deep link transport
     new NightlyAdapter(),   // Nightly - multichain wallet (injected)
-    new SendAdapter(),      // Send - passkey-based, kernel.id-guarded window.canton
+    // Send is served via the generic CIP-0103 announce path (registry
+    // transport:'announce') — no longer in defaults; SendAdapter stays exported
+    // below for opt-in manual/bespoke use.
   ];
 }
 
