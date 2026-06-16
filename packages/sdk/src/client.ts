@@ -47,7 +47,7 @@ import {
   type DiscoveredProvider,
 } from '@partylayer/provider';
 import { findMatchingWalletInfo } from '@partylayer/core';
-import { GenericAnnounceAdapter } from './announce-adapter';
+import { GenericAnnounceAdapter, type AnnounceAdapterConfig } from './announce-adapter';
 import { GenericDiscoveryAdapter } from './discovery-adapter';
 import {
   DEFAULT_REGISTRY_URL,
@@ -92,6 +92,25 @@ const SESSION_STORAGE_KEY = 'active_session';
 // storm — into ONE emit, bounding the consumer's re-list (and its discovery
 // handshake) to once per burst.
 const WALLETS_CHANGED_DEBOUNCE_MS = 50;
+
+/**
+ * Map a registry announce entry (`adapter.transport: 'announce'`) to the
+ * GenericAnnounceAdapter opt-in config: `events` from the entry's capabilities,
+ * the rest from its free-form `adapter.config`. (The programmatic `mapError`
+ * hook is supplied at construction — JSON registry data can't carry a function.)
+ */
+function deriveAnnounceConfig(entry: {
+  capabilities?: { events?: boolean };
+  adapter?: { config?: Record<string, unknown> };
+}): AnnounceAdapterConfig {
+  const cfg = entry.adapter?.config ?? {};
+  return {
+    events: entry.capabilities?.events === true,
+    restore: cfg.restore === true,
+    ledgerApi: cfg.ledgerApi === true,
+    metadata: cfg.metadata === true,
+  };
+}
 
 /**
  * Pre-resolved inputs for `adapter.connect()`, produced by `resolveConnectPlan`.
@@ -488,7 +507,33 @@ export class PartyLayerClient {
             >[0],
             base,
           );
-          if (known) continue; // known wallet → existing entry/adapter; no dup
+          if (known) {
+            // A bespoke/registered adapter already represents this wallet (e.g.
+            // Send) → unchanged: its existing entry + adapter serve it.
+            if (this.adapters.has(known.walletId)) continue;
+            // Opt-in (additive): a registry announce wallet (`transport: 'announce'`)
+            // with NO registered adapter is served by a CONFIGURED generic announce
+            // adapter, registered under its REGISTRY walletId so its picker entry
+            // resolves. Keyed STRICTLY on transport==='announce' — discovery-adapter
+            // entries are gated separately and never reach here.
+            try {
+              const entry = await this.registryClient.getWalletEntry(String(known.walletId));
+              if (entry?.adapter?.transport === 'announce') {
+                const configured = new GenericAnnounceAdapter({
+                  announceId: d.id,
+                  walletId: known.walletId,
+                  name: d.name ?? known.name,
+                  icon: d.icon,
+                  provider: d.provider,
+                  config: deriveAnnounceConfig(entry),
+                });
+                this.adapters.set(configured.walletId, configured);
+              }
+            } catch {
+              // Registry lookup failed — leave as-is (the base entry still lists it).
+            }
+            continue; // known wallet → existing entry; no dynamic dup entry
+          }
 
           // Unknown announced wallet → dynamic, target-scoped entry + adapter.
           const adapter = new GenericAnnounceAdapter({
