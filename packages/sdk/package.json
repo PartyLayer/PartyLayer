@@ -1,6 +1,6 @@
 {
   "name": "@partylayer/sdk",
-  "version": "0.10.2",
+  "version": "0.11.0",
   "description": "Main SDK for PartyLayer - Unified wallet integration for Canton Network",
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",
