@@ -103,6 +103,8 @@ export interface GenericAnnounceAdapterArgs {
 interface AnnounceStatus {
   isConnected?: boolean;
   connection?: { isConnected?: boolean };
+  /** Standard splice-wallet-kernel / CIP-0103 runtime kernel info (not wallet-specific). */
+  kernel?: { id?: string };
   network?: { networkId?: string; ledgerApi?: { baseUrl?: string } };
   session?: { userId?: string };
 }
@@ -336,6 +338,7 @@ function buildMetadata(
   const put = (k: string, v: unknown): void => {
     if (typeof v === 'string' && v.length > 0) meta[k] = v;
   };
+  put('kernelId', status?.kernel?.id);
   put('publicKey', account.publicKey);
   put('namespace', account.namespace);
   put('networkId', account.networkId);

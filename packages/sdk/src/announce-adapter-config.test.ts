@@ -125,6 +125,35 @@ describe('GenericAnnounceAdapter — opt-in config', () => {
     expect(without.session.metadata).toBeUndefined();
   });
 
+  it('(e-kernelId) metadata:true + status.kernel.id present → metadata.kernelId set', async () => {
+    const { adapter } = make(
+      { metadata: true },
+      { status: { isConnected: true, kernel: { id: 'kernel-abc' }, network: { networkId: 'canton:devnet' } } },
+    );
+    const res = await adapter.connect(ctx);
+    expect(res.session.metadata?.kernelId).toBe('kernel-abc');
+  });
+
+  it('(e-kernelId) metadata:true + status WITHOUT kernel → no kernelId key (put skips)', async () => {
+    const { adapter } = make(
+      { metadata: true },
+      { status: { isConnected: true, network: { networkId: 'canton:devnet' } } }, // no kernel
+    );
+    const res = await adapter.connect(ctx);
+    expect(res.session.metadata).toBeDefined();
+    expect('kernelId' in (res.session.metadata as object)).toBe(false);
+  });
+
+  it('(e-kernelId) no-config → buildMetadata not called, no kernelId, minimal session', async () => {
+    const { adapter } = make(
+      undefined,
+      { status: { isConnected: true, kernel: { id: 'kernel-abc' }, network: { networkId: 'canton:devnet' } } },
+    );
+    const res = await adapter.connect(ctx);
+    expect(res.session.metadata).toBeUndefined(); // metadataEnabled false ⇒ never built
+    expect(adapter.getCapabilities()).toEqual(['connect', 'signMessage', 'submitTransaction']);
+  });
+
   it('(f) mapError: translates a configured error, falls through otherwise', async () => {
     const mapError = (err: unknown) =>
       err instanceof Error && err.message === 'boom' ? new Error('MAPPED') : undefined;
