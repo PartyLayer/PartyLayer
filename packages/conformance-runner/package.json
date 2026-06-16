@@ -1,6 +1,6 @@
 {
   "name": "@partylayer/conformance-runner",
-  "version": "0.2.4",
+  "version": "0.2.5",
   "description": "CLI tool for running adapter conformance tests",
   "type": "module",
   "bin": {
