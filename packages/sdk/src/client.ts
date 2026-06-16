@@ -86,6 +86,13 @@ import type {
  */
 const SESSION_STORAGE_KEY = 'active_session';
 
+// Debounce window for the `wallets:changed` emit. Real extension injects land
+// across a few ticks (a microtask only coalesces same-tick), so a short timer
+// collapses a near-simultaneous burst — and the construction-time announce reply
+// storm — into ONE emit, bounding the consumer's re-list (and its discovery
+// handshake) to once per burst.
+const WALLETS_CHANGED_DEBOUNCE_MS = 50;
+
 /**
  * Pre-resolved inputs for `adapter.connect()`, produced by `resolveConnectPlan`.
  * When pre-warmed (see `warmPlans`), the popup-safe fast-path can reach
@@ -129,6 +136,8 @@ export class PartyLayerClient {
   // torn down in destroy(). Empty → listWallets() output is byte-identical.
   private readonly announceRegistry = new Map<string, DiscoveredProvider>();
   private announceUnsubscribe: (() => void) | null = null;
+  /** Pending debounced `wallets:changed` emit (coalesces an announce burst). */
+  private walletsChangedTimer: ReturnType<typeof setTimeout> | null = null;
   private origin: string;
 
   constructor(config: PartyLayerConfig) {
@@ -208,7 +217,7 @@ export class PartyLayerClient {
     // since construction — including late/slow extension injection.
     if (this.announceEnabled) {
       this.announceUnsubscribe = subscribeAnnouncedProviders(
-        (p) => this.announceRegistry.set(p.id, p),
+        (p) => this.onAnnounceAccumulated(p),
         { createProvider: (a) => createExtensionChannelProvider({ target: a.target ?? a.id }) },
       );
     }
@@ -399,6 +408,34 @@ export class PartyLayerClient {
    */
   refreshDiscovery(): void {
     this.announceEntriesCache = null;
+  }
+
+  /**
+   * Persistent-accumulator callback (mounted at construction). On each newly
+   * announced provider:
+   *   1. record it in the live `announceRegistry` (unchanged);
+   *   2. invalidate the one-shot `announceEntriesCache` — the SAME invalidation
+   *      as {@link refreshDiscovery}, so the next `listWallets()` re-aggregates
+   *      and surfaces the wallet. This does NOT touch `warmPlans` (those hold
+   *      only GenericDiscoveryAdapter popup plans — a disjoint set);
+   *   3. emit a DEBOUNCED `wallets:changed` signal so a reactive consumer (e.g.
+   *      the React provider) re-lists. The debounce coalesces a burst — and the
+   *      construction-time reply storm — into one emit (no re-discovery storm).
+   *
+   * Byte-identical idle: with zero announces this never fires — no invalidation,
+   * no emit, no re-list.
+   */
+  private onAnnounceAccumulated(p: DiscoveredProvider): void {
+    this.announceRegistry.set(p.id, p);
+    this.announceEntriesCache = null;
+    // Leading-scheduled, trailing-fire debounce: the first announce of a burst
+    // arms a single timer; further announces within the window are coalesced
+    // (cache already invalidated each time) and do not reschedule it.
+    if (this.walletsChangedTimer !== null) return;
+    this.walletsChangedTimer = setTimeout(() => {
+      this.walletsChangedTimer = null;
+      this.emit('wallets:changed', { type: 'wallets:changed', reason: 'announced' });
+    }, WALLETS_CHANGED_DEBOUNCE_MS);
   }
 
   /**
@@ -1084,10 +1121,15 @@ export class PartyLayerClient {
       this.telemetry.flush().catch(() => {});
     }
     
-    // Tear down the persistent announce subscription (remove the window listener).
+    // Tear down the persistent announce subscription (remove the window listener)
+    // and any pending debounced `wallets:changed` emit (no leak / late fire).
     this.announceUnsubscribe?.();
     this.announceUnsubscribe = null;
     this.announceRegistry.clear();
+    if (this.walletsChangedTimer !== null) {
+      clearTimeout(this.walletsChangedTimer);
+      this.walletsChangedTimer = null;
+    }
 
     this.eventHandlers.clear();
     this.activeSession = null;

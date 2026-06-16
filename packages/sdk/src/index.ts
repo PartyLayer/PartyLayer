@@ -42,6 +42,7 @@ export type {
   SessionDisconnectedEvent,
   SessionExpiredEvent,
   TxStatusEvent,
+  WalletsChangedEvent,
   ErrorEvent,
 } from './events';
 

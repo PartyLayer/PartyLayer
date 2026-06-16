@@ -181,12 +181,30 @@ export function PartyLayerProvider({
       }
     });
 
+    // Reactive wallet list: when a wallet announces late (e.g. Send injecting
+    // after the picker already loaded), the SDK emits 'wallets:changed' — re-list
+    // so the new wallet appears WITHOUT a manual refresh (mirrors EIP-6963/mipd:
+    // store emits, UI re-reads). listWallets() does the authoritative gating/
+    // filtering, so we re-call it rather than trusting an event payload.
+    const unsubscribeWalletsChanged = client.on('wallets:changed', () => {
+      if (!mounted) return;
+      client
+        .listWallets()
+        .then((next) => {
+          if (mounted) setWallets(next);
+        })
+        .catch(() => {
+          /* transient discovery failure — keep the current list */
+        });
+    });
+
     return () => {
       mounted = false;
       unsubscribeConnect();
       unsubscribeDisconnect();
       unsubscribeExpired();
       unsubscribeError();
+      unsubscribeWalletsChanged();
     };
   }, [client]);
 
