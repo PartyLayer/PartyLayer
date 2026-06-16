@@ -72,6 +72,14 @@ export interface AnnounceAdapterConfig {
   /** Populate the richer `session.metadata` on connect when the provider returns it. */
   metadata?: boolean;
   /**
+   * Declarative wallet-specific STATIC metadata (e.g. `{ signingMethod:
+   * 'webauthn-prf' }`) — the wagmi connector-property pattern (like rdns/iconUrl).
+   * Merged into `session.metadata` ONLY when `metadata` is enabled, and FILLS
+   * GAPS: runtime RPC values (from `status`/account) take precedence on a key
+   * collision (EIP-6963: the wallet's runtime announce is authoritative).
+   */
+  staticMetadata?: Record<string, string>;
+  /**
    * Optional error-translation hook. Given first crack at a thrown error: return
    * an `Error` to surface it, or `undefined` to fall through to the SDK's
    * built-in standard EIP-1193/-1474 mapping. A generic mechanism — not
@@ -133,6 +141,7 @@ export class GenericAnnounceAdapter implements WalletAdapter {
   readonly icon?: string;
   private readonly provider: CIP0103Provider;
   private readonly metadataEnabled: boolean;
+  private readonly staticMetadata?: Record<string, string>;
   private readonly mapError?: (err: unknown) => Error | undefined;
 
   // Optional WalletAdapter surface — assigned in the ctor ONLY when configured,
@@ -152,6 +161,7 @@ export class GenericAnnounceAdapter implements WalletAdapter {
 
     const config = args.config;
     this.metadataEnabled = config?.metadata === true;
+    this.staticMetadata = config?.staticMetadata;
     this.mapError = config?.mapError;
     if (config?.events) this.on = this.makeOn();
     if (config?.restore) this.restore = this.makeRestore();
@@ -202,8 +212,10 @@ export class GenericAnnounceAdapter implements WalletAdapter {
         network: (reportedNetwork ?? account.networkId ?? ctx.network) as NetworkId,
       };
       // Additive: richer metadata only when opted in AND the provider returned it.
+      // Static config fills gaps; runtime RPC wins on a key collision (static
+      // FIRST, RPC LAST). No staticMetadata ⇒ identical to the kernelId step.
       if (this.metadataEnabled) {
-        session.metadata = buildMetadata(status, account);
+        session.metadata = { ...(this.staticMetadata ?? {}), ...buildMetadata(status, account) };
       }
       return { partyId, session, capabilities: this.getCapabilities() };
     });
@@ -290,7 +302,12 @@ export class GenericAnnounceAdapter implements WalletAdapter {
         return {
           ...persisted,
           walletId: this.walletId,
-          metadata: { ...(persisted.metadata ?? {}), ...buildMetadata(status, account) },
+          // persisted (lowest) → static config → runtime RPC (wins).
+          metadata: {
+            ...(persisted.metadata ?? {}),
+            ...(this.staticMetadata ?? {}),
+            ...buildMetadata(status, account),
+          },
         };
       });
   }

@@ -104,12 +104,23 @@ function deriveAnnounceConfig(entry: {
   adapter?: { config?: Record<string, unknown> };
 }): AnnounceAdapterConfig {
   const cfg = entry.adapter?.config ?? {};
-  return {
+  const config: AnnounceAdapterConfig = {
     events: entry.capabilities?.events === true,
     restore: cfg.restore === true,
     ledgerApi: cfg.ledgerApi === true,
     metadata: cfg.metadata === true,
   };
+  // staticMetadata: declarative string→string only (JSON-safe, unlike mapError
+  // which is a function and is correctly omitted). Non-string values are dropped.
+  const sm = cfg.staticMetadata;
+  if (sm && typeof sm === 'object') {
+    const out: Record<string, string> = {};
+    for (const [k, v] of Object.entries(sm as Record<string, unknown>)) {
+      if (typeof v === 'string') out[k] = v;
+    }
+    if (Object.keys(out).length > 0) config.staticMetadata = out;
+  }
+  return config;
 }
 
 /**

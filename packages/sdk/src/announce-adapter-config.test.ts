@@ -154,6 +154,54 @@ describe('GenericAnnounceAdapter — opt-in config', () => {
     expect(adapter.getCapabilities()).toEqual(['connect', 'signMessage', 'submitTransaction']);
   });
 
+  it('(static-a) staticMetadata fills the gap: signingMethod present + RPC fields present', async () => {
+    const { adapter } = make({ metadata: true, staticMetadata: { signingMethod: 'webauthn-prf' } });
+    const res = await adapter.connect(ctx);
+    expect(res.session.metadata?.signingMethod).toBe('webauthn-prf'); // static
+    expect(res.session.metadata?.publicKey).toBe('PUBKEY'); // RPC still present
+  });
+
+  it('(static-b) COLLISION: RPC wins over staticMetadata on the same key (precedence proof)', async () => {
+    const { adapter } = make({
+      metadata: true,
+      staticMetadata: { networkId: 'STATIC-NET', signingMethod: 'webauthn-prf' },
+    });
+    const res = await adapter.connect(ctx);
+    expect(res.session.metadata?.networkId).toBe('canton:devnet'); // RPC (account.networkId) WINS
+    expect(res.session.metadata?.signingMethod).toBe('webauthn-prf'); // static-only key kept
+  });
+
+  it('(static-c) metadata:true + NO staticMetadata → byte-identical to the kernelId step', async () => {
+    const { adapter } = make({ metadata: true });
+    const res = await adapter.connect(ctx);
+    expect(res.session.metadata).toEqual({
+      publicKey: 'PUBKEY', namespace: 'NS', networkId: 'canton:devnet',
+      signingProviderId: 'webauthn-prf', hint: 'gen',
+      ledgerApiBaseUrl: 'https://api.example', userId: 'u1',
+    });
+    expect('signingMethod' in (res.session.metadata as object)).toBe(false);
+  });
+
+  it('(static-d) no-config → exactly 3 caps + session.metadata undefined (byte-identical)', async () => {
+    const { adapter } = make(undefined, { status: { isConnected: true, network: { networkId: 'canton:devnet' } } });
+    const res = await adapter.connect(ctx);
+    expect(adapter.getCapabilities()).toEqual(['connect', 'signMessage', 'submitTransaction']);
+    expect(res.session.metadata).toBeUndefined();
+  });
+
+  it('(static-f) restore merges staticMetadata: persisted < static < RPC', async () => {
+    const { adapter } = make({ restore: true, staticMetadata: { signingMethod: 'webauthn-prf', networkId: 'STATIC-NET' } });
+    const restored = await adapter.restore!(ctx, {
+      partyId: toPartyId('party::gen-1'),
+      metadata: { signingMethod: 'OLD', keepme: 'yes' },
+    } as never);
+    const meta = (restored as { metadata: Record<string, string> }).metadata;
+    expect(meta.signingMethod).toBe('webauthn-prf'); // static beats persisted
+    expect(meta.networkId).toBe('canton:devnet'); // RPC beats static
+    expect(meta.keepme).toBe('yes'); // persisted-only key preserved
+    expect(meta.publicKey).toBe('PUBKEY'); // RPC present
+  });
+
   it('(f) mapError: translates a configured error, falls through otherwise', async () => {
     const mapError = (err: unknown) =>
       err instanceof Error && err.message === 'boom' ? new Error('MAPPED') : undefined;
