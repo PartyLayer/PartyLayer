@@ -2,9 +2,9 @@
   "metadata": {
     "registryVersion": "1.0.0",
     "schemaVersion": "1.0.0",
-    "publishedAt": "2026-06-14T00:00:00Z",
+    "publishedAt": "2026-06-16T00:00:00Z",
     "channel": "stable",
-    "sequence": 10,
+    "sequence": 11,
     "publisher": "PartyLayer"
   },
   "wallets": [
@@ -151,10 +151,18 @@
         "submitTransaction": true,
         "transactionStatus": true,
         "switchNetwork": false,
-        "multiParty": false
+        "multiParty": false,
+        "events": true
       },
       "adapter": {
-        "type": "@partylayer/adapter-send"
+        "type": "@partylayer/adapter-send",
+        "transport": "announce",
+        "config": {
+          "metadata": true,
+          "restore": true,
+          "ledgerApi": true,
+          "staticMetadata": { "signingMethod": "webauthn-prf" }
+        }
       },
       "installation": {
         "windowProperty": "canton"
