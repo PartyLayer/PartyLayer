@@ -153,6 +153,13 @@ export class PartyLayerClient {
   private readonly warmPlans = new Map<WalletId, ConnectPlan>();
   private eventHandlers = new Map<string, Set<EventHandler>>();
   private activeSession: Session | null = null;
+  /**
+   * True when `activeSession` was revived AS-IS (no live `status()` probe) because
+   * its adapter wasn't registered yet at restore time (the lazy configured-announce
+   * case). Cleared once a live probe validates it (or on fresh connect). When set,
+   * `aggregateAnnouncedWallets` re-probes the session the moment that adapter is born.
+   */
+  private activeSessionNeedsProbe = false;
   public readonly registryClient: RegistryClient; // Expose for React hooks
   private logger: import('@partylayer/core').LoggerAdapter;
   private crypto: import('@partylayer/core').CryptoAdapter;
@@ -539,6 +546,35 @@ export class PartyLayerClient {
                   config: deriveAnnounceConfig(entry),
                 });
                 this.adapters.set(configured.walletId, configured);
+                // Restore hardening: if the active session was revived AS-IS (no
+                // live probe, because this adapter didn't exist at restore time),
+                // re-validate it NOW via the adapter's status() probe — matching
+                // bespoke's ctor-time probe. Fires only for the matching wallet,
+                // exactly once (flag cleared); guarded so it can't break listing.
+                const active = this.activeSession;
+                if (active && this.activeSessionNeedsProbe && active.walletId === configured.walletId && configured.restore) {
+                  try {
+                    const reprobed = await configured.restore(this.createAdapterContext(), {
+                      ...active,
+                      encrypted: '',
+                    });
+                    if (reprobed) {
+                      this.activeSession = reprobed;
+                      this.activeSessionNeedsProbe = false;
+                      await this.persistSession(reprobed);
+                      this.emit('session:connected', { type: 'session:connected', session: reprobed });
+                    } else {
+                      // Wallet disconnected between reloads — clear the stale as-is session.
+                      await this.removeSession(active.sessionId);
+                      this.activeSession = null;
+                      this.activeSessionNeedsProbe = false;
+                      this.emit('session:expired', { type: 'session:expired', sessionId: active.sessionId });
+                    }
+                  } catch (err) {
+                    // Re-probe failed — leave the session as-is; never break listWallets.
+                    this.logger.warn('Restore re-probe failed; leaving session as-is', err);
+                  }
+                }
               }
             } catch {
               // Registry lookup failed — leave as-is (the base entry still lists it).
@@ -838,6 +874,7 @@ export class PartyLayerClient {
 
     // Set active session
     this.activeSession = session;
+    this.activeSessionNeedsProbe = false; // fresh connect — no restore re-probe needed
 
     // Update registry status (may have changed during fetch)
     this.updateRegistryStatus();
@@ -1316,6 +1353,7 @@ export class PartyLayerClient {
 
         if (restored) {
           this.activeSession = restored;
+          this.activeSessionNeedsProbe = false; // adapter.restore already live-probed
           // Persist restored session (may have updated metadata)
           await this.persistSession(restored);
           
@@ -1343,6 +1381,10 @@ export class PartyLayerClient {
       // If restore not supported, use stored session as-is
       // (Some adapters don't support restore but session metadata is still valid)
       this.activeSession = session;
+      // Revived WITHOUT a live probe — e.g. a configured-announce wallet whose
+      // adapter isn't registered yet (it's born lazily in aggregateAnnouncedWallets).
+      // Flag it so that adapter, once created, re-validates this session via status().
+      this.activeSessionNeedsProbe = true;
       return session;
     } catch (err) {
       this.logger.warn('Failed to restore session', err);
