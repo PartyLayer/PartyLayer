@@ -1,5 +1,12 @@
 # @partylayer/react
 
+## 0.9.3
+
+### Patch Changes
+
+- Updated dependencies [5fdc6e8]
+  - @partylayer/sdk@0.12.0
+
 ## 0.9.2
 
 ### Patch Changes
