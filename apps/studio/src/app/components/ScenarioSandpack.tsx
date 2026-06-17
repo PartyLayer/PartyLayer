@@ -19,10 +19,7 @@ export function ScenarioSandpack() {
         template="react-ts"
         files={connectScenario.files}
         customSetup={{ dependencies: { ...connectScenario.dependencies } }}
-        // enableServiceWorker → Sandpack serves /public static files (the empty
-        // registry JSON) so the SDK's registry fetch gets valid JSON, not the
-        // HTML SPA-fallback that caused the connect-time JSON-parse TransportError.
-        options={{ activeFile: '/App.tsx', recompileMode: 'delayed', experimental_enableServiceWorker: true }}
+        options={{ activeFile: '/App.tsx', recompileMode: 'delayed' }}
       >
         <SandpackLayout>
           {/* Read-only code view (S8.3 swaps Monaco in for editing). */}
