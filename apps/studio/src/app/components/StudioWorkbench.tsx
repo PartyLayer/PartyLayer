@@ -2,9 +2,14 @@
 
 import { useState } from 'react';
 import dynamic from 'next/dynamic';
+import type { StudioScenario } from '../scenarios/types';
 import { connectScenario } from '../scenarios/connectScenario';
 import { submitScenario } from '../scenarios/submitScenario';
 import { signScenario } from '../scenarios/signScenario';
+import {
+  resilienceReconnectScenario,
+  resilienceDisconnectScenario,
+} from '../scenarios/resilienceScenarios';
 
 // Sandpack touches browser APIs → load client-only (no SSR/prerender attempt).
 const ScenarioSandpack = dynamic(
@@ -12,16 +17,20 @@ const ScenarioSandpack = dynamic(
   { ssr: false, loading: () => <div className="scenario-loading">Loading live preview…</div> },
 );
 
-type ScenarioKey = 'connect' | 'sign' | 'submit';
+type ScenarioKey = 'connect' | 'sign' | 'submit' | 'reconnect' | 'disconnect';
 
-const SCENARIOS: { key: ScenarioKey; label: string; ready: boolean }[] = [
-  { key: 'connect', label: 'Connect a wallet', ready: true },
-  { key: 'sign', label: 'Sign a message', ready: true },
-  { key: 'submit', label: 'Submit a transaction', ready: true },
+const SCENARIOS: { key: ScenarioKey; label: string; ready: boolean; scenario: StudioScenario }[] = [
+  { key: 'connect', label: 'Connect a wallet', ready: true, scenario: connectScenario },
+  { key: 'sign', label: 'Sign a message', ready: true, scenario: signScenario },
+  { key: 'submit', label: 'Submit a transaction', ready: true, scenario: submitScenario },
+  { key: 'reconnect', label: 'Session resilience — reconnect', ready: true, scenario: resilienceReconnectScenario },
+  { key: 'disconnect', label: 'Session resilience — disconnect', ready: true, scenario: resilienceDisconnectScenario },
 ];
 
 export function StudioWorkbench() {
   const [selected, setSelected] = useState<ScenarioKey>('connect');
+  const activeScenario =
+    SCENARIOS.find((s) => s.key === selected)?.scenario ?? connectScenario;
 
   return (
     <div className="studio">
@@ -60,13 +69,7 @@ export function StudioWorkbench() {
         </nav>
 
         <main className="studio-main">
-          {selected === 'connect' ? (
-            <ScenarioSandpack scenario={connectScenario} />
-          ) : selected === 'submit' ? (
-            <ScenarioSandpack scenario={submitScenario} />
-          ) : (
-            <ScenarioSandpack scenario={signScenario} />
-          )}
+          <ScenarioSandpack key={selected} scenario={activeScenario} />
         </main>
       </div>
     </div>
