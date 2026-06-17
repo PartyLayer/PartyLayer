@@ -221,8 +221,12 @@ export const studioClientOptions = {
   network: 'devnet',
   app: { name: 'PartyLayer Studio' },
   adapters: [new CantonDemoWalletAdapter()],
-  // Local path with no registry file → 404 → adapters-only (no cache to fall back to).
-  registryUrl: '/studio-sandbox-no-registry',
+  // Points at a VALID EMPTY registry JSON served by Sandpack from /public (SW on):
+  // getRegistry succeeds with wallets:[] → getWalletEntry('canton-demo') throws
+  // WalletNotFoundError (which the connect origin-allowlist check SWALLOWS), instead
+  // of JSON.parse choking on the dev server's HTML SPA-fallback (the prior
+  // TransportError). No live registry; no cache (noopStorage).
+  registryUrl: '/registry',
   storage: noopStorage,
   // Off → no canton:announceProvider discovery + no window.canton namespace scan,
   // so the mock's window.canton.demoWallet slot can't synthesize a phantom 2nd
@@ -253,6 +257,21 @@ root.render(
 );
 `;
 
+// HIDDEN empty registry — served by Sandpack from /public at
+// /registry/v1/stable/registry.json (registryUrl '/registry' + channel 'stable').
+// Schema-valid per validateRegistry (metadata + wallets:[]) so getRegistry SUCCEEDS
+// with no wallets → getWalletEntry throws WalletNotFoundError (swallowed by connect).
+const EMPTY_REGISTRY_JSON = JSON.stringify({
+  metadata: {
+    registryVersion: '1.0.0',
+    schemaVersion: '1.0.0',
+    publishedAt: '2026-06-16T00:00:00Z',
+    channel: 'stable',
+    sequence: 0,
+  },
+  wallets: [],
+});
+
 // HIDDEN mock module — the VERBATIM CIP-0103 mock (bd10bfa2) as an ES module.
 // Its IIFE self-executes on import (the entry imports it FIRST) → sets
 // window.canton.demoWallet synchronously, before React. Same RPC surface the
@@ -267,6 +286,7 @@ export const connectScenario = {
     '/studio-setup.ts': { code: STUDIO_SETUP_CODE, hidden: true },
     '/index.tsx': { code: STUDIO_ENTRY_CODE, hidden: true },
     '/studio-mock-inject.ts': { code: STUDIO_MOCK_INJECT_CODE, hidden: true },
+    '/public/registry/v1/stable/registry.json': { code: EMPTY_REGISTRY_JSON, hidden: true },
   },
   dependencies: {
     '@partylayer/react': '0.9.4',
