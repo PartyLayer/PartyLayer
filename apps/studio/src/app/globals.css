@@ -88,14 +88,45 @@ body {
 }
 
 .studio-rail-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
   padding: 8px 10px;
+  border: none;
   border-radius: 8px;
+  font: inherit;
   font-size: 14px;
+  text-align: left;
+  color: #374151;
+  background: transparent;
+  cursor: pointer;
+}
+
+.studio-rail-item:hover:not(:disabled) {
+  background: #f4f4f5;
+}
+
+.studio-rail-item--active {
+  background: #efeafe;
+  color: #4c3bcf;
+  font-weight: 600;
 }
 
 .studio-rail-item--placeholder {
   color: #9ca3af;
-  background: #f4f4f5;
+  cursor: default;
+}
+
+.studio-rail-soon {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #b0b3b8;
+  border: 1px solid #e6e6e6;
+  border-radius: 999px;
+  padding: 1px 6px;
 }
 
 .studio-rail-note {
@@ -108,9 +139,38 @@ body {
   flex: 1;
   min-width: 0;
   display: flex;
+  flex-direction: column;
+  padding: 20px;
+}
+
+/* When a placeholder (not the live scenario) is shown, center it. */
+.studio-main > .studio-placeholder {
+  margin: auto;
+}
+
+.scenario-sandpack {
+  flex: 1;
+  min-height: 0;
+}
+
+/* Let the Sandpack layout fill the main area; give code + preview real height. */
+.scenario-sandpack .sp-wrapper,
+.scenario-sandpack .sp-layout {
+  height: 100%;
+}
+
+.scenario-sandpack .sp-layout {
+  min-height: 520px;
+}
+
+.scenario-loading {
+  display: flex;
   align-items: center;
   justify-content: center;
-  padding: 40px;
+  height: 100%;
+  min-height: 520px;
+  color: #6b7280;
+  font-size: 14px;
 }
 
 .studio-placeholder {

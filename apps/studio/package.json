@@ -10,6 +10,7 @@
     "typecheck": "tsc --noEmit -p tsconfig.json"
   },
   "dependencies": {
+    "@codesandbox/sandpack-react": "^2.19.0",
     "@partylayer/react": "workspace:^",
     "@partylayer/sdk": "workspace:^",
     "@partylayer/session": "workspace:^",
