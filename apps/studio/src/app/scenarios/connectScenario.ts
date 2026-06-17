@@ -24,12 +24,23 @@ import { studioClientOptions } from './studio-setup';
 
 function Demo() {
   const { wallets } = useWallets();
-  const { connect, isConnecting } = useConnect();
+  const { connect, isConnecting, error } = useConnect();
   const [partyId, setPartyId] = useState<string | null>(null);
+  const [debug, setDebug] = useState<string | null>(null);
 
   async function onConnect(walletId: string) {
-    const session = await connect({ walletId });
-    if (session) setPartyId(String(session.partyId));
+    setDebug('clicked: connect(' + walletId + ') …');
+    try {
+      const session = await connect({ walletId });
+      setDebug('connect resolved → session = ' + JSON.stringify(session));
+      if (session) {
+        setPartyId(String(session.partyId));
+      } else {
+        setDebug('connect returned a falsy session (null) — connect threw internally and useConnect caught it. See useConnect.error below.');
+      }
+    } catch (e) {
+      setDebug('connect THREW: ' + (e instanceof Error ? e.name + ': ' + e.message : String(e)));
+    }
   }
 
   return (
@@ -54,6 +65,17 @@ function Demo() {
             {isConnecting ? 'Connecting…' : 'Connect ' + w.name}
           </button>
         ))
+      )}
+
+      {debug && (
+        <pre style={{ marginTop: 16, padding: 12, background: '#1e1e1e', color: '#0f0', fontSize: 12, whiteSpace: 'pre-wrap', borderRadius: 6 }}>
+          {debug}
+        </pre>
+      )}
+      {error && (
+        <pre style={{ marginTop: 8, padding: 12, background: '#2a0000', color: '#f88', fontSize: 12, whiteSpace: 'pre-wrap', borderRadius: 6 }}>
+          useConnect.error: {error.name}: {error.message}
+        </pre>
       )}
     </div>
   );
