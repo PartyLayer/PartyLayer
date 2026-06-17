@@ -1,7 +1,8 @@
 // S8.2 — connect-only scenario via the CIP-0103 mock wallet.
 // Hybrid layout (Option C): the VISIBLE /App.tsx is a clean teaching example;
-// the sandbox wiring lives in a HIDDEN /studio-setup.ts; the mock JS is inlined
-// in /public/index.html (no served-path dependency). Runs published @partylayer/*
+// the sandbox wiring lives in a HIDDEN /studio-setup.ts; the mock is injected by
+// a HIDDEN /studio-mock-inject.ts that the HIDDEN /index.tsx entry imports FIRST
+// (before React mounts, in the bundled module graph). Runs published @partylayer/*
 // via Sandpack's bundler.
 //
 // S8.2-fix-2: use the LOWER-LEVEL createPartyLayer + PartyLayerProvider form
@@ -208,30 +209,42 @@ export const studioClientOptions = {
 };
 `;
 
-/** HIDDEN Sandpack HTML — mock INLINED (no served path) so it runs before mount. */
-const INDEX_HTML = `<!DOCTYPE html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <title>PartyLayer Studio — Connect</title>
-    <!-- CIP-0103 mock wallet, inlined so it runs before React mounts → window.canton.demoWallet -->
-    <script>
-${MOCK_WALLET}
-    </script>
-  </head>
-  <body>
-    <div id="root"></div>
-  </body>
-</html>
+// HIDDEN entry — identical to the react-ts default (createRoot into #root +
+// StrictMode + ./styles.css) EXCEPT the first line: a side-effect import of the
+// mock module. ES import order guarantees the mock runs (and sets
+// window.canton.demoWallet) BEFORE React mounts — in the SAME bundled module
+// graph/window the adapter reads — so connect → installGuard → detectInstalled
+// finds the fixture. (The earlier index.html <script> didn't reliably run in
+// that context/timing.)
+const STUDIO_ENTRY_CODE = `import './studio-mock-inject';
+import React, { StrictMode } from 'react';
+import { createRoot } from 'react-dom/client';
+import './styles.css';
+
+import App from './App';
+
+const root = createRoot(document.getElementById('root'));
+root.render(
+  <StrictMode>
+    <App />
+  </StrictMode>
+);
 `;
 
-/** Scenario passed to Sandpack: visible App + hidden setup + hidden inlined-mock HTML. */
+// HIDDEN mock module — the VERBATIM CIP-0103 mock (bd10bfa2) as an ES module.
+// Its IIFE self-executes on import (the entry imports it FIRST) → sets
+// window.canton.demoWallet synchronously, before React. Same RPC surface the
+// CantonDemoWalletAdapter wraps 1:1.
+const STUDIO_MOCK_INJECT_CODE = MOCK_WALLET;
+
+/** Scenario passed to Sandpack: visible App + hidden setup + hidden entry (mock-first) + hidden mock module. */
 export const connectScenario = {
   title: 'Connect a wallet',
   files: {
     '/App.tsx': { code: CONNECT_APP_CODE, active: true },
     '/studio-setup.ts': { code: STUDIO_SETUP_CODE, hidden: true },
-    '/public/index.html': { code: INDEX_HTML, hidden: true },
+    '/index.tsx': { code: STUDIO_ENTRY_CODE, hidden: true },
+    '/studio-mock-inject.ts': { code: STUDIO_MOCK_INJECT_CODE, hidden: true },
   },
   dependencies: {
     '@partylayer/react': '0.9.4',
