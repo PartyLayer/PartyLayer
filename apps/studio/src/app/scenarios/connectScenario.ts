@@ -201,6 +201,10 @@ export const studioClientOptions = {
   // Local path with no registry file → 404 → adapters-only (no cache to fall back to).
   registryUrl: '/studio-sandbox-no-registry',
   storage: noopStorage,
+  // Off → no canton:announceProvider discovery + no window.canton namespace scan,
+  // so the mock's window.canton.demoWallet slot can't synthesize a phantom 2nd
+  // entry. listWallets then surfaces exactly the one registered adapter.
+  discovery: { announce: false },
 };
 `;
 
