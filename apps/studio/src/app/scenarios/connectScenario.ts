@@ -265,11 +265,49 @@ export const studioClientOptions = {
 // finds the fixture. (The earlier index.html <script> didn't reliably run in
 // that context/timing.)
 const STUDIO_ENTRY_CODE = `import './studio-mock-inject';
+import { MOCK_CONFIG } from './studio-mock-config';
 import React, { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import './styles.css';
 
 import App from './App';
+
+// Mock driver: apply the driver config (failure scenario + connect delay) to the
+// injected mock's connect — by WRAPPING window.canton.demoWallet.request, so the
+// proven bd10bfa2 mock IIFE stays byte-verbatim (the S8.2 success path is
+// structurally untouched). Runs at module-eval (after the mock import sets the
+// provider, before React mounts). A driver change rewrites /studio-mock-config.ts
+// → Sandpack recompiles → this re-runs with the new config.
+(function applyMockDriver() {
+  const demo = (window as any).canton && (window as any).canton.demoWallet;
+  if (!demo || typeof demo.request !== 'function') return;
+  const orig = demo.request.bind(demo);
+  const mapFail = (name) => {
+    const msgs = {
+      userRejected: 'User rejected the connection request (4001)',
+      insufficientTraffic: 'Insufficient traffic to complete the request',
+      synchronizerError: 'Synchronizer unavailable — chain disconnected (4901)',
+      transactionTimeout: 'Wallet did not respond in time (timeout)',
+      genericError: 'Wallet connection failed',
+    };
+    const e = new Error(msgs[name] || ('Mock failure: ' + name));
+    e.name = name; // surfaces as the scenario name in the connect diagnostics
+    return e;
+  };
+  demo.request = (args) => {
+    if (args && args.method === 'connect') {
+      const cfg = MOCK_CONFIG || {};
+      const run = () => (cfg.failConnect ? Promise.reject(mapFail(cfg.failConnect)) : orig(args));
+      if (cfg.connectDelayMs) {
+        return new Promise((resolve, reject) => {
+          setTimeout(() => run().then(resolve, reject), cfg.connectDelayMs);
+        });
+      }
+      return run();
+    }
+    return orig(args);
+  };
+})();
 
 const root = createRoot(document.getElementById('root'));
 root.render(
@@ -277,6 +315,15 @@ root.render(
     <App />
   </StrictMode>
 );
+`;
+
+// HIDDEN driver config — the connect scenario reads this to simulate failure +
+// delay. Default = today's success behavior (failConnect:null, no delay). The
+// MockDriverPanel rewrites this file (via sandpack.updateFile) → recompile.
+const MOCK_CONFIG_CODE = `export const MOCK_CONFIG: { failConnect: string | null; connectDelayMs: number } = {
+  failConnect: null,
+  connectDelayMs: 0,
+};
 `;
 
 // HIDDEN mock module — the VERBATIM CIP-0103 mock (bd10bfa2) as an ES module.
@@ -293,6 +340,7 @@ export const connectScenario = {
     '/studio-setup.ts': { code: STUDIO_SETUP_CODE, hidden: true },
     '/index.tsx': { code: STUDIO_ENTRY_CODE, hidden: true },
     '/studio-mock-inject.ts': { code: STUDIO_MOCK_INJECT_CODE, hidden: true },
+    '/studio-mock-config.ts': { code: MOCK_CONFIG_CODE, hidden: true },
   },
   dependencies: {
     '@partylayer/react': '0.9.4',
@@ -300,3 +348,27 @@ export const connectScenario = {
     '@partylayer/core': '0.9.0',
   },
 } as const;
+
+// ── Mock-driver config (S8.4) ────────────────────────────────────────────────
+/** Driver config the connect scenario reads (mirrors /studio-mock-config.ts). */
+export type MockDriverConfig = { failConnect: string | null; connectDelayMs: number };
+
+/** Default = today's success behavior. */
+export const DEFAULT_MOCK_CONFIG: MockDriverConfig = { failConnect: null, connectDelayMs: 0 };
+
+/** Failure scenarios the driver dropdown offers (value '' = success/none). */
+export const MOCK_FAILURE_SCENARIOS: { value: string; label: string }[] = [
+  { value: '', label: 'None (success)' },
+  { value: 'userRejected', label: 'User rejected (4001)' },
+  { value: 'insufficientTraffic', label: 'Insufficient traffic' },
+  { value: 'synchronizerError', label: 'Synchronizer error (4901)' },
+  { value: 'transactionTimeout', label: 'Transaction timeout' },
+  { value: 'genericError', label: 'Generic error' },
+];
+
+/** Serialize a driver config to the /studio-mock-config.ts file content. */
+export function mockConfigFile(cfg: MockDriverConfig): string {
+  return `export const MOCK_CONFIG: { failConnect: string | null; connectDelayMs: number } = ${JSON.stringify(
+    cfg,
+  )};\n`;
+}
