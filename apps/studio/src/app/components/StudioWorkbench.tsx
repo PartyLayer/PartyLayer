@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import dynamic from 'next/dynamic';
+import { connectScenario } from '../scenarios/connectScenario';
 
 // Sandpack touches browser APIs → load client-only (no SSR/prerender attempt).
 const ScenarioSandpack = dynamic(
@@ -58,7 +59,7 @@ export function StudioWorkbench() {
 
         <main className="studio-main">
           {selected === 'connect' ? (
-            <ScenarioSandpack />
+            <ScenarioSandpack scenario={connectScenario} />
           ) : (
             <div className="studio-placeholder">
               <h1 className="studio-placeholder-title">Coming soon</h1>
