@@ -1,19 +1,25 @@
-// S8.2 — the first runnable scenario: connect-only, via the CIP-0103 mock wallet.
-// Hybrid layout (Option C): the VISIBLE /App.tsx is a clean teaching example
-// (PartyLayerKit + hooks); the fixture wiring (a demo adapter + a local empty
-// registry) lives in a HIDDEN /studio-setup.ts; the mock JS is inlined directly
-// in /public/index.html's <script> (no served-path dependency) so
-// window.canton.demoWallet exists before React mounts. Runs published
-// @partylayer/* via Sandpack's bundler.
+// S8.2 — connect-only scenario via the CIP-0103 mock wallet.
+// Hybrid layout (Option C): the VISIBLE /App.tsx is a clean teaching example;
+// the sandbox wiring lives in a HIDDEN /studio-setup.ts; the mock JS is inlined
+// in /public/index.html (no served-path dependency). Runs published @partylayer/*
+// via Sandpack's bundler.
+//
+// S8.2-fix-2: use the LOWER-LEVEL createPartyLayer + PartyLayerProvider form
+// (instead of PartyLayerKit's auto-client) so the sandbox controls storage. A
+// no-op storage means NO persistent registry cache, so the 404 registry URL
+// yields an EMPTY registry (no cache fallback) → the picker lists ONLY the
+// fixture wallet, and connect → the (sole) demo adapter → partyId. Mirrors
+// wagmi's mock-connector-at-config-level approach.
 import { MOCK_WALLET } from './mockWallet';
 
-/** VISIBLE, read-only example — what a real dApp writes (clean hooks usage). */
-export const CONNECT_APP_CODE = `import { useState } from 'react';
-import { PartyLayerKit, useWallets, useConnect } from '@partylayer/react';
-// Studio runs one fixture wallet in a sandbox, so the adapter list and a local
-// (empty) registry come from ./studio-setup. A real dApp passes neither — it
-// uses PartyLayer's built-in adapters + the public registry.
-import { studioAdapters, STUDIO_REGISTRY_URL } from './studio-setup';
+/** VISIBLE, read-only example — clean, instructive lower-level usage. */
+export const CONNECT_APP_CODE = `import { useMemo, useState } from 'react';
+import { createPartyLayer } from '@partylayer/sdk';
+import { PartyLayerProvider, useWallets, useConnect } from '@partylayer/react';
+// A normal app uses <PartyLayerKit network appName> which builds the client for
+// you. This studio sandbox builds the client directly so it can run ONE fixture
+// wallet in isolation — no live registry, no persistent cache (see ./studio-setup).
+import { studioClientOptions } from './studio-setup';
 
 function Demo() {
   const { wallets } = useWallets();
@@ -53,25 +59,21 @@ function Demo() {
 }
 
 export default function App() {
+  const client = useMemo(() => createPartyLayer(studioClientOptions), []);
   return (
-    <PartyLayerKit
-      network="devnet"
-      appName="PartyLayer Studio"
-      adapters={studioAdapters}
-      registryUrl={STUDIO_REGISTRY_URL}
-    >
+    <PartyLayerProvider client={client}>
       <Demo />
-    </PartyLayerKit>
+    </PartyLayerProvider>
   );
 }
 `;
 
-/** HIDDEN sandbox wiring — a fixture adapter + a local empty registry. */
-const STUDIO_SETUP_CODE = `// Sandbox-only wiring (hidden). A real dApp needs NONE of this: it uses the
-// built-in adapters + the public registry. Here we register one fixture adapter
-// (wrapping the injected window.canton.demoWallet) and point the registry at a
-// local path with no file, so the SDK's registry fetch 404s and falls back to
-// adapters-only discovery → the list contains exactly the fixture wallet.
+/** HIDDEN sandbox wiring — fixture adapter + no-cache, no-live-registry client options. */
+const STUDIO_SETUP_CODE = `// Sandbox-only wiring (hidden). A real dApp needs NONE of this: it uses
+// <PartyLayerKit>, the built-in adapters, and the public registry. Here we build
+// the client directly with: one fixture adapter; a NO-OP storage (so there is no
+// persistent registry cache); and a local 404 registry URL (so the registry
+// fetch fails → adapters-only discovery → the picker lists exactly the fixture).
 import {
   toPartyId,
   toSignature,
@@ -84,6 +86,7 @@ import {
   type Session,
   type SignMessageParams,
   type SignedMessage,
+  type StorageAdapter,
   type WalletAdapter,
 } from '@partylayer/core';
 
@@ -181,14 +184,27 @@ export class CantonDemoWalletAdapter implements WalletAdapter {
   }
 }
 
-export const studioAdapters: WalletAdapter[] = [new CantonDemoWalletAdapter()];
+// No-op storage → NO persistent registry cache. Combined with the 404 registry
+// URL below, the registry fetch fails with nothing to fall back to, so
+// listWallets surfaces only the registered adapter(s) — exactly the fixture.
+const noopStorage: StorageAdapter = {
+  get: async () => null,
+  set: async () => {},
+  remove: async () => {},
+  clear: async () => {},
+};
 
-// Local path with no registry file → the SDK registry fetch 404s → adapters-only
-// discovery → the picker lists exactly the fixture wallet (deterministic sandbox).
-export const STUDIO_REGISTRY_URL = '/studio-sandbox-no-registry';
+export const studioClientOptions = {
+  network: 'devnet',
+  app: { name: 'PartyLayer Studio' },
+  adapters: [new CantonDemoWalletAdapter()],
+  // Local path with no registry file → 404 → adapters-only (no cache to fall back to).
+  registryUrl: '/studio-sandbox-no-registry',
+  storage: noopStorage,
+};
 `;
 
-/** HIDDEN Sandpack HTML — the mock is INLINED here (no served path to get wrong). */
+/** HIDDEN Sandpack HTML — mock INLINED (no served path) so it runs before mount. */
 const INDEX_HTML = `<!DOCTYPE html>
 <html lang="en">
   <head>
