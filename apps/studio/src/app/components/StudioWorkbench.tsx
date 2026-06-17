@@ -4,6 +4,7 @@ import { useState } from 'react';
 import dynamic from 'next/dynamic';
 import { connectScenario } from '../scenarios/connectScenario';
 import { submitScenario } from '../scenarios/submitScenario';
+import { signScenario } from '../scenarios/signScenario';
 
 // Sandpack touches browser APIs → load client-only (no SSR/prerender attempt).
 const ScenarioSandpack = dynamic(
@@ -15,7 +16,7 @@ type ScenarioKey = 'connect' | 'sign' | 'submit';
 
 const SCENARIOS: { key: ScenarioKey; label: string; ready: boolean }[] = [
   { key: 'connect', label: 'Connect a wallet', ready: true },
-  { key: 'sign', label: 'Sign a message', ready: false },
+  { key: 'sign', label: 'Sign a message', ready: true },
   { key: 'submit', label: 'Submit a transaction', ready: true },
 ];
 
@@ -64,10 +65,7 @@ export function StudioWorkbench() {
           ) : selected === 'submit' ? (
             <ScenarioSandpack scenario={submitScenario} />
           ) : (
-            <div className="studio-placeholder">
-              <h1 className="studio-placeholder-title">Coming soon</h1>
-              <p className="studio-placeholder-text">This pattern lands in a later step.</p>
-            </div>
+            <ScenarioSandpack scenario={signScenario} />
           )}
         </main>
       </div>
