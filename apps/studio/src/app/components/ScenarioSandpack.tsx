@@ -9,11 +9,11 @@ import { SandpackProvider, SandpackLayout, SandpackPreview, useSandpack } from '
 import dynamic from 'next/dynamic';
 import { useState } from 'react';
 import {
-  connectScenario,
   DEFAULT_MOCK_CONFIG,
   mockConfigFile,
   type MockDriverConfig,
 } from '../scenarios/connectScenario';
+import type { StudioScenario } from '../scenarios/types';
 import { MockDriverPanel } from './MockDriverPanel';
 
 // Monaco (~5MB) loaded client-only so it stays out of the SSR/build server bundle.
@@ -39,14 +39,14 @@ function DriverControls() {
   );
 }
 
-export function ScenarioSandpack() {
+export function ScenarioSandpack({ scenario }: { scenario: StudioScenario }) {
   return (
     <div className="scenario-sandpack">
       <SandpackProvider
         template="react-ts"
-        files={connectScenario.files}
-        customSetup={{ dependencies: { ...connectScenario.dependencies } }}
-        options={{ activeFile: '/App.tsx', recompileMode: 'delayed' }}
+        files={scenario.files}
+        customSetup={{ dependencies: { ...scenario.dependencies } }}
+        options={{ activeFile: scenario.activeFile ?? '/App.tsx', recompileMode: 'delayed' }}
       >
         <DriverControls />
         <SandpackLayout>
