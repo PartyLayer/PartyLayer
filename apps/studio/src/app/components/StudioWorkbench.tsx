@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import dynamic from 'next/dynamic';
 import { connectScenario } from '../scenarios/connectScenario';
+import { submitScenario } from '../scenarios/submitScenario';
 
 // Sandpack touches browser APIs → load client-only (no SSR/prerender attempt).
 const ScenarioSandpack = dynamic(
@@ -15,7 +16,7 @@ type ScenarioKey = 'connect' | 'sign' | 'submit';
 const SCENARIOS: { key: ScenarioKey; label: string; ready: boolean }[] = [
   { key: 'connect', label: 'Connect a wallet', ready: true },
   { key: 'sign', label: 'Sign a message', ready: false },
-  { key: 'submit', label: 'Submit a transaction', ready: false },
+  { key: 'submit', label: 'Submit a transaction', ready: true },
 ];
 
 export function StudioWorkbench() {
@@ -60,6 +61,8 @@ export function StudioWorkbench() {
         <main className="studio-main">
           {selected === 'connect' ? (
             <ScenarioSandpack scenario={connectScenario} />
+          ) : selected === 'submit' ? (
+            <ScenarioSandpack scenario={submitScenario} />
           ) : (
             <div className="studio-placeholder">
               <h1 className="studio-placeholder-title">Coming soon</h1>
