@@ -207,11 +207,36 @@ export class CantonDemoWalletAdapter implements WalletAdapter {
   }
 }
 
-// No-op storage → NO persistent registry cache. Combined with the 404 registry
-// URL below, the registry fetch fails with nothing to fall back to, so
-// listWallets surfaces only the registered adapter(s) — exactly the fixture.
-const noopStorage: StorageAdapter = {
-  get: async () => null,
+// Seeded read-only storage: returns a pre-built CachedRegistry wrapping an EMPTY
+// registry for 'registry_stable'. loadFromStorage seeds memoryCache at ctor, so
+// getRegistry serves it CACHE-FIRST and never does a network fetch — avoiding the
+// CORS preflight the If-None-Match header triggers on cross-origin hosts (the
+// real connect-blocker). getWalletEntry('canton-demo') then finds no entry →
+// WalletNotFoundError, which connect's origin-allowlist check swallows.
+const SEED_EMPTY_REGISTRY = {
+  metadata: {
+    registryVersion: '1.0.0',
+    schemaVersion: '1.0.0',
+    publishedAt: '2026-06-16T00:00:00Z',
+    channel: 'stable',
+    sequence: 0,
+  },
+  wallets: [],
+};
+const seededStorage: StorageAdapter = {
+  get: async (key: string) => {
+    if (key === 'registry_stable') {
+      // CachedRegistry shape (status.ts): { registry, verified, fetchedAt, etag?, sequence }
+      return JSON.stringify({
+        registry: SEED_EMPTY_REGISTRY,
+        verified: true,
+        fetchedAt: Date.now(), // fresh → age < cacheTtl (1h) → getRegistry returns cache, no sync fetch
+        etag: 'studio-seed',
+        sequence: 0,
+      });
+    }
+    return null;
+  },
   set: async () => {},
   remove: async () => {},
   clear: async () => {},
@@ -221,18 +246,13 @@ export const studioClientOptions = {
   network: 'devnet',
   app: { name: 'PartyLayer Studio' },
   adapters: [new CantonDemoWalletAdapter()],
-  // Points at a VALID EMPTY registry JSON hosted on CORS-enabled
-  // raw.githubusercontent.com (SW-independent — Sandpack's /public SW serving did
-  // NOT work on the remote bundler). getRegistry then succeeds with wallets:[] →
-  // getWalletEntry('canton-demo') throws WalletNotFoundError (the connect
-  // origin-allowlist check SWALLOWS it), instead of JSON.parse choking on the dev
-  // server's HTML SPA-fallback. No live registry; no cache (noopStorage). The
-  // base resolves to .../apps/studio/sandbox-registry/v1/stable/registry.json.
-  registryUrl: 'https://raw.githubusercontent.com/PartyLayer/PartyLayer/main/apps/studio/sandbox-registry',
-  storage: noopStorage,
+  // Harmless placeholder: getRegistry serves the seeded cache before any fetch, so
+  // this URL is only touched by the fire-and-forget background refresh (whose
+  // failure is internal to the registry-client and never reaches connect).
+  registryUrl: '/studio-registry',
+  storage: seededStorage,
   // Off → no canton:announceProvider discovery + no window.canton namespace scan,
-  // so the mock's window.canton.demoWallet slot can't synthesize a phantom 2nd
-  // entry. listWallets then surfaces exactly the one registered adapter.
+  // so the mock's window.canton.demoWallet slot can't synthesize a phantom entry.
   discovery: { announce: false },
 };
 `;
