@@ -1,6 +1,10 @@
 'use client';
 
 import { useDocs } from '../layout';
+// Generated from the wallet registry (registry/v1/stable/registry.json) by
+// scripts/gen-readme.mjs — `pnpm gate:readme` keeps this in sync. Table 1 below
+// renders from it so the built-in wallet list can never drift from the registry.
+import { GENERATED_WALLETS } from './wallets.generated';
 
 export default function WalletsPage() {
   const { H1, H2, H3, P, Code, CodeBlock, PropsTable, Callout, PrevNext, Strong, UL, LI } = useDocs();
@@ -9,7 +13,7 @@ export default function WalletsPage() {
     <>
       <H1>Wallets & Adapters</H1>
       <P>
-        PartyLayer includes 5 built-in wallet adapters and supports custom adapters for any Canton wallet.
+        PartyLayer includes built-in wallet adapters and supports custom adapters for any Canton wallet.
         Wallets are discovered through the registry and CIP-0103 native provider detection.
       </P>
 
@@ -23,25 +27,18 @@ export default function WalletsPage() {
         }}>
           <thead>
             <tr style={{ background: '#F5F6F8' }}>
-              {['Wallet', 'Transport', 'Detection', 'Auto-registered'].map(h => (
+              {['Wallet', 'Networks', 'Opt-in', 'Adapter'].map(h => (
                 <th key={h} style={{ textAlign: 'left', padding: '10px 14px', fontWeight: 600, color: '#0B0F1A', borderBottom: '1px solid rgba(15,23,42,0.10)', fontSize: 13 }}>{h}</th>
               ))}
             </tr>
           </thead>
           <tbody>
-            {[
-              { name: 'Console Wallet', transport: 'PostMessage / QR / Deep Link', detection: 'Extension + mobile', auto: 'Yes' },
-              { name: '5N Loop', transport: 'QR Code / Popup', detection: 'Mobile / Web app', auto: 'Yes' },
-              { name: 'Cantor8 (C8)', transport: 'Deep Link', detection: 'Browser extension', auto: 'Yes' },
-              { name: 'Nightly', transport: 'Injected', detection: 'window.nightly.canton', auto: 'Yes' },
-              { name: 'Bron', transport: 'OAuth', detection: 'Enterprise config', auto: 'No' },
-              { name: 'Send', transport: 'Injected', detection: 'window.canton (kernel.id guard)', auto: 'Yes' },
-            ].map(w => (
-              <tr key={w.name} style={{ borderBottom: '1px solid rgba(15,23,42,0.10)' }}>
+            {GENERATED_WALLETS.map(w => (
+              <tr key={w.id} style={{ borderBottom: '1px solid rgba(15,23,42,0.10)' }}>
                 <td style={{ padding: '10px 14px', fontWeight: 500, color: '#0B0F1A' }}>{w.name}</td>
-                <td style={{ padding: '10px 14px', color: '#64748B' }}>{w.transport}</td>
-                <td style={{ padding: '10px 14px', color: '#64748B', fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace', fontSize: 12.5 }}>{w.detection}</td>
-                <td style={{ padding: '10px 14px', color: w.auto === 'Yes' ? '#166534' : '#92400E', fontWeight: 500 }}>{w.auto}</td>
+                <td style={{ padding: '10px 14px', color: '#64748B' }}>{w.networks.join(', ')}</td>
+                <td style={{ padding: '10px 14px', color: w.optIn ? '#92400E' : '#166534', fontWeight: 500 }}>{w.optIn ? 'Yes' : 'No'}</td>
+                <td style={{ padding: '10px 14px', color: '#64748B', fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace', fontSize: 12.5 }}>{w.adapter}</td>
               </tr>
             ))}
           </tbody>
@@ -49,8 +46,10 @@ export default function WalletsPage() {
       </div>
 
       <Callout type="note">
-        All wallets except <Strong>Bron</Strong> are auto-registered when using <Code>{'PartyLayerKit'}</Code>.
-        Bron requires explicit configuration because it needs an OAuth client ID.
+        Wallets marked <Strong>Opt-in</Strong> (<Strong>Bron</Strong>, <Strong>WalletConnect</Strong>) require explicit
+        configuration — register them via <Code>{'config.adapters'}</Code> (Bron needs an OAuth client ID;
+        WalletConnect needs the optional <Code>{'@walletconnect/*'}</Code> peers). The rest are auto-registered
+        when using <Code>{'PartyLayerKit'}</Code>.
       </Callout>
 
       <H2 id="capability-matrix">Capability Matrix</H2>
@@ -80,6 +79,8 @@ export default function WalletsPage() {
               { name: 'Nightly', connect: true, signMessage: true, signTransaction: false, submitTransaction: true, ledgerApi: 'full', restore: true },
               { name: 'Bron', connect: true, signMessage: true, signTransaction: true, submitTransaction: false, ledgerApi: 'full', restore: true },
               { name: 'Send', connect: true, signMessage: true, signTransaction: false, submitTransaction: true, ledgerApi: 'full', restore: true },
+              { name: 'Walley', connect: true, signMessage: true, signTransaction: false, submitTransaction: true, ledgerApi: 'none', restore: true },
+              { name: 'WalletConnect', connect: true, signMessage: true, signTransaction: false, submitTransaction: true, ledgerApi: 'full', restore: true },
             ].map(w => (
               <tr key={w.name} style={{ borderBottom: '1px solid rgba(15,23,42,0.10)' }}>
                 <td style={{ padding: '10px 14px', fontWeight: 500, color: '#0B0F1A' }}>{w.name}</td>

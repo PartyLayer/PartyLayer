@@ -24,7 +24,7 @@
     "registry:sign": "tsx scripts/registry/sign.ts",
     "registry:verify": "tsx scripts/registry/verify.ts",
     "verify:e2e": "tsx scripts/verify/e2e.ts",
-    "gate": "pnpm gate:build && pnpm typecheck && pnpm lint && pnpm gate:test && pnpm gate:conformance && pnpm gate:api && pnpm gate:registry",
+    "gate": "pnpm gate:build && pnpm typecheck && pnpm lint && pnpm gate:test && pnpm gate:conformance && pnpm gate:api && pnpm gate:registry && pnpm gate:readme",
     "//gate:build": "Serial (--workspace-concurrency=1): the parallel -r build can start a dependent package (e.g. testing) before a workspace dep (session) has flushed its .d.ts, an intermittent DTS-resolution race; serial enforces topological order deterministically. Reinstall after dependency edits keeps the graph correct — this is belt-and-suspenders (cf. examples.yml serialization precedent).",
     "gate:build": "pnpm -r --filter \"@partylayer/*\" --workspace-concurrency=1 build",
     "gate:test": "CI=true pnpm -r test",
@@ -32,6 +32,8 @@
     "gate:api": "node --test scripts/gate/api-normalize.test.mjs && node scripts/gate/api-snapshot.mjs",
     "gate:api:update": "node scripts/gate/api-snapshot.mjs --update",
     "gate:registry": "node scripts/gate/registry-check.mjs",
+    "gen:readme": "node scripts/gen-readme.mjs --write",
+    "gate:readme": "node scripts/gen-readme.mjs",
     "changeset": "changeset",
     "version-packages": "changeset version",
     "release": "pnpm build && changeset publish"
