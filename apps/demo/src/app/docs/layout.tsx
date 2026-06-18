@@ -90,6 +90,12 @@ const SIDEBAR_NAV = [
       { label: 'Advanced', href: '/docs/advanced' },
     ],
   },
+  {
+    category: 'Cookbook',
+    items: [
+      { label: 'Pattern Cookbook', href: '/docs/cookbook' },
+    ],
+  },
 ];
 
 /* Flatten for prev/next navigation */
@@ -195,6 +201,18 @@ const SEARCH_INDEX: SearchEntry[] = [
   { title: 'Registry Internals', section: 'Advanced', href: '/docs/advanced#registry', keywords: ['registry', 'signed', 'manifest', 'cache', 'verification', 'fallback'] },
   { title: 'Security', section: 'Advanced', href: '/docs/advanced#security', keywords: ['security', 'CSP', 'origin', 'transport', 'encryption'] },
   { title: 'Production Checklist', section: 'Advanced', href: '/docs/advanced#production-checklist', keywords: ['production', 'checklist', 'deploy', 'best practices'] },
+
+  // Cookbook
+  { title: 'Pattern Cookbook', href: '/docs/cookbook', keywords: ['cookbook', 'patterns', 'recipes', 'examples', 'runnable', 'studio', 'when not to use'] },
+  { title: 'Connect a wallet', section: 'Cookbook', href: '/docs/cookbook#connect-a-wallet', keywords: ['connect', 'useConnect', 'useWallets', 'recipe', 'studio'] },
+  { title: 'Sign a message', section: 'Cookbook', href: '/docs/cookbook#sign-a-message', keywords: ['sign', 'useSignMessage', 'signature', 'recipe', 'studio'] },
+  { title: 'Submit a transaction', section: 'Cookbook', href: '/docs/cookbook#submit-a-transaction', keywords: ['submit', 'useSubmitTransaction', 'transaction', 'lifecycle', 'recipe', 'studio'] },
+  { title: 'Reconnect a session', section: 'Cookbook', href: '/docs/cookbook#reconnect-a-session', keywords: ['reconnect', 'restore', 'useSession', 'resilience', 'rehydrate', 'recipe', 'studio'] },
+  { title: 'Terminal disconnect', section: 'Cookbook', href: '/docs/cookbook#terminal-disconnect', keywords: ['disconnect', 'useSession', 'terminal', 'sign out', 'recipe', 'studio'] },
+  { title: 'PartyLayer + React Query', section: 'Cookbook', href: '/docs/cookbook#react-query', keywords: ['react query', 'tanstack', 'useQuery', 'useMutation', 'wagmi', 'recipe', 'studio'] },
+  { title: 'Multi-framework (React / Vue / Vanilla)', section: 'Cookbook', href: '/docs/cookbook#multi-framework', keywords: ['vue', 'vanilla', 'react', 'framework', 'createPartyLayerSession', 'recipe', 'studio'] },
+  { title: 'Error handling', section: 'Cookbook', href: '/docs/cookbook#error-handling', keywords: ['error', 'UserRejectedError', 'reset', 'PartyLayerError', 'recipe', 'studio'] },
+  { title: 'Capability gating', section: 'Cookbook', href: '/docs/cookbook#capability-gating', keywords: ['capability', 'CapabilityNotSupportedError', 'gating', 'submit', 'recipe', 'studio'] },
 ];
 
 function searchDocs(query: string): SearchEntry[] {
