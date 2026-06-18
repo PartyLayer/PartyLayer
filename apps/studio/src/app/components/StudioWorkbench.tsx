@@ -10,6 +10,7 @@ import {
   resilienceReconnectScenario,
   resilienceDisconnectScenario,
 } from '../scenarios/resilienceScenarios';
+import { reactQueryScenario } from '../scenarios/reactQueryScenario';
 
 // Sandpack touches browser APIs → load client-only (no SSR/prerender attempt).
 const ScenarioSandpack = dynamic(
@@ -17,7 +18,7 @@ const ScenarioSandpack = dynamic(
   { ssr: false, loading: () => <div className="scenario-loading">Loading live preview…</div> },
 );
 
-type ScenarioKey = 'connect' | 'sign' | 'submit' | 'reconnect' | 'disconnect';
+type ScenarioKey = 'connect' | 'sign' | 'submit' | 'reconnect' | 'disconnect' | 'react-query';
 
 const SCENARIOS: { key: ScenarioKey; label: string; ready: boolean; scenario: StudioScenario }[] = [
   { key: 'connect', label: 'Connect a wallet', ready: true, scenario: connectScenario },
@@ -25,6 +26,7 @@ const SCENARIOS: { key: ScenarioKey; label: string; ready: boolean; scenario: St
   { key: 'submit', label: 'Submit a transaction', ready: true, scenario: submitScenario },
   { key: 'reconnect', label: 'Session resilience — reconnect', ready: true, scenario: resilienceReconnectScenario },
   { key: 'disconnect', label: 'Session resilience — disconnect', ready: true, scenario: resilienceDisconnectScenario },
+  { key: 'react-query', label: 'React Query + DevTools', ready: true, scenario: reactQueryScenario },
 ];
 
 export function StudioWorkbench() {
