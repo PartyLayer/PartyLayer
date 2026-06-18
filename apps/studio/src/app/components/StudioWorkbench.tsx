@@ -55,10 +55,16 @@ export function StudioWorkbench() {
     <div className="studio">
       <header className="studio-header">
         <div className="studio-brand">
-          <span className="studio-logo" aria-hidden="true">◆</span>
-          <span className="studio-title">PartyLayer Studio</span>
+          <span className="studio-logo" aria-hidden="true">
+            <img src="/favicon-new.svg" alt="" width={34} height={34} className="studio-logo-mark" />
+          </span>
+          <div className="studio-wordmark">
+            <span className="studio-title">
+              PartyLayer <span className="studio-title-sub">Studio</span>
+            </span>
+            <span className="studio-subtitle">Interactive pattern workbench</span>
+          </div>
         </div>
-        <p className="studio-subtitle">Live, runnable PartyLayer patterns</p>
       </header>
 
       <div className="studio-body">
