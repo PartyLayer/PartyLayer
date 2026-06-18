@@ -193,14 +193,15 @@ function Demo() {
   }
 
   return (
-    <div style={{ fontFamily: 'system-ui, sans-serif', padding: 24, lineHeight: 1.6 }}>
+    <div style={{ fontFamily: 'system-ui, sans-serif', padding: 20, lineHeight: 1.6 }}>
+      <style>{".pl-btn{font:inherit;font-size:14px;font-weight:600;color:#0B0F1A;background:#FFCC00;border:none;border-radius:10px;padding:10px 16px;box-shadow:0 1px 2px rgba(15,23,42,0.05);cursor:pointer;transition:background .18s cubic-bezier(0.2,0.8,0.2,1),box-shadow .18s cubic-bezier(0.2,0.8,0.2,1)}.pl-btn:hover:not(:disabled){background:#E6B800;box-shadow:0 2px 4px rgba(15,23,42,0.08)}.pl-btn:disabled{opacity:.6;cursor:default}"}</style>
       <h2 style={{ margin: '0 0 4px' }}>Connect a wallet — React</h2>
       <p style={{ margin: '0 0 12px', color: '#6b7280', fontSize: 13 }}>
         <code>@partylayer/react</code> — useConnect() / useWallets().
       </p>
       {partyId ? (
         <p>
-          ✅ Connected — partyId:{' '}
+          Connected — partyId:{' '}
           <code style={{ background: '#dcfce7', padding: '2px 6px', borderRadius: 6 }}>{partyId}</code>
         </p>
       ) : (
@@ -209,7 +210,7 @@ function Demo() {
             key={String(w.walletId)}
             onClick={() => onConnect(String(w.walletId))}
             disabled={isConnecting}
-            style={{ padding: '8px 16px', fontSize: 14, cursor: 'pointer' }}
+            className="pl-btn"
           >
             {isConnecting ? 'Connecting…' : 'Connect ' + w.name}
           </button>
@@ -265,7 +266,7 @@ async function onConnect() {
 </script>
 
 <template>
-  <div style="font-family: system-ui, sans-serif; padding: 24px; line-height: 1.6;">
+  <div style="font-family: system-ui, sans-serif; padding: 20px; line-height: 1.6;">
     <h2 style="margin: 0 0 4px;">Connect a wallet — Vue</h2>
     <p style="margin: 0 0 12px; color: #6b7280; font-size: 13px;">
       <code>@partylayer/vue</code> — useSession() / useAccount() over the injected CIP-0103 wallet.
@@ -277,16 +278,22 @@ async function onConnect() {
       v-if="!party"
       @click="onConnect"
       :disabled="isConnecting"
-      style="padding: 8px 16px; font-size: 14px; cursor: pointer;"
+      class="pl-btn"
     >
       {{ isConnecting ? 'Connecting…' : 'Connect Canton Demo Wallet' }}
     </button>
     <p v-else>
-      ✅ Connected — partyId:
+      Connected — partyId:
       <code style="background: #dcfce7; padding: 2px 6px; border-radius: 6px;">{{ party }}</code>
     </p>
   </div>
 </template>
+
+<style>
+.pl-btn{font:inherit;font-size:14px;font-weight:600;color:#0B0F1A;background:#FFCC00;border:none;border-radius:10px;padding:10px 16px;box-shadow:0 1px 2px rgba(15,23,42,0.05);cursor:pointer;transition:background .18s cubic-bezier(0.2,0.8,0.2,1),box-shadow .18s cubic-bezier(0.2,0.8,0.2,1)}
+.pl-btn:hover:not(:disabled){background:#E6B800;box-shadow:0 2px 4px rgba(15,23,42,0.08)}
+.pl-btn:disabled{opacity:.6;cursor:default}
+</style>
 `;
 
 const VUE_MAIN_CODE = `import './studio-mock-inject';
@@ -313,12 +320,17 @@ const client = createPartyLayer(studioClientOptions);
 
 const root = document.getElementById('app')!;
 root.innerHTML = \`
-  <div style="font-family: system-ui, sans-serif; padding: 24px; line-height: 1.6;">
+  <style>
+    .pl-btn{font:inherit;font-size:14px;font-weight:600;color:#0B0F1A;background:#FFCC00;border:none;border-radius:10px;padding:10px 16px;box-shadow:0 1px 2px rgba(15,23,42,0.05);cursor:pointer;transition:background .18s cubic-bezier(0.2,0.8,0.2,1),box-shadow .18s cubic-bezier(0.2,0.8,0.2,1)}
+    .pl-btn:hover:not(:disabled){background:#E6B800;box-shadow:0 2px 4px rgba(15,23,42,0.08)}
+    .pl-btn:disabled{opacity:.6;cursor:default}
+  </style>
+  <div style="font-family: system-ui, sans-serif; padding: 20px; line-height: 1.6;">
     <h2 style="margin: 0 0 4px;">Connect a wallet — Vanilla</h2>
     <p style="margin: 0 0 12px; color: #6b7280; font-size: 13px;">
       <code>@partylayer/sdk</code> — createPartyLayer() + client.connect() directly.
     </p>
-    <button id="connect-btn" style="padding: 8px 16px; font-size: 14px; cursor: pointer;">
+    <button id="connect-btn" class="pl-btn">
       Connect Canton Demo Wallet
     </button>
     <pre id="out" style="margin-top: 16px; padding: 12px; background: #1e1e1e; color: #0f0; font-size: 12px; white-space: pre-wrap; border-radius: 6px;"></pre>
@@ -335,7 +347,7 @@ btn.onclick = async () => {
     const wallets = await client.listWallets();
     const session = await client.connect(wallets[0] ? { walletId: wallets[0].walletId } : undefined);
     out.textContent = session
-      ? '✅ Connected — partyId: ' + String(session.partyId)
+      ? 'Connected — partyId: ' + String(session.partyId)
       : 'connect returned null (see console)';
   } catch (e) {
     out.textContent = 'connect error: ' + (e instanceof Error ? e.message : String(e));

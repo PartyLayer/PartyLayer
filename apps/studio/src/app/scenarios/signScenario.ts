@@ -49,7 +49,8 @@ function Demo() {
   }
 
   return (
-    <div style={{ fontFamily: 'system-ui, sans-serif', padding: 24, lineHeight: 1.6 }}>
+    <div style={{ fontFamily: 'system-ui, sans-serif', padding: 20, lineHeight: 1.6 }}>
+      <style>{".pl-btn{font:inherit;font-size:14px;font-weight:600;color:#0B0F1A;background:#FFCC00;border:none;border-radius:10px;padding:10px 16px;box-shadow:0 1px 2px rgba(15,23,42,0.05);cursor:pointer;transition:background .18s cubic-bezier(0.2,0.8,0.2,1),box-shadow .18s cubic-bezier(0.2,0.8,0.2,1)}.pl-btn:hover:not(:disabled){background:#E6B800;box-shadow:0 2px 4px rgba(15,23,42,0.08)}.pl-btn:disabled{opacity:.6;cursor:default}"}</style>
       <h2 style={{ margin: '0 0 12px' }}>Sign a message</h2>
 
       {!partyId ? (
@@ -58,7 +59,7 @@ function Demo() {
             key={String(w.walletId)}
             onClick={() => onConnect(String(w.walletId))}
             disabled={isConnecting}
-            style={{ padding: '8px 16px', fontSize: 14, cursor: 'pointer' }}
+            className="pl-btn"
           >
             {isConnecting ? 'Connecting…' : 'Connect ' + w.name}
           </button>
@@ -66,7 +67,7 @@ function Demo() {
       ) : (
         <>
           <p style={{ margin: '0 0 12px' }}>
-            ✅ Connected — partyId:{' '}
+            Connected — partyId:{' '}
             <code style={{ background: '#f1f1f4', padding: '2px 6px', borderRadius: 6 }}>
               {partyId}
             </code>
@@ -82,7 +83,7 @@ function Demo() {
             <button
               onClick={onSign}
               disabled={isSigning || !message}
-              style={{ padding: '8px 16px', fontSize: 14, cursor: 'pointer' }}
+              className="pl-btn"
             >
               {isSigning ? 'Signing…' : 'Sign message'}
             </button>
@@ -91,7 +92,7 @@ function Demo() {
           {signed && (
             <div style={{ marginTop: 16, fontSize: 13 }}>
               <p style={{ margin: '0 0 4px' }}>
-                ✍️ signature:{' '}
+                signature:{' '}
                 <code style={{ background: '#f1f1f4', padding: '2px 6px', borderRadius: 6, wordBreak: 'break-all' }}>
                   {String(signed.signature)}
                 </code>
@@ -112,12 +113,12 @@ function Demo() {
       )}
 
       {signed && (
-        <pre style={{ marginTop: 16, padding: 12, background: '#1e1e1e', color: '#0f0', fontSize: 12, whiteSpace: 'pre-wrap', borderRadius: 6 }}>
+        <pre style={{ marginTop: 16, padding: 12, background: '#1e1e1e', color: '#0f0', fontSize: 12, whiteSpace: 'pre-wrap', borderRadius: 6, maxHeight: 200, overflowY: 'auto' }}>
           {'SignedMessage:\\n' + JSON.stringify(signed, null, 2)}
         </pre>
       )}
       {error && (
-        <pre style={{ marginTop: 8, padding: 12, background: '#2a0000', color: '#f88', fontSize: 12, whiteSpace: 'pre-wrap', borderRadius: 6 }}>
+        <pre style={{ marginTop: 8, padding: 12, background: '#2a0000', color: '#f88', fontSize: 12, whiteSpace: 'pre-wrap', borderRadius: 6, maxHeight: 200, overflowY: 'auto' }}>
           useSignMessage.error: {error.name}: {error.message}
         </pre>
       )}

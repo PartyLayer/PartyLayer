@@ -77,7 +77,8 @@ function Demo() {
   const partyId = session ? String(session.partyId) : null;
 
   return (
-    <div style={{ fontFamily: 'system-ui, sans-serif', padding: 24, lineHeight: 1.6 }}>
+    <div style={{ fontFamily: 'system-ui, sans-serif', padding: 20, lineHeight: 1.6 }}>
+      <style>{".pl-btn{font:inherit;font-size:14px;font-weight:600;color:#0B0F1A;background:#FFCC00;border:none;border-radius:10px;padding:10px 16px;box-shadow:0 1px 2px rgba(15,23,42,0.05);cursor:pointer;transition:background .18s cubic-bezier(0.2,0.8,0.2,1),box-shadow .18s cubic-bezier(0.2,0.8,0.2,1)}.pl-btn:hover:not(:disabled){background:#E6B800;box-shadow:0 2px 4px rgba(15,23,42,0.08)}.pl-btn:disabled{opacity:.6;cursor:default}"}</style>
       <h2 style={{ margin: '0 0 4px' }}>React Query + DevTools</h2>
       <p style={{ margin: '0 0 12px', color: '#6b7280', fontSize: 13 }}>
         PartyLayer has no React Query dependency — this is the app-level integration. Open the
@@ -102,7 +103,7 @@ function Demo() {
         <button
           onClick={() => connectMutation.mutate()}
           disabled={connectMutation.isPending || !!partyId}
-          style={{ padding: '8px 16px', fontSize: 14, cursor: 'pointer' }}
+          className="pl-btn"
         >
           {connectMutation.isPending ? 'Connecting…' : partyId ? 'Connected' : 'Connect (mutation)'}
         </button>
@@ -116,13 +117,13 @@ function Demo() {
         <button
           onClick={() => signMutation.mutate(message)}
           disabled={signMutation.isPending || !partyId}
-          style={{ padding: '8px 16px', fontSize: 14, cursor: 'pointer' }}
+          className="pl-btn"
         >
           {signMutation.isPending ? 'Signing…' : 'Sign (mutation)'}
         </button>
       </div>
 
-      <pre style={{ marginTop: 16, padding: 12, background: '#1e1e1e', color: '#0f0', fontSize: 12, whiteSpace: 'pre-wrap', borderRadius: 6 }}>
+      <pre style={{ marginTop: 16, padding: 12, background: '#1e1e1e', color: '#0f0', fontSize: 12, whiteSpace: 'pre-wrap', borderRadius: 6, maxHeight: 200, overflowY: 'auto' }}>
         {[
           'session query  : ' + sessionQuery.status + (sessionQuery.isFetching ? ' (fetching)' : ''),
           'connect mutation: ' + connectMutation.status,
@@ -132,7 +133,7 @@ function Demo() {
       </pre>
 
       {(connectMutation.error || signMutation.error) && (
-        <pre style={{ marginTop: 8, padding: 12, background: '#2a0000', color: '#f88', fontSize: 12, whiteSpace: 'pre-wrap', borderRadius: 6 }}>
+        <pre style={{ marginTop: 8, padding: 12, background: '#2a0000', color: '#f88', fontSize: 12, whiteSpace: 'pre-wrap', borderRadius: 6, maxHeight: 200, overflowY: 'auto' }}>
           {connectMutation.error ? 'connect error: ' + connectMutation.error.message : ''}
           {signMutation.error ? 'sign error: ' + signMutation.error.message : ''}
         </pre>

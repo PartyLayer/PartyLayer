@@ -324,7 +324,8 @@ function Demo() {
   }
 
   return (
-    <div style={{ fontFamily: 'system-ui, sans-serif', padding: 24, lineHeight: 1.6 }}>
+    <div style={{ fontFamily: 'system-ui, sans-serif', padding: 20, lineHeight: 1.6 }}>
+      <style>{".pl-btn{font:inherit;font-size:14px;font-weight:600;color:#0B0F1A;background:#FFCC00;border:none;border-radius:10px;padding:10px 16px;box-shadow:0 1px 2px rgba(15,23,42,0.05);cursor:pointer;transition:background .18s cubic-bezier(0.2,0.8,0.2,1),box-shadow .18s cubic-bezier(0.2,0.8,0.2,1)}.pl-btn:hover:not(:disabled){background:#E6B800;box-shadow:0 2px 4px rgba(15,23,42,0.08)}.pl-btn:disabled{opacity:.6;cursor:default}"}</style>
       <h2 style={{ margin: '0 0 4px' }}>Session resilience — reconnect</h2>
       <p style={{ margin: '0 0 12px', color: '#6b7280', fontSize: 13 }}>
         A transient drop / page reload re-probes the live wallet and lands back connected — automatically.
@@ -349,7 +350,7 @@ function Demo() {
             key={String(w.walletId)}
             onClick={() => onConnect(String(w.walletId))}
             disabled={isConnecting}
-            style={{ padding: '8px 16px', fontSize: 14, cursor: 'pointer' }}
+            className="pl-btn"
           >
             {isConnecting ? 'Connecting…' : 'Connect ' + w.name}
           </button>
@@ -358,14 +359,14 @@ function Demo() {
         <button
           onClick={onReconnect}
           disabled={account.isReconnecting}
-          style={{ padding: '8px 16px', fontSize: 14, cursor: 'pointer' }}
+          className="pl-btn"
         >
           {account.isReconnecting ? 'Reconnecting…' : 'Simulate reconnect (restore)'}
         </button>
       )}
 
       {log.length > 0 && (
-        <pre style={{ marginTop: 16, padding: 12, background: '#1e1e1e', color: '#0f0', fontSize: 12, whiteSpace: 'pre-wrap', borderRadius: 6 }}>
+        <pre style={{ marginTop: 16, padding: 12, background: '#1e1e1e', color: '#0f0', fontSize: 12, whiteSpace: 'pre-wrap', borderRadius: 6, maxHeight: 200, overflowY: 'auto' }}>
           {log.join('\\n')}
         </pre>
       )}
@@ -434,7 +435,8 @@ function Demo() {
   }
 
   return (
-    <div style={{ fontFamily: 'system-ui, sans-serif', padding: 24, lineHeight: 1.6 }}>
+    <div style={{ fontFamily: 'system-ui, sans-serif', padding: 20, lineHeight: 1.6 }}>
+      <style>{".pl-btn{font:inherit;font-size:14px;font-weight:600;color:#0B0F1A;background:#FFCC00;border:none;border-radius:10px;padding:10px 16px;box-shadow:0 1px 2px rgba(15,23,42,0.05);cursor:pointer;transition:background .18s cubic-bezier(0.2,0.8,0.2,1),box-shadow .18s cubic-bezier(0.2,0.8,0.2,1)}.pl-btn:hover:not(:disabled){background:#E6B800;box-shadow:0 2px 4px rgba(15,23,42,0.08)}.pl-btn:disabled{opacity:.6;cursor:default}"}</style>
       <h2 style={{ margin: '0 0 4px' }}>Session resilience — disconnect is terminal</h2>
       <p style={{ margin: '0 0 12px', color: '#6b7280', fontSize: 13 }}>
         The flip side of resilience: an EXPLICIT disconnect is final. Unlike a transient drop,
@@ -461,7 +463,7 @@ function Demo() {
               key={String(w.walletId)}
               onClick={() => onConnect(String(w.walletId))}
               disabled={isConnecting}
-              style={{ padding: '8px 16px', fontSize: 14, cursor: 'pointer' }}
+              className="pl-btn"
             >
               {isConnecting ? 'Connecting…' : 'Connect ' + w.name}
             </button>
@@ -470,7 +472,7 @@ function Demo() {
           {account.isDisconnected && log.some((l) => l.indexOf('EXPLICIT') !== -1) && (
             <button
               onClick={onTryRestore}
-              style={{ padding: '8px 16px', fontSize: 14, cursor: 'pointer' }}
+              className="pl-btn"
             >
               Attempt restore (should stay disconnected)
             </button>
@@ -479,14 +481,14 @@ function Demo() {
       ) : (
         <button
           onClick={onDisconnect}
-          style={{ padding: '8px 16px', fontSize: 14, cursor: 'pointer' }}
+          className="pl-btn"
         >
           Disconnect (explicit)
         </button>
       )}
 
       {log.length > 0 && (
-        <pre style={{ marginTop: 16, padding: 12, background: '#1e1e1e', color: '#0f0', fontSize: 12, whiteSpace: 'pre-wrap', borderRadius: 6 }}>
+        <pre style={{ marginTop: 16, padding: 12, background: '#1e1e1e', color: '#0f0', fontSize: 12, whiteSpace: 'pre-wrap', borderRadius: 6, maxHeight: 200, overflowY: 'auto' }}>
           {log.join('\\n')}
         </pre>
       )}
