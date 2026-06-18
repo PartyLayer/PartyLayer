@@ -2,9 +2,9 @@
   "metadata": {
     "registryVersion": "1.0.0",
     "schemaVersion": "1.0.0",
-    "publishedAt": "2026-06-16T00:00:00Z",
+    "publishedAt": "2026-06-18T00:00:00Z",
     "channel": "stable",
-    "sequence": 11,
+    "sequence": 12,
     "publisher": "PartyLayer"
   },
   "wallets": [
@@ -214,6 +214,33 @@
         "native": true,
         "evidence": "https://walley.cc",
         "since": "2026-06-13"
+      }
+    },
+    {
+      "id": "walletconnect",
+      "name": "WalletConnect",
+      "description": "Connect Canton wallets over WalletConnect (hosted/mobile, e.g. Nightly mobile). Opt-in adapter wrapping @canton-network/dapp-sdk's official WalletConnect adapter.",
+      "homepage": "https://walletconnect.network",
+      "icon": "https://registry.partylayer.xyz/wallets/walletconnect.svg",
+      "supportedNetworks": ["devnet", "testnet", "mainnet"],
+      "capabilities": {
+        "signMessage": true,
+        "signTransaction": false,
+        "submitTransaction": true,
+        "transactionStatus": false,
+        "switchNetwork": false,
+        "multiParty": false
+      },
+      "adapter": {
+        "type": "@partylayer/adapter-walletconnect",
+        "requiresConfig": true
+      },
+      "installation": { "remote": true },
+      "sdkVersion": ">=0.3.0",
+      "cip0103": {
+        "native": true,
+        "evidence": "https://www.npmjs.com/package/@canton-network/dapp-sdk",
+        "since": "2026-06-18"
       }
     }
   ]
