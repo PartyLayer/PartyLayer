@@ -43,12 +43,16 @@ export function ScenarioSandpack({ scenario }: { scenario: StudioScenario }) {
   return (
     <div className="scenario-sandpack">
       <SandpackProvider
-        template="react-ts"
+        // Default 'react-ts' so the existing react-ts scenarios (none set
+        // `template`) are byte-for-byte unchanged; the framework scenario sets
+        // 'vue' / 'vanilla-ts' to run the same connect demo cross-framework.
+        template={(scenario.template ?? 'react-ts') as 'react-ts'}
         files={scenario.files}
         customSetup={{ dependencies: { ...scenario.dependencies } }}
         options={{ activeFile: scenario.activeFile ?? '/App.tsx', recompileMode: 'delayed' }}
       >
-        <DriverControls />
+        {/* Driver shown unless the scenario opts out (framework variants do). */}
+        {!scenario.hideMockDriver && <DriverControls />}
         <SandpackLayout>
           {/* Editable Monaco (replaces the read-only SandpackCodeViewer). */}
           <ScenarioMonacoEditor />

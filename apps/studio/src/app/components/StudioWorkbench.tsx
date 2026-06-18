@@ -11,6 +11,12 @@ import {
   resilienceDisconnectScenario,
 } from '../scenarios/resilienceScenarios';
 import { reactQueryScenario } from '../scenarios/reactQueryScenario';
+import {
+  FRAMEWORK_VARIANTS,
+  frameworkReactScenario,
+  type FrameworkKey,
+} from '../scenarios/frameworkScenario';
+import { FrameworkToggle } from './FrameworkToggle';
 
 // Sandpack touches browser APIs → load client-only (no SSR/prerender attempt).
 const ScenarioSandpack = dynamic(
@@ -18,8 +24,17 @@ const ScenarioSandpack = dynamic(
   { ssr: false, loading: () => <div className="scenario-loading">Loading live preview…</div> },
 );
 
-type ScenarioKey = 'connect' | 'sign' | 'submit' | 'reconnect' | 'disconnect' | 'react-query';
+type ScenarioKey =
+  | 'connect'
+  | 'sign'
+  | 'submit'
+  | 'reconnect'
+  | 'disconnect'
+  | 'react-query'
+  | 'framework';
 
+// The framework item is special-cased in render (toggle + variant), so its
+// `scenario` here is only the default rail target.
 const SCENARIOS: { key: ScenarioKey; label: string; ready: boolean; scenario: StudioScenario }[] = [
   { key: 'connect', label: 'Connect a wallet', ready: true, scenario: connectScenario },
   { key: 'sign', label: 'Sign a message', ready: true, scenario: signScenario },
@@ -27,10 +42,12 @@ const SCENARIOS: { key: ScenarioKey; label: string; ready: boolean; scenario: St
   { key: 'reconnect', label: 'Session resilience — reconnect', ready: true, scenario: resilienceReconnectScenario },
   { key: 'disconnect', label: 'Session resilience — disconnect', ready: true, scenario: resilienceDisconnectScenario },
   { key: 'react-query', label: 'React Query + DevTools', ready: true, scenario: reactQueryScenario },
+  { key: 'framework', label: 'Framework toggle', ready: true, scenario: frameworkReactScenario },
 ];
 
 export function StudioWorkbench() {
   const [selected, setSelected] = useState<ScenarioKey>('connect');
+  const [framework, setFramework] = useState<FrameworkKey>('react');
   const activeScenario =
     SCENARIOS.find((s) => s.key === selected)?.scenario ?? connectScenario;
 
@@ -71,7 +88,14 @@ export function StudioWorkbench() {
         </nav>
 
         <main className="studio-main">
-          <ScenarioSandpack key={selected} scenario={activeScenario} />
+          {selected === 'framework' ? (
+            <div className="scenario-sandpack">
+              <FrameworkToggle framework={framework} onChange={setFramework} />
+              <ScenarioSandpack key={'framework-' + framework} scenario={FRAMEWORK_VARIANTS[framework]} />
+            </div>
+          ) : (
+            <ScenarioSandpack key={selected} scenario={activeScenario} />
+          )}
         </main>
       </div>
     </div>
