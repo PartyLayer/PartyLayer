@@ -85,9 +85,13 @@ test.describe('WalletConnect — real relay pairing in the browser', () => {
     // (a) Real pairing URI produced in the browser → relay path works.
     const wcUri = (await wcLink.getAttribute('href')) || '';
     expect(wcUri).toMatch(/^wc:[0-9a-f]+@2\?/); // wc: v2 pairing URI
-    // QR scan affordance is shown.
-    await expect(modal.getByText(/Scan with your Canton wallet/i)).toBeVisible();
-    await expect(modal.locator('svg').first()).toBeVisible(); // rendered QR
+    // QR scan affordance is shown. Asserted BEFORE the heavy storage dump below,
+    // with a generous timeout: on the real-relay path the modal's transition into
+    // the QR view + rendering this copy can race past the default 5s (real relay +
+    // dapp-sdk DOM is slow/variable). Tolerating that latency does not weaken
+    // coverage — the wc: URI above already proves the relay path.
+    await expect(modal.getByText(/Scan with your Canton wallet/i)).toBeVisible({ timeout: 20_000 });
+    await expect(modal.locator('svg').first()).toBeVisible({ timeout: 20_000 }); // rendered QR
 
     // (b) Proposal carries the demo's configured network (canton:da-devnet, via A1).
     // The relayed proposal is symKey-encrypted, but WC persists the dApp's own
