@@ -278,9 +278,9 @@ export class SendAdapter implements WalletAdapter {
             `(received ${safePreview(payload)})`,
         );
       }
-      if (!payload.commands || typeof payload.commands !== 'object') {
+      if (!Array.isArray(payload.commands) || payload.commands.length === 0) {
         throw new Error(
-          "submitTransaction signedTx is missing the required 'commands' field " +
+          "submitTransaction signedTx is missing or empty required 'commands' array " +
             `(received ${safePreview(payload)})`,
         );
       }

@@ -35,7 +35,7 @@ interface SendLedgerApiRequest { requestMethod: 'GET' | 'POST' | 'PUT' | 'DELETE
 interface SendLedgerApiResult { response: string; }
 interface SendNetwork { networkId: string; ledgerApi?: { baseUrl: string; }; }
 interface SendPrepareExecuteAndWaitResult { tx: SendTxExecutedEvent; }
-interface SendPrepareSubmissionRequest { commandId?: string; commands: Record<string, unknown>; actAs?: string[]; readAs?: string[]; disclosedContracts?: SendDisclosedContract[]; synchronizerId?: string; packageIdSelectionPreference?: string[]; }
+interface SendPrepareSubmissionRequest { commandId?: string; commands: SendCommand[]; actAs?: string[]; readAs?: string[]; disclosedContracts?: SendDisclosedContract[]; synchronizerId?: string; packageIdSelectionPreference?: string[]; }
 interface SendProviderOptions { provider?: CIP0103Provider; announceTimeoutMs?: number; detectTimeoutMs?: number; waitForProvider?: (predicate: (p: DiscoveredProvider) => boolean, options?: WaitForAnnouncedOptions) => Promise<DiscoveredProvider | null>; discover?: (options?: AnnounceDiscoveryOptions) => Promise<DiscoveredProvider[]>; }
 interface SendRpcSchemas { status: { params: void; result: SendStatusResponse; }; connect: { params: void; result: SendStatusResponse; }; disconnect: { params: void; result: null; }; isConnected: { params: void; result: SendStatusResponse; }; getActiveNetwork: { params: void; result: SendNetwork; }; getPrimaryAccount: { params: void; result: SendAccount; }; listAccounts: { params: void; result: SendAccount[]; }; prepareExecute: { params: SendPrepareSubmissionRequest; result: null; }; prepareExecuteAndWait: { params: SendPrepareSubmissionRequest; result: SendPrepareExecuteAndWaitResult; }; signMessage: { params: SendSignMessageRequest; result: SendSignMessageResult; }; ledgerApi: { params: SendLedgerApiRequest; result: SendLedgerApiResult; }; }
 interface SendSignMessageRequest { message: string; }
@@ -43,6 +43,7 @@ interface SendSignMessageResult { signature: string; }
 interface SendStatusResponse { kernel: SendKernelInfo; isConnected: boolean; isNetworkConnected: boolean; networkReason?: string; network?: SendNetwork; session?: { accessToken: string; userId: string; }; }
 interface SendTxExecutedEvent { status: 'executed'; commandId: string; payload: { updateId: string; completionOffset: number; }; }
 interface Window { canton?: SendCantonProvider; }
+type SendCommand = { CreateCommand: Record<string, unknown>; } | { ExerciseCommand: Record<string, unknown>; } | { CreateAndExerciseCommand: Record<string, unknown>; } | { ExerciseByKeyCommand: Record<string, unknown>; };
 type SendEventListener = (...args: unknown[]) => void;
 type SendEventName = 'accountsChanged' | 'txChanged';
 type SendRpcMethod = 'status' | 'connect' | 'disconnect' | 'isConnected' | 'getActiveNetwork' | 'getPrimaryAccount' | 'listAccounts' | 'prepareExecute' | 'prepareExecuteAndWait' | 'signMessage' | 'ledgerApi';

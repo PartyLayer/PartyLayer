@@ -73,9 +73,17 @@ export interface SendDisclosedContract {
   synchronizerId?: string;
 }
 
+/** A Daml command atom — wrapped variant, mirror of the Canton Ledger API Command union.
+ *  Inner payload shapes are intentionally opaque (defined by the Canton Ledger API). */
+export type SendCommand =
+  | { CreateCommand: Record<string, unknown> }
+  | { ExerciseCommand: Record<string, unknown> }
+  | { CreateAndExerciseCommand: Record<string, unknown> }
+  | { ExerciseByKeyCommand: Record<string, unknown> };
+
 export interface SendPrepareSubmissionRequest {
   commandId?: string;
-  commands: Record<string, unknown>;
+  commands: SendCommand[];
   actAs?: string[];
   readAs?: string[];
   disclosedContracts?: SendDisclosedContract[];

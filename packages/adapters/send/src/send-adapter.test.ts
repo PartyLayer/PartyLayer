@@ -107,7 +107,7 @@ const baseSubmitPayload: SendPrepareSubmissionRequest = {
         choiceArgument: {},
       },
     },
-  ] as unknown as Record<string, unknown>,
+  ],
   actAs: [REAL_PRIMARY_ACCOUNT.partyId],
 };
 
@@ -627,7 +627,7 @@ describe('SendAdapter: submitTransaction', () => {
             choiceArgument: {},
           },
         },
-      ] as unknown as Record<string, unknown>,
+      ],
     };
     const err = await adapter
       .submitTransaction(ctx, session, { signedTx: legacyPayload })
@@ -652,7 +652,7 @@ describe('SendAdapter: submitTransaction', () => {
             choiceArgument: {},
           },
         },
-      ] as unknown as Record<string, unknown>,
+      ],
     };
     const err = await adapter
       .submitTransaction(ctx, session, { signedTx: shortFormPayload })
