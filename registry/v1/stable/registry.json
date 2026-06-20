@@ -2,9 +2,9 @@
   "metadata": {
     "registryVersion": "1.0.0",
     "schemaVersion": "1.0.0",
-    "publishedAt": "2026-06-19T00:00:00Z",
+    "publishedAt": "2026-06-20T00:00:00Z",
     "channel": "stable",
-    "sequence": 13,
+    "sequence": 14,
     "publisher": "PartyLayer"
   },
   "wallets": [
@@ -229,7 +229,9 @@
         "submitTransaction": true,
         "transactionStatus": false,
         "switchNetwork": false,
-        "multiParty": false
+        "multiParty": false,
+        "mobileConnect": true,
+        "remoteSigner": true
       },
       "adapter": {
         "type": "@partylayer/adapter-walletconnect",
