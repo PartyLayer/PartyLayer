@@ -18,6 +18,8 @@
 import {
   CapabilityNotSupportedError,
   TransportError,
+  normalizeLedgerMethodLower,
+  ledgerApiBodyToObject,
   toPartyId,
   toSignature,
   toTransactionHash,
@@ -350,39 +352,13 @@ export class SendAdapter implements WalletAdapter {
         resource: params.resource,
       });
 
-      // Send's @sigilry/dapp schema is strict: lower-case verb + an OBJECT body
-      // (a string body or upper-case verb → INVALID_PARAMS before any ledger
-      // call). Normalize PartyLayer's friendly LedgerApiParams to that shape.
-      const requestMethod = params.requestMethod.toLowerCase() as
-        | 'get'
-        | 'post'
-        | 'patch'
-        | 'put'
-        | 'delete';
-      let body: Record<string, unknown> | undefined;
-      if (typeof params.body === 'string') {
-        try {
-          body = JSON.parse(params.body) as Record<string, unknown>;
-        } catch {
-          throw new TransportError(
-            `ledgerApi body must be a JSON object (or JSON-parseable string) for Send; got a non-JSON string for ${params.resource}.`,
-            undefined,
-            {
-              walletId: this.walletId,
-              phase: 'ledgerApi',
-              transport: 'injected',
-              sessionId: session.sessionId,
-            },
-          );
-        }
-      } else {
-        body = params.body;
-      }
-
+      // Send's @sigilry/dapp schema is the canonical CIP-0103 dApp API: a
+      // lower-case verb + an OBJECT body (a string body or upper-case verb →
+      // INVALID_PARAMS before any ledger call). Normalize via the shared helpers.
       const result = await this.provider.ledgerApi({
-        requestMethod,
+        requestMethod: normalizeLedgerMethodLower(params.requestMethod),
         resource: params.resource,
-        body,
+        body: ledgerApiBodyToObject(params.body),
       });
 
       // Send's contract is `{ response: string }` — preserve raw to match

@@ -27,6 +27,7 @@ import type {
 import {
   CapabilityNotSupportedError,
   WalletNotInstalledError,
+  TransportError,
 } from './errors';
 
 /**
@@ -115,9 +116,42 @@ export interface LedgerApiParams {
 }
 
 /**
- * Normalize a {@link LedgerApiParams} verb to upper-case — the form CIP-0103
- * providers (Console / Nightly / Bron / WalletConnect / the announce bridge)
- * expect on the wire.
+ * Normalize a {@link LedgerApiParams} verb to LOWER-case — the canonical
+ * CIP-0103 dApp API form (splice-wallet-kernel `LedgerApiRequest.requestMethod`
+ * is the enum `["get","post","patch","put","delete"]`). Every `window.canton`
+ * CIP-0103 RPC wallet (Send / Console / Nightly / WalletConnect / the announce
+ * bridge) expects this.
+ */
+export function normalizeLedgerMethodLower(
+  method: LedgerApiMethod,
+): 'get' | 'post' | 'patch' | 'put' | 'delete' {
+  return method.toLowerCase() as 'get' | 'post' | 'patch' | 'put' | 'delete';
+}
+
+/**
+ * Coerce a {@link LedgerApiParams} body to a plain OBJECT (or `undefined`) — the
+ * canonical CIP-0103 dApp API form (`LedgerApiRequest.body` is
+ * `{ type: 'object' }`). An object passes through; a JSON string is parsed; a
+ * non-JSON-parseable string throws.
+ */
+export function ledgerApiBodyToObject(
+  body: string | Record<string, unknown> | undefined,
+): Record<string, unknown> | undefined {
+  if (body == null) return undefined;
+  if (typeof body !== 'string') return body;
+  try {
+    return JSON.parse(body) as Record<string, unknown>;
+  } catch {
+    throw new TransportError(
+      'ledgerApi body must be a JSON object (or JSON-parseable string) for a CIP-0103 wallet',
+    );
+  }
+}
+
+/**
+ * Normalize a {@link LedgerApiParams} verb to upper-case. Retained for the Bron
+ * REST proxy (case-insensitive HTTP JSON API) — NOT a CIP-0103 RPC wallet; the
+ * CIP-0103 wallets use {@link normalizeLedgerMethodLower}.
  */
 export function normalizeLedgerMethodUpper(
   method: LedgerApiMethod,
@@ -127,7 +161,7 @@ export function normalizeLedgerMethodUpper(
 
 /**
  * Coerce a {@link LedgerApiParams} body to a JSON string (or `undefined`) — the
- * form CIP-0103 providers and the Loop adapter's handlers expect. An object is
+ * form Loop's handlers and the Bron REST proxy expect. An object is
  * `JSON.stringify`-d; a string passes through verbatim.
  */
 export function ledgerApiBodyToString(

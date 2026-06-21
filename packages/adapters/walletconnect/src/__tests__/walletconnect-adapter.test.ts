@@ -398,12 +398,35 @@ describe('WalletConnectAdapter — disconnect / restore / submit', () => {
       requestMethod: 'GET',
       resource: '/v2/state/ledger-end',
     });
+    // Canonical CIP-0103: the verb is lower-cased on the wire.
     expect(official.request).toHaveBeenCalledWith({
       method: 'ledgerApi',
-      params: { requestMethod: 'GET', resource: '/v2/state/ledger-end' },
+      params: { requestMethod: 'get', resource: '/v2/state/ledger-end' },
     });
     expect(typeof res.response).toBe('string');
     expect(res.response).toContain('canton_ledgerApi');
+  });
+
+  it('ledgerApi() normalizes to CIP-0103: lower-case verb + OBJECT body', async () => {
+    const official = makeMockOfficial({});
+    const adapter = new WalletConnectAdapter(
+      { projectId: 'p' },
+      { createOfficialAdapter: () => official },
+    );
+    // A string body from the SDK boundary is parsed to an object on the wire.
+    await adapter.ledgerApi(createMockContext(), createMockSession(), {
+      requestMethod: 'POST',
+      resource: '/v2/state/active-contracts',
+      body: '{"filter":{"x":1}}',
+    });
+    expect(official.request).toHaveBeenCalledWith({
+      method: 'ledgerApi',
+      params: {
+        requestMethod: 'post',
+        resource: '/v2/state/active-contracts',
+        body: { filter: { x: 1 } },
+      },
+    });
   });
 
   it('signTransaction() throws CapabilityNotSupportedError', async () => {

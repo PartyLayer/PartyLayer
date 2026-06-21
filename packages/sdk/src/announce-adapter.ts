@@ -46,7 +46,7 @@ import type {
   WalletAdapter,
   WalletId,
 } from '@partylayer/core';
-import { toPartyId, toWalletId, normalizeLedgerMethodUpper, ledgerApiBodyToString } from '@partylayer/core';
+import { toPartyId, toWalletId, normalizeLedgerMethodLower, ledgerApiBodyToObject } from '@partylayer/core';
 
 /** Canonical providerId prefix for an announced extension (provider.md: `browser:ext:<id>`). */
 export const ANNOUNCED_WALLET_ID_PREFIX = 'browser:ext:';
@@ -319,9 +319,9 @@ export class GenericAnnounceAdapter implements WalletAdapter {
         const result = await this.provider.request<{ response?: string }>({
           method: 'ledgerApi',
           params: {
-            requestMethod: normalizeLedgerMethodUpper(params.requestMethod),
+            requestMethod: normalizeLedgerMethodLower(params.requestMethod),
             resource: params.resource,
-            body: ledgerApiBodyToString(params.body),
+            body: ledgerApiBodyToObject(params.body),
           },
         });
         if (result && typeof result.response === 'string') return { response: result.response };

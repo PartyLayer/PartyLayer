@@ -317,6 +317,43 @@ describe('createProviderBridge', () => {
       expect(result.response).toBe(JSON.stringify({ status: 'ok' }));
     });
 
+    it('forwards an OBJECT body to client.ledgerApi unchanged (never "[object Object]")', async () => {
+      const client = createMockClient();
+      const provider = createProviderBridge(client);
+      await provider.request({
+        method: 'ledgerApi',
+        params: {
+          requestMethod: 'post',
+          resource: '/v2/state/active-contracts',
+          body: { filter: { x: 1 } },
+        },
+      });
+      // The bridge must NOT String() the body — the wallet's adapter normalizes.
+      expect(client.ledgerApi).toHaveBeenCalledWith({
+        requestMethod: 'post',
+        resource: '/v2/state/active-contracts',
+        body: { filter: { x: 1 } },
+      });
+    });
+
+    it('forwards a STRING body + verb case to client.ledgerApi unchanged', async () => {
+      const client = createMockClient();
+      const provider = createProviderBridge(client);
+      await provider.request({
+        method: 'ledgerApi',
+        params: {
+          requestMethod: 'POST',
+          resource: '/v2/state/active-contracts',
+          body: '{"filter":{}}',
+        },
+      });
+      expect(client.ledgerApi).toHaveBeenCalledWith({
+        requestMethod: 'POST',
+        resource: '/v2/state/active-contracts',
+        body: '{"filter":{}}',
+      });
+    });
+
     it('should throw UNSUPPORTED_METHOD when client lacks ledgerApi', async () => {
       const client = createMockClient();
       delete (client as Record<string, unknown>).ledgerApi;

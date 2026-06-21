@@ -135,9 +135,11 @@ export type CIP0103TxChangedEvent =
 // ─── Ledger API ──────────────────────────────────────────────────────────────
 
 export interface CIP0103LedgerApiRequest {
-  requestMethod: 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH';
+  // Canonical CIP-0103 dApp API shape (splice-wallet-kernel LedgerApiRequest):
+  // LOWER-case verb enum + an OBJECT body.
+  requestMethod: 'get' | 'post' | 'patch' | 'put' | 'delete';
   resource: string;
-  body?: string;
+  body?: Record<string, unknown>;
 }
 
 export interface CIP0103LedgerApiResponse {

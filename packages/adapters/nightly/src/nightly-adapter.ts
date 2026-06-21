@@ -27,7 +27,7 @@ import type {
   CapabilityKey,
   PartyId,
 } from '@partylayer/core';
-import { normalizeLedgerMethodUpper, ledgerApiBodyToString } from '@partylayer/core';
+import { normalizeLedgerMethodLower, ledgerApiBodyToObject } from '@partylayer/core';
 import {
   toWalletId,
   toPartyId,
@@ -416,7 +416,7 @@ export class NightlyAdapter implements WalletAdapter {
     try {
       const provider = window.nightly?.canton as unknown as
         | (NightlyCantonProvider & {
-            ledgerApi?: (p: { requestMethod: string; resource: string; body?: string }) => Promise<unknown>;
+            ledgerApi?: (p: { requestMethod: string; resource: string; body?: string | Record<string, unknown> }) => Promise<unknown>;
             request?: (args: { method: string; params?: unknown }) => Promise<unknown>;
           })
         | undefined;
@@ -425,10 +425,11 @@ export class NightlyAdapter implements WalletAdapter {
         throw new Error('Not connected to Nightly Wallet');
       }
 
-      // Nightly is a CIP-0103 wallet (upper-case verb + JSON-string body). The
-      // SDK boundary accepts both cases + an object body, so normalize here.
-      const requestMethod = normalizeLedgerMethodUpper(params.requestMethod);
-      const body = ledgerApiBodyToString(params.body);
+      // Nightly is a CIP-0103 RPC wallet — canonical dApp API shape: lower-case
+      // verb + an OBJECT body. The SDK boundary accepts both cases + a string
+      // body, so normalize here.
+      const requestMethod = normalizeLedgerMethodLower(params.requestMethod);
+      const body = ledgerApiBodyToObject(params.body);
 
       ctx.logger.debug('Proxying ledger API request via Nightly Wallet', {
         sessionId: session.sessionId,

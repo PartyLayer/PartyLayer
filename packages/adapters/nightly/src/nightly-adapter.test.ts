@@ -403,6 +403,23 @@ describe('NightlyAdapter', () => {
       expect(result.response).toBe('acs-data');
     });
 
+    it('normalizes to CIP-0103 on the wire: lower-case verb + OBJECT body', async () => {
+      const provider = createNightlyProvider({
+        ledgerApi: vi.fn(async () => ({ response: 'ok' })),
+      });
+      installNightly(provider);
+      await adapter.ledgerApi(ctx, createMockSession(), {
+        requestMethod: 'POST',
+        resource: '/v2/state/active-contracts',
+        body: '{"filter":{"x":1}}',
+      });
+      expect(provider.ledgerApi).toHaveBeenCalledWith({
+        requestMethod: 'post',
+        resource: '/v2/state/active-contracts',
+        body: { filter: { x: 1 } },
+      });
+    });
+
     it('falls back to provider.request when ledgerApi is absent', async () => {
       const provider = createNightlyProvider({
         request: vi.fn(async () => ({ response: 'via-request' })),
