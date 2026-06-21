@@ -19,6 +19,7 @@ import type {
   LedgerApiParams,
   LedgerApiResult,
 } from '@partylayer/core';
+import { normalizeLedgerMethodUpper, ledgerApiBodyToString } from '@partylayer/core';
 import {
   toWalletId,
   toSignature,
@@ -369,9 +370,9 @@ export class BronAdapter implements WalletAdapter {
       });
 
       const result = await this.apiClient.proxyLedgerApi({
-        requestMethod: params.requestMethod,
+        requestMethod: normalizeLedgerMethodUpper(params.requestMethod),
         resource: params.resource,
-        body: params.body,
+        body: ledgerApiBodyToString(params.body),
         sessionId,
       });
 

@@ -27,6 +27,7 @@ import type {
   CapabilityKey,
   PartyId,
 } from '@partylayer/core';
+import { normalizeLedgerMethodUpper, ledgerApiBodyToString } from '@partylayer/core';
 import {
   toWalletId,
   toPartyId,
@@ -424,17 +425,22 @@ export class NightlyAdapter implements WalletAdapter {
         throw new Error('Not connected to Nightly Wallet');
       }
 
+      // Nightly is a CIP-0103 wallet (upper-case verb + JSON-string body). The
+      // SDK boundary accepts both cases + an object body, so normalize here.
+      const requestMethod = normalizeLedgerMethodUpper(params.requestMethod);
+      const body = ledgerApiBodyToString(params.body);
+
       ctx.logger.debug('Proxying ledger API request via Nightly Wallet', {
         sessionId: session.sessionId,
-        requestMethod: params.requestMethod,
+        requestMethod,
         resource: params.resource,
       });
 
       if (typeof provider.ledgerApi === 'function') {
         const result = await provider.ledgerApi({
-          requestMethod: params.requestMethod,
+          requestMethod,
           resource: params.resource,
-          body: params.body,
+          body,
         });
         const response = result as { response?: string } | string;
         return {
@@ -448,9 +454,9 @@ export class NightlyAdapter implements WalletAdapter {
         const result = await provider.request({
           method: 'ledgerApi',
           params: {
-            requestMethod: params.requestMethod,
+            requestMethod,
             resource: params.resource,
-            body: params.body,
+            body,
           },
         });
         const response = result as { response?: string } | string;

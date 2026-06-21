@@ -262,7 +262,7 @@ function BalanceQuery() {
 
     const result = await ledgerApi({
       requestMethod: 'POST',
-      resource: '/v2/state/acs',
+      resource: '/v2/state/active-contracts',
       body: JSON.stringify({
         filter: {
           filtersByParty: {

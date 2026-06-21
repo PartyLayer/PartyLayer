@@ -82,7 +82,7 @@ export interface BridgeableClient {
   ledgerApi?(params: {
     requestMethod: string;
     resource: string;
-    body?: string;
+    body?: string | Record<string, unknown>;
   }): Promise<{ response: string }>;
   getRegistryStatus(): unknown;
   on(event: string, handler: (event: unknown) => void | Promise<void>): () => void;

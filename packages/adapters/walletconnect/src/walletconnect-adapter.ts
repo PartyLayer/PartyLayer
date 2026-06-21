@@ -24,6 +24,8 @@ import {
   toSignature,
   toTransactionHash,
   toWalletId,
+  normalizeLedgerMethodUpper,
+  ledgerApiBodyToString,
   type AdapterConnectResult,
   type AdapterContext,
   type AdapterDetectResult,
@@ -434,12 +436,15 @@ export class WalletConnectAdapter implements WalletAdapter {
       const wc = await this.ensureOfficial();
       // Proxies a JSON Ledger API request through the wallet via
       // `canton_ledgerApi`.
+      // The relayed Canton wallet expects CIP-0103 shape (upper-case verb +
+      // JSON-string body); normalize the friendly SDK-boundary params.
+      const body = ledgerApiBodyToString(params.body);
       const result = await wc.request<unknown>({
         method: 'ledgerApi',
         params: {
-          requestMethod: params.requestMethod,
+          requestMethod: normalizeLedgerMethodUpper(params.requestMethod),
           resource: params.resource,
-          ...(params.body !== undefined ? { body: params.body } : {}),
+          ...(body !== undefined ? { body } : {}),
         },
       });
       const maybeResponse = (result as { response?: unknown } | null)?.response;

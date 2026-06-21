@@ -703,7 +703,7 @@ describe('SendAdapter: ledgerApi', () => {
     expect(result.response).toBe('{"offset":"42"}');
   });
 
-  it('forwards POST /v2/state/active-contracts with body argument', async () => {
+  it('forwards POST /v2/state/active-contracts normalized to Send schema (lower-case verb + object body)', async () => {
     const provider = installMockCanton();
     const session = createMockSession();
     await adapter.ledgerApi(ctx, session, {
@@ -711,12 +711,15 @@ describe('SendAdapter: ledgerApi', () => {
       resource: '/v2/state/active-contracts',
       body: '{"filter":{}}',
     });
+    // End-to-end through the real SendProvider: the upper-case verb is
+    // lower-cased and the JSON-string body is parsed to an object per Send's
+    // strict @sigilry/dapp schema.
     expect(provider.request).toHaveBeenCalledWith({
       method: 'ledgerApi',
       params: {
-        requestMethod: 'POST',
+        requestMethod: 'post',
         resource: '/v2/state/active-contracts',
-        body: '{"filter":{}}',
+        body: { filter: {} },
       },
     });
   });
@@ -1139,5 +1142,79 @@ describe('helpers: mapSigilryError', () => {
   it('falls back to the generic PartyLayer mapper for non-RPC errors', () => {
     const err = mapSigilryError(new Error('boom'), ctx);
     expect(err).toBeInstanceOf(PartyLayerError);
+  });
+});
+
+describe('SendAdapter: ledgerApi normalization (Send schema = lower-case verb + object body)', () => {
+  let ctx: AdapterContext;
+
+  beforeEach(() => {
+    ctx = createMockContext();
+    installMockCanton();
+  });
+  afterEach(() => uninstallMockCanton());
+
+  /** Adapter whose provider.ledgerApi is spied + stubbed, to assert the exact
+   *  request object handed to Send after normalization. */
+  function spiedAdapter() {
+    const provider = makeSendProvider();
+    const spy = vi
+      .spyOn(provider, 'ledgerApi')
+      .mockResolvedValue({ response: '{"ok":true}' });
+    return { adapter: new SendAdapter({ provider }), spy };
+  }
+
+  it('lower-cases an upper-case verb (Send requires lower-case)', async () => {
+    const { adapter, spy } = spiedAdapter();
+    await adapter.ledgerApi(ctx, createMockSession(), {
+      requestMethod: 'POST',
+      resource: '/v2/state/active-contracts',
+    });
+    expect(spy).toHaveBeenCalledWith(
+      expect.objectContaining({ requestMethod: 'post', resource: '/v2/state/active-contracts' }),
+    );
+  });
+
+  it('parses a JSON-string body into an object (Send requires an object body)', async () => {
+    const { adapter, spy } = spiedAdapter();
+    await adapter.ledgerApi(ctx, createMockSession(), {
+      requestMethod: 'post',
+      resource: '/v2/state/active-contracts',
+      body: JSON.stringify({ filter: { x: 1 } }),
+    });
+    expect(spy).toHaveBeenCalledWith({
+      requestMethod: 'post',
+      resource: '/v2/state/active-contracts',
+      body: { filter: { x: 1 } },
+    });
+  });
+
+  it('passes an object body through unchanged', async () => {
+    const { adapter, spy } = spiedAdapter();
+    const body = { filter: { y: 2 } };
+    await adapter.ledgerApi(ctx, createMockSession(), {
+      requestMethod: 'GET',
+      resource: '/v2/state/active-contracts',
+      body,
+    });
+    expect(spy).toHaveBeenCalledWith({
+      requestMethod: 'get',
+      resource: '/v2/state/active-contracts',
+      body,
+    });
+  });
+
+  it('throws a TransportError for a non-JSON string body (never reaches the wallet)', async () => {
+    const { adapter, spy } = spiedAdapter();
+    const err = await adapter
+      .ledgerApi(ctx, createMockSession(), {
+        requestMethod: 'post',
+        resource: '/v2/state/active-contracts',
+        body: 'not-json{',
+      })
+      .catch((e: unknown) => e);
+    expect(err).toBeInstanceOf(TransportError);
+    expect((err as Error).message).toMatch(/JSON object/);
+    expect(spy).not.toHaveBeenCalled();
   });
 });

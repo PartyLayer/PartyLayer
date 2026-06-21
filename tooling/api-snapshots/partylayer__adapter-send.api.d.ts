@@ -31,7 +31,7 @@ interface SendAccount { primary: boolean; partyId: string; status: 'allocated' |
 interface SendCantonProvider { request<M extends SendRpcMethod>(args: SendRpcRequest<M>): Promise<SendRpcResult<M>>; on(event: SendEventName, listener: SendEventListener): unknown; off?(event: SendEventName, listener: SendEventListener): unknown; removeListener?(event: SendEventName, listener: SendEventListener): unknown; }
 interface SendDisclosedContract { templateId?: string; contractId?: string; createdEventBlob: string; synchronizerId?: string; }
 interface SendKernelInfo { id: string; clientType: 'browser' | 'desktop' | 'mobile' | 'remote'; url?: string; userUrl?: string; }
-interface SendLedgerApiRequest { requestMethod: 'GET' | 'POST' | 'PUT' | 'DELETE'; resource: string; body?: string; headers?: Record<string, string>; query?: Record<string, unknown>; path?: Record<string, string>; }
+interface SendLedgerApiRequest { requestMethod: 'get' | 'post' | 'patch' | 'put' | 'delete'; resource: string; body?: Record<string, unknown>; headers?: Record<string, string>; query?: Record<string, unknown>; path?: Record<string, string>; }
 interface SendLedgerApiResult { response: string; }
 interface SendNetwork { networkId: string; ledgerApi?: { baseUrl: string; }; }
 interface SendPrepareExecuteAndWaitResult { tx: SendTxExecutedEvent; }

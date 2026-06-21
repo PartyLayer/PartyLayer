@@ -80,15 +80,61 @@ export interface SubmitTransactionParams {
 }
 
 /**
- * Ledger API proxy parameters (CIP-0103 ledgerApi method)
+ * Method verb accepted at the SDK boundary for {@link LedgerApiParams}. A
+ * friendly superset: both cases are accepted because wallets diverge (Send's
+ * schema requires lower-case; CIP-0103 providers use upper-case). Each adapter
+ * normalizes the case to what its wallet requires — see {@link normalizeLedgerMethodUpper}.
+ */
+export type LedgerApiMethod =
+  | 'GET'
+  | 'POST'
+  | 'PUT'
+  | 'DELETE'
+  | 'PATCH'
+  | 'get'
+  | 'post'
+  | 'put'
+  | 'delete'
+  | 'patch';
+
+/**
+ * Ledger API proxy parameters (CIP-0103 ledgerApi method).
+ *
+ * This is a friendly superset so ONE call works across all wallets: the case of
+ * `requestMethod` is normalized per-adapter, and `body` may be a JSON string OR
+ * a plain object — each adapter coerces it to the shape its wallet requires
+ * (Send wants an object; CIP-0103 providers / Loop want a JSON string).
  */
 export interface LedgerApiParams {
-  /** HTTP method for the JSON Ledger API */
-  requestMethod: 'GET' | 'POST' | 'PUT' | 'DELETE';
-  /** Resource path (e.g., "/v2/state/acs") */
+  /** HTTP method for the JSON Ledger API (case normalized per-adapter). */
+  requestMethod: LedgerApiMethod;
+  /** Resource path (e.g., "/v2/state/active-contracts"). */
   resource: string;
-  /** Optional JSON body */
-  body?: string;
+  /** Optional JSON body — a JSON string OR a plain object (coerced per-adapter). */
+  body?: string | Record<string, unknown>;
+}
+
+/**
+ * Normalize a {@link LedgerApiParams} verb to upper-case — the form CIP-0103
+ * providers (Console / Nightly / Bron / WalletConnect / the announce bridge)
+ * expect on the wire.
+ */
+export function normalizeLedgerMethodUpper(
+  method: LedgerApiMethod,
+): 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH' {
+  return method.toUpperCase() as 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH';
+}
+
+/**
+ * Coerce a {@link LedgerApiParams} body to a JSON string (or `undefined`) — the
+ * form CIP-0103 providers and the Loop adapter's handlers expect. An object is
+ * `JSON.stringify`-d; a string passes through verbatim.
+ */
+export function ledgerApiBodyToString(
+  body: string | Record<string, unknown> | undefined,
+): string | undefined {
+  if (body == null) return undefined;
+  return typeof body === 'string' ? body : JSON.stringify(body);
 }
 
 /**

@@ -113,9 +113,12 @@ export type SendTxChangedEvent =
   | { status: 'failed'; commandId: string };
 
 export interface SendLedgerApiRequest {
-  requestMethod: 'GET' | 'POST' | 'PUT' | 'DELETE';
+  // Send's published RPC schema (@sigilry/dapp LedgerApiRequestSchema) is strict:
+  // lower-case verb enum and an OBJECT body (not a JSON string). The adapter
+  // normalizes PartyLayer's friendly LedgerApiParams to this shape.
+  requestMethod: 'get' | 'post' | 'patch' | 'put' | 'delete';
   resource: string;
-  body?: string;
+  body?: Record<string, unknown>;
   headers?: Record<string, string>;
   query?: Record<string, unknown>;
   path?: Record<string, string>;

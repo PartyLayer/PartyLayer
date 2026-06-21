@@ -145,7 +145,7 @@ console.log('Submitted at:', new Date(receipt.submittedAt));`}</CodeBlock>
       <CodeBlock language="typescript">{`// Query active contracts (wallet balances)
 const result = await client.ledgerApi({
   requestMethod: 'POST',
-  resource: '/v2/state/acs',
+  resource: '/v2/state/active-contracts',
   body: JSON.stringify({
     filter: {
       filtersByParty: {

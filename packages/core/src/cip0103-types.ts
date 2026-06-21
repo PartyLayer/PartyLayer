@@ -135,7 +135,7 @@ export type CIP0103TxChangedEvent =
 // ─── Ledger API ──────────────────────────────────────────────────────────────
 
 export interface CIP0103LedgerApiRequest {
-  requestMethod: 'GET' | 'POST' | 'PUT' | 'DELETE';
+  requestMethod: 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH';
   resource: string;
   body?: string;
 }

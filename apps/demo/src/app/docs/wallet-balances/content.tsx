@@ -61,7 +61,7 @@ function TokenBalance({ templateId }: { templateId: string }) {
 
     client.ledgerApi({
       requestMethod: 'POST',
-      resource: '/v2/state/acs',
+      resource: '/v2/state/active-contracts',
       body: JSON.stringify({
         filter: {
           filtersByParty: {
@@ -112,7 +112,7 @@ function TokenBalance({ templateId }: { templateId: string }) {
 
     const result = await ledgerApi({
       requestMethod: 'POST',
-      resource: '/v2/state/acs',
+      resource: '/v2/state/active-contracts',
       body: JSON.stringify({
         filter: {
           filtersByParty: {
@@ -172,7 +172,7 @@ function MultiTokenBalances() {
         client
           .ledgerApi({
             requestMethod: 'POST',
-            resource: '/v2/state/acs',
+            resource: '/v2/state/active-contracts',
             body: JSON.stringify({
               filter: {
                 filtersByParty: {
@@ -228,7 +228,7 @@ const session = await client.connect();
 async function getBalance(templateId: string): Promise<number> {
   const result = await client.ledgerApi({
     requestMethod: 'POST',
-    resource: '/v2/state/acs',
+    resource: '/v2/state/active-contracts',
     body: JSON.stringify({
       filter: {
         filtersByParty: {
@@ -333,7 +333,7 @@ console.log(activeContracts);`}</CodeBlock>
   do {
     const result = await client.ledgerApi({
       requestMethod: 'POST',
-      resource: '/v2/state/acs',
+      resource: '/v2/state/active-contracts',
       body: JSON.stringify({
         filter: {
           filtersByParty: {

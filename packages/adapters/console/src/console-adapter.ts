@@ -37,6 +37,7 @@ import type {
   CapabilityKey,
   PartyId,
 } from '@partylayer/core';
+import { normalizeLedgerMethodUpper, ledgerApiBodyToString } from '@partylayer/core';
 import {
   toWalletId,
   toPartyId,
@@ -566,9 +567,14 @@ export class ConsoleAdapter implements WalletAdapter {
     const transport = resolveTransportLabel(this.target, this.activeTransport);
 
     try {
+      // Console is a CIP-0103 wallet (upper-case verb + JSON-string body). The
+      // SDK boundary accepts both cases + an object body, so normalize here.
+      const requestMethod = normalizeLedgerMethodUpper(params.requestMethod);
+      const body = ledgerApiBodyToString(params.body);
+
       ctx.logger.debug('Proxying ledger API request via Console Wallet', {
         sessionId: session.sessionId,
-        requestMethod: params.requestMethod,
+        requestMethod,
         resource: params.resource,
         transport,
       });
@@ -589,9 +595,9 @@ export class ConsoleAdapter implements WalletAdapter {
 
       if (typeof wallet.ledgerApi === 'function') {
         const result = await wallet.ledgerApi({
-          requestMethod: params.requestMethod,
+          requestMethod,
           resource: params.resource,
-          body: params.body,
+          body,
         });
         const response = result as { response?: string } | string;
         return {
@@ -606,9 +612,9 @@ export class ConsoleAdapter implements WalletAdapter {
         const result = await wallet.request({
           method: 'ledgerApi',
           params: {
-            requestMethod: params.requestMethod,
+            requestMethod,
             resource: params.resource,
-            body: params.body,
+            body,
           },
         });
         const response = result as { response?: string } | string;

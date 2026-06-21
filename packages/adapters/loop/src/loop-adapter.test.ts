@@ -156,6 +156,33 @@ describe('LoopAdapter', () => {
         expect(parsed.activeContracts[0].contractId).toBe('c1');
       });
 
+      it('coerces an OBJECT body to a JSON string before the Loop ACS handler', async () => {
+        mockProvider.getActiveContracts.mockResolvedValue([]);
+
+        // The SDK boundary now also accepts an object body; Loop's handler parses
+        // a JSON string, so the adapter must stringify the object first.
+        await adapter.ledgerApi(ctx, createMockSession(), {
+          requestMethod: 'POST',
+          resource: '/v2/state/active-contracts',
+          body: {
+            filter: {
+              filtersByParty: {
+                'party::test': {
+                  inclusive: {
+                    templateFilters: [{ templateId: 'Splice.Amulet:Amulet' }],
+                  },
+                },
+              },
+            },
+          },
+        });
+
+        expect(mockProvider.getActiveContracts).toHaveBeenCalledWith({
+          templateId: 'Splice.Amulet:Amulet',
+          interfaceId: undefined,
+        });
+      });
+
       it('should handle POST /v2/state/active-contracts (alias)', async () => {
         mockProvider.getActiveContracts.mockResolvedValue([]);
 

@@ -34,6 +34,7 @@ import {
   WalletNotInstalledError,
   CapabilityNotSupportedError,
   mapUnknownErrorToPartyLayerError,
+  ledgerApiBodyToString,
 } from '@partylayer/core';
 import { loop } from '@fivenorth/loop-sdk';
 import type { LoopProvider } from '@fivenorth/loop-sdk';
@@ -438,7 +439,10 @@ export class LoopAdapter implements WalletAdapter {
         throw new Error('Not connected to Loop Wallet');
       }
 
-      const { requestMethod, resource, body } = params;
+      const { requestMethod, resource } = params;
+      // Loop's SDK handlers parse a JSON string body; the SDK boundary now also
+      // accepts an object, so coerce to the string form Loop expects.
+      const body = ledgerApiBodyToString(params.body);
       const route = `${requestMethod.toUpperCase()} ${resource}`;
 
       ctx.logger.debug('Loop ledgerApi request', {
