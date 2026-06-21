@@ -9,7 +9,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { ConsoleAdapter } from './console-adapter';
 import type { ConsoleAdapterConfig } from './console-adapter';
-import type { AdapterContext, PersistedSession } from '@partylayer/core';
+import type { AdapterContext, PersistedSession, Session } from '@partylayer/core';
 import {
   toWalletId,
   toPartyId,
@@ -33,6 +33,7 @@ const mockConsoleWallet = vi.hoisted(() => ({
   status: vi.fn(),
   signMessage: vi.fn(),
   submitCommands: vi.fn(),
+  ledgerApi: vi.fn(),
   onConnectionStatusChanged: vi.fn(),
   onTxStatusChanged: vi.fn(),
 }));
@@ -960,6 +961,49 @@ describe('ConsoleAdapter', () => {
       const adapter = new ConsoleAdapter();
       expect(adapter.walletId).toBe(toWalletId('console'));
       expect(adapter.name).toBe('Console Wallet');
+    });
+  });
+
+  describe('ledgerApi normalization (CIP-0103: lower-case verb + OBJECT body)', () => {
+    const session = {
+      sessionId: toSessionId('s1'),
+      walletId: toWalletId('console'),
+      partyId: toPartyId('party::test'),
+      network: 'devnet' as const,
+      createdAt: 0,
+      origin: 'https://test.com',
+      capabilitiesSnapshot: [] as string[],
+    } as unknown as Session;
+
+    it('lower-cases the verb + parses a string body to an object on the wire', async () => {
+      mockConsoleWallet.ledgerApi.mockResolvedValue({ response: 'ok' });
+      const adapter = new ConsoleAdapter({ target: 'local' });
+      await adapter.ledgerApi(createMockContext(), session, {
+        requestMethod: 'POST',
+        resource: '/v2/state/active-contracts',
+        body: '{"filter":{"x":1}}',
+      });
+      expect(mockConsoleWallet.ledgerApi).toHaveBeenCalledWith({
+        requestMethod: 'post',
+        resource: '/v2/state/active-contracts',
+        body: { filter: { x: 1 } },
+      });
+    });
+
+    it('passes an object body through unchanged (lower-case verb)', async () => {
+      mockConsoleWallet.ledgerApi.mockResolvedValue({ response: 'ok' });
+      const adapter = new ConsoleAdapter({ target: 'local' });
+      const body = { filter: { y: 2 } };
+      await adapter.ledgerApi(createMockContext(), session, {
+        requestMethod: 'get',
+        resource: '/v2/state/active-contracts',
+        body,
+      });
+      expect(mockConsoleWallet.ledgerApi).toHaveBeenCalledWith({
+        requestMethod: 'get',
+        resource: '/v2/state/active-contracts',
+        body,
+      });
     });
   });
 });

@@ -15,12 +15,16 @@ boundary (`LedgerApiParams`) accepts a friendly superset — `requestMethod` in
 either case (plus `PATCH`) and `body` as a JSON string **or** a plain object — and
 each adapter normalizes to what its wallet requires:
 
-- **CIP-0103 RPC wallets** (Send, Console, Nightly, WalletConnect, the SDK
-  announce bridge) get the canonical splice-wallet-kernel dApp API shape: a
-  **lower-case** verb + an **object** body (`normalizeLedgerMethodLower` +
-  `ledgerApiBodyToObject`). `CIP0103LedgerApiRequest` is corrected to this shape.
-- **Loop** (Loop SDK) and **Bron** (REST proxy) keep a **JSON-string** body
-  (`ledgerApiBodyToString`).
+- **CIP-0103 `window.canton` RPC wallets** — Send, Console, Nightly,
+  WalletConnect, and the SDK announce bridge — get a **lower-case** verb + an
+  **object** body, per the canonical CIP-0103 OpenRPC `LedgerApiRequest` schema
+  (splice-wallet-kernel). `CIP0103LedgerApiRequest` is corrected to this shape.
+- **Loop** (Loop SDK adapter) and **Bron** (REST proxy) get a **JSON-string**
+  body.
+
+New `@partylayer/core` helpers: `normalizeLedgerMethodLower` +
+`ledgerApiBodyToObject` (the CIP-0103 wallets); `normalizeLedgerMethodUpper` +
+`ledgerApiBodyToString` are retained for Loop/Bron.
 
 The CIP-0103 provider bridge forwards the verb case and the body type (string or
 object) unchanged to the active wallet's adapter — it no longer `String()`-s an
