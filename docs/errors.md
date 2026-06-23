@@ -9,7 +9,8 @@ All errors extend `PartyLayerError` and have a stable `code` property for progra
 
 | Code | Class | Description | UX Message |
 |------|-------|-------------|------------|
-| `WALLET_NOT_FOUND` | `WalletNotFoundError` | Wallet not in registry | "Wallet not found. Please check the wallet ID." |
+| `WALLET_NOT_FOUND` | `WalletNotFoundError` | No wallet with this id is known (not in registry, no adapter registered) | "Wallet not found. Please check the wallet ID." |
+| `ADAPTER_NOT_REGISTERED` | `AdapterNotRegisteredError` | A popup/remote (discovery-adapter) wallet was selected but the app registered no matching provider adapter | "This wallet needs additional setup by the app." |
 | `WALLET_NOT_INSTALLED` | `WalletNotInstalledError` | Wallet extension/SDK not installed | "Please install [Wallet Name] to continue." |
 | `USER_REJECTED` | `UserRejectedError` | User rejected the operation | "Operation cancelled by user." |
 | `ORIGIN_NOT_ALLOWED` | `OriginNotAllowedError` | Origin not in allowlist | "This origin is not allowed to connect." |
@@ -20,6 +21,7 @@ All errors extend `PartyLayerError` and have a stable `code` property for progra
 | `REGISTRY_VERIFICATION_FAILED` | `RegistryVerificationFailedError` | Registry signature invalid | "Registry verification failed. Using cached version." |
 | `REGISTRY_SCHEMA_INVALID` | `RegistrySchemaInvalidError` | Registry schema invalid | "Invalid registry format. Using cached version." |
 | `INTERNAL_ERROR` | `InternalError` | Internal SDK error | "An unexpected error occurred. Please try again." |
+| `NETWORK_MISMATCH` | `NetworkMismatchError` | Wallet is on a different network than the dApp requires | "Your wallet is on the wrong network. Switch it, then reconnect." |
 | `TIMEOUT` | `TimeoutError` | Operation timed out | "Operation timed out. Please try again." |
 
 ## Error Handling

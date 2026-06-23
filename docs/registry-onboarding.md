@@ -4,107 +4,144 @@
 
 ## Overview
 
-The PartyLayer wallet registry is a signed, versioned JSON file that lists available wallets. Wallets start in the `beta` channel and are promoted to `stable` after validation.
+The PartyLayer wallet registry is a signed, versioned JSON file that lists available wallets. Wallets start in the `beta` channel and are promoted to `stable` after validation. Each wallet is one entry in the `wallets` array of `registry/v1/<channel>/registry.json`, and every entry must match the `RegistryWalletEntry` schema in `packages/registry-client/src/schema.ts` (also enforced by `tooling/registry-schema/registry.schema.json`).
 
-## Required Registry Fields
+## Registry Entry Schema
 
-### Basic Fields
+### Required fields
+
+| Field | Type | Notes |
+|-------|------|-------|
+| `id` | `string` | Wallet identifier, unique within the channel |
+| `name` | `string` | Display name shown in the picker |
+| `supportedNetworks` | `NetworkId[]` | e.g. `["devnet", "testnet", "mainnet"]` |
+| `capabilities` | object | All six boolean flags below are required |
+| `adapter.type` | `string` | Adapter package name, or a logical type for announce/discovery wallets |
+
+The `capabilities` object requires these booleans: `signMessage`, `signTransaction`, `submitTransaction`, `transactionStatus`, `switchNetwork`, `multiParty`. Optional booleans: `mobileConnect`, `remoteSigner`, and `events` (set `events: true` for wallets that emit CIP-0103 provider events).
+
+### Optional fields
+
+| Field | Type | Notes |
+|-------|------|-------|
+| `description` | `string` | Short description |
+| `homepage` | `string` | Wallet website URL |
+| `icon` | `string` | Single icon URL (not an object) |
+| `adapter.transport` | `'injected' \| 'announce' \| 'discovery-adapter'` | How the SDK obtains the provider (see below) |
+| `adapter.config` | object | Adapter-specific configuration |
+| `adapter.networkHosts` | object | Network to host mapping for `transport: 'discovery-adapter'` |
+| `installation` | object | Detection hints: `windowProperty`, `scriptTag`, `extensionId`, `deeplink`, `oauth` |
+| `providerDetection` | object | Match the injected `window.canton` provider to this entry |
+| `cip0103` | object | `{ native: boolean, evidence?: string, since?: string }` |
+| `originAllowlist` | `string[]` | Restrict which dApp origins may connect |
+| `sdkVersion` | `string` | Adapter version range, e.g. `>=0.2.5` |
+
+### Example: injected, CIP-0103 native wallet
 
 ```json
 {
-  "walletId": "mywallet",
+  "id": "mywallet",
   "name": "My Wallet",
   "description": "A wallet for Canton Network",
-  "website": "https://mywallet.com",
-  "icons": {
-    "sm": "https://mywallet.com/icon-sm.png",
-    "md": "https://mywallet.com/icon-md.png",
-    "lg": "https://mywallet.com/icon-lg.png"
+  "homepage": "https://mywallet.com",
+  "icon": "https://mywallet.com/icon.svg",
+  "supportedNetworks": ["devnet", "testnet", "mainnet"],
+  "capabilities": {
+    "signMessage": true,
+    "signTransaction": true,
+    "submitTransaction": true,
+    "transactionStatus": true,
+    "switchNetwork": false,
+    "multiParty": false
   },
-  "category": "mobile", // or "browser", "enterprise"
-  "channel": "beta", // or "stable"
-  "capabilities": ["connect", "disconnect", "signMessage"],
   "adapter": {
-    "packageName": "@mywallet/adapter",
-    "versionRange": "^1.0.0"
+    "type": "@mywallet/adapter"
   },
-  "docs": ["https://docs.mywallet.com"],
-  "networks": ["devnet", "testnet", "mainnet"]
-}
-```
-
-### Install Hints
-
-Provide hints for wallet detection:
-
-#### Browser Extension
-
-```json
-{
-  "installHints": {
-    "injectedKey": "myWallet", // window.myWallet
-    "extensionId": "abcdefghijklmnopqrstuvwxyz123456" // Chrome extension ID
+  "installation": {
+    "windowProperty": "myWallet",
+    "extensionId": "abcdefghijklmnopqrstuvwxyz123456"
+  },
+  "providerDetection": {
+    "transport": "window.canton",
+    "matchers": [
+      { "field": "provider.id", "match": "exact", "values": ["abcdefghijklmnopqrstuvwxyz123456"] }
+    ]
+  },
+  "cip0103": {
+    "native": true,
+    "evidence": "https://www.npmjs.com/package/@mywallet/dapp-sdk",
+    "since": "2025-11-01"
   }
 }
 ```
 
-#### Mobile Wallet (Deep Link)
+### Example: announce (adapterless CIP-0103) wallet
+
+CIP-0103 wallets that announce themselves over `canton:announceProvider` do not need a bespoke adapter package. Set `adapter.transport: "announce"` and use `adapter.config` to enable optional capabilities. See the [Generic Bridge guide](./generic-bridge.md).
 
 ```json
 {
-  "installHints": {
-    "deepLinkScheme": "mywallet", // mywallet://
-    "universalLinkBase": "https://app.mywallet.com"
-  }
-}
-```
-
-#### Remote Signer
-
-```json
-{
-  "installHints": {
-    // No install hints needed for remote signers
+  "id": "mywallet",
+  "name": "My Wallet",
+  "homepage": "https://mywallet.com",
+  "icon": "https://mywallet.com/icon.svg",
+  "supportedNetworks": ["mainnet"],
+  "capabilities": {
+    "signMessage": true,
+    "signTransaction": false,
+    "submitTransaction": true,
+    "transactionStatus": true,
+    "switchNetwork": false,
+    "multiParty": false,
+    "events": true
   },
-  "category": "enterprise"
+  "adapter": {
+    "type": "@mywallet/adapter",
+    "transport": "announce",
+    "config": {
+      "restore": true,
+      "ledgerApi": true
+    }
+  },
+  "cip0103": {
+    "native": true
+  }
 }
 ```
 
 ### Origin Allowlist
 
-If your wallet supports origin allowlist:
+If your wallet restricts which dApp origins may connect, list them. The SDK enforces the allowlist when present.
 
 ```json
 {
   "originAllowlist": [
     "https://myapp.com",
-    "https://*.myapp.com" // Wildcard support
+    "https://*.myapp.com"
   ]
 }
 ```
 
-**Note**: SDK automatically enforces origin allowlist if provided.
+## Workflow: Beta to Stable
 
-## Workflow: Beta → Stable
+### Step 1: Scaffold the entry in the beta registry
 
-### Step 1: Add to Beta Registry
+`add-wallet` writes a starter entry with all capabilities set to `false` and `supportedNetworks` set to all three networks. After running it, open `registry/v1/beta/registry.json` and edit your entry to set the real `capabilities`, `supportedNetworks`, `adapter.transport`, `installation`, `providerDetection`, and `cip0103` values.
 
 ```bash
 partylayer-registry add-wallet \
   --channel beta \
   --walletId mywallet \
   --name "My Wallet" \
-  --description "A wallet for Canton Network" \
-  --website "https://mywallet.com" \
   --adapterPackage "@mywallet/adapter" \
-  --adapterRange "^1.0.0" \
-  --capabilities connect,disconnect,signMessage \
-  --installHints '{"injectedKey":"myWallet"}' \
-  --docs '["https://docs.mywallet.com"]' \
-  --networks devnet,testnet,mainnet
+  --adapterRange ">=1.0.0" \
+  --homepage "https://mywallet.com" \
+  --icon "https://mywallet.com/icon.svg"
 ```
 
-### Step 2: Run Conformance Tests
+The available `add-wallet` flags are exactly: `--channel`, `--walletId`, `--name`, `--adapterPackage`, `--adapterRange`, `--homepage`, `--icon`, `--sign`, `--key`. There are no flags for capabilities, networks, or detection. Edit those directly in the JSON.
+
+### Step 2: Run conformance tests
 
 ```bash
 # Build adapter
@@ -117,100 +154,97 @@ partylayer-conformance run --adapter ./dist
 # Verify all tests pass
 ```
 
-### Step 3: Sign Registry
+### Step 3: Sign the registry
 
 ```bash
 partylayer-registry sign \
   --channel beta \
-  --key ./registry/keys/dev-private.pem
+  --key ./registry/keys/dev.key
 ```
 
-### Step 4: Verify Registry
+### Step 4: Verify the signature
 
 ```bash
 partylayer-registry verify \
   --channel beta \
-  --pubkey ./registry/keys/dev-public.pem
+  --pubkey ./registry/keys/dev.pub
 ```
 
-### Step 5: Promote to Stable
+### Step 5: Promote to stable
 
-After beta testing period:
+After the beta testing period (`--key` is optional and signs the target after promotion):
 
 ```bash
 partylayer-registry promote \
   --from beta \
   --to stable \
-  --key ./registry/keys/dev-private.pem
+  --key ./registry/keys/dev.key
 ```
 
 ## Key Rotation
 
 ### Adding a New Key
 
-1. Generate new key pair:
+1. Generate a new key pair:
    ```bash
    # Generate Ed25519 key pair
-   openssl genpkey -algorithm Ed25519 -out new-private.pem
-   openssl pkey -pubout -in new-private.pem -out new-public.pem
+   openssl genpkey -algorithm Ed25519 -out new-private.key
+   openssl pkey -pubout -in new-private.key -out new-public.pub
    ```
 
-2. Add public key to SDK config:
+2. Add the public key to the SDK config:
    ```typescript
    const client = createPartyLayer({
+     network: 'mainnet',
+     app: { name: 'My dApp' },
      registryPublicKeys: [
        'old-public-key-base64',
-       'new-public-key-base64', // Add new key
+       'new-public-key-base64',
      ],
    });
    ```
 
-3. Sign registry with new key:
+3. Sign the registry with the new key:
    ```bash
-   partylayer-registry sign --channel stable --key new-private.pem
+   partylayer-registry sign --channel stable --key new-private.key
    ```
 
-4. After transition period, remove old key from config.
+4. After the transition period, remove the old key from the config.
 
 ## Rollback Procedure
 
 If a bad registry is published:
 
-1. **Identify last-known-good sequence**:
+1. Identify the last known good sequence:
    ```bash
    partylayer-registry print-status --channel stable
    ```
 
-2. **Restore from cache** (SDK automatically uses last-known-good)
+2. Restore from cache (the SDK automatically uses the last known good registry).
 
-3. **Fix registry** and publish with higher sequence:
+3. Fix the registry and publish with a higher sequence:
    ```bash
    partylayer-registry bump-sequence --channel stable
-   partylayer-registry sign --channel stable --key private.pem
+   partylayer-registry sign --channel stable --key ./registry/keys/dev.key
    ```
 
 ## Required Fields Checklist
 
-- [ ] `walletId` - Unique identifier
-- [ ] `name` - Display name
-- [ ] `description` - Brief description
-- [ ] `website` - Wallet website
-- [ ] `icons` - At least one icon URL
-- [ ] `category` - mobile, browser, or enterprise
-- [ ] `channel` - beta or stable
-- [ ] `capabilities` - Array of supported capabilities
-- [ ] `adapter.packageName` - NPM package name
-- [ ] `adapter.versionRange` - Semantic version range
-- [ ] `docs` - Array of documentation URLs
-- [ ] `networks` - Supported networks
-- [ ] `installHints` - Detection hints (if applicable)
+- [ ] `id`: unique identifier within the channel
+- [ ] `name`: display name
+- [ ] `supportedNetworks`: array of supported networks
+- [ ] `capabilities`: object with all six required booleans (`signMessage`, `signTransaction`, `submitTransaction`, `transactionStatus`, `switchNetwork`, `multiParty`)
+- [ ] `adapter.type`: adapter package name or logical type
+- [ ] `adapter.transport`: `injected`, `announce`, or `discovery-adapter` (if not a default injected adapter)
+- [ ] `cip0103.native`: `true` for confirmed CIP-0103 wallets
+- [ ] `homepage`, `icon`: recommended for the picker
+- [ ] `installation` and/or `providerDetection`: detection hints (if applicable)
 
 ## Security Considerations
 
-- **Origin Allowlist**: Use for production wallets to restrict access
-- **Version Range**: Use semantic versioning (e.g., `^1.0.0`)
-- **Signature Verification**: Always verify registry signatures
-- **Sequence Numbers**: Never decrease sequence (prevents downgrade attacks)
+- **Origin Allowlist**: use for production wallets to restrict access.
+- **Signature Verification**: always verify registry signatures.
+- **Sequence Numbers**: never decrease the sequence (prevents downgrade attacks).
 
 ## Support
 

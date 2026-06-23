@@ -117,6 +117,14 @@ Submit a signed transaction.
 submitTransaction(params: SubmitTransactionParams): Promise<TxReceipt>
 ```
 
+#### ledgerApi
+
+Proxy a Canton JSON Ledger API call through the connected wallet. Requires the `ledgerApi` capability.
+
+```typescript
+ledgerApi(params: LedgerApiParams): Promise<LedgerApiResult>
+```
+
 #### registerAdapter
 
 Register a custom wallet adapter at runtime.
@@ -159,11 +167,11 @@ destroy(): void
 | Event | Payload | Description |
 |-------|---------|-------------|
 | `session:connected` | `{ session: Session }` | Wallet connected successfully |
-| `session:disconnected` | `{}` | Wallet disconnected |
-| `session:expired` | `{}` | Session has expired |
-| `tx:status` | `{ txHash, status }` | Transaction status update |
+| `session:disconnected` | `{ sessionId: SessionId }` | Wallet disconnected |
+| `session:expired` | `{ sessionId: SessionId }` | Session has expired |
+| `tx:status` | `{ sessionId, txId, status, raw? }` | Transaction status update |
 | `registry:status` | `{ status: RegistryStatus }` | Registry status change |
-| `error` | `{ error: Error }` | Error occurred |
+| `error` | `{ error: PartyLayerError }` | Error occurred |
 
 ---
 
@@ -477,10 +485,16 @@ type WalletId = string;
 type PartyId = string;
 
 interface Session {
-  sessionId: string;
+  sessionId: SessionId;
   walletId: WalletId;
   partyId: PartyId;
+  network: NetworkId;
+  createdAt: number;
   expiresAt?: number;
+  origin: string;
+  capabilitiesSnapshot: CapabilityKey[];
+  metadata?: Record<string, string>;
+  networkMismatch?: { expected: string; actual: string };
 }
 
 interface WalletInfo {

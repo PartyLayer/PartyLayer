@@ -30,10 +30,10 @@ export default function IntroductionPage() {
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 16, marginBottom: 32 }}>
         {[
           { title: 'Zero-Config React', desc: 'PartyLayerKit + ConnectButton for instant wallet integration. No boilerplate needed.' },
-          { title: 'CIP-0103 Compliant', desc: 'Full implementation of the Canton dApp Standard — 10 methods, 4 events, typed errors.' },
-          { title: '6 Wallet Adapters', desc: 'Console, Loop, Cantor8, Nightly, and Send (beta) auto-registered. Bron available for enterprise.' },
+          { title: 'CIP-0103 Compliant', desc: 'Full implementation of the Canton dApp Standard: 10 methods, 4 events, typed errors.' },
+          { title: 'Multi-Wallet', desc: 'Console, Loop, Cantor8, and Nightly auto-registered. Send is discovered via the CIP-0103 announce path. Bron available for enterprise.' },
           { title: 'Registry Discovery', desc: 'Verified wallets fetched from the PartyLayer registry with signature verification.' },
-          { title: 'Type-Safe', desc: 'Branded types, strict TypeScript, and 12 typed error classes with stable error codes.' },
+          { title: 'Type-Safe', desc: 'Branded types, strict TypeScript, and 14 typed error classes with stable error codes.' },
           { title: 'Themes & Customization', desc: 'Light, dark, and auto themes. Full theme customization with PartyLayerTheme.' },
         ].map(f => (
           <div key={f.title} style={{

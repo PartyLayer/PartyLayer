@@ -147,6 +147,7 @@ const partyId = 'party::abc123' as PartyId;`}</CodeBlock>
       <H2 id="error-code">ErrorCode</H2>
       <CodeBlock language="typescript">{`type ErrorCode =
   | 'WALLET_NOT_FOUND'
+  | 'ADAPTER_NOT_REGISTERED'
   | 'WALLET_NOT_INSTALLED'
   | 'USER_REJECTED'
   | 'ORIGIN_NOT_ALLOWED'
@@ -157,6 +158,7 @@ const partyId = 'party::abc123' as PartyId;`}</CodeBlock>
   | 'REGISTRY_VERIFICATION_FAILED'
   | 'REGISTRY_SCHEMA_INVALID'
   | 'INTERNAL_ERROR'
+  | 'NETWORK_MISMATCH'
   | 'TIMEOUT';`}</CodeBlock>
 
       <H2 id="event-types">Event Types</H2>

@@ -69,7 +69,21 @@ import { getBuiltinAdapters } from '@partylayer/sdk';
 <PartyLayerKit
   network="mainnet"
   appName="My dApp"
-  adapters={[...getBuiltinAdapters(), new BronAdapter({ clientId: '...' })]}
+  adapters={[
+    ...getBuiltinAdapters(),
+    new BronAdapter({
+      auth: {
+        clientId: '...',
+        redirectUri: 'https://your-app.com/auth/callback',
+        authorizationUrl: 'https://auth.bron.example/authorize',
+        tokenUrl: 'https://auth.bron.example/token',
+      },
+      api: {
+        baseUrl: 'https://api.bron.example',
+        getAccessToken: async () => getStoredAccessToken(),
+      },
+    }),
+  ]}
 >
   {/* ... */}
 </PartyLayerKit>`}</CodeBlock>

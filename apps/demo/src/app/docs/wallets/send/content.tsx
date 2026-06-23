@@ -55,20 +55,23 @@ export default function SendContent() {
       </P>
       <CodeBlock language="bash">{`npm install @partylayer/sdk @partylayer/react @partylayer/adapter-send`}</CodeBlock>
       <P>
-        With <Code>{'PartyLayerKit'}</Code>{' '}auto-discovery there is no further wiring — Send appears
-        in the wallet picker automatically. If you build a custom adapter set, register{' '}
-        <Code>{'SendAdapter'}</Code> alongside the others:
+        With <Code>{'PartyLayerKit'}</Code>{' '}there is no further wiring: Send is served through the
+        CIP-0103 announce path, so it appears in the wallet picker automatically when the user has Send
+        installed. If you build a custom adapter set and want the bespoke <Code>{'SendAdapter'}</Code>{' '}
+        explicitly, register it alongside the built-ins:
       </P>
       <CodeBlock language="tsx">{`import { createPartyLayer, getBuiltinAdapters, SendAdapter } from '@partylayer/sdk';
 
 const client = createPartyLayer({
   network: 'mainnet',
-  appName: 'My dApp',
+  app: { name: 'My dApp' },
   adapters: [...getBuiltinAdapters(), new SendAdapter()],
 });`}</CodeBlock>
       <Callout type="note">
-        Send is <Strong>already in <Code>{'getBuiltinAdapters()'}</Code></Strong>. The example above is
-        only meaningful if you previously passed a manually-curated adapter list.
+        Send is <Strong>not</Strong> in <Code>{'getBuiltinAdapters()'}</Code> (that returns Console, Loop,
+        Cantor8, and Nightly). By default Send is discovered through the CIP-0103 announce path, so the
+        explicit <Code>{'SendAdapter'}</Code> above is only needed if you want the bespoke adapter instead
+        of the announce path.
       </Callout>
 
       <H2 id="connection-flow">Connection Flow</H2>

@@ -66,7 +66,20 @@ const signingWallets = await client.listWallets({
       <P>Register a custom wallet adapter at runtime.</P>
       <CodeBlock language="typescript">{`import { BronAdapter } from '@partylayer/adapter-bron';
 
-client.registerAdapter(new BronAdapter({ clientId: 'your-client-id' }));`}</CodeBlock>
+client.registerAdapter(
+  new BronAdapter({
+    auth: {
+      clientId: 'your-client-id',
+      redirectUri: 'https://your-app.com/auth/callback',
+      authorizationUrl: 'https://auth.bron.example/authorize',
+      tokenUrl: 'https://auth.bron.example/token',
+    },
+    api: {
+      baseUrl: 'https://api.bron.example',
+      getAccessToken: async () => getStoredAccessToken(),
+    },
+  }),
+);`}</CodeBlock>
 
       <H2 id="session-management">Session Management</H2>
 

@@ -125,7 +125,7 @@ function TransferButton({
               //   { tag: 'AV_Text',       value: '<string>' }
               //   { tag: 'AV_Party',      value: '<party>' }
               // The Scan /transfer-factory response already ships these values
-              // in the correct shape — pass them through verbatim.
+              // in the correct shape, so pass them through verbatim.
               extraArgs: {
                 context: { values: choiceContext },
                 meta: { values: {} },
@@ -151,7 +151,7 @@ function TransferButton({
     }
   };
 
-  if (!session) return null;
+  if (!isConnected) return null;
 
   return (
     <>

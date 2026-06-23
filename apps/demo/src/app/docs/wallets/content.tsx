@@ -131,7 +131,7 @@ export default function WalletsPage() {
           <Code>{'signTransaction'}</Code> with your own participant submission, or call{' '}
           <Code>{'ledgerApi'}</Code> against <Code>{'/v2/commands/submit-and-wait'}</Code> and let Bron sign
           the pre-built command. Requires explicit OAuth configuration via{' '}
-          <Code>{'BronAdapter'}</Code> with a <Code>{'clientId'}</Code>.</LI>
+          <Code>{'BronAdapter'}</Code> with <Code>{'auth'}</Code> and <Code>{'api'}</Code> config.</LI>
         <LI><Strong>Session restore (all five wallets):</Strong> every adapter declares the{' '}
           <Code>{'restore'}</Code> capability and implements a matching{' '}
           <Code>{'restore()'}</Code> method. On page reload, the SDK decrypts the persisted
@@ -152,9 +152,16 @@ import { BronAdapter } from '@partylayer/adapter-bron';
   adapters={[
     ...getBuiltinAdapters(),
     new BronAdapter({
-      clientId: 'your-oauth-client-id',
-      // Optional: custom OAuth redirect URI
-      // redirectUri: 'https://my-app.com/callback',
+      auth: {
+        clientId: 'your-oauth-client-id',
+        redirectUri: 'https://my-app.com/callback',
+        authorizationUrl: 'https://auth.bron.example/authorize',
+        tokenUrl: 'https://auth.bron.example/token',
+      },
+      api: {
+        baseUrl: 'https://api.bron.example',
+        getAccessToken: async () => getStoredAccessToken(),
+      },
     }),
   ]}
 >`}</CodeBlock>

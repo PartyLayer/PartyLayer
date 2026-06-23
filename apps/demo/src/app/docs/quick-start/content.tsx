@@ -63,7 +63,8 @@ export function Providers({ children }: { children: React.ReactNode }) {
 
       <Callout type="tip">
         <Code>{'PartyLayerKit'}</Code> automatically registers all built-in wallet adapters
-        (Console, Loop, Cantor8, Nightly, Send), fetches the wallet registry, and sets up session persistence.
+        (Console, Loop, Cantor8, Nightly), fetches the wallet registry, and sets up session persistence.
+        Send is discovered through the CIP-0103 announce path, so it appears in the picker without being registered.
       </Callout>
 
       <H2 id="step-3">Step 3: Add ConnectButton</H2>
@@ -169,11 +170,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <H2 id="whats-happening">What{"'"}s Happening Under the Hood?</H2>
       <P>When <Code>{'PartyLayerKit'}</Code> mounts, it:</P>
       <OL>
-        <LI><Strong>Creates a PartyLayerClient</Strong> — the core SDK instance that manages all wallet operations</LI>
-        <LI><Strong>Registers built-in adapters</Strong> — Console, Loop, Cantor8, Nightly, and Send wallet adapters</LI>
-        <LI><Strong>Fetches the wallet registry</Strong> — verified wallet metadata from <Code>{'registry.partylayer.xyz'}</Code></LI>
-        <LI><Strong>Groups CIP-0103 native wallets</Strong> — those flagged <Code>{'cip0103.native: true'}</Code> in the registry render in a dedicated picker section</LI>
-        <LI><Strong>Restores existing sessions</Strong> — if a user was previously connected, the session is restored automatically</LI>
+        <LI><Strong>Creates a PartyLayerClient</Strong>: the core SDK instance that manages all wallet operations</LI>
+        <LI><Strong>Registers built-in adapters</Strong>: Console, Loop, Cantor8, and Nightly wallet adapters (Send is served through the CIP-0103 announce path)</LI>
+        <LI><Strong>Fetches the wallet registry</Strong>: verified wallet metadata from <Code>{'registry.partylayer.xyz'}</Code></LI>
+        <LI><Strong>Groups CIP-0103 native wallets</Strong>: those flagged <Code>{'cip0103.native: true'}</Code> in the registry render in a dedicated picker section</LI>
+        <LI><Strong>Restores existing sessions</Strong>: if a user was previously connected, the session is restored automatically</LI>
       </OL>
 
       <H2 id="using-hooks">Using Session Data</H2>
@@ -198,11 +199,11 @@ function Profile() {
       <H2 id="next-steps">Next Steps</H2>
       <P>Now that you have basic connectivity, explore more:</P>
       <OL>
-        <LI><A href="/docs/partylayer-kit">PartyLayerKit</A> — Configuration options (network, adapters, theme)</LI>
-        <LI><A href="/docs/connect-button">ConnectButton</A> — Customize the button appearance and behavior</LI>
-        <LI><A href="/docs/hooks">React Hooks</A> — Use <Code>{'useSignMessage'}</Code>, <Code>{'useSubmitTransaction'}</Code>, and more</LI>
-        <LI><A href="/docs/theming">Theming</A> — Switch between light, dark, and custom themes</LI>
-        <LI><A href="/docs/wallets">Wallets & Adapters</A> — Add custom wallet adapters or the Bron enterprise wallet</LI>
+        <LI><A href="/docs/partylayer-kit">PartyLayerKit</A>: Configuration options (network, adapters, theme)</LI>
+        <LI><A href="/docs/connect-button">ConnectButton</A>: Customize the button appearance and behavior</LI>
+        <LI><A href="/docs/hooks">React Hooks</A>: Use <Code>{'useSignMessage'}</Code>, <Code>{'useSubmitTransaction'}</Code>, and more</LI>
+        <LI><A href="/docs/theming">Theming</A>: Switch between light, dark, and custom themes</LI>
+        <LI><A href="/docs/wallets">Wallets & Adapters</A>: Add custom wallet adapters or the Bron enterprise wallet</LI>
       </OL>
 
       <PrevNext />

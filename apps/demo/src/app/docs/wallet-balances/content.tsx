@@ -82,7 +82,7 @@ function TokenBalance({ templateId }: { templateId: string }) {
       );
       setBalance(total);
     });
-  }, [session, templateId]);
+  }, [isConnected, party, client, templateId]);
 
   if (!isConnected) return null;
   return <span>{balance ?? '…'}</span>;
@@ -200,7 +200,7 @@ function MultiTokenBalances() {
         Object.fromEntries(results.map((r) => [r.templateId, r.total]))
       );
     });
-  }, [session]);
+  }, [isConnected, party, client]);
 
   return (
     <ul>
@@ -224,6 +224,7 @@ const client = createPartyLayer({
 });
 
 const session = await client.connect();
+const party = session.partyId;
 
 async function getBalance(templateId: string): Promise<number> {
   const result = await client.ledgerApi({
@@ -256,8 +257,9 @@ console.log('Balance:', balance);`}</CodeBlock>
       <H3>All holdings (unfiltered)</H3>
       <P>Fetch every active contract for the connected party, regardless of token type:</P>
       <CodeBlock language="typescript">{`const result = await client.ledgerApi({
-  requestMethod: 'GET',
-  resource: '/v2/state/acs/active-contracts',
+  requestMethod: 'POST',
+  resource: '/v2/state/active-contracts',
+  body: JSON.stringify({ filter: { filtersByParty: { [party]: {} } } }),
 });
 
 const { activeContracts } = JSON.parse(result.response);

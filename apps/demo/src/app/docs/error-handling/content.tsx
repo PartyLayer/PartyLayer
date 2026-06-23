@@ -9,7 +9,7 @@ export default function ErrorHandlingPage() {
     <>
       <H1>Error Handling</H1>
       <P>
-        PartyLayer provides 12 typed error classes with stable error codes, human-readable messages,
+        PartyLayer provides 14 typed error classes with stable error codes, human-readable messages,
         and structured metadata. All errors extend <Code>{'PartyLayerError'}</Code>.
       </P>
 
@@ -48,7 +48,8 @@ export default function ErrorHandlingPage() {
           </thead>
           <tbody>
             {[
-              { code: 'WALLET_NOT_FOUND', cls: 'WalletNotFoundError', desc: 'No adapter registered for the requested walletId.' },
+              { code: 'WALLET_NOT_FOUND', cls: 'WalletNotFoundError', desc: 'No wallet with the requested id is known (not in the registry and no adapter registered for it).' },
+              { code: 'ADAPTER_NOT_REGISTERED', cls: 'AdapterNotRegisteredError', desc: 'A popup or remote (discovery-adapter) wallet was selected, but the app did not register a matching provider adapter.' },
               { code: 'WALLET_NOT_INSTALLED', cls: 'WalletNotInstalledError', desc: 'Wallet was found in registry but not detected on the device.' },
               { code: 'USER_REJECTED', cls: 'UserRejectedError', desc: 'User declined the connection or signing request in the wallet UI.' },
               { code: 'ORIGIN_NOT_ALLOWED', cls: 'OriginNotAllowedError', desc: 'Wallet rejected the dApp origin (domain not whitelisted).' },
@@ -58,7 +59,8 @@ export default function ErrorHandlingPage() {
               { code: 'REGISTRY_FETCH_FAILED', cls: 'RegistryFetchFailedError', desc: 'Could not fetch the wallet registry. SDK falls back to adapters.' },
               { code: 'REGISTRY_VERIFICATION_FAILED', cls: 'RegistryVerificationFailedError', desc: 'Registry signature verification failed (possible tampering).' },
               { code: 'REGISTRY_SCHEMA_INVALID', cls: 'RegistrySchemaInvalidError', desc: 'Registry data did not match the expected schema.' },
-              { code: 'INTERNAL_ERROR', cls: 'InternalError', desc: 'Unexpected internal SDK error. This is a bug — please report it.' },
+              { code: 'INTERNAL_ERROR', cls: 'InternalError', desc: 'Unexpected internal SDK error. This is a bug. Please report it.' },
+              { code: 'NETWORK_MISMATCH', cls: 'NetworkMismatchError', desc: 'The wallet is on a different network than the dApp requires. Switch the wallet network, then reconnect.' },
               { code: 'TIMEOUT', cls: 'TimeoutError', desc: 'Operation timed out (e.g., wallet took too long to respond).' },
             ].map(e => (
               <tr key={e.code} style={{ borderBottom: '1px solid rgba(15,23,42,0.10)' }}>

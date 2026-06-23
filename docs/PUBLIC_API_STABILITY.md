@@ -118,6 +118,7 @@ Error codes are stable identifiers for programmatic handling:
 | Code | Meaning |
 |------|---------|
 | `WALLET_NOT_FOUND` | Wallet not in registry |
+| `ADAPTER_NOT_REGISTERED` | Discovery-adapter wallet selected with no matching provider adapter registered |
 | `WALLET_NOT_INSTALLED` | Wallet extension not detected |
 | `USER_REJECTED` | User cancelled operation |
 | `SESSION_EXPIRED` | Session has expired |
@@ -129,6 +130,7 @@ Error codes are stable identifiers for programmatic handling:
 | `REGISTRY_VERIFICATION_FAILED` | Signature verification failed |
 | `REGISTRY_SCHEMA_INVALID` | Invalid registry format |
 | `INTERNAL_ERROR` | Unexpected internal error |
+| `NETWORK_MISMATCH` | Wallet is on a different network than the dApp requires |
 
 ---
 
