@@ -61,8 +61,8 @@ function App() {
         The default view showing all available wallets. Wallets are grouped into two categories:
       </P>
       <UL>
-        <LI><Strong>CIP-0103 Native</Strong> — Wallets detected via <Code>{'window.canton.*'}</Code> injection (shown first with a "Native" badge)</LI>
-        <LI><Strong>Registry Wallets</Strong> — Verified wallets from the PartyLayer registry</LI>
+        <LI><Strong>CIP-0103 Native</Strong>: wallets flagged <Code>{'cip0103.native'}</Code> in the registry (shown first with a "CIP-0103" badge)</LI>
+        <LI><Strong>Registry Wallets</Strong>: verified wallets from the PartyLayer registry</LI>
       </UL>
       <P>
         Each wallet card shows the wallet name, icon, and a brief description. Verified wallets
@@ -90,8 +90,9 @@ function App() {
 
       <H3>5. Not Installed</H3>
       <P>
-        If the selected wallet isn{"'"}t detected, the modal shows an installation prompt with
-        links to the wallet{"'"}s website and app stores (from the wallet{"'"}s <Code>{'installHints'}</Code>).
+        If the selected wallet isn{"'"}t detected, the modal shows an installation prompt with a
+        link to the wallet{"'"}s website (from the wallet{"'"}s <Code>{'website'}</Code> field, with a
+        built-in fallback URL for known wallets). Mobile flows may also show a deep-link button.
       </P>
 
       <H2 id="registry-status">Registry Status</H2>
@@ -102,9 +103,8 @@ function App() {
 
       <H2 id="keyboard">Keyboard Navigation</H2>
       <UL>
-        <LI><Code>{'Escape'}</Code> — Close the modal</LI>
-        <LI><Code>{'Tab'}</Code> — Navigate between wallet options</LI>
-        <LI><Code>{'Enter'}</Code> — Select the focused wallet</LI>
+        <LI><Code>{'Escape'}</Code>: closes the modal (explicit handler)</LI>
+        <LI>Wallet options are standard buttons, so <Code>{'Tab'}</Code> moves focus between them and <Code>{'Enter'}</Code> or <Code>{'Space'}</Code> activates the focused wallet (native browser behavior)</LI>
       </UL>
 
       <H2 id="custom-icons">Custom Wallet Icons</H2>

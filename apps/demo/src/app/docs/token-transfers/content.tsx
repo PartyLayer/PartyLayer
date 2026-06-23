@@ -52,10 +52,11 @@ export default function TokenTransfersContent() {
       <UL>
         <LI>Wallet connected — see <a href="/docs/quick-start" style={{ color: '#E6B800' }}>Quick Start</a></LI>
         <LI>
-          A <Strong>TransferFactory contractId</Strong> — fetched from the app-provider{"'"}s
-          Scan / off-ledger API. For Amulet on mainnet/devnet, that{"'"}s the{' '}
-          <Code>{'/registry/transfer-instruction/v1/transfer-factory'}</Code> endpoint of the DSO{"'"}s
-          Scan (it returns both the factoryId and a <Code>{'ChoiceContext'}</Code> blob to pass as{' '}
+          A <Strong>TransferFactory contractId</Strong>, fetched from the app-provider{"'"}s
+          Scan token-standard registry API. For Amulet, that is the{' '}
+          <Code>{'POST /registry/transfer-instruction/v1/transfer-factory'}</Code> endpoint of the DSO{"'"}s
+          Scan (it returns the <Code>{'factoryId'}</Code> plus a{' '}
+          <Code>{'choiceContext.choiceContextData'}</Code> blob to pass as{' '}
           <Code>{'extraArgs.context'}</Code>).
         </LI>
         <LI>
@@ -83,8 +84,8 @@ function TransferButton({
   dsoParty,
   receiverPartyId,
 }: {
-  factoryCid: string;             // from Scan /transfer-factory
-  choiceContext: Record<string, unknown>; // from Scan
+  factoryCid: string;             // factoryId from Scan transfer-factory
+  choiceContext: Record<string, unknown>; // raw choiceContext.choiceContextData from Scan
   inputHoldingCids: string[];     // from your ACS query
   dsoParty: string;               // instrument admin (e.g. DSO on the network)
   receiverPartyId: string;
@@ -119,15 +120,13 @@ function TransferButton({
                 inputHoldingCids,
                 meta: { values: {} },
               },
-              // ChoiceContext.values is a TextMap AnyValue. Each entry must
-              // use the tagged-union form, e.g.
-              //   { tag: 'AV_ContractId', value: '<cid>' }
-              //   { tag: 'AV_Text',       value: '<string>' }
-              //   { tag: 'AV_Party',      value: '<party>' }
-              // The Scan /transfer-factory response already ships these values
-              // in the correct shape, so pass them through verbatim.
+              // extraArgs.context is the ChoiceContext blob from the Scan
+              // transfer-factory response, passed through unchanged. The
+              // canonical Splice CLI assigns it verbatim, with NO extra wrapping:
+              //   extraArgs.context = transferFactory.choiceContext.choiceContextData
+              // choiceContext below already IS that choiceContextData object.
               extraArgs: {
-                context: { values: choiceContext },
+                context: choiceContext,
                 meta: { values: {} },
               },
             },
@@ -163,15 +162,30 @@ function TransferButton({
   );
 }`}</CodeBlock>
 
+      <Callout type="warning">
+        <Strong>Submission path depends on the wallet.</Strong> The raw{' '}
+        <Code>{'ledgerApi'}</Code> call to <Code>{'/v2/commands/submit-and-wait'}</Code> above works when
+        the connected wallet proxies the JSON Ledger API for a party that can submit directly to a
+        participant node. External or passkey parties (for example <Code>{'Send'}</Code>) do not submit
+        raw ledger commands; the wallet prepares, signs, and submits in one step. For those wallets, use
+        PartyLayer{"'"}s <Code>{'submitTransaction()'}</Code>, which routes the command set through the
+        wallet{"'"}s <Code>{'prepareExecute'}</Code> / <Code>{'prepareExecuteAndWait'}</Code> (the generic
+        announce bridge maps <Code>{'submitTransaction'}</Code> to <Code>{'prepareExecute'}</Code>). Build
+        the same <Code>{'TransferFactory_Transfer'}</Code> command and submit it through the path your
+        target wallet supports.
+      </Callout>
+
       <Callout type="note">
         <Strong>Where do <Code>{'factoryCid'}</Code> and <Code>{'choiceContext'}</Code> come from?</Strong>{' '}
-        From the Splice Scan HTTP API that the registry issuer runs. For the Amulet DSO on
-        devnet/mainnet, you call{' '}
-        <Code>{'GET /api/scan/v0/registry/transfer-instruction/v1/transfer-factory'}</Code>{' '}
-        (body includes the sender and receiver) and it returns{' '}
-        <Code>{'{ factoryId, choiceContext, disclosedContracts }'}</Code>. This is dApp-side
-        off-ledger coordination — PartyLayer does not abstract it because the endpoint varies by
-        app provider.
+        From the Splice Scan token-standard registry API that the registry issuer runs. You call{' '}
+        <Code>{'POST /registry/transfer-instruction/v1/transfer-factory'}</Code>{' '}
+        with the transfer <Code>{'choiceArguments'}</Code> in the body, and it returns{' '}
+        <Code>{'{ factoryId, transferKind, choiceContext: { choiceContextData, disclosedContracts } }'}</Code>.
+        Use <Code>{'factoryId'}</Code> as the factory contractId and pass{' '}
+        <Code>{'choiceContext.choiceContextData'}</Code> through as <Code>{'extraArgs.context'}</Code>.
+        The path is the canonical spec route; a given deployment may front it under a Scan proxy prefix
+        (for example <Code>{'/api/scan/v0'}</Code>). This is dApp-side off-ledger coordination, so
+        PartyLayer does not abstract it.
       </Callout>
 
       <H2 id="loop-fast-path">Loop wallet — convenience helper</H2>
@@ -190,9 +204,15 @@ await loop.wallet.transfer(
   { instrument_admin: dsoParty, instrument_id: 'Amulet' },
   { message: 'Payment for invoice #42', executionMode: 'wait' },
 );`}</CodeBlock>
+      <P>
+        Under the helper, Loop exposes the lower-level <Code>{'provider.submitTransaction(command, options)'}</Code>{' '}
+        (returns first, with the ledger update arriving via <Code>{'onTransactionUpdate'}</Code>) and the
+        opt-in <Code>{'provider.submitAndWaitForTransaction(command, options)'}</Code>, which waits for the
+        final result. Both accept the same Token Standard <Code>{'ExerciseCommand'}</Code> payload shown above.
+      </P>
       <Callout type="tip">
-        This path works only with Loop. For Console / Nightly / Bron / Send, use the Token Standard
-        command flow above — those wallets do not expose a high-level transfer helper. Send fuses the
+        This helper works only with Loop. For Console / Nightly / Bron / Send, use the Token Standard
+        command flow above; those wallets do not expose a high-level transfer helper. Send fuses the
         prepare-sign-submit steps into <Code>{'prepareExecuteAndWait'}</Code> internally, so the
         Token Standard command flow is the canonical path there.
       </Callout>
@@ -218,7 +238,7 @@ await client.ledgerApi({
         choice: 'TransferInstruction_Accept',
         choiceArgument: {
           extraArgs: {
-            context: { values: acceptChoiceContext }, // tagged TextMap AnyValue from Scan
+            context: acceptChoiceContext, // raw choiceContextData from Scan, passed through unchanged
             meta: { values: {} },
           },
         },

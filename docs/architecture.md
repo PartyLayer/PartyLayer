@@ -318,9 +318,8 @@ The wallet registry is a versioned JSON document:
 
 - `WalletNotFoundError`: Wallet not in registry
 - `WalletNotInstalledError`: Wallet not installed in browser
-- `ConnectionRejectedError`: User rejected connection
+- `UserRejectedError`: User rejected the connection or signing operation
 - `SessionExpiredError`: Session has expired
-- `UserRejectedError`: User rejected signing operation
 - `TransportError`: Communication error with wallet
 - `TimeoutError`: Operation timed out
 

@@ -20,24 +20,31 @@ function createPartyLayer(config: PartyLayerConfig): PartyLayerClient
 ```typescript
 interface PartyLayerConfig {
   /** Target network */
-  network: 'devnet' | 'testnet' | 'mainnet';
+  network: NetworkId;
   /** Application info shown to wallets */
   app: {
     name: string;
     origin?: string; // defaults to window.location.origin
   };
-  /** Registry URL (default: https://registry.partylayer.xyz/v1/wallets.json) */
+  /** Registry URL (default: https://registry.partylayer.xyz) */
   registryUrl?: string;
   /** Registry channel (default: 'stable') */
   channel?: 'stable' | 'beta';
+  /** Network-mismatch enforcement policy (default: 'guard') */
+  networkEnforcement?: 'off' | 'guard' | 'strict';
   /** Custom storage adapter (default: localStorage) */
   storage?: StorageAdapter;
   /** Custom crypto adapter */
   crypto?: CryptoAdapter;
   /** Registry public keys for signature verification */
   registryPublicKeys?: string[];
-  /** Wallet adapters (default: all built-in — Console, Loop, Cantor8, Nightly) */
-  adapters?: (WalletAdapter | AdapterClass)[];
+  /** Wallet adapters (default: all built-in: Console, Loop, Cantor8, Nightly) */
+  adapters?: (WalletAdapter | AdapterClass | OfficialProviderAdapter | OfficialAdapterFactory)[];
+  /** Announce-based wallet discovery */
+  discovery?: {
+    announce?: boolean;        // default true in the browser
+    announceTimeoutMs?: number; // default ~300
+  };
   /** Telemetry configuration or custom adapter */
   telemetry?: TelemetryConfig | TelemetryAdapter;
   /** Custom logger */
@@ -73,7 +80,18 @@ connect(options?: ConnectOptions): Promise<Session>
 
 ```typescript
 interface ConnectOptions {
+  /** Specific wallet ID to connect to */
   walletId?: WalletId;
+  /** Prefer installed wallets */
+  preferInstalled?: boolean;
+  /** Allow only specific wallets */
+  allowWallets?: WalletId[];
+  /** Required capabilities */
+  requiredCapabilities?: string[];
+  /** Timeout in milliseconds */
+  timeoutMs?: number;
+  /** Called with a pairing/display URI (e.g. a WalletConnect wc: URI) before approval */
+  onDisplayUri?: (uri: string) => void;
 }
 ```
 
@@ -480,7 +498,7 @@ interface TelemetryConfig {
 ### Core Types
 
 ```typescript
-type NetworkId = 'devnet' | 'testnet' | 'mainnet';
+type NetworkId = 'devnet' | 'testnet' | 'mainnet' | (string & {});
 type WalletId = string;
 type PartyId = string;
 

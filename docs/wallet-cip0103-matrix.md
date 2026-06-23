@@ -28,7 +28,7 @@ Verdict legend:
 | walletId | Transport | Detection mechanism (cited) | CIP-0103 verdict | Registry `cip0103.native` | Sunset implication |
 |---|---|---|---|---|---|
 | console | SDK: extension postMessage (local) / QR-relay (remote) / combined | `consoleWallet.checkExtensionAvailability()` postMessage probe — [console-adapter.ts:657-682](../packages/adapters/console/src/console-adapter.ts#L657-L682) | **NATIVE (CIP-0103 via official SDK)** | `true` (stable + beta) | Likely removable once native path covers extension **and** remote QR-relay; until then keep as SDK shim. Live-check whether Console injects `window.canton`. |
-| send | Injected `window.canton` (splice OpenRPC) | `window.canton` presence + registry `matchesProviderDetection` on `status().kernel.id` — [send-provider.ts:54-72](../packages/adapters/send/src/send-provider.ts#L54-L72), [send-provider.ts:131-139](../packages/adapters/send/src/send-provider.ts#L131-L139) | **NATIVE `window.canton`** | `true` (stable + beta) | Strongest native candidate. Removable once native discovery replicates the `kernel.id` guard so Send/Console don't collide at `window.canton`. |
+| send | Announce (`canton:announceProvider`) | Announce-gated: `detectInstalled` is true iff Send announces via `canton:announceProvider`, independent of who owns `window.canton` — [send-adapter.ts:104-126](../packages/adapters/send/src/send-adapter.ts#L104-L126), [send-provider.ts:233](../packages/adapters/send/src/send-provider.ts#L233) | **NATIVE (CIP-0103, announce-discovered)** | `true` (stable + beta) | Strongest native candidate. Already announce-based, so Send and Console no longer collide at `window.canton`. |
 | loop | QR + WebSocket popup via `@fivenorth/loop-sdk` | None — `detectInstalled` always `true` in a browser (SDK bundled) — [loop-adapter.ts:77-89](../packages/adapters/loop/src/loop-adapter.ts#L77-L89) | **WALLETCONNECT / SDK (not CIP-0103)** | absent | Cannot be removed by native+WC alone. Needs Loop to ship a CIP-0103 `window.canton` provider or a standard WC interface. **Keep.** |
 | cantor8 | Deep-link (`DeepLinkTransport`) + stub vendor module | Mobile user-agent only: `/iPhone\|iPad\|iPod\|Android/i.test(navigator.userAgent)` — [cantor8-adapter.ts:91-98](../packages/adapters/cantor8/src/cantor8-adapter.ts#L91-L98) | **STUBBED/UNCONFIRMED (deep-link)** | absent | Real C8 transport (extension? WC? deep-link?) unconfirmed from public docs. **Requires live browser check before any sunset decision. Keep.** |
 | bron | OAuth2 popup + remote HTTP API | None — `detectInstalled` always `true` ("remote signer service") — [bron-adapter.ts:106-113](../packages/adapters/bron/src/bron-adapter.ts#L106-L113) | **OAUTH / remote (not CIP-0103)** | absent | Server-side remote signer; fundamentally not injected/WC. Cannot be removed unless Bron exposes CIP-0103. **Keep.** |
@@ -90,18 +90,21 @@ false positives, but limited protection) — this is the
 
 ### send — `@partylayer/adapter-send`
 
-- **Transport.** Injected `window.canton`, the splice-wallet-kernel OpenRPC
-  surface ([send-adapter.ts:1-16](../packages/adapters/send/src/send-adapter.ts#L1-L16)).
-- **Detection.** `isPotentiallyAvailable()` checks `window.canton` presence
-  ([send-provider.ts:70-72](../packages/adapters/send/src/send-provider.ts#L70-L72));
-  `isInstalled()` then runs a `status` round-trip and matches it against
-  registry-driven rules via `matchesProviderDetection`
-  ([send-provider.ts:54-62](../packages/adapters/send/src/send-provider.ts#L54-L62)).
-  Every RPC is funnelled through `guardedRequest`, which rejects with
-  `SendKernelMismatchError` if the live `kernel.id` doesn't match Send
-  ([send-provider.ts:131-139](../packages/adapters/send/src/send-provider.ts#L131-L139)).
-  This is the guard that lets Send and Console coexist at the shared
-  `window.canton` slot.
+- **Transport.** Announce-based: Send advertises over `canton:announceProvider`
+  and is driven through the extension postMessage `target` channel it announces,
+  rather than binding the shared `window.canton` slot
+  ([send-provider.ts:1-12](../packages/adapters/send/src/send-provider.ts#L1-L12)).
+- **Detection.** Announce-gated. `detectInstalled()`
+  ([send-adapter.ts:104-126](../packages/adapters/send/src/send-adapter.ts#L104-L126))
+  first calls the cheap browser-readiness gate `isPotentiallyAvailable()`
+  ([send-provider.ts:249](../packages/adapters/send/src/send-provider.ts#L249)),
+  then `isInstalled()`, which resolves true iff Send announces via
+  `canton:announceProvider`, independent of who owns `window.canton`
+  ([send-provider.ts:233](../packages/adapters/send/src/send-provider.ts#L233)).
+  The `status().kernel.id` read is now a back-compat diagnostic only, not the
+  detection path ([send-provider.ts:254](../packages/adapters/send/src/send-provider.ts#L254)).
+  Because the channel is scoped to the announcing extension, Send and Console no
+  longer collide at the shared `window.canton` slot.
 - **CIP-0103 capabilities implemented.** Full OpenRPC method set:
   `status, connect, disconnect, isConnected, getActiveNetwork, listAccounts,
   getPrimaryAccount, signMessage, prepareExecute, prepareExecuteAndWait,
@@ -112,9 +115,10 @@ false positives, but limited protection) — this is the
 - **Capabilities** ([send-adapter.ts:67-76](../packages/adapters/send/src/send-adapter.ts#L67-L76)):
   `connect, disconnect, restore, signMessage, submitTransaction, ledgerApi,
   events, injected`.
-- **Verdict:** NATIVE `window.canton` (CIP-0103 provider). Registry marks
+- **Verdict:** NATIVE (CIP-0103 provider, announce-discovered). Registry marks
   `cip0103.native: true` in both channels; the stable entry also carries
-  `providerDetection` rules.
+  `providerDetection` rules (used for diagnostics, not the announce-gated
+  install check).
 - **Sunset implication:** The cleanest removal candidate. Once the native
   provider/discovery layer reproduces the `kernel.id` guard (so Send isn't
   mistaken for Console or vice-versa at `window.canton`), dApps can talk to Send

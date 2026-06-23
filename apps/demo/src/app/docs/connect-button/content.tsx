@@ -29,7 +29,7 @@ function Navbar() {
       <H2 id="props">Props</H2>
       <PropsTable data={[
         { prop: 'label', type: 'string', default: '"Connect Wallet"', description: 'Text shown on the button when disconnected.' },
-        { prop: 'connectedLabel', type: '"address" | "wallet" | "custom"', default: '"address"', description: 'What to display when connected: truncated party ID, wallet name, or custom format.' },
+        { prop: 'connectedLabel', type: '"address" | "wallet" | "custom"', default: '"address"', description: 'What to display when connected: truncated party ID, wallet ID, or custom format.' },
         { prop: 'formatAddress', type: '(partyId: string) => string', description: 'Custom formatter for the connected label. Only used when connectedLabel="custom".' },
         { prop: 'className', type: 'string', description: 'CSS class name for the outer container.' },
         { prop: 'style', type: 'CSSProperties', description: 'Inline styles for the outer container.' },
@@ -50,7 +50,7 @@ function Navbar() {
       <H3>Connecting</H3>
       <P>
         While a wallet connection is in progress, the button shows a loading spinner.
-        This state is automatic — no configuration needed.
+        This state is automatic, no configuration needed.
       </P>
 
       <H3>Connected</H3>
@@ -60,10 +60,10 @@ function Navbar() {
       </P>
       <P>The dropdown shows:</P>
       <UL>
-        <LI><Strong>Status badge</Strong> — green "CONNECTED" indicator</LI>
-        <LI><Strong>Party ID</Strong> — the full connected party ID</LI>
-        <LI><Strong>Wallet name</Strong> — which wallet is connected</LI>
-        <LI><Strong>Disconnect button</Strong> — cleanly ends the session</LI>
+        <LI><Strong>Status badge</Strong>: green "CONNECTED" indicator</LI>
+        <LI><Strong>Party ID</Strong>: the full connected party ID</LI>
+        <LI><Strong>Wallet ID</Strong>: which wallet is connected</LI>
+        <LI><Strong>Disconnect button</Strong>: cleanly ends the session</LI>
       </UL>
 
       <H2 id="connected-label">Connected Label Formats</H2>
@@ -71,9 +71,9 @@ function Navbar() {
 <ConnectButton connectedLabel="address" />
 // Result: "party::abc1...xyz9"
 
-// Show wallet name
+// Show the wallet ID
 <ConnectButton connectedLabel="wallet" />
-// Result: "Console Wallet"
+// Result: "console"
 
 // Custom format
 <ConnectButton
