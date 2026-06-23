@@ -2,6 +2,13 @@
 
 **How to build a PartyLayer wallet adapter**
 
+> **Deprecated for CIP-0103 wallets.** The per-wallet adapter approach in this guide is
+> being phased out. CIP-0103 wallets now integrate adapterlessly: announce over
+> `canton:announceProvider` and PartyLayer drives the wallet through the generic bridge,
+> with no adapter package to write or maintain. See the
+> [Generic Bridge guide](https://partylayer.xyz/docs/generic-bridge). This page is kept
+> for reference and for existing, non-CIP-0103 adapters only.
+
 ## What is PartyLayer?
 
 PartyLayer is a developer SDK that provides a WalletConnect-like experience for Canton Network wallets. It allows dApps to connect to multiple wallet types through a single integration point.
