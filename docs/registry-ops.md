@@ -85,7 +85,7 @@ partylayer-registry sign --channel stable --key registry/keys/dev.key
 partylayer-registry bump-sequence --channel stable
 
 # Sign
-partylayer-registry sign --channel stable --key registry/keys/dev.pub
+partylayer-registry sign --channel stable --key registry/keys/dev.key
 ```
 
 ## Key Rotation

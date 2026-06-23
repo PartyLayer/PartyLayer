@@ -178,6 +178,47 @@ interface PartyLayerError extends Error {
 
 ---
 
+### session:networkMismatch
+
+Emitted when the connected wallet's effective network differs from the dApp's configured network. Emitted under all policies (informational); `enforced` is true when the active policy (`guard` or `strict`) will block.
+
+```typescript
+interface SessionNetworkMismatchEvent {
+  type: 'session:networkMismatch';
+  sessionId: SessionId;
+  expected: string; // dApp-configured network, CAIP-2 normalized
+  actual: string;   // wallet-reported network, CAIP-2 normalized
+  enforced: boolean; // true under guard|strict, false under off
+}
+```
+
+**Triggered by:**
+- A network mismatch detected at connect or restore time
+
+**Metrics mapping:**
+- No direct metric
+
+---
+
+### wallets:changed
+
+Emitted when the available wallet list changes, currently only from late or inject-time announce discovery.
+
+```typescript
+interface WalletsChangedEvent {
+  type: 'wallets:changed';
+  reason: 'announced';
+}
+```
+
+**Triggered by:**
+- A `canton:announceProvider` wallet appearing after the initial list was built
+
+**Metrics mapping:**
+- No direct metric
+
+---
+
 ## Event → Metric Mapping Table
 
 | Event | Condition | Metric |

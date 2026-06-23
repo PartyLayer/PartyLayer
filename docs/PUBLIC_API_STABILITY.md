@@ -70,6 +70,7 @@ client.getActiveSession(): Promise<Session | null>
 client.signMessage(params): Promise<SignedMessage>
 client.signTransaction(params): Promise<SignedTransaction>
 client.submitTransaction(params): Promise<TxReceipt>
+client.ledgerApi(params): Promise<LedgerApiResult>
 client.on(event, handler): () => void
 client.off(event, handler): void
 client.destroy(): void

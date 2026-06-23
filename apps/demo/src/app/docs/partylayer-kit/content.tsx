@@ -32,9 +32,11 @@ function App() {
         { prop: 'children', type: 'ReactNode', description: 'Your application component tree.' },
         { prop: 'registryUrl', type: 'string', default: '"https://registry.partylayer.xyz"', description: 'Override the wallet registry URL. Useful for self-hosted registries.' },
         { prop: 'channel', type: '"stable" | "beta"', default: '"stable"', description: 'Registry channel. Use "beta" to include wallets in beta testing.' },
-        { prop: 'adapters', type: '(WalletAdapter | AdapterClass)[]', default: 'Built-in adapters', description: 'Custom wallet adapter list. Overrides the default built-in adapters if provided.' },
+        { prop: 'adapters', type: '(WalletAdapter | AdapterClass | OfficialProviderAdapter | OfficialAdapterFactory)[]', default: 'Built-in adapters', description: 'Custom wallet adapter list. Overrides the default built-in adapters if provided. Also accepts official provider adapters and adapter factories.' },
         { prop: 'theme', type: '"light" | "dark" | "auto" | PartyLayerTheme', default: '"light"', description: 'Theme preset or a custom theme object. "auto" follows system preference.' },
         { prop: 'walletIcons', type: 'Record<string, string>', default: '{}', description: 'Custom wallet icon URLs keyed by walletId. Overrides registry icons.' },
+        { prop: 'walletOrder', type: 'readonly string[]', description: 'Wallet ids in display order for the connect modal. Unlisted wallets fall to the end; sorting applies within the CIP-0103 Native and Available sections.' },
+        { prop: 'sessionOptions', type: 'Partial<SessionStoreOptions>', description: 'Session-store options forwarded to PartyLayerProvider (reconnect, expiry, broadcast, persistSnapshot, storage, onInvalidate) for encrypted persistence, auto-reconnect, and multi-tab sync.' },
       ]} />
 
       <H2 id="network-config">Network Configuration</H2>

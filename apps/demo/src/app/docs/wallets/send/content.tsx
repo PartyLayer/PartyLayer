@@ -10,8 +10,9 @@ export default function SendContent() {
       <H1>Send Wallet</H1>
 
       <P>
-        <Strong>Send</Strong> is a passkey-based Canton wallet that exposes the splice-wallet-kernel
-        OpenRPC contract via <Code>{'window.canton'}</Code>. The dApp connection layer is open-sourced as{' '}
+        <Strong>Send</Strong> is a passkey-based Canton wallet that speaks the splice-wallet-kernel
+        OpenRPC contract and announces itself over <Code>{'canton:announceProvider'}</Code> rather than
+        binding the shared <Code>{'window.canton'}</Code> slot. The dApp connection layer is open-sourced as{' '}
         <A href="https://sigilry.org">Sigilry</A>; this PartyLayer adapter wraps that contract with the
         same surface every other Canton wallet uses.
       </P>
@@ -34,7 +35,7 @@ export default function SendContent() {
           <tbody>
             {[
               { prop: 'Authentication', send: 'Passkey (WebAuthn-PRF)', note: 'Touch ID / Face ID prompt per signature' },
-              { prop: 'Provider injection', send: 'window.canton', note: 'CIP-0103 / splice-wallet-kernel native via Sigilry' },
+              { prop: 'Discovery', send: 'canton:announceProvider', note: 'Announce-based (EIP-6963 style); does not bind window.canton' },
               { prop: 'Networks', send: 'canton:mainnet only', note: '' },
             ].map(r => (
               <tr key={r.prop} style={{ borderBottom: '1px solid rgba(15,23,42,0.10)' }}>
@@ -184,7 +185,7 @@ await submit({
         <LI><Strong>ledgerApi</Strong> — supported (full Sigilry passthrough; matches Console / Nightly).</LI>
         <LI><Strong>events</Strong> — supported; <Code>{'txChanged'}</Code> bridged to PartyLayer{' '}
           <Code>{'tx:status'}</Code>.</LI>
-        <LI><Strong>injected</Strong> — supported via <Code>{'window.canton'}</Code> with kernel.id guard.</LI>
+        <LI><Strong>injected</Strong>: declared as a capability, but Send is discovered and driven over the <Code>{'canton:announceProvider'}</Code> channel rather than by binding the shared <Code>{'window.canton'}</Code> slot.</LI>
       </UL>
 
       <H2 id="network-support">Network Support</H2>
@@ -195,8 +196,8 @@ await submit({
         <Strong>Demo-app display caveat:</Strong> the PartyLayer demo at{' '}
         <Code>{'localhost:3000'}</Code> defaults its network label to{' '}
         <Code>{'devnet'}</Code>. That label reflects the demo{"'"}s configuration — not the actual
-        network the connected wallet sits on. Send{"'"}s adapter reads the live network from{' '}
-        <Code>{'window.canton.getActiveNetwork()'}</Code> and reports{' '}
+        network the connected wallet sits on. Send{"'"}s adapter reads the live network via its{' '}
+        <Code>{'getActiveNetwork()'}</Code> provider call and reports{' '}
         <Code>{'canton:mainnet'}</Code> when Send is active. dApps that ship to production should
         configure <Code>{'PartyLayerKit'}</Code> with{' '}
         <Code>{'network="mainnet"'}</Code> when targeting Send.
@@ -204,10 +205,10 @@ await submit({
 
       <H2 id="troubleshooting">Troubleshooting</H2>
       <UL>
-        <LI><Strong>{'"Send not detected"'}</Strong> — the extension is missing, or{' '}
-          <Code>{'window.canton.kernel.id'}</Code> doesn{"'"}t match Send. The adapter intentionally
-          refuses to claim foreign providers (e.g. another splice-wallet-kernel-compatible
-          extension); install Send and reload.</LI>
+        <LI><Strong>{'"Send not detected"'}</Strong>: the extension is missing, or Send did not
+          announce over <Code>{'canton:announceProvider'}</Code> within the detection window. Send
+          announces on its own channel and does not depend on owning{' '}
+          <Code>{'window.canton'}</Code>; install Send and reload.</LI>
         <LI><Strong>{'"Connection cancelled"'}</Strong> — the user dismissed the passkey prompt or the
           extension popup. Triggering connect again is safe.</LI>
         <LI><Strong>{'"Authentication Failed: Cannot reach authentication server"'}</Strong> — Send{"'"}s
@@ -229,12 +230,11 @@ await submit({
           token in <Code>{'status.session.accessToken'}</Code> for the lifetime of the connection;
           PartyLayer{"'"}s session-persistence layer encrypts state at rest in the dApp{"'"}s
           configured storage.</LI>
-        <LI><Strong>Registry-driven detection guard.</Strong> Every Send adapter call verifies the
-          live <Code>{'window.canton'}</Code> provider against the registry{"'"}s{' '}
-          <Code>{'providerDetection'}</Code> rules before forwarding. If a different
-          splice-wallet-kernel-compatible extension grabs the global, Send adapter cleanly returns{' '}
-          <Strong>not installed</Strong> and yields to the matching adapter rather than acting on a
-          foreign provider.</LI>
+        <LI><Strong>Announce-scoped channel.</Strong> Send is discovered and every RPC is routed over
+          the dedicated <Code>{'canton:announceProvider'}</Code> channel that Send advertises. Because
+          the channel is bound to the announcing extension, the adapter never acts on a foreign
+          provider that happens to own <Code>{'window.canton'}</Code>; if Send does not announce, the
+          adapter cleanly returns <Strong>not installed</Strong> and yields to the matching adapter.</LI>
       </UL>
 
       <H3 id="references">References</H3>

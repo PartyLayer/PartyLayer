@@ -84,7 +84,7 @@ This covers the most common use cases: querying token balances (ACS) and submitt
 
 ## Limitations
 
-- **Session Restoration**: Loop sessions are ephemeral and cannot be restored. Users must reconnect via QR code after page refresh.
+- **Session Restoration**: Supported, but conditional. `restore()` calls Loop's `autoConnect()`, which reconnects when a valid auth token is still in `localStorage`. If the token is missing or expired, the user must reconnect via QR code.
 - **Sign Transaction Only**: Loop SDK doesn't expose separate signing - use `submitTransaction()` which signs and submits.
 - **Network Switching**: Not supported. Requires reconnection.
 - **Multi-Party**: Not supported.
@@ -143,10 +143,10 @@ Party ID is obtained from `provider.party_id` after successful connection. This 
 
 ## Reconnect Required
 
-Since Loop doesn't support session restoration, users must reconnect after:
-- Page refresh
-- Browser restart
-- Session expiration
+Loop restores automatically via `autoConnect()` when a valid auth token is present. A user must reconnect (via QR code) when:
+- The stored auth token has expired
+- The browser storage was cleared
+- `autoConnect()` does not complete within the restore timeout
 
 The demo app should clearly indicate when reconnect is required.
 
