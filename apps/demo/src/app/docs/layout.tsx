@@ -78,6 +78,7 @@ const SIDEBAR_NAV = [
       { label: 'Wallets & Adapters', href: '/docs/wallets' },
       { label: 'Send (Beta)', href: '/docs/wallets/send' },
       { label: 'CIP-0103 Provider', href: '/docs/cip-0103' },
+      { label: 'Generic Bridge', href: '/docs/generic-bridge' },
     ],
   },
   {
@@ -176,6 +177,13 @@ const SEARCH_INDEX: SearchEntry[] = [
   { title: 'asProvider() Bridge', section: 'CIP-0103', href: '/docs/cip-0103#bridge', keywords: ['bridge', 'asProvider', 'PartyLayerClient', 'wrapper'] },
   { title: 'discoverInjectedProviders', section: 'CIP-0103', href: '/docs/cip-0103#discovery', keywords: ['discover', 'injected', 'window.canton', 'native'] },
   { title: 'ProviderRpcError', section: 'CIP-0103', href: '/docs/cip-0103#errors', keywords: ['error', 'RPC', 'EIP-1193', 'code', 'ProviderRpcError'] },
+
+  // Generic Bridge
+  { title: 'Generic Bridge', href: '/docs/generic-bridge', keywords: ['generic bridge', 'adapterless', 'announce', 'cip-0103', 'wallet integration', 'canton:announceProvider', 'browser:ext'] },
+  { title: 'Announce handshake', section: 'Generic Bridge', href: '/docs/generic-bridge#announce-handshake', keywords: ['announce', 'requestProvider', 'announceProvider', 'EIP-6963', 'discovery', 'AnnouncedWallet', 'target'] },
+  { title: 'For wallets: zero adapter code', section: 'Generic Bridge', href: '/docs/generic-bridge#for-wallets', keywords: ['wallet', 'adapterless', 'connect', 'signMessage', 'prepareExecute', 'baseline', 'capabilities'] },
+  { title: 'Capability mapping', section: 'Generic Bridge', href: '/docs/generic-bridge#capability-mapping', keywords: ['capability', 'mapping', 'ledgerApi', 'restore', 'events', 'submitTransaction'] },
+  { title: 'For dApps: connect to any CIP-0103 wallet', section: 'Generic Bridge', href: '/docs/generic-bridge#for-dapps', keywords: ['dapp', 'createPartyLayer', 'connect', 'capabilitiesSnapshot', 'ConnectButton', 'PartyLayerKit'] },
 
   // Error Handling
   { title: 'Error Handling', href: '/docs/error-handling', keywords: ['error', 'catch', 'try', 'handling', 'PartyLayerError'] },
