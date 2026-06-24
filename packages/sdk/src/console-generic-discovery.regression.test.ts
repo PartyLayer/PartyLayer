@@ -388,13 +388,16 @@ describe('ConsoleAdapter behavior unchanged (smoke, no live extension)', () => {
 
     const session = { ...res.session, partyId: res.partyId } as unknown as Session;
 
-    // signMessage: SDK is called with the hex-encoded message; returns a SignedMessage.
+    // signMessage: SDK is called with the base64-encoded message; returns a SignedMessage.
     const signed = await adapter.signMessage(ctx, session, { message: 'hello' } as never);
     expect(String(signed.signature)).toBe('0xsignature');
     expect(signed.message).toBe('hello');
+    // base64('hello') === 'aGVsbG8='; the adapter sends { message: { base64 } }, NO { hex }.
     expect(mockConsoleWallet.signMessage).toHaveBeenCalledWith(
-      expect.objectContaining({ message: expect.objectContaining({ hex: expect.stringMatching(/^0x/) }) }),
+      expect.objectContaining({ message: expect.objectContaining({ base64: 'aGVsbG8=' }) }),
     );
+    const signArg = mockConsoleWallet.signMessage.mock.calls[0][0] as { message: Record<string, unknown> };
+    expect('hex' in signArg.message).toBe(false);
 
     // submitTransaction: SDK submitCommands with waitForFinalization; returns a TxReceipt.
     const receipt = await adapter.submitTransaction(ctx, session, { signedTx: { commands: [] } } as never);
