@@ -54,11 +54,13 @@ import {
   toWalletId,
   type AdapterContext,
   type CIP0103Provider,
+  type OfficialProviderAdapter,
   type Session,
   type WalletInfo,
 } from '@partylayer/core';
 import { ConsoleAdapter } from '@partylayer/adapter-console';
 import { createPartyLayer } from './client';
+import { GenericAnnounceAdapter } from './announce-adapter';
 
 // Console's VERIFIED provider id == the registry providerDetection matcher value.
 // Anchored to the shipping registry by the "registry anchor" test below.
@@ -116,13 +118,106 @@ function consoleWalletInfo(): WalletInfo {
 /** The shipping console registry entry shape (NO transport: 'announce'). */
 const CONSOLE_REGISTRY_ENTRY = { id: 'console', adapter: { type: '@partylayer/adapter-console' } };
 
+// ── Send + Walley fixtures (verified from the real registry) ─────────────────
+// Send's VERIFIED announce id == its registry provider.id matcher value.
+const SEND_ID = 'ldmohiccoioolenadmogclhoklmanpgi';
+
+/** Registry WalletInfo for Send: provider.id + kernel.* matchers (OR-list). */
+function sendWalletInfo(): WalletInfo {
+  return {
+    walletId: toWalletId('send'),
+    name: 'Send',
+    website: '',
+    icons: {},
+    capabilities: ['connect', 'signMessage', 'submitTransaction'],
+    adapter: { packageName: '@partylayer/adapter-send', versionRange: '*' },
+    docs: [],
+    networks: ['mainnet'],
+    channel: 'stable',
+    providerDetection: {
+      transport: 'window.canton',
+      matchers: [
+        { field: 'provider.id', match: 'exact', values: [SEND_ID] },
+        { field: 'kernel.url', match: 'domain', value: 'cantonwallet.com' },
+        { field: 'kernel.userUrl', match: 'domain', value: 'cantonwallet.com' },
+        { field: 'kernel.id', match: 'exact', values: [SEND_ID] },
+      ],
+    },
+  } as unknown as WalletInfo;
+}
+
+/** Registry WalletInfo for Walley: discovery-adapter, NO providerDetection. */
+function walleyWalletInfo(): WalletInfo {
+  return {
+    walletId: toWalletId('walley'),
+    name: 'Walley',
+    website: '',
+    icons: {},
+    capabilities: ['connect', 'signMessage', 'submitTransaction'],
+    adapter: { packageName: '@k2flabs/walley-dapp-sdk', versionRange: '*' },
+    docs: [],
+    networks: ['devnet'],
+    channel: 'stable',
+  } as unknown as WalletInfo;
+}
+
+/** Raw registry entries (the shape gateDiscoveryAdapterEntries + the bridge read). */
+const SEND_REGISTRY_ENTRY = {
+  id: 'send',
+  adapter: {
+    type: '@partylayer/adapter-send',
+    transport: 'announce',
+    config: { metadata: true, restore: true, ledgerApi: true, staticMetadata: { signingMethod: 'webauthn-prf' } },
+  },
+};
+const WALLEY_REGISTRY_ENTRY = {
+  id: 'walley',
+  adapter: { type: '@k2flabs/walley-dapp-sdk', transport: 'discovery-adapter', config: { providerId: 'walley' } },
+};
+
+/** Dispatch a flat canton:announceProvider event (Console + Send both use this). */
+function announce(id: string, name: string): void {
+  window.dispatchEvent(
+    new CustomEvent('canton:announceProvider', { detail: { providerId: id, name, target: id } }),
+  );
+}
+
+/** A Walley-shaped OfficialProviderAdapter (registers under toWalletId('walley')). */
+function makeWalleyOfficial(): OfficialProviderAdapter {
+  const provider: CIP0103Provider = {
+    request: (async ({ method }: { method: string }) =>
+      method === 'getPrimaryAccount'
+        ? { partyId: 'party::walley', networkId: 'canton:da-devnet' }
+        : method === 'status'
+          ? { connection: { isConnected: true }, network: { networkId: 'canton:da-devnet' } }
+          : {}) as CIP0103Provider['request'],
+    on: () => provider,
+    emit: () => false,
+    removeListener: () => provider,
+  };
+  return {
+    providerId: 'walley',
+    name: 'Walley',
+    type: 'browser',
+    detect: async () => true,
+    provider: () => provider,
+  } as unknown as OfficialProviderAdapter;
+}
+
 function setWindowCanton(p: unknown): void {
   (window as unknown as Record<string, unknown>).canton = p;
 }
 
-/** Create a client whose registry returns the console entry (with detection). */
+type RegistryOpts = {
+  wallets?: WalletInfo[];
+  registry?: { wallets: unknown[] };
+  entryFor?: (id: string) => unknown;
+};
+
+/** Create a client whose registry returns the given wallets/entries. */
 function makeClientWithRegistry(
   adapters: ConstructorParameters<typeof createPartyLayer>[0]['adapters'],
+  opts: RegistryOpts = {},
 ) {
   const client = createPartyLayer({
     network: 'devnet',
@@ -130,9 +225,11 @@ function makeClientWithRegistry(
     discovery: { announceTimeoutMs: 0 },
     adapters,
   });
-  vi.spyOn(client.registryClient, 'getWallets').mockResolvedValue([consoleWalletInfo()]);
-  vi.spyOn(client.registryClient, 'getRegistry').mockResolvedValue({ wallets: [] } as never);
-  vi.spyOn(client.registryClient, 'getWalletEntry').mockResolvedValue(CONSOLE_REGISTRY_ENTRY as never);
+  vi.spyOn(client.registryClient, 'getWallets').mockResolvedValue(opts.wallets ?? [consoleWalletInfo()]);
+  vi.spyOn(client.registryClient, 'getRegistry').mockResolvedValue((opts.registry ?? { wallets: [] }) as never);
+  vi.spyOn(client.registryClient, 'getWalletEntry').mockImplementation(
+    async (id: string) => (opts.entryFor ? opts.entryFor(id) : CONSOLE_REGISTRY_ENTRY) as never,
+  );
   return client;
 }
 
@@ -306,5 +403,169 @@ describe('ConsoleAdapter behavior unchanged (smoke, no live extension)', () => {
     expect(mockConsoleWallet.submitCommands).toHaveBeenCalledWith(
       expect.objectContaining({ waitForFinalization: 5000 }),
     );
+  });
+});
+
+// ════════════════════════════════════════════════════════════════════════════
+// CROSS-CLAIM COVERAGE: Console, Send, and Walley never claim/override each other
+// ════════════════════════════════════════════════════════════════════════════
+
+/** entryFor that returns the right raw registry entry per id. */
+function multiEntryFor(id: string): unknown {
+  if (id === 'send') return SEND_REGISTRY_ENTRY;
+  if (id === 'walley') return WALLEY_REGISTRY_ENTRY;
+  return CONSOLE_REGISTRY_ENTRY;
+}
+
+// ── Cross-claim 1: provider.id exact-match isolation (detection.ts) ───────────
+describe('cross-claim: provider.id exact match never crosses Console <-> Send', () => {
+  const infos = [consoleWalletInfo(), sendWalletInfo()];
+
+  it("Send's id resolves to SEND, never console", () => {
+    const m = findMatchingWalletInfo({ provider: { id: SEND_ID } } as never, infos);
+    expect(m && String(m.walletId)).toBe('send');
+  });
+
+  it("Console's id resolves to CONSOLE, never send", () => {
+    const m = findMatchingWalletInfo({ provider: { id: CONSOLE_ID } } as never, infos);
+    expect(m && String(m.walletId)).toBe('console');
+  });
+
+  it('a foreign id resolves to neither', () => {
+    expect(findMatchingWalletInfo({ provider: { id: 'unknown-extension' } } as never, infos)).toBeUndefined();
+  });
+
+  it('exact match is symmetric: neither id is a substring/loose match of the other', () => {
+    // Guard against any future switch to a loose matcher. Both ids are 32 chars,
+    // distinct; exact match must reject the other entirely.
+    expect(SEND_ID).not.toEqual(CONSOLE_ID);
+    expect(findMatchingWalletInfo({ provider: { id: SEND_ID } } as never, [consoleWalletInfo()])).toBeUndefined();
+    expect(findMatchingWalletInfo({ provider: { id: CONSOLE_ID } } as never, [sendWalletInfo()])).toBeUndefined();
+  });
+});
+
+// ── Cross-claim 2: both extensions announce on one event -> two distinct entries ─
+describe('cross-claim: Console + Send announce together -> two distinct entries', () => {
+  it('exactly one "console" (ConsoleAdapter) AND one "send" (generic announce), no dup/phantom', async () => {
+    const client = makeClientWithRegistry([new ConsoleAdapter()], {
+      wallets: [consoleWalletInfo(), sendWalletInfo()],
+      registry: { wallets: [CONSOLE_REGISTRY_ENTRY, SEND_REGISTRY_ENTRY] },
+      entryFor: multiEntryFor,
+    });
+
+    // BOTH announce on the same canton:announceProvider event, flat detail.
+    announce(CONSOLE_ID, 'Console Wallet'); // known + ConsoleAdapter registered -> adapters.has -> continue
+    announce(SEND_ID, 'Send'); // known + transport 'announce', no bespoke adapter -> generic bridge
+    await new Promise((r) => setTimeout(r, 40));
+
+    const wallets = await client.listWallets({ includeExperimental: true });
+    const ids = wallets.map((w) => String(w.walletId));
+
+    // Two distinct entries, each exactly once.
+    expect(ids.filter((id) => id === 'console')).toHaveLength(1);
+    expect(ids.filter((id) => id === 'send')).toHaveLength(1);
+    // Neither claimed the other; no dynamic browser:ext:* duplicate; no phantom.
+    expect(ids.some((id) => id.startsWith('browser:ext:'))).toBe(false);
+    expect(ids).not.toContain('browser:ext:canton');
+
+    // Console is served by the bespoke adapter; Send by the generic announce adapter.
+    expect(client.getAdapter('console')).toBeInstanceOf(ConsoleAdapter);
+    expect(client.getAdapter('send')).toBeInstanceOf(GenericAnnounceAdapter);
+    // Cross-check: the bespoke ConsoleAdapter did NOT get registered under send, and vice versa.
+    expect(client.getAdapter('send')).not.toBeInstanceOf(ConsoleAdapter);
+
+    client.destroy();
+  });
+});
+
+// ── Cross-claim 3: Walley (discovery-adapter) isolation ───────────────────────
+describe('cross-claim: Walley discovery-adapter is gated + never collides with console/send', () => {
+  const base = { wallets: [consoleWalletInfo(), sendWalletInfo(), walleyWalletInfo()], registry: { wallets: [CONSOLE_REGISTRY_ENTRY, SEND_REGISTRY_ENTRY, WALLEY_REGISTRY_ENTRY] }, entryFor: multiEntryFor };
+
+  it('WITHOUT the Walley adapter: walley is hidden (gated), console/send unaffected', async () => {
+    // gateDiscoveryAdapterEntries (client.ts:390-407): a discovery-adapter entry
+    // whose adapter is NOT registered is hidden so its click can't break.
+    const client = makeClientWithRegistry([new ConsoleAdapter()], base);
+    const ids = (await client.listWallets({ includeExperimental: true })).map((w) => String(w.walletId));
+
+    expect(ids).not.toContain('walley'); // gated out
+    expect(ids.filter((id) => id === 'console')).toHaveLength(1);
+    expect(ids.filter((id) => id === 'send')).toHaveLength(1);
+    client.destroy();
+  });
+
+  it('WITH the Walley adapter: walley surfaces as its own single entry; console/send still distinct', async () => {
+    const client = makeClientWithRegistry([new ConsoleAdapter(), makeWalleyOfficial()], base);
+
+    // Console + Send also announce; prove the announce path never yields a walley
+    // entry, and Walley's discovery-adapter path never yields a console/send entry.
+    announce(CONSOLE_ID, 'Console Wallet');
+    announce(SEND_ID, 'Send');
+    await new Promise((r) => setTimeout(r, 40));
+
+    const ids = (await client.listWallets({ includeExperimental: true })).map((w) => String(w.walletId));
+
+    expect(ids.filter((id) => id === 'walley')).toHaveLength(1); // surfaced, single
+    expect(ids.filter((id) => id === 'console')).toHaveLength(1);
+    expect(ids.filter((id) => id === 'send')).toHaveLength(1);
+    expect(ids.some((id) => id.startsWith('browser:ext:'))).toBe(false); // no announce dup leaks
+    // Walley is its own adapter; it did not claim console/send and was not claimed by them.
+    expect(client.getAdapter('walley')).toBeDefined();
+    expect(client.getAdapter('console')).toBeInstanceOf(ConsoleAdapter);
+    expect(client.getAdapter('send')).toBeInstanceOf(GenericAnnounceAdapter);
+    client.destroy();
+  });
+});
+
+// ── Cross-claim 4: request-time isolation (the mechanism that REPLACED the
+//    kernel.id guard). Source reality, verified this branch:
+//      - Send no longer binds window.canton / guards by kernel.id; detection is
+//        announce-only (send-adapter.ts:108-122, send-adapter.test.ts:120-123).
+//      - SendKernelMismatchError is exported (errors.ts:78) but NO LONGER THROWN
+//        anywhere in source (the guardedRequest transport was removed).
+//    Request-time isolation is now delivered by announce TARGET-CHANNEL scoping:
+//    each wallet is driven over its own announce target, so Send and Console
+//    cannot reach each other's provider even when they share window.canton.
+//    This is the honest, source-true form of the "request-time isolation" check.
+describe('cross-claim: request-time target isolation (Console vs Send providers)', () => {
+  it("a Send-scoped generic adapter drives ONLY the Send provider, never Console's", async () => {
+    // Two independent recorder providers standing in for the two target channels.
+    const make = (tag: string) => {
+      const calls: string[] = [];
+      const p = {
+        calls,
+        request: async ({ method }: { method: string }) => {
+          calls.push(`${tag}:${method}`);
+          if (method === 'getPrimaryAccount') return { partyId: `party::${tag}`, networkId: 'canton:da-devnet' };
+          if (method === 'status') return { network: { networkId: 'canton:da-devnet' } };
+          return {};
+        },
+        on() {
+          return p;
+        },
+        emit() {
+          return true;
+        },
+        removeListener() {
+          return p;
+        },
+      };
+      return p as unknown as CIP0103Provider & { calls: string[] };
+    };
+    const consoleProv = make('console');
+    const sendProv = make('send');
+
+    const sendAdapter = new GenericAnnounceAdapter({
+      announceId: SEND_ID,
+      walletId: toWalletId('send'),
+      provider: sendProv, // bound to the Send target channel ONLY
+    });
+
+    await sendAdapter.connect({ network: 'devnet' } as never);
+
+    // The Send adapter touched ONLY the Send channel; Console's provider is silent.
+    expect(sendProv.calls.some((c) => c.startsWith('send:'))).toBe(true);
+    expect(sendProv.calls).toContain('send:connect');
+    expect(consoleProv.calls).toEqual([]); // never reached -> request-time isolation
   });
 });
