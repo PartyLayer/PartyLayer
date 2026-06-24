@@ -29,7 +29,8 @@
         "type": "@partylayer/adapter-console",
         "transport": "announce",
         "config": {
-          "restore": true
+          "restore": true,
+          "signMessageHex": true
         }
       },
       "installation": {

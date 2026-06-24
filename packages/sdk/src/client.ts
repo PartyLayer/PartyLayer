@@ -109,6 +109,7 @@ function deriveAnnounceConfig(entry: {
     restore: cfg.restore === true,
     ledgerApi: cfg.ledgerApi === true,
     metadata: cfg.metadata === true,
+    signMessageHex: cfg.signMessageHex === true,
   };
   // staticMetadata: declarative string→string only (JSON-safe, unlike mapError
   // which is a function and is correctly omitted). Non-string values are dropped.

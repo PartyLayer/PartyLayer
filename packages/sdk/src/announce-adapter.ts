@@ -46,7 +46,7 @@ import type {
   WalletAdapter,
   WalletId,
 } from '@partylayer/core';
-import { toPartyId, toWalletId, normalizeLedgerMethodLower, ledgerApiBodyToObject, isRecognizedNetwork } from '@partylayer/core';
+import { toPartyId, toWalletId, toSignature, normalizeLedgerMethodLower, ledgerApiBodyToObject, isRecognizedNetwork } from '@partylayer/core';
 
 /** Canonical providerId prefix for an announced extension (provider.md: `browser:ext:<id>`). */
 export const ANNOUNCED_WALLET_ID_PREFIX = 'browser:ext:';
@@ -71,6 +71,14 @@ export interface AnnounceAdapterConfig {
   ledgerApi?: boolean;
   /** Populate the richer `session.metadata` on connect when the provider returns it. */
   metadata?: boolean;
+  /**
+   * Hex-encode the `signMessage` payload. Some CIP-0103 wallets (e.g. Console)
+   * expect the message as `{ message: { hex: '0x…' }, metaData: {...} }` rather
+   * than the bare-string `{ message }` the spec type declares; absent/false keeps
+   * the raw string (e.g. Send). Opt-in, like the other flags — no wallet-specific
+   * code in the adapter, the registry entry's `adapter.config` drives it.
+   */
+  signMessageHex?: boolean;
   /**
    * Declarative wallet-specific STATIC metadata (e.g. `{ signingMethod:
    * 'webauthn-prf' }`) — the wagmi connector-property pattern (like rdns/iconUrl).
@@ -134,6 +142,19 @@ function mapTxStatus(
   }
 }
 
+/**
+ * Hex-encode a UTF-8 message as `0x…`, byte-for-byte identical to
+ * ConsoleAdapter's encoding (console-adapter.ts: "SDK expects { message: { hex } }").
+ */
+function toHexMessage(message: string): string {
+  return (
+    '0x' +
+    Array.from(new TextEncoder().encode(message))
+      .map((b) => b.toString(16).padStart(2, '0'))
+      .join('')
+  );
+}
+
 export class GenericAnnounceAdapter implements WalletAdapter {
   readonly walletId: WalletId;
   readonly name: string;
@@ -143,6 +164,7 @@ export class GenericAnnounceAdapter implements WalletAdapter {
   private readonly metadataEnabled: boolean;
   private readonly staticMetadata?: Record<string, string>;
   private readonly mapError?: (err: unknown) => Error | undefined;
+  private readonly signMessageHex: boolean;
 
   // Optional WalletAdapter surface — assigned in the ctor ONLY when configured,
   // so `getCapabilities()` and `'x' in adapter` feature-detection stay honest.
@@ -163,6 +185,7 @@ export class GenericAnnounceAdapter implements WalletAdapter {
     this.metadataEnabled = config?.metadata === true;
     this.staticMetadata = config?.staticMetadata;
     this.mapError = config?.mapError;
+    this.signMessageHex = config?.signMessageHex === true;
     if (config?.events) this.on = this.makeOn();
     if (config?.restore) this.restore = this.makeRestore();
     if (config?.ledgerApi) this.ledgerApi = this.makeLedgerApi();
@@ -242,15 +265,40 @@ export class GenericAnnounceAdapter implements WalletAdapter {
 
   async signMessage(
     _ctx: AdapterContext,
-    _session: Session,
+    session: Session,
     params: SignMessageParams,
   ): Promise<SignedMessage> {
-    return this.guarded(() =>
-      this.provider.request<SignedMessage>({
-        method: 'signMessage',
-        params: { message: params.message },
-      }),
-    );
+    return this.guarded(async () => {
+      // Param shape: spec-default is the bare string `{ message }` (Send). When
+      // `signMessageHex` is configured (Console), mirror ConsoleAdapter exactly:
+      // `{ message: { hex }, metaData: { purpose: 'sign-message', ... } }`.
+      const rpcParams = this.signMessageHex
+        ? {
+            message: { hex: toHexMessage(params.message) },
+            metaData: {
+              purpose: 'sign-message',
+              ...(params.domain ? { domain: params.domain } : {}),
+              ...(params.nonce ? { nonce: params.nonce } : {}),
+            },
+          }
+        : { message: params.message };
+
+      const res = await this.provider.request<unknown>({ method: 'signMessage', params: rpcParams });
+
+      // Response normalization (universal): the provider may return a bare
+      // signature string OR `{ signature }`; synthesize the full SignedMessage
+      // from session + params (matches ConsoleAdapter and SendAdapter). Additive
+      // for Send — adds partyId/message, removes nothing.
+      const sig =
+        typeof res === 'string' ? res : (res as { signature?: unknown } | null)?.signature ?? '';
+      return {
+        signature: toSignature(String(sig)),
+        partyId: session.partyId,
+        message: params.message,
+        nonce: params.nonce,
+        domain: params.domain,
+      };
+    });
   }
 
   async submitTransaction(
