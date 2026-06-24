@@ -72,13 +72,14 @@ export interface AnnounceAdapterConfig {
   /** Populate the richer `session.metadata` on connect when the provider returns it. */
   metadata?: boolean;
   /**
-   * Hex-encode the `signMessage` payload. Some CIP-0103 wallets (e.g. Console)
-   * expect the message as `{ message: { hex: '0x…' }, metaData: {...} }` rather
-   * than the bare-string `{ message }` the spec type declares; absent/false keeps
-   * the raw string (e.g. Send). Opt-in, like the other flags — no wallet-specific
-   * code in the adapter, the registry entry's `adapter.config` drives it.
+   * Base64-encode the `signMessage` payload. LIVE-VERIFIED: Console's
+   * `window.canton` signMessage expects `{ message: <base64 string> }` (base64 of
+   * the message's UTF-8 bytes, with NO `metaData`); raw text, `{ hex }`, and
+   * `metaData` all crash inside Console. Absent/false keeps the raw string the
+   * spec type declares (e.g. Send). Opt-in, like the other flags — no
+   * wallet-specific code in the adapter; the registry `adapter.config` drives it.
    */
-  signMessageHex?: boolean;
+  signMessageBase64?: boolean;
   /**
    * Declarative wallet-specific STATIC metadata (e.g. `{ signingMethod:
    * 'webauthn-prf' }`) — the wagmi connector-property pattern (like rdns/iconUrl).
@@ -143,16 +144,17 @@ function mapTxStatus(
 }
 
 /**
- * Hex-encode a UTF-8 message as `0x…`, byte-for-byte identical to
- * ConsoleAdapter's encoding (console-adapter.ts: "SDK expects { message: { hex } }").
+ * Base64-encode a message's UTF-8 bytes. LIVE-VERIFIED against the real Console
+ * extension (provider lpnf…): Console's `window.canton` signMessage wants
+ * `{ message: <base64 string> }` (a base64 STRING, not a `{ hex }` object, not
+ * raw text). `btoa(btoa-of-utf8-bytes)` reproduces the verified-success call
+ * (`btoa('hello canton')` for ASCII) and is correct for all UTF-8.
  */
-function toHexMessage(message: string): string {
-  return (
-    '0x' +
-    Array.from(new TextEncoder().encode(message))
-      .map((b) => b.toString(16).padStart(2, '0'))
-      .join('')
-  );
+function toBase64Message(message: string): string {
+  const bytes = new TextEncoder().encode(message);
+  let binary = '';
+  for (const b of bytes) binary += String.fromCharCode(b);
+  return btoa(binary);
 }
 
 export class GenericAnnounceAdapter implements WalletAdapter {
@@ -164,7 +166,7 @@ export class GenericAnnounceAdapter implements WalletAdapter {
   private readonly metadataEnabled: boolean;
   private readonly staticMetadata?: Record<string, string>;
   private readonly mapError?: (err: unknown) => Error | undefined;
-  private readonly signMessageHex: boolean;
+  private readonly signMessageBase64: boolean;
 
   // Optional WalletAdapter surface — assigned in the ctor ONLY when configured,
   // so `getCapabilities()` and `'x' in adapter` feature-detection stay honest.
@@ -185,7 +187,7 @@ export class GenericAnnounceAdapter implements WalletAdapter {
     this.metadataEnabled = config?.metadata === true;
     this.staticMetadata = config?.staticMetadata;
     this.mapError = config?.mapError;
-    this.signMessageHex = config?.signMessageHex === true;
+    this.signMessageBase64 = config?.signMessageBase64 === true;
     if (config?.events) this.on = this.makeOn();
     if (config?.restore) this.restore = this.makeRestore();
     if (config?.ledgerApi) this.ledgerApi = this.makeLedgerApi();
@@ -270,17 +272,12 @@ export class GenericAnnounceAdapter implements WalletAdapter {
   ): Promise<SignedMessage> {
     return this.guarded(async () => {
       // Param shape: spec-default is the bare string `{ message }` (Send). When
-      // `signMessageHex` is configured (Console), mirror ConsoleAdapter exactly:
-      // `{ message: { hex }, metaData: { purpose: 'sign-message', ... } }`.
-      const rpcParams = this.signMessageHex
-        ? {
-            message: { hex: toHexMessage(params.message) },
-            metaData: {
-              purpose: 'sign-message',
-              ...(params.domain ? { domain: params.domain } : {}),
-              ...(params.nonce ? { nonce: params.nonce } : {}),
-            },
-          }
+      // `signMessageBase64` is configured (Console), send `{ message: <base64> }`
+      // and NOTHING else. LIVE-VERIFIED against Console (provider lpnf…): a base64
+      // string SUCCEEDED; raw text, a `{ hex }` object, and any `metaData` field
+      // all crashed inside Console — so we send only the base64 string.
+      const rpcParams = this.signMessageBase64
+        ? { message: toBase64Message(params.message) }
         : { message: params.message };
 
       const res = await this.provider.request<unknown>({ method: 'signMessage', params: rpcParams });

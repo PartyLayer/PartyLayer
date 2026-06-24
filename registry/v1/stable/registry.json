@@ -30,7 +30,7 @@
         "transport": "announce",
         "config": {
           "restore": true,
-          "signMessageHex": true
+          "signMessageBase64": true
         }
       },
       "installation": {

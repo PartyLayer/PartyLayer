@@ -1,18 +1,20 @@
 // @vitest-environment jsdom
 /**
- * signMessage over the generic announce path (Faz 2 fix).
+ * signMessage over the generic announce path (Faz 2 fix, base64 correction).
  *
- * Pins the config-driven param-shape + universal response normalization in
- * GenericAnnounceAdapter.signMessage (announce-adapter.ts):
- *   - Console (registry adapter.config.signMessageHex:true) → hex-object param
- *     `{ message: { hex }, metaData: { purpose:'sign-message', ... } }`
- *     (mirrors ConsoleAdapter, console-adapter.ts:442-456).
+ * LIVE-VERIFIED against the real Console extension (provider lpnf…):
+ *   - Console's window.canton signMessage wants `{ message: <base64 string> }`
+ *     (base64 of the message bytes) and NOTHING else — raw text, `{ hex }`, and
+ *     any `metaData` all crash inside Console.
+ *   - Console's response is an OBJECT `{ signature: '<base64>' }`.
+ *
+ * This suite pins:
+ *   - Console (registry adapter.config.signMessageBase64:true) → base64-string param.
  *   - Send (no flag) → the RAW string `{ message }` (send-adapter.ts:241).
- *   - Response: a bare string OR `{ signature }` → a full SignedMessage
- *     synthesized from session+params.
+ *   - Response: a bare string OR `{ signature }` → a full SignedMessage.
  *
- * The bare-string param for Send is asserted so a future hex-encode of Send
- * would FAIL this suite.
+ * The bare-string param for Send is asserted so a future base64/hex-encode of
+ * Send would FAIL this suite.
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
@@ -45,8 +47,14 @@ import { createPartyLayer } from './client';
 const CONSOLE_ID = 'lpnfhpbpmlobjlgkdmnjieeihjmihhjd';
 const SEND_ID = 'ldmohiccoioolenadmogclhoklmanpgi';
 
-// hex of "Hello" (UTF-8) — matches ConsoleAdapter's encoder.
-const HELLO_HEX = '0x48656c6c6f';
+/** base64 of a message's UTF-8 bytes — same encoding the adapter uses. */
+function b64(message: string): string {
+  const bytes = new TextEncoder().encode(message);
+  let binary = '';
+  for (const byte of bytes) binary += String.fromCharCode(byte);
+  return btoa(binary);
+}
+const HELLO_B64 = b64('Hello'); // 'SGVsbG8='
 
 type SignArgs = { method: string; params?: unknown };
 
@@ -85,15 +93,15 @@ function lastSign(p: { calls: SignArgs[] }): SignArgs | undefined {
   return [...p.calls].reverse().find((c) => c.method === 'signMessage');
 }
 
-// ── Console: hex-object param + metaData; response normalization ─────────────
-describe('Console (signMessageHex:true): hex param + metaData, normalized response', () => {
-  it('sends { message: { hex }, metaData.purpose } and normalizes a BARE STRING response', async () => {
-    const provider = recorder('0xSIGNATURE'); // bare string response
+// ── Console: base64-string param (no hex, no metaData); response normalization ─
+describe('Console (signMessageBase64:true): base64-string param, normalized response', () => {
+  it('sends { message: <base64> } with NO metaData and NO { hex }, and normalizes a { signature } object', async () => {
+    const provider = recorder({ signature: '0xSIGB64' }); // Console returns an object
     const adapter = new GenericAnnounceAdapter({
       announceId: CONSOLE_ID,
       walletId: toWalletId('console'),
       provider,
-      config: { signMessageHex: true },
+      config: { signMessageBase64: true },
     });
 
     const out = await adapter.signMessage(ctx, session('console'), {
@@ -103,33 +111,33 @@ describe('Console (signMessageHex:true): hex param + metaData, normalized respon
     } as never);
 
     const sign = lastSign(provider)!;
+    const params = sign.params as Record<string, unknown>;
     expect(sign.method).toBe('signMessage');
-    expect((sign.params as { message: { hex: string } }).message).toEqual({ hex: HELLO_HEX });
-    expect((sign.params as { metaData: { purpose: string; domain?: string; nonce?: string } }).metaData).toEqual({
-      purpose: 'sign-message',
-      domain: 'example.com',
-      nonce: 'n1',
-    });
+    // base64 STRING, equal to base64(input)
+    expect(typeof params.message).toBe('string');
+    expect(params.message).toBe(HELLO_B64);
+    // NO metaData, NO hex object (the shapes that crashed Console)
+    expect('metaData' in params).toBe(false);
+    expect(typeof params.message === 'object').toBe(false);
 
-    expect(String(out.signature)).toBe('0xSIGNATURE');
+    expect(String(out.signature)).toBe('0xSIGB64');
     expect(String(out.partyId)).toBe('party::user');
-    expect(out.message).toBe('Hello');
+    expect(out.message).toBe('Hello'); // original message preserved on the SignedMessage
     expect(out.domain).toBe('example.com');
     expect(out.nonce).toBe('n1');
   });
 
-  it('normalizes a { signature } OBJECT response too', async () => {
-    const provider = recorder({ signature: '0xFROMOBJECT' });
+  it('normalizes a BARE STRING response too (defensive)', async () => {
+    const provider = recorder('rawsigstring');
     const adapter = new GenericAnnounceAdapter({
       announceId: CONSOLE_ID,
       walletId: toWalletId('console'),
       provider,
-      config: { signMessageHex: true },
+      config: { signMessageBase64: true },
     });
     const out = await adapter.signMessage(ctx, session('console'), { message: 'Hello' } as never);
-    // no domain/nonce -> metaData carries only purpose
-    expect((lastSign(provider)!.params as { metaData: object }).metaData).toEqual({ purpose: 'sign-message' });
-    expect(String(out.signature)).toBe('0xFROMOBJECT');
+    expect(lastSign(provider)!.params).toEqual({ message: HELLO_B64 });
+    expect(String(out.signature)).toBe('rawsigstring');
     expect(out.message).toBe('Hello');
     expect(String(out.partyId)).toBe('party::user');
   });
@@ -137,24 +145,24 @@ describe('Console (signMessageHex:true): hex param + metaData, normalized respon
 
 // ── Send: MUST stay the raw string (no regression) ───────────────────────────
 describe('Send (no flag): raw-string param unchanged; response normalized', () => {
-  it('sends params.message as the RAW STRING (no hex, no metaData) and normalizes { signature }', async () => {
+  it('sends params.message as the RAW STRING (no base64, no hex, no metaData)', async () => {
     const provider = recorder({ signature: '0xSENDSIG' });
     const adapter = new GenericAnnounceAdapter({
       announceId: SEND_ID,
       walletId: toWalletId('send'),
       provider,
-      // NO signMessageHex
+      // NO signMessageBase64
     });
 
     const out = await adapter.signMessage(ctx, session('send'), { message: 'Hello' } as never);
 
-    const sign = lastSign(provider)!;
-    // THE no-regression guard: Send's message is the raw string, NOT { hex }.
-    expect(typeof (sign.params as { message: unknown }).message).toBe('string');
-    expect((sign.params as { message: string }).message).toBe('Hello');
-    expect((sign.params as { metaData?: unknown }).metaData).toBeUndefined();
+    const params = lastSign(provider)!.params as Record<string, unknown>;
+    // THE no-regression guard: Send's message is the raw string, NOT base64/hex.
+    expect(typeof params.message).toBe('string');
+    expect(params.message).toBe('Hello');
+    expect(params.message).not.toBe(HELLO_B64); // explicitly NOT base64-encoded
+    expect('metaData' in params).toBe(false);
 
-    // Response still normalized to a full SignedMessage (additive for Send).
     expect(String(out.signature)).toBe('0xSENDSIG');
     expect(String(out.partyId)).toBe('party::user');
     expect(out.message).toBe('Hello');
@@ -165,7 +173,7 @@ describe('Send (no flag): raw-string param unchanged; response normalized', () =
 describe('client.signMessage via the announce bridge (Console, no ConsoleAdapter)', () => {
   beforeEach(() => discoverMock.mockReset());
 
-  it('returns a valid SignedMessage (NOT InternalError) end to end', async () => {
+  it('returns a valid SignedMessage (NOT an error) end to end', async () => {
     const provider = recorder({ signature: '0xE2E' });
     discoverMock.mockResolvedValue([
       { id: CONSOLE_ID, provider, source: 'injected', name: 'Console Wallet', identityResolved: true },
@@ -199,7 +207,7 @@ describe('client.signMessage via the announce bridge (Console, no ConsoleAdapter
     vi.spyOn(client.registryClient, 'getRegistry').mockResolvedValue({ wallets: [] } as never);
     vi.spyOn(client.registryClient, 'getWalletEntry').mockResolvedValue({
       id: 'console',
-      adapter: { type: '@partylayer/adapter-console', transport: 'announce', config: { restore: true, signMessageHex: true } },
+      adapter: { type: '@partylayer/adapter-console', transport: 'announce', config: { restore: true, signMessageBase64: true } },
     } as never);
 
     await client.listWallets({ includeExperimental: true }); // triggers bridge registration
@@ -208,9 +216,9 @@ describe('client.signMessage via the announce bridge (Console, no ConsoleAdapter
     await client.connect({ walletId: toWalletId('console') });
     const signed = await client.signMessage({ message: 'Hello' });
 
-    // The bridge propagated signMessageHex:true → hex param reached the provider.
-    expect((lastSign(provider)!.params as { message: { hex: string } }).message).toEqual({ hex: HELLO_HEX });
-    // And the result is a valid SignedMessage, not InternalError.
+    // The bridge propagated signMessageBase64:true → base64 string reached the provider.
+    expect((lastSign(provider)!.params as { message: string }).message).toBe(HELLO_B64);
+    // And the result is a valid SignedMessage.
     expect(String(signed.signature)).toBe('0xE2E');
     expect(signed.message).toBe('Hello');
     expect(String(signed.partyId)).toBe('party::user');
