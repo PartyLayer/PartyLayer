@@ -37,7 +37,7 @@ import type {
   CapabilityKey,
   PartyId,
 } from '@partylayer/core';
-import { normalizeLedgerMethodLower, ledgerApiBodyToObject } from '@partylayer/core';
+import { normalizeLedgerMethodLower, ledgerApiBodyToObject, isRecognizedNetwork } from '@partylayer/core';
 import {
   toWalletId,
   toPartyId,
@@ -299,11 +299,22 @@ export class ConsoleAdapter implements WalletAdapter {
       const account = await (await getConsoleWallet()).getPrimaryAccount();
       const partyIdStr = account?.partyId || `party-${Date.now()}`;
 
-      // Get active network
+      // Get active network. Trust the wallet-reported network ONLY when it is a
+      // RECOGNIZED Canton network; otherwise fall back to the dApp's configured
+      // ctx.network. Mirrors the generic announce adapter (announce-adapter.ts)
+      // and isRecognizedNetwork's own doc (core/src/network.ts): an UNRECOGNIZED
+      // value must NOT override ctx.network. The current Console extension reports
+      // the environment-agnostic label "CANTON_NETWORK" (normalizes to
+      // "canton:CANTON_NETWORK" ∉ KNOWN_CAIP2), which would otherwise trip a
+      // false NetworkMismatchError in the SDK's network guard.
       let networkId = ctx.network;
       try {
         const network = await (await getConsoleWallet()).getActiveNetwork();
-        if (network?.id) networkId = network.id;
+        const reported = network?.id;
+        networkId =
+          [reported, ctx.network].find(
+            (n): n is string => typeof n === 'string' && isRecognizedNetwork(n),
+          ) ?? ctx.network;
       } catch {
         // Network query failed — use context network
       }

@@ -461,6 +461,41 @@ describe('ConsoleAdapter', () => {
       },
     );
 
+    // ── isRecognizedNetwork fallback (network resolution; target 'remote' needs
+    //    no window so these run unconditionally) ───────────────────────────────
+    it('connect: unrecognized wallet network ("CANTON_NETWORK") falls back to ctx.network', async () => {
+      setupSuccessfulConnect();
+      // The real Console extension reports the env-agnostic label "CANTON_NETWORK".
+      mockConsoleWallet.getActiveNetwork.mockResolvedValue({ id: 'CANTON_NETWORK' });
+
+      const adapter = new ConsoleAdapter({ target: 'remote' });
+      const result = await adapter.connect(ctx); // ctx.network === 'devnet'
+
+      expect(result.session.network).toBe('devnet'); // fell back, no false mismatch
+      expect(result.session.network).not.toBe('CANTON_NETWORK');
+    });
+
+    it('connect: a RECOGNIZED wallet network is used (no regression)', async () => {
+      setupSuccessfulConnect();
+      // Recognized AND different from ctx.network ('devnet') to prove it is USED.
+      mockConsoleWallet.getActiveNetwork.mockResolvedValue({ id: 'mainnet' });
+
+      const adapter = new ConsoleAdapter({ target: 'remote' });
+      const result = await adapter.connect(ctx);
+
+      expect(result.session.network).toBe('mainnet');
+    });
+
+    it('connect: getActiveNetwork throwing falls back to ctx.network', async () => {
+      setupSuccessfulConnect();
+      mockConsoleWallet.getActiveNetwork.mockRejectedValue(new Error('Network query failed'));
+
+      const adapter = new ConsoleAdapter({ target: 'remote' });
+      const result = await adapter.connect(ctx);
+
+      expect(result.session.network).toBe('devnet');
+    });
+
     it.skipIf(!isBrowser)(
       'should include provider metadata when available',
       async () => {
