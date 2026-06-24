@@ -46,7 +46,7 @@ import type {
   WalletAdapter,
   WalletId,
 } from '@partylayer/core';
-import { toPartyId, toWalletId, normalizeLedgerMethodLower, ledgerApiBodyToObject } from '@partylayer/core';
+import { toPartyId, toWalletId, normalizeLedgerMethodLower, ledgerApiBodyToObject, isRecognizedNetwork } from '@partylayer/core';
 
 /** Canonical providerId prefix for an announced extension (provider.md: `browser:ext:<id>`). */
 export const ANNOUNCED_WALLET_ID_PREFIX = 'browser:ext:';
@@ -206,10 +206,21 @@ export class GenericAnnounceAdapter implements WalletAdapter {
       const reportedNetwork = status?.network?.networkId;
 
       const partyId = toPartyId(account.partyId);
+      // Network capture: trust the FIRST RECOGNIZED of [wallet-reported, account,
+      // dApp ctx]. Mirrors the discovery-adapter bridge (discovery-adapter.ts:243-246)
+      // and isRecognizedNetwork's own doc (core/src/network.ts): an UNRECOGNIZED
+      // value (e.g. Console's account.networkId "CANTON_NETWORK", which normalizes
+      // to "canton:CANTON_NETWORK" ∉ KNOWN_CAIP2) must NOT override the dApp's
+      // configured ctx.network — otherwise detectNetworkMismatch (client.ts:631)
+      // sees a non-CAIP2 value and emits a FALSE-POSITIVE session:networkMismatch.
+      const network =
+        [reportedNetwork, account.networkId, ctx.network].find(
+          (n): n is string => typeof n === 'string' && isRecognizedNetwork(n),
+        ) ?? ctx.network;
       const session: Partial<Session> = {
         walletId: this.walletId,
         partyId,
-        network: (reportedNetwork ?? account.networkId ?? ctx.network) as NetworkId,
+        network: network as NetworkId,
       };
       // Additive: richer metadata only when opted in AND the provider returned it.
       // Static config fills gaps; runtime RPC wins on a key collision (static
