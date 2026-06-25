@@ -9,10 +9,13 @@
 // ----------------------------------------------------------------------------
 declare const partyLayerKeys: { readonly all: readonly [ "partylayer" ]; readonly connect: () => readonly [ "partylayer", "connect" ]; readonly account: () => readonly [ "partylayer", "account" ]; readonly session: () => readonly [ "partylayer", "session" ]; readonly wallets: (params?: { filter?: unknown; }) => readonly [ "partylayer", "wallets", { filter?: unknown; } ]; readonly registryStatus: () => readonly [ "partylayer", "registryStatus" ]; };
 declare function useConnect(parameters?: UseConnectParameters): UseConnectReturnType;
-export { type ConnectVariables, type PartyLayerKeys, type UseConnectParameters, type UseConnectReturnType, partyLayerKeys, useConnect };
-import { ConnectOptions, Session } from '@partylayer/sdk';
-import { UseMutationOptions, UseMutationResult } from '@tanstack/react-query';
+declare function useWallets(parameters?: UseWalletsParameters): UseWalletsReturnType;
+export { type ConnectVariables, type PartyLayerKeys, type UseConnectParameters, type UseConnectReturnType, type UseWalletsParameters, type UseWalletsReturnType, partyLayerKeys, useConnect, useWallets };
+import { ConnectOptions, Session, WalletFilter, WalletInfo } from '@partylayer/sdk';
+import { UseMutationOptions, UseMutationResult, UseQueryOptions, UseQueryResult } from '@tanstack/react-query';
 interface UseConnectParameters { mutation?: Omit<UseMutationOptions<Session, Error, ConnectVariables>, 'mutationFn' | 'mutationKey'>; }
+interface UseWalletsParameters { filter?: WalletFilter; query?: Omit<UseQueryOptions<WalletInfo[], Error>, 'queryKey' | 'queryFn'>; }
 type ConnectVariables = ConnectOptions | undefined;
 type PartyLayerKeys = typeof partyLayerKeys;
 type UseConnectReturnType = UseMutationResult<Session, Error, ConnectVariables> & { connect: UseMutationResult<Session, Error, ConnectVariables>['mutate']; connectAsync: UseMutationResult<Session, Error, ConnectVariables>['mutateAsync']; };
+type UseWalletsReturnType = UseQueryResult<WalletInfo[], Error> & { wallets: UseQueryResult<WalletInfo[], Error>['data']; };

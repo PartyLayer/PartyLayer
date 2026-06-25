@@ -27,3 +27,9 @@ export type {
   UseConnectReturnType,
   ConnectVariables,
 } from './use-connect';
+
+export { useWallets } from './use-wallets';
+export type {
+  UseWalletsParameters,
+  UseWalletsReturnType,
+} from './use-wallets';
