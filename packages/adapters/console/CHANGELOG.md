@@ -1,5 +1,11 @@
 # @partylayer/adapter-console
 
+## 0.3.13
+
+### Patch Changes
+
+- fix(adapter-console): signMessage uses base64 ({ message: { base64 } } per Console extension + dapp-sdk 2.1.5) and connect network resolution falls back to ctx.network for unrecognized wallet networks (isRecognizedNetwork).
+
 ## 0.3.12
 
 ### Patch Changes

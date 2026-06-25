@@ -1,5 +1,16 @@
 # @partylayer/sdk
 
+## 0.14.0
+
+### Minor Changes
+
+- feat(sdk): Console is served via the generic CIP-0103 announce path (removed from default adapters, GenericAnnounceAdapter); add signMessageBase64 announce config; isRecognizedNetwork network fallback.
+
+### Patch Changes
+
+- Updated dependencies
+  - @partylayer/adapter-console@0.3.13
+
 ## 0.13.3
 
 ### Patch Changes
