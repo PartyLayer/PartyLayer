@@ -33,3 +33,22 @@ export type {
   UseWalletsParameters,
   UseWalletsReturnType,
 } from './use-wallets';
+
+export { useDisconnect } from './use-disconnect';
+export type {
+  UseDisconnectParameters,
+  UseDisconnectReturnType,
+  DisconnectVariables,
+} from './use-disconnect';
+
+export { useSignMessage } from './use-sign-message';
+export type {
+  UseSignMessageParameters,
+  UseSignMessageReturnType,
+} from './use-sign-message';
+
+export { useSubmitTransaction } from './use-submit-transaction';
+export type {
+  UseSubmitTransactionParameters,
+  UseSubmitTransactionReturnType,
+} from './use-submit-transaction';

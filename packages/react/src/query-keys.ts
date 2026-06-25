@@ -16,6 +16,15 @@ export const partyLayerKeys = {
   /** Mutation: connect a wallet. */
   connect: () => [...partyLayerKeys.all, 'connect'] as const,
 
+  /** Mutation: disconnect the active session. */
+  disconnect: () => [...partyLayerKeys.all, 'disconnect'] as const,
+
+  /** Mutation: sign a message. */
+  signMessage: () => [...partyLayerKeys.all, 'signMessage'] as const,
+
+  /** Mutation: submit a transaction. */
+  submitTransaction: () => [...partyLayerKeys.all, 'submitTransaction'] as const,
+
   /** Query: the active account/session-derived account. */
   account: () => [...partyLayerKeys.all, 'account'] as const,
 
