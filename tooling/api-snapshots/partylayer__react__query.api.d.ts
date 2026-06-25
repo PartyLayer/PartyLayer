@@ -12,14 +12,16 @@ declare function useConnect(parameters?: UseConnectParameters): UseConnectReturn
 declare function useDisconnect(parameters?: UseDisconnectParameters): UseDisconnectReturnType;
 declare function useSignMessage(parameters?: UseSignMessageParameters): UseSignMessageReturnType;
 declare function useSubmitTransaction(parameters?: UseSubmitTransactionParameters): UseSubmitTransactionReturnType;
+declare function useSuspenseWallets(parameters?: UseSuspenseWalletsParameters): UseSuspenseWalletsReturnType;
 declare function useWallets(parameters?: UseWalletsParameters): UseWalletsReturnType;
-export { type ConnectVariables, type DisconnectVariables, type PartyLayerKeys, type UseConnectParameters, type UseConnectReturnType, type UseDisconnectParameters, type UseDisconnectReturnType, type UseSignMessageParameters, type UseSignMessageReturnType, type UseSubmitTransactionParameters, type UseSubmitTransactionReturnType, type UseWalletsParameters, type UseWalletsReturnType, partyLayerKeys, useConnect, useDisconnect, useSignMessage, useSubmitTransaction, useWallets };
+export { type ConnectVariables, type DisconnectVariables, type PartyLayerKeys, type UseConnectParameters, type UseConnectReturnType, type UseDisconnectParameters, type UseDisconnectReturnType, type UseSignMessageParameters, type UseSignMessageReturnType, type UseSubmitTransactionParameters, type UseSubmitTransactionReturnType, type UseSuspenseWalletsParameters, type UseSuspenseWalletsReturnType, type UseWalletsParameters, type UseWalletsReturnType, partyLayerKeys, useConnect, useDisconnect, useSignMessage, useSubmitTransaction, useSuspenseWallets, useWallets };
 import { ConnectOptions, Session, WalletFilter, WalletInfo, SignedMessage, SignMessageParams, TxReceipt, SubmitTransactionParams } from '@partylayer/sdk';
-import { UseMutationOptions, UseMutationResult, UseQueryOptions, UseQueryResult } from '@tanstack/react-query';
+import { UseMutationOptions, UseMutationResult, UseQueryOptions, UseQueryResult, UseSuspenseQueryOptions, UseSuspenseQueryResult } from '@tanstack/react-query';
 interface UseConnectParameters { mutation?: Omit<UseMutationOptions<Session, Error, ConnectVariables>, 'mutationFn' | 'mutationKey'>; }
 interface UseDisconnectParameters { mutation?: Omit<UseMutationOptions<void, Error, DisconnectVariables>, 'mutationFn' | 'mutationKey'>; }
 interface UseSignMessageParameters { mutation?: Omit<UseMutationOptions<SignedMessage, Error, SignMessageParams>, 'mutationFn' | 'mutationKey'>; }
 interface UseSubmitTransactionParameters { mutation?: Omit<UseMutationOptions<TxReceipt, Error, SubmitTransactionParams>, 'mutationFn' | 'mutationKey'>; }
+interface UseSuspenseWalletsParameters { filter?: WalletFilter; query?: Omit<UseSuspenseQueryOptions<WalletInfo[], Error>, 'queryKey' | 'queryFn'>; }
 interface UseWalletsParameters { filter?: WalletFilter; query?: Omit<UseQueryOptions<WalletInfo[], Error>, 'queryKey' | 'queryFn'>; }
 type ConnectVariables = ConnectOptions | undefined;
 type DisconnectVariables = void;
@@ -28,4 +30,5 @@ type UseConnectReturnType = UseMutationResult<Session, Error, ConnectVariables> 
 type UseDisconnectReturnType = UseMutationResult<void, Error, DisconnectVariables> & { disconnect: UseMutationResult<void, Error, DisconnectVariables>['mutate']; disconnectAsync: UseMutationResult<void, Error, DisconnectVariables>['mutateAsync']; };
 type UseSignMessageReturnType = UseMutationResult<SignedMessage, Error, SignMessageParams> & { signMessage: UseMutationResult<SignedMessage, Error, SignMessageParams>['mutate']; signMessageAsync: UseMutationResult<SignedMessage, Error, SignMessageParams>['mutateAsync']; };
 type UseSubmitTransactionReturnType = UseMutationResult<TxReceipt, Error, SubmitTransactionParams> & { submitTransaction: UseMutationResult<TxReceipt, Error, SubmitTransactionParams>['mutate']; submitTransactionAsync: UseMutationResult<TxReceipt, Error, SubmitTransactionParams>['mutateAsync']; };
+type UseSuspenseWalletsReturnType = UseSuspenseQueryResult<WalletInfo[], Error> & { wallets: UseSuspenseQueryResult<WalletInfo[], Error>['data']; };
 type UseWalletsReturnType = UseQueryResult<WalletInfo[], Error> & { wallets: UseQueryResult<WalletInfo[], Error>['data']; };

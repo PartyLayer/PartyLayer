@@ -34,6 +34,12 @@ export type {
   UseWalletsReturnType,
 } from './use-wallets';
 
+export { useSuspenseWallets } from './use-suspense-wallets';
+export type {
+  UseSuspenseWalletsParameters,
+  UseSuspenseWalletsReturnType,
+} from './use-suspense-wallets';
+
 export { useDisconnect } from './use-disconnect';
 export type {
   UseDisconnectParameters,
