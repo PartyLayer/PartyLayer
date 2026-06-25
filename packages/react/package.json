@@ -10,6 +10,11 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.mjs",
       "require": "./dist/index.js"
+    },
+    "./query": {
+      "types": "./dist/query.d.ts",
+      "import": "./dist/query.mjs",
+      "require": "./dist/query.js"
     }
   },
   "files": [
@@ -39,7 +44,8 @@
     "url": "https://github.com/PartyLayer/PartyLayer/issues"
   },
   "peerDependencies": {
-    "react": ">=18.0.0"
+    "react": ">=18.0.0",
+    "@tanstack/react-query": ">=5"
   },
   "dependencies": {
     "@partylayer/sdk": "workspace:^",
@@ -49,6 +55,7 @@
   },
   "devDependencies": {
     "@partylayer/testing": "workspace:^",
+    "@tanstack/react-query": "^5.101.0",
     "@testing-library/react": "^14.2.0",
     "@types/qrcode": "^1.5.5",
     "@types/react": "^18.2.0",

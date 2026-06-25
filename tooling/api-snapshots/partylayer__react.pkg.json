@@ -4,12 +4,18 @@
       "import": "./dist/index.mjs",
       "require": "./dist/index.js",
       "types": "./dist/index.d.ts"
+    },
+    "./query": {
+      "import": "./dist/query.mjs",
+      "require": "./dist/query.js",
+      "types": "./dist/query.d.ts"
     }
   },
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",
   "name": "@partylayer/react",
   "peerDependencies": {
+    "@tanstack/react-query": ">=5",
     "react": ">=18.0.0"
   },
   "types": "./dist/index.d.ts"

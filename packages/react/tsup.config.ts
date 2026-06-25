@@ -1,7 +1,7 @@
 import { defineConfig } from 'tsup';
 
 export default defineConfig({
-  entry: ['src/index.ts'],
+  entry: ['src/index.ts', 'src/query.ts'],
   format: ['cjs', 'esm'],
   dts: {
     compilerOptions: {
@@ -15,6 +15,7 @@ export default defineConfig({
   treeshake: true,
   external: [
     'react',
+    '@tanstack/react-query',
     '@partylayer/sdk',
     '@partylayer/registry-client',
     'qrcode',
