@@ -1,12 +1,12 @@
 /**
  * Send Canton Wallet adapter.
  *
- * Send is a passkey-based Canton wallet that exposes the splice-wallet-kernel
- * OpenRPC protocol at `window.canton`. Because the bare `window.canton` slot is shared with
- * other splice-spec wallets (e.g. Console-class), the adapter funnels
- * every request through `SendProvider.guardedRequest`, which verifies
- * the running provider's `kernel.id` matches Send's Chrome extension
- * ID before forwarding the call.
+ * Send is a passkey-based Canton wallet that exposes the CIP-103 /
+ * splice-wallet-kernel OpenRPC protocol. Send is announce-only: it advertises
+ * via `canton:announceProvider` (it does NOT inject `window.canton`), and every
+ * RPC is routed through `SendProvider.channelRequest` over the extension's
+ * postMessage `target` channel (CIP-103 OpenRPC method names, JSON-RPC). There
+ * is no `kernel.id` request guard.
  *
  * Capability summary: connect / disconnect / restore / signMessage /
  * submitTransaction / ledgerApi / events / injected. `signTransaction`
@@ -186,9 +186,8 @@ export class SendAdapter implements WalletAdapter {
 
       // status() is a silent introspection call — no popup, no passkey
       // prompt — so we can use it as a "still authorised?" probe on page
-      // reload. If the kernel.id has shifted (user installed another
-      // wallet) the guarded request will throw `SendKernelMismatchError`
-      // and we'll return null below.
+      // reload. If status() shows the wallet is not connected (or the call
+      // fails), restore returns null below.
       const status = await this.provider.status();
       if (!status.isConnected) return null;
 
