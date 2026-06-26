@@ -15,6 +15,10 @@ export type { PartyLayerKitProps, WalletIconMap } from './kit';
 export { ConnectButton, truncatePartyId } from './connect-button';
 export type { ConnectButtonProps } from './connect-button';
 
+// CostPreview — presentational traffic-cost panel (dApp passes cost data as props)
+export { CostPreview } from './cost-preview';
+export type { CostPreviewProps } from './cost-preview';
+
 // Theme system
 export { ThemeProvider, useTheme, lightTheme, darkTheme } from './theme';
 export type { PartyLayerTheme } from './theme';

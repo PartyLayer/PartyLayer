@@ -11,6 +11,7 @@ declare class NativeCIP0103Adapter implements WalletAdapter { readonly walletId:
 declare const darkTheme: PartyLayerTheme;
 declare const lightTheme: PartyLayerTheme;
 declare function ConnectButton({ label, connectedLabel, formatAddress, className, style, showDisconnect, }: ConnectButtonProps): react_jsx_runtime.JSX.Element;
+declare function CostPreview({ estimate, paid, loading, error, formatCost, className, style, }: CostPreviewProps): react_jsx_runtime.JSX.Element | null;
 declare function PartyLayerKit({ network, appName, children, registryUrl, channel, adapters, theme, walletIcons, walletOrder, sessionOptions, }: PartyLayerKitProps): react_jsx_runtime.JSX.Element;
 declare function PartyLayerProvider({ client, children, sessionOptions, }: PartyLayerProviderProps): react_jsx_runtime.JSX.Element;
 declare function ThemeProvider({ theme, children }: ThemeProviderProps): react_jsx_runtime.JSX.Element;
@@ -36,14 +37,16 @@ declare function useSubmitTransaction(): { submitTransaction: (params: SubmitTra
 declare function useTheme(): PartyLayerTheme;
 declare function useWalletIcons(): WalletIconMap;
 declare function useWallets(): { wallets: _partylayer_core.WalletInfo[]; isLoading: boolean; error: Error | null; };
-export { PartyLayerProvider as CantonConnectProvider, ConnectButton, type ConnectButtonProps, NativeCIP0103Adapter, PartyLayerKit, type PartyLayerKitProps, PartyLayerProvider, type PartyLayerTheme, type SessionChain, ThemeProvider, type UseAccountEffectParameters, type UseAccountReturn, type UseSessionReturn, type WalletIconMap, WalletModal, type WalletModalProps, createLocalStorage, createNativeAdapter, createSyntheticWalletInfo, darkTheme, lightTheme, resolveWalletIcon, truncatePartyId, useAccount, useAccountEffect, usePartyLayer as useCantonConnect, useClientSession, useConnect, useDisconnect, useLedgerApi, usePartyLayer, usePartyLayerContext, useRegistryStatus, useSession, useSignMessage, useSignTransaction, useSubmitTransaction, useTheme, useWalletIcons, useWallets };
+export { PartyLayerProvider as CantonConnectProvider, ConnectButton, type ConnectButtonProps, CostPreview, type CostPreviewProps, NativeCIP0103Adapter, PartyLayerKit, type PartyLayerKitProps, PartyLayerProvider, type PartyLayerTheme, type SessionChain, ThemeProvider, type UseAccountEffectParameters, type UseAccountReturn, type UseSessionReturn, type WalletIconMap, WalletModal, type WalletModalProps, createLocalStorage, createNativeAdapter, createSyntheticWalletInfo, darkTheme, lightTheme, resolveWalletIcon, truncatePartyId, useAccount, useAccountEffect, usePartyLayer as useCantonConnect, useClientSession, useConnect, useDisconnect, useLedgerApi, usePartyLayer, usePartyLayerContext, useRegistryStatus, useSession, useSignMessage, useSignTransaction, useSubmitTransaction, useTheme, useWalletIcons, useWallets };
 export { RegistryStatus } from '@partylayer/registry-client';
 import * as _partylayer_core from '@partylayer/core';
 import * as _partylayer_sdk from '@partylayer/sdk';
 import * as react_jsx_runtime from 'react/jsx-runtime';
+import { CostEstimation, PaidTrafficCost, TrafficCost } from '@partylayer/core';
 import { PartyLayerClient, Session, WalletInfo, ConnectOptions, LedgerApiParams, LedgerApiResult, RegistryStatus, SignMessageParams, SignedMessage, SignTransactionParams, SignedTransaction, SubmitTransactionParams, TxReceipt, WalletAdapter, AdapterClass, OfficialProviderAdapter, OfficialAdapterFactory, WalletId, CIP0103Provider, CapabilityKey, AdapterDetectResult, AdapterContext, PartyId, AdapterConnectResult, DiscoveredProvider, Cip0103StatusForDetection } from '@partylayer/sdk';
 import { SessionStoreOptions, SessionStore, SessionAccount, SessionStatus, SessionState, SessionEvent, SessionStorage } from '@partylayer/session';
 interface ConnectButtonProps { label?: string; connectedLabel?: 'address' | 'wallet' | 'custom'; formatAddress?: (partyId: string) => string; className?: string; style?: React.CSSProperties; showDisconnect?: boolean; }
+interface CostPreviewProps { estimate?: CostEstimation | null; paid?: PaidTrafficCost | null; loading?: boolean; error?: Error | null; formatCost?: (cost: TrafficCost) => React.ReactNode; className?: string; style?: React.CSSProperties; }
 interface EnrichedProvider extends DiscoveredProvider { status?: Cip0103StatusForDetection; matchedWallet?: WalletInfo; }
 interface PartyLayerContextValue { client: PartyLayerClient | null; session: Session | null; wallets: WalletInfo[]; isLoading: boolean; error: Error | null; store: SessionStore | null; }
 interface PartyLayerKitProps { network: 'devnet' | 'testnet' | 'mainnet'; appName: string; children: React.ReactNode; registryUrl?: string; channel?: 'stable' | 'beta'; adapters?: (WalletAdapter | AdapterClass | OfficialProviderAdapter | OfficialAdapterFactory)[]; theme?: 'light' | 'dark' | 'auto' | PartyLayerTheme; walletIcons?: WalletIconMap; walletOrder?: readonly string[]; sessionOptions?: Partial<SessionStoreOptions>; }
