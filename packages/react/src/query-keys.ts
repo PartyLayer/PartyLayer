@@ -48,6 +48,14 @@ export const partyLayerKeys = {
    */
   transactionCostEstimate: (params?: { input?: unknown }) =>
     [...partyLayerKeys.all, 'transactionCostEstimate', params ?? {}] as const,
+
+  /**
+   * Query: the actual paid traffic cost of a transaction (post-execution).
+   * Optional opaque params (e.g. an `input` identifying the transaction) are
+   * folded into the key so different transactions cache independently.
+   */
+  paidTrafficCost: (params?: { input?: unknown }) =>
+    [...partyLayerKeys.all, 'paidTrafficCost', params ?? {}] as const,
 } as const;
 
 export type PartyLayerKeys = typeof partyLayerKeys;

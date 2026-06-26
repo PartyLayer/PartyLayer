@@ -65,5 +65,11 @@ export type {
   UseTransactionCostEstimateReturnType,
 } from './use-transaction-cost-estimate';
 
+export { usePaidTrafficCost } from './use-paid-traffic-cost';
+export type {
+  UsePaidTrafficCostParameters,
+  UsePaidTrafficCostReturnType,
+} from './use-paid-traffic-cost';
+
 // Re-export the standard cost types from core for convenience.
-export type { CostEstimation, TrafficCost } from '@partylayer/core';
+export type { CostEstimation, TrafficCost, PaidTrafficCost } from '@partylayer/core';
