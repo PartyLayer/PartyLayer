@@ -13,6 +13,7 @@ export * from './metrics';
 export * from './metrics-payload';
 export * from './cip0103-types';
 export * from './network';
+export * from './cost';
 export { DeepLinkTransport } from './transport/deeplink';
 export { PopupTransport } from './transport/popup';
 export { PostMessageTransport } from './transport/postmessage';
