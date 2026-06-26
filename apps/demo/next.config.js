@@ -29,7 +29,9 @@ const nextConfig = {
     // Resolve workspace packages
     config.resolve.alias = {
       ...config.resolve.alias,
-      '@partylayer/react': path.resolve(__dirname, '../../packages/react'),
+      // Exact-match ($) so bare `@partylayer/react` resolves here as before, while
+      // subpaths like `@partylayer/react/query` fall through to the package exports.
+      '@partylayer/react$': path.resolve(__dirname, '../../packages/react'),
       '@partylayer/sdk': path.resolve(__dirname, '../../packages/sdk'),
       '@partylayer/core': path.resolve(__dirname, '../../packages/core'),
       '@partylayer/registry-client': path.resolve(__dirname, '../../packages/registry-client'),
