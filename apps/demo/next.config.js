@@ -3,6 +3,8 @@ const path = require('path');
 
 const nextConfig = {
   reactStrictMode: true,
+  // Produce a self-contained standalone server bundle for host-node deployment.
+  output: 'standalone',
   transpilePackages: [
     '@partylayer/react',
     '@partylayer/sdk',
@@ -18,6 +20,9 @@ const nextConfig = {
   // Ensure ESM packages work correctly
   experimental: {
     esmExternals: 'loose',
+    // Monorepo root so standalone file-tracing includes the workspace
+    // @partylayer/* packages that live above apps/demo.
+    outputFileTracingRoot: path.resolve(__dirname, '../../'),
   },
   // Webpack configuration to resolve workspace packages
   webpack: (config, { isServer, dev }) => {
