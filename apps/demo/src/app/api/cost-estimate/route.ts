@@ -73,12 +73,20 @@ export async function POST() {
     estimateTrafficCost: { disabled: false, expectedSignatures: [] },
   };
 
+  // The node's nginx routes the ledger by server_name; when the proxy reaches it
+  // through a shared host:port (e.g. 127.0.0.1:8080), set LEDGER_HOST_HEADER to the
+  // JSON ledger API server_name (e.g. json-ledger-api.localhost) so the request hits
+  // the ledger block, not the default one. Unset → no Host header (behaves as before).
+  const ledgerHeaders: Record<string, string> = { 'Content-Type': 'application/json' };
+  const hostHeader = process.env.LEDGER_HOST_HEADER;
+  if (hostHeader) ledgerHeaders.Host = hostHeader;
+
   let res: Response;
   try {
     res = await fetch(`${ledgerUrl.replace(/\/+$/, '')}/v2/interactive-submission/prepare`, {
       method: 'POST',
       // No Authorization header — the ledger is auth-disabled.
-      headers: { 'Content-Type': 'application/json' },
+      headers: ledgerHeaders,
       body: JSON.stringify(prepareRequest),
       cache: 'no-store',
     });
