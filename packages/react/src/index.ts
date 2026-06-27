@@ -37,6 +37,10 @@ export type {
   UseSessionReturn,
   SessionChain,
 } from './session-hooks';
+// Party-focused reactive state (the party's view of useAccount; reactive store
+// state via useSyncExternalStore, NOT a TanStack query, so it lives here).
+export { usePartyState } from './use-party-state';
+export type { UsePartyStateReturn } from './use-party-state';
 // Browser localStorage adapter for the session store (SSR-safe).
 export { createLocalStorage } from './session-storage';
 

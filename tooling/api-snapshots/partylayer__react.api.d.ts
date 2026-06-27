@@ -29,6 +29,7 @@ declare function useDisconnect(): { disconnect: () => Promise<void>; isDisconnec
 declare function useLedgerApi(): { ledgerApi: (params: LedgerApiParams) => Promise<LedgerApiResult | null>; isLoading: boolean; error: Error | null; };
 declare function usePartyLayer(): _partylayer_sdk.CantonConnectClient;
 declare function usePartyLayerContext(): PartyLayerContextValue;
+declare function usePartyState(): UsePartyStateReturn;
 declare function useRegistryStatus(): { status: RegistryStatus | null; refresh: () => Promise<void>; };
 declare function useSession(): UseSessionReturn;
 declare function useSignMessage(): { signMessage: (params: SignMessageParams) => Promise<SignedMessage | null>; isSigning: boolean; error: Error | null; };
@@ -38,7 +39,7 @@ declare function useTheme(): PartyLayerTheme;
 declare function useWalletIcons(): WalletIconMap;
 declare function useWallets(): { wallets: _partylayer_core.WalletInfo[]; isLoading: boolean; error: Error | null; };
 export { CookieAdapter, CookieSetOptions, CookieStorageOptions, createCookieStorage, documentCookieAdapter } from '@partylayer/session';
-export { PartyLayerProvider as CantonConnectProvider, ConnectButton, type ConnectButtonProps, CostPreview, type CostPreviewProps, NativeCIP0103Adapter, PartyLayerKit, type PartyLayerKitProps, PartyLayerProvider, type PartyLayerTheme, type SessionChain, ThemeProvider, type UseAccountEffectParameters, type UseAccountReturn, type UseSessionReturn, type WalletIconMap, WalletModal, type WalletModalProps, createLocalStorage, createNativeAdapter, createSyntheticWalletInfo, darkTheme, lightTheme, resolveWalletIcon, truncatePartyId, useAccount, useAccountEffect, usePartyLayer as useCantonConnect, useClientSession, useConnect, useDisconnect, useLedgerApi, usePartyLayer, usePartyLayerContext, useRegistryStatus, useSession, useSignMessage, useSignTransaction, useSubmitTransaction, useTheme, useWalletIcons, useWallets };
+export { PartyLayerProvider as CantonConnectProvider, ConnectButton, type ConnectButtonProps, CostPreview, type CostPreviewProps, NativeCIP0103Adapter, PartyLayerKit, type PartyLayerKitProps, PartyLayerProvider, type PartyLayerTheme, type SessionChain, ThemeProvider, type UseAccountEffectParameters, type UseAccountReturn, type UsePartyStateReturn, type UseSessionReturn, type WalletIconMap, WalletModal, type WalletModalProps, createLocalStorage, createNativeAdapter, createSyntheticWalletInfo, darkTheme, lightTheme, resolveWalletIcon, truncatePartyId, useAccount, useAccountEffect, usePartyLayer as useCantonConnect, useClientSession, useConnect, useDisconnect, useLedgerApi, usePartyLayer, usePartyLayerContext, usePartyState, useRegistryStatus, useSession, useSignMessage, useSignTransaction, useSubmitTransaction, useTheme, useWalletIcons, useWallets };
 export { RegistryStatus } from '@partylayer/registry-client';
 import * as _partylayer_core from '@partylayer/core';
 import * as _partylayer_sdk from '@partylayer/sdk';
@@ -57,6 +58,7 @@ interface SessionChain { id: string; }
 interface ThemeProviderProps { theme: 'light' | 'dark' | 'auto' | PartyLayerTheme; children: React.ReactNode; }
 interface UseAccountEffectParameters { onConnect?: (data: { account: SessionAccount | null; accounts: readonly SessionAccount[]; networkId: string | null; }) => void; onDisconnect?: () => void; onPartyChanged?: (data: { previous: string | null; current: string | null; }) => void; }
 interface UseAccountReturn { party: string | null; address: string | null; account: SessionAccount | null; accounts: readonly SessionAccount[]; status: SessionStatus; isConnected: boolean; isConnecting: boolean; isReconnecting: boolean; isDisconnected: boolean; networkId: string | null; chain: SessionChain | null; lastError: Error | null; }
+interface UsePartyStateReturn { party: string | null; account: SessionAccount | null; accounts: readonly SessionAccount[]; status: SessionStatus; isConnected: boolean; isDisconnected: boolean; networkId: string | null; lastError: Error | null; }
 interface UseSessionReturn extends SessionState { isConnected: boolean; isConnecting: boolean; isReconnecting: boolean; isDisconnected: boolean; connect(params?: Record<string, unknown>): Promise<SessionState>; disconnect(): Promise<void>; restore(): Promise<SessionState>; on<T extends SessionEvent['type']>(event: T, handler: (event: Extract<SessionEvent, { type: T; }>) => void): () => void; }
 interface WalletModalProps { isOpen: boolean; onClose: () => void; onConnect?: (sessionId: string) => void; walletIcons?: WalletIconMap; walletOrder?: readonly string[]; }
 type WalletIconMap = Record<string, string>;
