@@ -66,6 +66,13 @@ export const partyLayerKeys = {
    */
   damlContract: (params?: { key?: unknown }) =>
     [...partyLayerKeys.all, 'damlContract', params ?? {}] as const,
+
+  /**
+   * Mutation: exercise a DAML choice (the write counterpart of `damlContract`).
+   * The dApp owns the exercise transport (Model 2), so this is just a stable
+   * mutation key; the variables/result are the dApp's, not folded into the key.
+   */
+  exerciseChoice: () => [...partyLayerKeys.all, 'exerciseChoice'] as const,
 } as const;
 
 export type PartyLayerKeys = typeof partyLayerKeys;

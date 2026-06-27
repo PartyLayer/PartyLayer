@@ -91,5 +91,11 @@ export type {
   UseDamlContractReturnType,
 } from './use-daml-contract';
 
+export { useChoice } from './use-choice';
+export type {
+  UseChoiceParameters,
+  UseChoiceReturnType,
+} from './use-choice';
+
 // Re-export the standard cost types from core for convenience.
 export type { CostEstimation, TrafficCost, PaidTrafficCost } from '@partylayer/core';
