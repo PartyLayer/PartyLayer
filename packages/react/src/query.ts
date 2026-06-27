@@ -97,5 +97,12 @@ export type {
   UseChoiceReturnType,
 } from './use-choice';
 
+// Optimistic update + automatic rollback helper for the mutation hooks.
+export { optimisticMutationOptions } from './use-optimistic';
+export type {
+  OptimisticMutationConfig,
+  OptimisticContext,
+} from './use-optimistic';
+
 // Re-export the standard cost types from core for convenience.
 export type { CostEstimation, TrafficCost, PaidTrafficCost } from '@partylayer/core';
