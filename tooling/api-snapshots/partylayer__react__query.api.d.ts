@@ -13,11 +13,13 @@ declare function useDisconnect(parameters?: UseDisconnectParameters): UseDisconn
 declare function usePaidTrafficCost(parameters: UsePaidTrafficCostParameters): UsePaidTrafficCostReturnType;
 declare function useSignMessage(parameters?: UseSignMessageParameters): UseSignMessageReturnType;
 declare function useSubmitTransaction(parameters?: UseSubmitTransactionParameters): UseSubmitTransactionReturnType;
+declare function useSuspensePaidTrafficCost(parameters: UseSuspensePaidTrafficCostParameters): UseSuspensePaidTrafficCostReturnType;
+declare function useSuspenseTransactionCostEstimate(parameters: UseSuspenseTransactionCostEstimateParameters): UseSuspenseTransactionCostEstimateReturnType;
 declare function useSuspenseWallets(parameters?: UseSuspenseWalletsParameters): UseSuspenseWalletsReturnType;
 declare function useTransactionCostEstimate(parameters: UseTransactionCostEstimateParameters): UseTransactionCostEstimateReturnType;
 declare function useWallets(parameters?: UseWalletsParameters): UseWalletsReturnType;
 export { CostEstimation, PaidTrafficCost, TrafficCost } from '@partylayer/core';
-export { type ConnectVariables, type DisconnectVariables, type PartyLayerKeys, type UseConnectParameters, type UseConnectReturnType, type UseDisconnectParameters, type UseDisconnectReturnType, type UsePaidTrafficCostParameters, type UsePaidTrafficCostReturnType, type UseSignMessageParameters, type UseSignMessageReturnType, type UseSubmitTransactionParameters, type UseSubmitTransactionReturnType, type UseSuspenseWalletsParameters, type UseSuspenseWalletsReturnType, type UseTransactionCostEstimateParameters, type UseTransactionCostEstimateReturnType, type UseWalletsParameters, type UseWalletsReturnType, partyLayerKeys, useConnect, useDisconnect, usePaidTrafficCost, useSignMessage, useSubmitTransaction, useSuspenseWallets, useTransactionCostEstimate, useWallets };
+export { type ConnectVariables, type DisconnectVariables, type PartyLayerKeys, type UseConnectParameters, type UseConnectReturnType, type UseDisconnectParameters, type UseDisconnectReturnType, type UsePaidTrafficCostParameters, type UsePaidTrafficCostReturnType, type UseSignMessageParameters, type UseSignMessageReturnType, type UseSubmitTransactionParameters, type UseSubmitTransactionReturnType, type UseSuspensePaidTrafficCostParameters, type UseSuspensePaidTrafficCostReturnType, type UseSuspenseTransactionCostEstimateParameters, type UseSuspenseTransactionCostEstimateReturnType, type UseSuspenseWalletsParameters, type UseSuspenseWalletsReturnType, type UseTransactionCostEstimateParameters, type UseTransactionCostEstimateReturnType, type UseWalletsParameters, type UseWalletsReturnType, partyLayerKeys, useConnect, useDisconnect, usePaidTrafficCost, useSignMessage, useSubmitTransaction, useSuspensePaidTrafficCost, useSuspenseTransactionCostEstimate, useSuspenseWallets, useTransactionCostEstimate, useWallets };
 import { ConnectOptions, Session, WalletFilter, WalletInfo, SignedMessage, SignMessageParams, TxReceipt, SubmitTransactionParams } from '@partylayer/sdk';
 import { CostEstimation, PaidTrafficCost } from '@partylayer/core';
 import { UseMutationOptions, UseMutationResult, UseQueryOptions, UseQueryResult, UseSuspenseQueryOptions, UseSuspenseQueryResult } from '@tanstack/react-query';
@@ -26,6 +28,8 @@ interface UseDisconnectParameters { mutation?: Omit<UseMutationOptions<void, Err
 interface UsePaidTrafficCostParameters { fetch: (signal?: AbortSignal) => Promise<PaidTrafficCost | null>; input?: unknown; query?: Omit<UseQueryOptions<PaidTrafficCost | null, Error>, 'queryKey' | 'queryFn'>; }
 interface UseSignMessageParameters { mutation?: Omit<UseMutationOptions<SignedMessage, Error, SignMessageParams>, 'mutationFn' | 'mutationKey'>; }
 interface UseSubmitTransactionParameters { mutation?: Omit<UseMutationOptions<TxReceipt, Error, SubmitTransactionParams>, 'mutationFn' | 'mutationKey'>; }
+interface UseSuspensePaidTrafficCostParameters { fetch: (signal?: AbortSignal) => Promise<PaidTrafficCost | null>; input?: unknown; query?: Omit<UseSuspenseQueryOptions<PaidTrafficCost | null, Error>, 'queryKey' | 'queryFn'>; }
+interface UseSuspenseTransactionCostEstimateParameters { estimate: (signal?: AbortSignal) => Promise<CostEstimation | null>; input?: unknown; query?: Omit<UseSuspenseQueryOptions<CostEstimation | null, Error>, 'queryKey' | 'queryFn'>; }
 interface UseSuspenseWalletsParameters { filter?: WalletFilter; query?: Omit<UseSuspenseQueryOptions<WalletInfo[], Error>, 'queryKey' | 'queryFn'>; }
 interface UseTransactionCostEstimateParameters { estimate: (signal?: AbortSignal) => Promise<CostEstimation | null>; input?: unknown; query?: Omit<UseQueryOptions<CostEstimation | null, Error>, 'queryKey' | 'queryFn'>; }
 interface UseWalletsParameters { filter?: WalletFilter; query?: Omit<UseQueryOptions<WalletInfo[], Error>, 'queryKey' | 'queryFn'>; }
@@ -37,6 +41,8 @@ type UseDisconnectReturnType = UseMutationResult<void, Error, DisconnectVariable
 type UsePaidTrafficCostReturnType = UseQueryResult<PaidTrafficCost | null, Error> & { paidTrafficCost: PaidTrafficCost | null | undefined; };
 type UseSignMessageReturnType = UseMutationResult<SignedMessage, Error, SignMessageParams> & { signMessage: UseMutationResult<SignedMessage, Error, SignMessageParams>['mutate']; signMessageAsync: UseMutationResult<SignedMessage, Error, SignMessageParams>['mutateAsync']; };
 type UseSubmitTransactionReturnType = UseMutationResult<TxReceipt, Error, SubmitTransactionParams> & { submitTransaction: UseMutationResult<TxReceipt, Error, SubmitTransactionParams>['mutate']; submitTransactionAsync: UseMutationResult<TxReceipt, Error, SubmitTransactionParams>['mutateAsync']; };
+type UseSuspensePaidTrafficCostReturnType = UseSuspenseQueryResult<PaidTrafficCost | null, Error> & { paidTrafficCost: PaidTrafficCost | null; };
+type UseSuspenseTransactionCostEstimateReturnType = UseSuspenseQueryResult<CostEstimation | null, Error> & { costEstimate: CostEstimation | null; };
 type UseSuspenseWalletsReturnType = UseSuspenseQueryResult<WalletInfo[], Error> & { wallets: UseSuspenseQueryResult<WalletInfo[], Error>['data']; };
 type UseTransactionCostEstimateReturnType = UseQueryResult<CostEstimation | null, Error> & { costEstimate: CostEstimation | null | undefined; };
 type UseWalletsReturnType = UseQueryResult<WalletInfo[], Error> & { wallets: UseQueryResult<WalletInfo[], Error>['data']; };

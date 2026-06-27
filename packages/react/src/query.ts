@@ -73,5 +73,17 @@ export type {
   UsePaidTrafficCostReturnType,
 } from './use-paid-traffic-cost';
 
+export { useSuspenseTransactionCostEstimate } from './use-suspense-transaction-cost-estimate';
+export type {
+  UseSuspenseTransactionCostEstimateParameters,
+  UseSuspenseTransactionCostEstimateReturnType,
+} from './use-suspense-transaction-cost-estimate';
+
+export { useSuspensePaidTrafficCost } from './use-suspense-paid-traffic-cost';
+export type {
+  UseSuspensePaidTrafficCostParameters,
+  UseSuspensePaidTrafficCostReturnType,
+} from './use-suspense-paid-traffic-cost';
+
 // Re-export the standard cost types from core for convenience.
 export type { CostEstimation, TrafficCost, PaidTrafficCost } from '@partylayer/core';
