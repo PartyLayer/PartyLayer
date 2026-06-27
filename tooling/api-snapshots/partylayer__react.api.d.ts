@@ -37,6 +37,7 @@ declare function useSubmitTransaction(): { submitTransaction: (params: SubmitTra
 declare function useTheme(): PartyLayerTheme;
 declare function useWalletIcons(): WalletIconMap;
 declare function useWallets(): { wallets: _partylayer_core.WalletInfo[]; isLoading: boolean; error: Error | null; };
+export { CookieAdapter, CookieSetOptions, CookieStorageOptions, createCookieStorage, documentCookieAdapter } from '@partylayer/session';
 export { PartyLayerProvider as CantonConnectProvider, ConnectButton, type ConnectButtonProps, CostPreview, type CostPreviewProps, NativeCIP0103Adapter, PartyLayerKit, type PartyLayerKitProps, PartyLayerProvider, type PartyLayerTheme, type SessionChain, ThemeProvider, type UseAccountEffectParameters, type UseAccountReturn, type UseSessionReturn, type WalletIconMap, WalletModal, type WalletModalProps, createLocalStorage, createNativeAdapter, createSyntheticWalletInfo, darkTheme, lightTheme, resolveWalletIcon, truncatePartyId, useAccount, useAccountEffect, usePartyLayer as useCantonConnect, useClientSession, useConnect, useDisconnect, useLedgerApi, usePartyLayer, usePartyLayerContext, useRegistryStatus, useSession, useSignMessage, useSignTransaction, useSubmitTransaction, useTheme, useWalletIcons, useWallets };
 export { RegistryStatus } from '@partylayer/registry-client';
 import * as _partylayer_core from '@partylayer/core';

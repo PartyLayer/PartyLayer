@@ -40,6 +40,16 @@ export type {
 // Browser localStorage adapter for the session store (SSR-safe).
 export { createLocalStorage } from './session-storage';
 
+// Cookie-backed adapter for the session store: the SSR-friendly option, readable
+// on both the server (injected adapter) and client (document.cookie). See
+// cookie-storage-react.ts for the cross-boundary hydration pattern.
+export { createCookieStorage, documentCookieAdapter } from './cookie-storage-react';
+export type {
+  CookieAdapter,
+  CookieStorageOptions,
+  CookieSetOptions,
+} from './cookie-storage-react';
+
 // Backward compatibility aliases
 export { PartyLayerProvider as CantonConnectProvider } from './context';
 export { usePartyLayer as useCantonConnect } from './hooks';
