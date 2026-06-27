@@ -1,3 +1,5 @@
+'use client';
+
 /**
  * React context for PartyLayer.
  *

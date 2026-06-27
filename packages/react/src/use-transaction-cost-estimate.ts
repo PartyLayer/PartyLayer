@@ -1,3 +1,5 @@
+'use client';
+
 /**
  * @partylayer/react v2: useTransactionCostEstimate (TanStack Query query).
  *

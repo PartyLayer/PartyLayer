@@ -1,3 +1,5 @@
+'use client';
+
 /**
  * @partylayer/react/query — TanStack Query v5 entrypoint (v2 hooks).
  *

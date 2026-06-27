@@ -1,3 +1,5 @@
+'use client';
+
 /**
  * CostPreview: a presentational traffic-cost panel for Canton dApps.
  *

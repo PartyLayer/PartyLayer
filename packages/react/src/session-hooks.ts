@@ -1,3 +1,5 @@
+'use client';
+
 /**
  * React hooks over the @partylayer/session core (Step 6b).
  *

@@ -1,3 +1,5 @@
+'use client';
+
 /**
  * WalletModal — Premium wallet selection modal for Canton dApps.
  *

@@ -1,3 +1,5 @@
+'use client';
+
 /**
  * ConnectButton — Premium wallet connection button for Canton dApps.
  *

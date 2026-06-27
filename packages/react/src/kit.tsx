@@ -1,3 +1,5 @@
+'use client';
+
 /**
  * PartyLayerKit — zero-config wrapper for PartyLayer dApp integration.
  *
