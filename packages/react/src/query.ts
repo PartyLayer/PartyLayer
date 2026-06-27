@@ -85,5 +85,11 @@ export type {
   UseSuspensePaidTrafficCostReturnType,
 } from './use-suspense-paid-traffic-cost';
 
+export { useDamlContract } from './use-daml-contract';
+export type {
+  UseDamlContractParameters,
+  UseDamlContractReturnType,
+} from './use-daml-contract';
+
 // Re-export the standard cost types from core for convenience.
 export type { CostEstimation, TrafficCost, PaidTrafficCost } from '@partylayer/core';

@@ -56,6 +56,16 @@ export const partyLayerKeys = {
    */
   paidTrafficCost: (params?: { input?: unknown }) =>
     [...partyLayerKeys.all, 'paidTrafficCost', params ?? {}] as const,
+
+  /**
+   * Query: a DAML contract read. Optional opaque params (e.g. a `key`
+   * identifying the contract/query: a template id, contract id, or filter the
+   * dApp keys on) are folded into the key so different reads cache independently.
+   * PartyLayer is schema-agnostic, so the key is opaque (the dApp's fetcher owns
+   * the actual query).
+   */
+  damlContract: (params?: { key?: unknown }) =>
+    [...partyLayerKeys.all, 'damlContract', params ?? {}] as const,
 } as const;
 
 export type PartyLayerKeys = typeof partyLayerKeys;
