@@ -23,6 +23,8 @@ export interface UseDisconnectParameters {
   /**
    * Pass-through TanStack `useMutation` options (e.g. `onSuccess`, `onError`).
    * `mutationFn` and `mutationKey` are managed by the hook and cannot be overridden.
+   * Optimistic updates: `onMutate`/`onError`/`onSettled` pass through here. See
+   * docs/react-optimistic-updates.md (and the `optimisticMutationOptions` helper).
    */
   mutation?: Omit<
     UseMutationOptions<void, Error, DisconnectVariables>,
