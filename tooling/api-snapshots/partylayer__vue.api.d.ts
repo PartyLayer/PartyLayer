@@ -14,16 +14,23 @@ declare function injectSessionStore(): SessionStore | null;
 declare function provideSessionStore(config: ProvideSessionConfig): SessionStore;
 declare function useAccount(): UseAccountReturn;
 declare function useAccountEffect(parameters?: UseAccountEffectParameters): void;
+declare function usePaidTrafficCost(parameters: UsePaidTrafficCostParameters): UsePaidTrafficCostReturnType;
 declare function usePartyState(): UsePartyStateReturn;
 declare function useSession(): UseSessionReturn;
-export { type PartyLayerKeys, type ProvideSessionConfig, SESSION_STORE_KEY, type SessionChain, type UseAccountEffectParameters, type UseAccountReturn, type UsePartyStateReturn, type UseSessionReturn, createPartyLayerSession, injectSessionStore, partyLayerKeys, provideSessionStore, useAccount, useAccountEffect, usePartyState, useSession };
-import { CIP0103Provider } from '@partylayer/core';
-import { InjectionKey, Plugin, ComputedRef } from 'vue';
+declare function useTransactionCostEstimate(parameters: UseTransactionCostEstimateParameters): UseTransactionCostEstimateReturnType;
+export { type PartyLayerKeys, type ProvideSessionConfig, SESSION_STORE_KEY, type SessionChain, type UseAccountEffectParameters, type UseAccountReturn, type UsePaidTrafficCostParameters, type UsePaidTrafficCostReturnType, type UsePartyStateReturn, type UseSessionReturn, type UseTransactionCostEstimateParameters, type UseTransactionCostEstimateReturnType, createPartyLayerSession, injectSessionStore, partyLayerKeys, provideSessionStore, useAccount, useAccountEffect, usePaidTrafficCost, usePartyState, useSession, useTransactionCostEstimate };
+import { CIP0103Provider, PaidTrafficCost, CostEstimation } from '@partylayer/core';
+import { InjectionKey, Plugin, ComputedRef, MaybeRefOrGetter } from 'vue';
 import { SessionStore, SessionStoreOptions, SessionAccount, SessionStatus, SessionState, SessionEvent } from '@partylayer/session';
+import { UseQueryOptions, UseQueryReturnType } from '@tanstack/vue-query';
 interface SessionChain { id: string; }
 interface UseAccountEffectParameters { onConnect?: (data: { account: SessionAccount | null; accounts: readonly SessionAccount[]; networkId: string | null; }) => void; onDisconnect?: () => void; onPartyChanged?: (data: { previous: string | null; current: string | null; }) => void; }
 interface UseAccountReturn { party: ComputedRef<string | null>; address: ComputedRef<string | null>; account: ComputedRef<SessionAccount | null>; accounts: ComputedRef<readonly SessionAccount[]>; status: ComputedRef<SessionStatus>; isConnected: ComputedRef<boolean>; isConnecting: ComputedRef<boolean>; isReconnecting: ComputedRef<boolean>; isDisconnected: ComputedRef<boolean>; networkId: ComputedRef<string | null>; chain: ComputedRef<SessionChain | null>; lastError: ComputedRef<Error | null>; }
+interface UsePaidTrafficCostParameters { fetch: (signal?: AbortSignal) => Promise<PaidTrafficCost | null>; input?: MaybeRefOrGetter<unknown>; query?: Omit<UseQueryOptions<PaidTrafficCost | null, Error>, 'queryKey' | 'queryFn'>; }
 interface UsePartyStateReturn { party: ComputedRef<string | null>; account: ComputedRef<SessionAccount | null>; accounts: ComputedRef<readonly SessionAccount[]>; status: ComputedRef<SessionStatus>; isConnected: ComputedRef<boolean>; isDisconnected: ComputedRef<boolean>; networkId: ComputedRef<string | null>; lastError: ComputedRef<Error | null>; }
 interface UseSessionReturn { status: ComputedRef<SessionStatus>; account: ComputedRef<SessionAccount | null>; accounts: ComputedRef<readonly SessionAccount[]>; networkId: ComputedRef<string | null>; lastError: ComputedRef<Error | null>; isConnected: ComputedRef<boolean>; isConnecting: ComputedRef<boolean>; isReconnecting: ComputedRef<boolean>; isDisconnected: ComputedRef<boolean>; connect(params?: Record<string, unknown>): Promise<SessionState>; disconnect(): Promise<void>; restore(): Promise<SessionState>; on<T extends SessionEvent['type']>(event: T, handler: (event: Extract<SessionEvent, { type: T; }>) => void): () => void; }
+interface UseTransactionCostEstimateParameters { estimate: (signal?: AbortSignal) => Promise<CostEstimation | null>; input?: MaybeRefOrGetter<unknown>; query?: Omit<UseQueryOptions<CostEstimation | null, Error>, 'queryKey' | 'queryFn'>; }
 type PartyLayerKeys = typeof partyLayerKeys;
 type ProvideSessionConfig = SessionStore | ({ provider: CIP0103Provider; } & Partial<SessionStoreOptions>);
+type UsePaidTrafficCostReturnType = UseQueryReturnType<PaidTrafficCost | null, Error> & { paidTrafficCost: ComputedRef<PaidTrafficCost | null | undefined>; };
+type UseTransactionCostEstimateReturnType = UseQueryReturnType<CostEstimation | null, Error> & { costEstimate: ComputedRef<CostEstimation | null | undefined>; };
