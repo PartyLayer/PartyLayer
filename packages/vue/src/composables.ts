@@ -126,6 +126,63 @@ export function useAccount(): UseAccountReturn {
   };
 }
 
+export interface UsePartyStateReturn {
+  /** Active party id (Canton's address analog), or null when no party is present. */
+  party: ComputedRef<string | null>;
+  /** Full active (primary) account, or null. */
+  account: ComputedRef<SessionAccount | null>;
+  /** All accounts the wallet exposed. */
+  accounts: ComputedRef<readonly SessionAccount[]>;
+  /** Connection status state-machine value. */
+  status: ComputedRef<SessionStatus>;
+  /** True when a party is present (status is `connected`). */
+  isConnected: ComputedRef<boolean>;
+  /** True when no party is present (status is `disconnected`). */
+  isDisconnected: ComputedRef<boolean>;
+  /** Active network in CAIP-2 form, or null. */
+  networkId: ComputedRef<string | null>;
+  /** Last connect/restore error, or null. */
+  lastError: ComputedRef<Error | null>;
+}
+
+/**
+ * Reactive party-state composable: the party-focused view of the active session,
+ * the Vue mirror of React's `usePartyState`. It answers "which party am I, and is
+ * it present?" where {@link useAccount} answers "what is my wagmi-style account and
+ * connection?". Both read the SAME reactive session store.
+ *
+ * BUILT ON useAccount: this composable calls {@link useAccount} internally and
+ * passes through its `ComputedRef`s for the party-centric subset. It does NOT
+ * re-read the store or re-implement the computed logic, so there is ONE source of
+ * truth and its behavior is identical to the proven composable. It is SSR-safe for
+ * the same reason (it inherits useAccount's disconnected snapshot).
+ *
+ * SURFACE (why it differs from useAccount): it exposes only genuine party/account
+ * state plus the two party-presence booleans, mirroring React's `usePartyState`. It
+ * deliberately OMITS useAccount's wagmi-connection emphasis, which is useAccount's
+ * job: `address` (a redundant alias of `party` here), `chain` (a connection handle,
+ * not party identity), and `isConnecting`/`isReconnecting` (transient connection
+ * flow; party presence is `isConnected`/`isDisconnected`, and the full `status` is
+ * still exposed). Every field is a `ComputedRef` (Vue's idiom), where React returns
+ * plain values. Use `useAccount` for the wagmi-style surface; both are backed by the
+ * same store, so they never disagree.
+ */
+export function usePartyState(): UsePartyStateReturn {
+  const { party, account, accounts, status, isConnected, isDisconnected, networkId, lastError } =
+    useAccount();
+
+  return {
+    party,
+    account,
+    accounts,
+    status,
+    isConnected,
+    isDisconnected,
+    networkId,
+    lastError,
+  };
+}
+
 export interface UseAccountEffectParameters {
   /** Fired on a transition INTO `connected` (once the account is available). */
   onConnect?: (data: {

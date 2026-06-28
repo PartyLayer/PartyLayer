@@ -18,9 +18,11 @@ export {
   useSession,
   useAccount,
   useAccountEffect,
+  usePartyState,
   type UseSessionReturn,
   type UseAccountReturn,
   type UseAccountEffectParameters,
+  type UsePartyStateReturn,
   type SessionChain,
 } from './composables';
 

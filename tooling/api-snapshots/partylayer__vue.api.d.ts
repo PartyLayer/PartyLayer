@@ -14,14 +14,16 @@ declare function injectSessionStore(): SessionStore | null;
 declare function provideSessionStore(config: ProvideSessionConfig): SessionStore;
 declare function useAccount(): UseAccountReturn;
 declare function useAccountEffect(parameters?: UseAccountEffectParameters): void;
+declare function usePartyState(): UsePartyStateReturn;
 declare function useSession(): UseSessionReturn;
-export { type PartyLayerKeys, type ProvideSessionConfig, SESSION_STORE_KEY, type SessionChain, type UseAccountEffectParameters, type UseAccountReturn, type UseSessionReturn, createPartyLayerSession, injectSessionStore, partyLayerKeys, provideSessionStore, useAccount, useAccountEffect, useSession };
+export { type PartyLayerKeys, type ProvideSessionConfig, SESSION_STORE_KEY, type SessionChain, type UseAccountEffectParameters, type UseAccountReturn, type UsePartyStateReturn, type UseSessionReturn, createPartyLayerSession, injectSessionStore, partyLayerKeys, provideSessionStore, useAccount, useAccountEffect, usePartyState, useSession };
 import { CIP0103Provider } from '@partylayer/core';
 import { InjectionKey, Plugin, ComputedRef } from 'vue';
 import { SessionStore, SessionStoreOptions, SessionAccount, SessionStatus, SessionState, SessionEvent } from '@partylayer/session';
 interface SessionChain { id: string; }
 interface UseAccountEffectParameters { onConnect?: (data: { account: SessionAccount | null; accounts: readonly SessionAccount[]; networkId: string | null; }) => void; onDisconnect?: () => void; onPartyChanged?: (data: { previous: string | null; current: string | null; }) => void; }
 interface UseAccountReturn { party: ComputedRef<string | null>; address: ComputedRef<string | null>; account: ComputedRef<SessionAccount | null>; accounts: ComputedRef<readonly SessionAccount[]>; status: ComputedRef<SessionStatus>; isConnected: ComputedRef<boolean>; isConnecting: ComputedRef<boolean>; isReconnecting: ComputedRef<boolean>; isDisconnected: ComputedRef<boolean>; networkId: ComputedRef<string | null>; chain: ComputedRef<SessionChain | null>; lastError: ComputedRef<Error | null>; }
+interface UsePartyStateReturn { party: ComputedRef<string | null>; account: ComputedRef<SessionAccount | null>; accounts: ComputedRef<readonly SessionAccount[]>; status: ComputedRef<SessionStatus>; isConnected: ComputedRef<boolean>; isDisconnected: ComputedRef<boolean>; networkId: ComputedRef<string | null>; lastError: ComputedRef<Error | null>; }
 interface UseSessionReturn { status: ComputedRef<SessionStatus>; account: ComputedRef<SessionAccount | null>; accounts: ComputedRef<readonly SessionAccount[]>; networkId: ComputedRef<string | null>; lastError: ComputedRef<Error | null>; isConnected: ComputedRef<boolean>; isConnecting: ComputedRef<boolean>; isReconnecting: ComputedRef<boolean>; isDisconnected: ComputedRef<boolean>; connect(params?: Record<string, unknown>): Promise<SessionState>; disconnect(): Promise<void>; restore(): Promise<SessionState>; on<T extends SessionEvent['type']>(event: T, handler: (event: Extract<SessionEvent, { type: T; }>) => void): () => void; }
 type PartyLayerKeys = typeof partyLayerKeys;
 type ProvideSessionConfig = SessionStore | ({ provider: CIP0103Provider; } & Partial<SessionStoreOptions>);
