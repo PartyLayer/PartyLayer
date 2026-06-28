@@ -524,6 +524,9 @@ importers:
         specifier: ^1.5.4
         version: 1.5.4
     devDependencies:
+      '@partylayer/conformance-runner':
+        specifier: workspace:^
+        version: link:../conformance-runner
       '@partylayer/testing':
         specifier: workspace:^
         version: link:../testing
