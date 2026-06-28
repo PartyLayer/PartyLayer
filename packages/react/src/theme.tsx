@@ -2,7 +2,7 @@
 
 /**
  * Lightweight theme system for PartyLayer UI components.
- * No external CSS-in-JS dependency — just a token object + React context.
+ * No external CSS-in-JS dependency, just a token object + React context.
  */
 
 import { createContext, useContext, useState, useEffect, useMemo } from 'react';

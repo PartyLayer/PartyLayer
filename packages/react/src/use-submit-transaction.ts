@@ -1,10 +1,10 @@
 'use client';
 
 /**
- * @partylayer/react v2 — useSubmitTransaction (TanStack Query mutation).
+ * @partylayer/react v2: useSubmitTransaction (TanStack Query mutation).
  *
  * Wagmi-shaped: wraps the existing client submit path in `useMutation`. The
- * underlying logic is UNCHANGED — `mutationFn` calls
+ * underlying logic is UNCHANGED: `mutationFn` calls
  * `client.submitTransaction(params)` (the same method the v1 context hook calls).
  * The QueryClient is supplied by the CONSUMER's `QueryClientProvider` (TanStack
  * Query is a peer dependency).
@@ -48,7 +48,7 @@ export function useSubmitTransaction(
   const mutation = useMutation<TxReceipt, Error, SubmitTransactionParams>({
     ...parameters.mutation,
     mutationKey: partyLayerKeys.submitTransaction(),
-    // Underlying submit path is UNCHANGED — same call the v1 hook makes.
+    // Underlying submit path is UNCHANGED, same call the v1 hook makes.
     mutationFn: (params) => client.submitTransaction(params),
   });
 

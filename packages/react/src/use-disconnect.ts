@@ -1,10 +1,10 @@
 'use client';
 
 /**
- * @partylayer/react v2 — useDisconnect (TanStack Query mutation).
+ * @partylayer/react v2: useDisconnect (TanStack Query mutation).
  *
  * Wagmi-shaped: wraps the existing client disconnect path in `useMutation`. The
- * underlying logic is UNCHANGED — `mutationFn` calls `client.disconnect()` (the
+ * underlying logic is UNCHANGED: `mutationFn` calls `client.disconnect()` (the
  * same method the v1 context hook calls). The QueryClient is supplied by the
  * CONSUMER's `QueryClientProvider` (TanStack Query is a peer dependency).
  *
@@ -45,7 +45,7 @@ export function useDisconnect(parameters: UseDisconnectParameters = {}): UseDisc
   const mutation = useMutation<void, Error, DisconnectVariables>({
     ...parameters.mutation,
     mutationKey: partyLayerKeys.disconnect(),
-    // Underlying disconnect path is UNCHANGED — same call the v1 hook makes.
+    // Underlying disconnect path is UNCHANGED, same call the v1 hook makes.
     mutationFn: () => client.disconnect(),
   });
 

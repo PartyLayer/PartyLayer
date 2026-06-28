@@ -42,7 +42,7 @@
 | WalletConnect | devnet, testnet, mainnet | signMessage, submitTransaction | Yes | `@partylayer/adapter-walletconnect` |
 <!-- WALLETS:END -->
 
-> **Try it live:** [PartyLayer Studio](https://studio.partylayer.xyz) — runnable, editable scenarios · [Pattern Cookbook](https://partylayer.xyz/docs/cookbook) — copy-paste recipes.
+> **Try it live:** [PartyLayer Studio](https://studio.partylayer.xyz): runnable, editable scenarios · [Pattern Cookbook](https://partylayer.xyz/docs/cookbook): copy-paste recipes.
 
 ---
 
@@ -146,7 +146,7 @@ if (isConnected) {
 
 > Need the legacy SDK `Session` getter (`{ sessionId, walletId, … }`)? It's
 > preserved as **`useClientSession()`** (deprecated). `useSession()` was
-> re-pointed to the reactive store — see the migration note below.
+> re-pointed to the reactive store. See the migration note below.
 
 ### `useWallets()`
 
@@ -265,7 +265,7 @@ A pre-built modal for wallet selection.
 <WalletModal
   isOpen={isOpen}
   onClose={() => setIsOpen(false)}
-  // optional — the modal self-closes via onClose and the session is observable
+  // optional: the modal self-closes via onClose and the session is observable
   // via useSession()/useAccount(); pass it only to get the session id directly.
   onConnect={(sessionId) => console.log('Connected:', sessionId)}
 />
@@ -473,4 +473,4 @@ SDK-layer getter (`(): Session | null`) is preserved **verbatim** as
 | `useSession()` | `useSession()` |
 | `useAccount()` | `useAccount()` |
 | `useAccountEffect()` | `onAccountEffect()` (watch-based) |
-| `useClientSession()` (legacy) | — (not ported) |
+| `useClientSession()` (legacy) | None (not ported) |

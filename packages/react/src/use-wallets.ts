@@ -1,10 +1,10 @@
 'use client';
 
 /**
- * @partylayer/react v2 — useWallets (TanStack Query query).
+ * @partylayer/react v2: useWallets (TanStack Query query).
  *
  * Wagmi-shaped: wraps the existing client wallet-list path in `useQuery`. The
- * underlying logic is UNCHANGED — `queryFn` calls `client.listWallets(filter)`
+ * underlying logic is UNCHANGED: `queryFn` calls `client.listWallets(filter)`
  * (the same method the v1 path uses to populate the context). The QueryClient is
  * supplied by the CONSUMER's `QueryClientProvider` (TanStack Query is a peer
  * dependency); `useQuery` reads it via `useQueryClient`.
@@ -42,7 +42,7 @@ export function useWallets(parameters: UseWalletsParameters = {}): UseWalletsRet
   const result = useQuery<WalletInfo[], Error>({
     ...query,
     queryKey: partyLayerKeys.wallets({ filter }),
-    // Underlying list logic is UNCHANGED — same call the v1 path makes.
+    // Underlying list logic is UNCHANGED, same call the v1 path makes.
     queryFn: () => client.listWallets(filter),
   });
 

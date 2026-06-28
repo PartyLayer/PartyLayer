@@ -1,7 +1,7 @@
 'use client';
 
 /**
- * @partylayer/react/query — TanStack Query v5 entrypoint (v2 hooks).
+ * @partylayer/react/query: TanStack Query v5 entrypoint (v2 hooks).
  *
  * Architecture (wagmi model): TanStack Query is a PEER dependency. The CONSUMER
  * provides their own `QueryClientProvider`; PartyLayer does NOT create or wrap a

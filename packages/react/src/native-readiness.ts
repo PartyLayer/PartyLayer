@@ -3,25 +3,25 @@
  *
  * The picker shows the canonical CIP-0103 wallet list (Console + Send
  * today; any registry-flagged wallet in the future) regardless of
- * install state — but each row needs a runtime "Ready" / "Not installed"
+ * install state, but each row needs a runtime "Ready" / "Not installed"
  * indicator. The Prompt-6 model used `matchesProviderDetection` against
  * `window.canton`, which works for Send but always reports Console as
  * "Not installed" because Console uses postMessage, not window.canton.
  *
- * The fix is to ask each adapter its own `detectInstalled()` — every
+ * The fix is to ask each adapter its own `detectInstalled()`, every
  * adapter already knows its own transport. This module wraps that call
  * with a hard timeout + try/catch so a slow or buggy adapter cannot
  * block / crash the picker.
  *
  * Real adapters resolve in <100 ms in practice (Console: postMessage
  * probe; Send: window.canton + status RPC; Nightly: window.nightly
- * check). The 2.5 s ceiling is a defensive bound — if it ever fires in
+ * check). The 2.5 s ceiling is a defensive bound: if it ever fires in
  * production that's a real bug in the offending adapter, not a UX
  * trade-off here.
  */
 
 /**
- * Minimum surface this module needs from a wallet adapter — narrowed
+ * Minimum surface this module needs from a wallet adapter, narrowed
  * structurally so tests can pass plain stubs without instantiating the
  * full adapter classes.
  */
@@ -48,7 +48,7 @@ export interface Cip0103ProviderLike {
 /**
  * Defense-in-depth shape gate for any code that reads `window.canton`
  * directly. Returns true only when `value` exposes a callable
- * `request` method — the SOLE entry point for CIP-0103 communication.
+ * `request` method, the SOLE entry point for CIP-0103 communication.
  *
  * The mock fixture used by the demo (and any other namespace squatter
  * that puts something at `window.canton.*` without implementing the

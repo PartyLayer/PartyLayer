@@ -3,17 +3,17 @@
  *
  * Wraps a discovered CIP-0103 Provider into the PartyLayer WalletAdapter
  * interface. Used when a provider injected at `window.canton.*` does NOT
- * match any registry entry — i.e. an unknown CIP-0103 wallet that the
+ * match any registry entry, i.e. an unknown CIP-0103 wallet that the
  * picker should still surface (with generic branding) so the user can
  * connect.
  *
- * For *known* CIP-0103 wallets — entries in the registry whose
- * `providerDetection` matches the active provider — we DO NOT create a
+ * For *known* CIP-0103 wallets: entries in the registry whose
+ * `providerDetection` matches the active provider, we DO NOT create a
  * synthetic adapter. The registry's own adapter (e.g. `SendAdapter`) is
  * already registered via `getBuiltinAdapters()` and carries wallet-
  * specific behaviour (kernel.id guard, template-id hint, error mapping).
  * The picker promotes the registry's WalletInfo into the "CIP-0103
- * Native" section instead — see `context.tsx` for the merge logic.
+ * Native" section instead. See `context.tsx` for the merge logic.
  */
 
 import {
@@ -66,7 +66,7 @@ export interface EnrichedProvider extends DiscoveredProvider {
 
 /**
  * A WalletAdapter that delegates to a native CIP-0103 Provider.
- * Used only for unknown CIP-0103 wallets — see file header.
+ * Used only for unknown CIP-0103 wallets. See file header.
  */
 export class NativeCIP0103Adapter implements WalletAdapter {
   readonly walletId: WalletId;
@@ -91,7 +91,7 @@ export class NativeCIP0103Adapter implements WalletAdapter {
   }
 
   async detectInstalled(): Promise<AdapterDetectResult> {
-    // Already discovered — always installed
+    // Already discovered: always installed
     return { installed: true };
   }
 
@@ -126,7 +126,7 @@ export class NativeCIP0103Adapter implements WalletAdapter {
           partyId = status.session.userId;
         }
       } catch {
-        // Fallback — partyId stays 'unknown'
+        // Fallback: partyId stays 'unknown'
       }
     }
 
@@ -167,7 +167,7 @@ export class NativeCIP0103Adapter implements WalletAdapter {
     _session: Session,
     params: SignTransactionParams,
   ): Promise<SignedTransaction> {
-    // CIP-0103 doesn't have a separate "sign only" — we use prepareExecute
+    // CIP-0103 doesn't have a separate "sign only", we use prepareExecute
     // but only capture the signed stage
     const result = await this.provider.request<{
       transactionHash?: string;
@@ -227,12 +227,12 @@ export function createNativeAdapter(
 const GENERIC_CIP0103_ICON = '/wallets/canton-generic.svg';
 
 /**
- * Create a synthetic WalletInfo for an unknown CIP-0103 provider — i.e.
+ * Create a synthetic WalletInfo for an unknown CIP-0103 provider, i.e.
  * one whose runtime status did NOT match any registry entry. The picker
  * still surfaces it (decision: "show all wallets"), with a name derived
  * from `kernel.userUrl` and a generic Canton-themed icon.
  *
- * For known wallets (registry-matched), don't call this — promote the
+ * For known wallets (registry-matched), don't call this: promote the
  * registry's WalletInfo to native instead. See `promoteRegistryToNative`.
  */
 export function createSyntheticWalletInfo(
@@ -282,7 +282,7 @@ export function createSyntheticWalletInfo(
  * Promote a registry-matched WalletInfo into the "CIP-0103 Native"
  * section of the picker. We do this by stamping `metadata.source =
  * 'native-cip0103'` so the existing modal predicate (`isNativeWallet`)
- * renders it under the native header — without losing the wallet's
+ * renders it under the native header, without losing the wallet's
  * registry branding (name, icon, description) or its real adapter.
  */
 export function promoteRegistryToNative(

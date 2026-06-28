@@ -3,7 +3,7 @@
 /**
  * React hooks over the @partylayer/session core (Step 6b).
  *
- * NEW, additive hooks — `useAccount` and `useAccountEffect` — with wagmi
+ * NEW, additive hooks, `useAccount` and `useAccountEffect`, with wagmi
  * parity. They read the shared `SessionStore` created by `PartyLayerProvider`
  * via `useSyncExternalStore`. The existing `useSession` (SDK-layer) is left
  * untouched; the two coexist until the M2 react v2 unification.
@@ -89,7 +89,7 @@ function deriveAccount(state: SessionState): UseAccountReturn {
  * Read the active account/connection from the shared session store.
  *
  * wagmi parity: `useAccount()` returns `{ address, status, isConnected, ... }`.
- * SSR-safe — `getServerSnapshot` returns a stable disconnected snapshot.
+ * SSR-safe: `getServerSnapshot` returns a stable disconnected snapshot.
  */
 export function useAccount(): UseAccountReturn {
   const { store } = usePartyLayerContext();
@@ -107,7 +107,7 @@ export function useAccount(): UseAccountReturn {
  * Reactive session: the full `SessionState` (live, via `useSyncExternalStore`)
  * plus the store's actions and the resilience/sync event subscription.
  *
- * NOTE — this is the NEW meaning of `useSession()`. The previous SDK-layer
+ * NOTE: this is the NEW meaning of `useSession()`. The previous SDK-layer
  * getter (`return context.session`) is preserved VERBATIM as `useClientSession()`.
  * Migration: `useSession()` (old) → `useClientSession()`.
  *
@@ -179,13 +179,13 @@ export interface UseAccountEffectParameters {
   onDisconnect?: () => void;
   /**
    * fired when the active PRIMARY party changes (the session
-   * `party:changed` event — a true switch, not a list reorder).
+   * `party:changed` event, a true switch, not a list reorder).
    */
   onPartyChanged?: (data: { previous: string | null; current: string | null }) => void;
 }
 
 /**
- * Fire side-effects on session status transitions — no render churn.
+ * Fire side-effects on session status transitions, no render churn.
  *
  * - `onConnect` runs once when status becomes `connected`.
  * - `onDisconnect` runs once on `connected → disconnected`.
