@@ -66,3 +66,18 @@ export {
 // supplies the data from the cost composables. Theme-independent, styleable via
 // class/style fallthrough.
 export { CostPreview, type CostPreviewProps } from './cost-preview';
+
+// Presentational Vue components (defineComponent + h, no SFC/theme): they receive
+// state as props and render it (Model 2, like CostPreview), the consumer owns the
+// state. Vue-specific (no React equivalent).
+export { PartyAvatar, type PartyAvatarProps } from './party-avatar';
+export {
+  SynchronizerSwitcher,
+  type SynchronizerSwitcherProps,
+  type SynchronizerOption,
+} from './synchronizer-switcher';
+export {
+  TransactionToast,
+  type TransactionToastProps,
+  type TransactionToastStatus,
+} from './transaction-toast';
