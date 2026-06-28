@@ -4,6 +4,11 @@
       "import": "./dist/index.mjs",
       "require": "./dist/index.js",
       "types": "./dist/index.d.ts"
+    },
+    "./pinia": {
+      "import": "./dist/pinia.mjs",
+      "require": "./dist/pinia.js",
+      "types": "./dist/pinia.d.ts"
     }
   },
   "main": "./dist/index.js",
@@ -11,6 +16,7 @@
   "name": "@partylayer/vue",
   "peerDependencies": {
     "@tanstack/vue-query": ">=5",
+    "pinia": ">=2",
     "vue": ">=3.4.0"
   },
   "types": "./dist/index.d.ts"
