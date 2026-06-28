@@ -1,10 +1,10 @@
 'use client';
 
 /**
- * @partylayer/react v2 — useSignMessage (TanStack Query mutation).
+ * @partylayer/react v2: useSignMessage (TanStack Query mutation).
  *
  * Wagmi-shaped: wraps the existing client sign path in `useMutation`. The
- * underlying logic is UNCHANGED — `mutationFn` calls `client.signMessage(params)`
+ * underlying logic is UNCHANGED: `mutationFn` calls `client.signMessage(params)`
  * (the same method the v1 context hook calls). The QueryClient is supplied by the
  * CONSUMER's `QueryClientProvider` (TanStack Query is a peer dependency).
  *
@@ -45,7 +45,7 @@ export function useSignMessage(parameters: UseSignMessageParameters = {}): UseSi
   const mutation = useMutation<SignedMessage, Error, SignMessageParams>({
     ...parameters.mutation,
     mutationKey: partyLayerKeys.signMessage(),
-    // Underlying sign path is UNCHANGED — same call the v1 hook makes.
+    // Underlying sign path is UNCHANGED, same call the v1 hook makes.
     mutationFn: (params) => client.signMessage(params),
   });
 

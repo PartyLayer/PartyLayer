@@ -2,7 +2,7 @@
  * Browser `localStorage`-backed `SessionStorage` for the session core.
  *
  * The `@partylayer/session` core is DOM-free and never touches `localStorage`
- * itself — this adapter is the only place that does, and it is SSR-safe
+ * itself, this adapter is the only place that does, and it is SSR-safe
  * (guards `typeof window`). The `PartyLayerProvider` injects it into the
  * session store it creates.
  */

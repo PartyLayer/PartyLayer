@@ -1,7 +1,7 @@
 'use client';
 
 /**
- * @partylayer/react v2 — useSuspenseWallets (TanStack Query suspense query).
+ * @partylayer/react v2: useSuspenseWallets (TanStack Query suspense query).
  *
  * The Suspense sibling of `useWallets`, for declarative loading boundaries. It is
  * identical to `useWallets` except it uses `useSuspenseQuery` instead of
@@ -11,11 +11,11 @@
  *
  * It uses the SAME `queryKey` (`partyLayerKeys.wallets({ filter })`) and SAME
  * `queryFn` (`() => client.listWallets(filter)`) as `useWallets`, so the two
- * share a single cache entry — switching between them (or rendering both) reuses
+ * share a single cache entry: switching between them (or rendering both) reuses
  * the same data. The underlying `listWallets` logic is UNCHANGED.
  *
  * Note (TanStack Query v5): suspense is its own hook (`useSuspenseQuery`), not the
- * removed v4 `suspense: true` option, and there is no `enabled` option — a
+ * removed v4 `suspense: true` option, and there is no `enabled` option, a
  * suspense query always runs.
  */
 import {
@@ -52,7 +52,7 @@ export function useSuspenseWallets(
   const result = useSuspenseQuery<WalletInfo[], Error>({
     ...query,
     queryKey: partyLayerKeys.wallets({ filter }),
-    // Same key + same call as useWallets — they share one cache entry.
+    // Same key + same call as useWallets, they share one cache entry.
     queryFn: () => client.listWallets(filter),
   });
 

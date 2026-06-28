@@ -1,7 +1,7 @@
 'use client';
 
 /**
- * WalletModal — Premium wallet selection modal for Canton dApps.
+ * WalletModal: Premium wallet selection modal for Canton dApps.
  *
  * Premium quality wallet selection experience:
  *   - Multi-state flow: idle -> connecting -> success -> error
@@ -126,7 +126,7 @@ function isDualTransportWallet(wallet: WalletInfo): boolean {
  * Pure-remote / QR-only wallet: NO browser extension, reached only via a
  * remote signer / mobile transport (e.g. WalletConnect). These deliver a
  * pairing URI at connect time (via `onDisplayUri`) which the modal renders as
- * a QR / deep-link itself — they have no `#console-wallet-connect-placeholder`
+ * a QR / deep-link itself, they have no `#console-wallet-connect-placeholder`
  * DOM injection. (Wallets whose own SDK draws the QR simply never emit a URI,
  * so the QR view is only entered once a URI actually arrives.)
  */
@@ -194,8 +194,8 @@ function getWalletUrl(wallet: WalletInfo): string | null {
 
 function getWalletTransportLabel(wallet: WalletInfo): string {
   // Prompt 7.6: no longer short-circuits to "Ready" for native wallets.
-  // Every wallet now reports its static transport family — derived purely
-  // from the registry's capabilities array — so the picker reads as a
+  // Every wallet now reports its static transport family, derived purely
+  // from the registry's capabilities array, so the picker reads as a
   // directory, not a status board.
   const hasInjected = wallet.capabilities.includes('injected');
   const hasDeeplink = wallet.capabilities.includes('deeplink');
@@ -502,7 +502,7 @@ export function WalletModal({
       cleanupConnectResources();
       const code = 'code' in error ? (error as { code: string }).code : '';
       if (code === 'WALLET_NOT_INSTALLED' && !isDualTransportWallet(selectedWallet!)) {
-        // For dual-transport wallets, don't show "not installed" — show QR fallback instead
+        // For dual-transport wallets, don't show "not installed", show QR fallback instead
         setView('not-installed');
       } else if (code === 'WALLET_NOT_INSTALLED' && isDualTransportWallet(selectedWallet!)) {
         // Extension not found for dual-transport → switch to QR phase
@@ -659,7 +659,7 @@ export function WalletModal({
     // Start observer before connecting (SDK will inject QR)
     startQrObserver();
 
-    // Reconnect — the adapter in combined mode will show QR if extension is unresponsive
+    // Reconnect: the adapter in combined mode will show QR if extension is unresponsive
     // We start a fresh connect; the observer will capture the QR
     (async () => {
       const session = await connect({
@@ -698,7 +698,7 @@ export function WalletModal({
 
   // Split wallets
   // Split into sections first, then (optionally) order WITHIN each section by
-  // `walletOrder` — preserving the section structure. Default: discovered order.
+  // `walletOrder`, preserving the section structure. Default: discovered order.
   const nativeWalletsRaw = wallets.filter(isNativeWallet);
   const registryWalletsRaw = wallets.filter((w) => !isNativeWallet(w));
   const nativeWallets = walletOrder ? sortByWalletOrder(nativeWalletsRaw, walletOrder) : nativeWalletsRaw;
@@ -928,7 +928,7 @@ export function WalletModal({
           </div>
           {/*
             Prompt 7.6: status indicators removed entirely. The picker is
-            now a registry-driven static directory — install / connect
+            now a registry-driven static directory, install / connect
             state is decided by the adapter at click-time, not pre-shown
             in the row. The transport-label line stays (it's static
             registry-derived metadata: "Browser Extension" / "Mobile
@@ -1580,7 +1580,7 @@ export function WalletModal({
       return 'https://cantonwallet.com';
     })();
 
-    // Amber-toned palette for the auth-timeout case — reads as "external
+    // Amber-toned palette for the auth-timeout case, reads as "external
     // hiccup, please retry" rather than the red "fatal failure" tone we
     // use for unrecognised connection errors.
     const badgeColor = isAuthTimeout ? '#F59E0B' : theme.colors.error;
@@ -1913,7 +1913,7 @@ export function WalletModal({
           50% { transform: scale(1.02); }
           100% { transform: scale(1); opacity: 1; }
         }
-        /* Hide Console SDK's injected QR/connector modal — we extract its
+        /* Hide Console SDK's injected QR/connector modal, we extract its
            content and render in our own modal. Using off-screen positioning
            instead of display:none so the SDK can fully render its DOM
            (QR SVG, connector buttons) before we extract them. */

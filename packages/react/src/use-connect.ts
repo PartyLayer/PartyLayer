@@ -1,10 +1,10 @@
 'use client';
 
 /**
- * @partylayer/react v2 — useConnect (TanStack Query mutation).
+ * @partylayer/react v2: useConnect (TanStack Query mutation).
  *
  * Wagmi-shaped: wraps the existing client connect path in `useMutation`. The
- * underlying connect logic is UNCHANGED — `mutationFn` calls
+ * underlying connect logic is UNCHANGED: `mutationFn` calls
  * `client.connect(options)` (the same method the v1 context hook calls). The
  * QueryClient is supplied by the CONSUMER's `QueryClientProvider` (TanStack
  * Query is a peer dependency); `useMutation` reads it via `useQueryClient`.
@@ -51,7 +51,7 @@ export function useConnect(parameters: UseConnectParameters = {}): UseConnectRet
   const mutation = useMutation<Session, Error, ConnectVariables>({
     ...parameters.mutation,
     mutationKey: partyLayerKeys.connect(),
-    // Underlying connect path is UNCHANGED — same call the v1 hook makes.
+    // Underlying connect path is UNCHANGED, same call the v1 hook makes.
     mutationFn: (options) => client.connect(options),
   });
 

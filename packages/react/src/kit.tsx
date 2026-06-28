@@ -1,7 +1,7 @@
 'use client';
 
 /**
- * PartyLayerKit — zero-config wrapper for PartyLayer dApp integration.
+ * PartyLayerKit: zero-config wrapper for PartyLayer dApp integration.
  *
  * Usage:
  *   <PartyLayerKit network="devnet" appName="My dApp">
@@ -84,8 +84,8 @@ export interface PartyLayerKitProps {
    *   adapters={[...getBuiltinAdapters(), new BronAdapter(config)]}
    *
    * Also accepts an official @canton-network ProviderAdapter
-   * (`OfficialProviderAdapter`, e.g. `new WalleyAdapter({ host })`) — the SDK
-   * auto-bridges it via GenericDiscoveryAdapter (popup/remote wallets) — or an
+   * (`OfficialProviderAdapter`, e.g. `new WalleyAdapter({ host })`), the SDK
+   * auto-bridges it via GenericDiscoveryAdapter (popup/remote wallets), or an
    * `OfficialAdapterFactory` (`{ providerId, create(host) }`), whose host the SDK
    * resolves from the registry entry's `networkHosts[network]` so you set
    * `network="…"` and never hardcode a wallet URL.

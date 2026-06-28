@@ -12,13 +12,13 @@
  *
  * Prompt 7.6 simplification: the modal renders the registry directly.
  * Each adapter's `connect()` flow handles install / QR / popup
- * fallbacks at click-time — that's where transport-specific knowledge
+ * fallbacks at click-time, that's where transport-specific knowledge
  * actually lives, and the right place for it.
  *
  * Detection helpers (`detectInstalled`, `matchesProviderDetection`,
  * `findMatchingWallet`, etc.) remain exported by `@partylayer/sdk`
  * and `@partylayer/registry-client` for advanced consumers and the
- * conformance suite — only the picker stops consuming them.
+ * conformance suite: only the picker stops consuming them.
  */
 
 import { createContext, useContext, useEffect, useRef, useState } from 'react';
@@ -38,7 +38,7 @@ interface PartyLayerContextValue {
   /**
    * Shared framework-agnostic session store (Step 6b). Backed by the client's
    * CIP-0103 provider and a localStorage adapter. Read by `useAccount` /
-   * `useAccountEffect`. Additive — existing consumers can ignore it; the
+   * `useAccountEffect`. Additive: existing consumers can ignore it; the
    * legacy `session` field above is unchanged.
    */
   store: SessionStore | null;
@@ -98,7 +98,7 @@ export function PartyLayerProvider({
     sessionOptionsRef.current = sessionOptions;
     storeRef.current = {
       client,
-      // 1.0: no pinned storage — inherit the session default (encrypted
+      // 1.0: no pinned storage, inherit the session default (encrypted
       // IndexedDB where supported, in-memory otherwise). Apps can still pass an
       // explicit `storage` (e.g. `createLocalStorage()` or `createMemoryStorage()`)
       // via `sessionOptions`, which is respected.
@@ -184,7 +184,7 @@ export function PartyLayerProvider({
     });
 
     // Reactive wallet list: when a wallet announces late (e.g. Send injecting
-    // after the picker already loaded), the SDK emits 'wallets:changed' — re-list
+    // after the picker already loaded), the SDK emits 'wallets:changed', re-list
     // so the new wallet appears WITHOUT a manual refresh (mirrors EIP-6963/mipd:
     // store emits, UI re-reads). listWallets() does the authoritative gating/
     // filtering, so we re-call it rather than trusting an event payload.
@@ -196,7 +196,7 @@ export function PartyLayerProvider({
           if (mounted) setWallets(next);
         })
         .catch(() => {
-          /* transient discovery failure — keep the current list */
+          /* transient discovery failure, keep the current list */
         });
     });
 
