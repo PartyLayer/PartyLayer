@@ -95,3 +95,27 @@ the actions are no-ops.
 
 `connect(params?)` mirrors the store's own signature exactly
 (`params?: Record<string, unknown>`).
+
+## TanStack vue-query (cache for cost/DAML composables)
+
+The cost and DAML composables (later releases) wrap a dApp-supplied fetcher in
+vue-query, the same way `@partylayer/react`'s cost/DAML hooks use react-query. So
+`@tanstack/vue-query` is a peer dependency, on the same v5 generation as React's
+`@tanstack/react-query`. The consumer supplies the `QueryClient` via
+`VueQueryPlugin`, the Vue analog of React's `QueryClientProvider`:
+
+```ts
+// main.ts
+import { createApp } from 'vue';
+import { VueQueryPlugin } from '@tanstack/vue-query';
+import { createPartyLayerSession } from '@partylayer/vue';
+import App from './App.vue';
+
+createApp(App)
+  .use(VueQueryPlugin)
+  .use(createPartyLayerSession({ provider }))
+  .mount('#app');
+```
+
+The shared `partyLayerKeys` factory (exported from `@partylayer/vue`) produces the
+same hierarchical cache keys as React, so the two packages stay consistent.
