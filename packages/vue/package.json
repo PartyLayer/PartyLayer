@@ -63,6 +63,7 @@
     "@partylayer/testing": "workspace:^",
     "@tanstack/vue-query": "^5.101.0",
     "@types/node": "^20.11.0",
+    "@vue/server-renderer": "^3.4.0",
     "@vue/test-utils": "^2.4.6",
     "happy-dom": "^14.12.0",
     "pinia": "^2.1.0",
