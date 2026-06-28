@@ -60,3 +60,9 @@ export {
   type UseChoiceParameters,
   type UseChoiceReturnType,
 } from './use-choice';
+
+// CIP-0104 cost UI: the Vue mirror of React's CostPreview. A presentational
+// defineComponent (no .vue SFC) that renders cost data passed as props; the dApp
+// supplies the data from the cost composables. Theme-independent, styleable via
+// class/style fallthrough.
+export { CostPreview, type CostPreviewProps } from './cost-preview';
