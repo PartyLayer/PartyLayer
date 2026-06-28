@@ -31,3 +31,14 @@ export {
 // The consumer supplies the QueryClient via VueQueryPlugin (the Vue analog of
 // React's QueryClientProvider); vue-query is a peer dependency.
 export { partyLayerKeys, type PartyLayerKeys } from './query-keys';
+
+// CIP-0104 cost composables (Model 2, vue-query): the Vue mirror of React's cost
+// hooks. The dApp supplies the fetcher; aliases are ComputedRefs; reactive input.
+export {
+  useTransactionCostEstimate,
+  usePaidTrafficCost,
+  type UseTransactionCostEstimateParameters,
+  type UseTransactionCostEstimateReturnType,
+  type UsePaidTrafficCostParameters,
+  type UsePaidTrafficCostReturnType,
+} from './use-transaction-cost';
