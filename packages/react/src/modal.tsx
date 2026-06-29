@@ -892,7 +892,7 @@ export function WalletModal({
               <span
                 title={
                   wallet.cip0103?.evidence
-                    ? `CIP-0103 native — evidence: ${wallet.cip0103.evidence}`
+                    ? `CIP-0103 native, evidence: ${wallet.cip0103.evidence}`
                     : 'CIP-0103 native'
                 }
                 style={{
