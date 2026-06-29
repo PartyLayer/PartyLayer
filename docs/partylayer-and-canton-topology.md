@@ -1,13 +1,14 @@
 # PartyLayer and Canton Topology: Where Your DARs Go
 
-A question comes up often when a team first wires up PartyLayer with their own DAML
-templates: "Do I publish my DAR to the wallets' validators, or do I publish it to
-PartyLayer's validator, which then bridges it to the wallets?"
+When integrating PartyLayer alongside your own DAML templates, a natural point of
+confusion is where DAR files need to be published: to the wallets' validators, or to a
+PartyLayer validator that then bridges them to the wallets. Neither is correct. DAR
+placement is governed entirely by Canton's topology, not by PartyLayer.
 
-The honest answer is neither. PartyLayer has no validator and is not a bridge in that
-sense, so there is nothing on PartyLayer's side to publish a DAR to. Where your DARs go
-is a pure Canton topology question, and it is the same answer whether or not you use
-PartyLayer. This guide clears up the boundary so you can reason about it correctly.
+PartyLayer has no validator and is not a ledger bridge, so there is nothing on
+PartyLayer's side to publish a DAR to. Where DARs go is the same with or without
+PartyLayer: they go where Canton's topology requires. This document explains that
+boundary and where PartyLayer sits relative to it.
 
 ---
 
@@ -119,17 +120,18 @@ connection and signing relay alongside it, not in the middle of it.
 
 ## Common misconceptions
 
-- "PartyLayer bridges my DAML to the wallets." No. Whether two participants can transact
-  on your templates is governed by Canton topology and DAR vetting. PartyLayer connects
-  the wallet and relays a prepared transaction; it does not move your packages or your
-  contract data between participants.
-- "I upload my DAR to PartyLayer." There is no PartyLayer validator to upload to. DARs go
-  to Canton participants (your validator, and any stakeholder party's hosting
-  participant).
-- "The generic bridge bridges my ledger." The generic bridge is wallet discovery (the
-  CIP-0103 announce handshake), not a ledger bridge.
-- "PartyLayer reads my contracts for me." PartyLayer's hooks wrap a fetcher you supply.
-  The read goes through your Ledger API or JSON API. PartyLayer is not a ledger client.
+- Misconception: that PartyLayer bridges DAML templates to the wallets. Whether two
+  participants can transact on a set of templates is governed by Canton topology and DAR
+  vetting. PartyLayer connects the wallet and relays a prepared transaction; it does not
+  move packages or contract data between participants.
+- Misconception: that DARs are uploaded to PartyLayer. There is no PartyLayer validator to
+  upload to. DARs go to Canton participants (the application's validator, and any
+  stakeholder party's hosting participant).
+- Misconception: that the generic bridge bridges the ledger. The generic bridge is wallet
+  discovery (the CIP-0103 announce handshake), not a ledger bridge.
+- Misconception: that PartyLayer reads contracts on the dApp's behalf. PartyLayer's hooks
+  wrap a fetcher the dApp supplies. The read goes through the dApp's Ledger API or JSON
+  API. PartyLayer is not a ledger client.
 
 ---
 
