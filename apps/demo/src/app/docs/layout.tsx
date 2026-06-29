@@ -84,6 +84,8 @@ const SIDEBAR_NAV = [
   {
     category: 'Guides',
     items: [
+      { label: 'Dev & Staging', href: '/docs/dev-and-staging' },
+      { label: 'Canton Topology', href: '/docs/partylayer-and-canton-topology' },
       { label: 'Error Handling', href: '/docs/error-handling' },
       { label: 'TypeScript Types', href: '/docs/typescript' },
       { label: 'Wallet Balances', href: '/docs/wallet-balances' },
@@ -184,6 +186,10 @@ const SEARCH_INDEX: SearchEntry[] = [
   { title: 'For wallets: zero adapter code', section: 'Generic Bridge', href: '/docs/generic-bridge#for-wallets', keywords: ['wallet', 'adapterless', 'connect', 'signMessage', 'prepareExecute', 'baseline', 'capabilities'] },
   { title: 'Capability mapping', section: 'Generic Bridge', href: '/docs/generic-bridge#capability-mapping', keywords: ['capability', 'mapping', 'ledgerApi', 'restore', 'events', 'submitTransaction'] },
   { title: 'For dApps: connect to any CIP-0103 wallet', section: 'Generic Bridge', href: '/docs/generic-bridge#for-dapps', keywords: ['dapp', 'createPartyLayer', 'connect', 'capabilitiesSnapshot', 'ConnectButton', 'PartyLayerKit'] },
+
+  // Guides
+  { title: 'Dev & Staging', section: 'Guides', href: '/docs/dev-and-staging', keywords: ['dev', 'staging', 'production', 'devnet', 'testnet', 'mainnet', 'mock', 'testing', 'studio', 'onboarding', 'getting started', 'integration'] },
+  { title: 'Canton Topology', section: 'Guides', href: '/docs/partylayer-and-canton-topology', keywords: ['dar', 'validator', 'vetting', 'topology', 'participant', 'ledger', 'bridge', 'daml', 'package', 'signatory', 'observer', 'stakeholder'] },
 
   // Error Handling
   { title: 'Error Handling', href: '/docs/error-handling', keywords: ['error', 'catch', 'try', 'handling', 'PartyLayerError'] },
