@@ -1,5 +1,5 @@
 /**
- * Session store provisioning for Vue — `provideSessionStore` (the core) and a
+ * Session store provisioning for Vue: `provideSessionStore` (the core) and a
  * thin `createPartyLayerSession` plugin that wraps the same provide, so there is
  * a single source of truth (one injection key, one store-resolution path).
  *
@@ -58,7 +58,7 @@ export function provideSessionStore(config: ProvideSessionConfig): SessionStore 
 }
 
 /**
- * Vue plugin form — a THIN wrapper over the same provide/resolution, for
+ * Vue plugin form, a THIN wrapper over the same provide/resolution, for
  * `app.use(...)`. Owned stores `init()` on the client at install and `destroy()`
  * when the app unmounts.
  */

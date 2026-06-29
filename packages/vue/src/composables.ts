@@ -4,8 +4,8 @@
  *
  * Each composable derives individual `ComputedRef`s from ONE internal
  * `shallowRef<SessionState>` fed by a single `store.subscribe`, cleaned up via
- * `onScopeDispose` (no leak after unmount). Returning refs — not a `reactive()`
- * object — means destructuring keeps reactivity.
+ * `onScopeDispose` (no leak after unmount). Returning refs, not a `reactive()`
+ * object, means destructuring keeps reactivity.
  *
  * SSR-safe: with no provided store the refs report a disconnected session and
  * the actions are no-ops; nothing touches `window`.
@@ -197,7 +197,7 @@ export interface UseAccountEffectParameters {
 }
 
 /**
- * Fire side-effects on session transitions — no render churn. Auto-cleans on
+ * Fire side-effects on session transitions, no render churn. Auto-cleans on
  * scope teardown (`onScopeDispose`). No-op when no store is provided.
  */
 export function useAccountEffect(parameters: UseAccountEffectParameters = {}): void {

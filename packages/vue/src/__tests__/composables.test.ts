@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 /**
- * Hermetic Vue composable tests — fake CIP-0103 provider, in-memory session
+ * Hermetic Vue composable tests: fake CIP-0103 provider, in-memory session
  * store, @vue/test-utils. Zero real I/O.
  *
  * Covers: reactivity (useSession/useAccount), useAccountEffect callbacks
@@ -176,7 +176,7 @@ describe('scope-dispose: no leak after unmount (MANDATORY)', () => {
 
     wrapper.unmount();
     await nextTick();
-    expect(active).toBe(0); // every subscription cleaned up — no leak
+    expect(active).toBe(0); // every subscription cleaned up, no leak
   });
 });
 
@@ -195,7 +195,7 @@ describe('provide ownership rule', () => {
     expect(p.removeListener).toHaveBeenCalled(); // store.destroy() removed provider listeners
   });
 
-  it('pre-built store: lifecycle belongs to the caller — never destroyed', async () => {
+  it('pre-built store: lifecycle belongs to the caller, never destroyed', async () => {
     const p = mockProvider();
     const store = makeStore(p);
     const destroySpy = vi.spyOn(store, 'destroy');
