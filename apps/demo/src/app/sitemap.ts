@@ -24,5 +24,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: `${base}/docs/wallet-balances`, lastModified: new Date(), changeFrequency: 'monthly', priority: 0.8 },
     { url: `${base}/docs/token-transfers`, lastModified: new Date(), changeFrequency: 'monthly', priority: 0.8 },
     { url: `${base}/docs/advanced`, lastModified: new Date(), changeFrequency: 'monthly', priority: 0.8 },
+    { url: `${base}/docs/dev-and-staging`, lastModified: new Date(), changeFrequency: 'monthly', priority: 0.8 },
+    { url: `${base}/docs/partylayer-and-canton-topology`, lastModified: new Date(), changeFrequency: 'monthly', priority: 0.8 },
   ];
 }
