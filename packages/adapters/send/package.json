@@ -1,6 +1,6 @@
 {
   "name": "@partylayer/adapter-send",
-  "version": "1.2.1",
+  "version": "1.2.2",
   "description": "Send Canton Wallet adapter for PartyLayer (CIP-0103, passkey-based via Sigilry)",
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",

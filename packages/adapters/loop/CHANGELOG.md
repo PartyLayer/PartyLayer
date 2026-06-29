@@ -1,5 +1,12 @@
 # @partylayer/adapter-loop
 
+## 0.3.15
+
+### Patch Changes
+
+- Updated dependencies [4850140]
+  - @partylayer/core@0.10.0
+
 ## 0.3.14
 
 ### Patch Changes

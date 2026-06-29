@@ -1,5 +1,12 @@
 # @partylayer/registry-client
 
+## 0.5.3
+
+### Patch Changes
+
+- Updated dependencies [4850140]
+  - @partylayer/core@0.10.0
+
 ## 0.5.2
 
 ### Patch Changes

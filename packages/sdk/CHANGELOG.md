@@ -1,5 +1,20 @@
 # @partylayer/sdk
 
+## 0.14.1
+
+### Patch Changes
+
+- Updated dependencies [4850140]
+  - @partylayer/core@0.10.0
+  - @partylayer/adapter-bron@0.2.18
+  - @partylayer/adapter-cantor8@0.2.17
+  - @partylayer/adapter-console@0.3.14
+  - @partylayer/adapter-loop@0.3.15
+  - @partylayer/adapter-nightly@0.2.17
+  - @partylayer/adapter-send@1.2.2
+  - @partylayer/provider@0.3.2
+  - @partylayer/registry-client@0.5.3
+
 ## 0.14.0
 
 ### Minor Changes
