@@ -13,6 +13,7 @@ Thank you for your interest in contributing to PartyLayer! This document provide
 - [Commit Messages](#commit-messages)
 - [Testing](#testing)
 - [Documentation](#documentation)
+- [Reproducible Builds](#reproducible-builds)
 
 ---
 
@@ -415,6 +416,64 @@ export function createPartyLayer(config: PartyLayerConfig): PartyLayerClient {
   // ...
 }
 ```
+
+---
+
+## Reproducible Builds
+
+Every published package can be rebuilt from source and matched against what is on
+npm. Each release is tagged on GitHub (for example `@partylayer/core@0.10.0`,
+`@partylayer/react@2.0.0`, `@partylayer/vue@1.0.0`), and the tag points to the exact
+commit the artifact was built from.
+
+### Toolchain
+
+- Node: `>=18` (the repo is built and tested on the active LTS line).
+- pnpm: `9.15.9` (pinned in the root `package.json` `packageManager` field). With
+  Corepack enabled (`corepack enable`), the correct pnpm is selected automatically.
+
+### Steps
+
+```bash
+# 1. Clone and check out the exact release tag (or its commit).
+git clone https://github.com/PartyLayer/PartyLayer.git
+cd PartyLayer
+git checkout "@partylayer/react@2.0.0"   # any published tag, or its commit SHA
+
+# 2. Install with the committed lockfile (no resolution drift).
+pnpm install --frozen-lockfile
+
+# 3. Build every package exactly as CI and the release did.
+pnpm -r --workspace-concurrency=1 build
+```
+
+The build script (`pnpm -r --workspace-concurrency=1 build`) is the same one the
+release ran, so the `dist/` output matches the published artifacts.
+
+### Verifying against npm
+
+To confirm a local build matches what was published, pack the package and inspect the
+tarball (the manifest and `dist/` contents):
+
+```bash
+cd packages/react
+pnpm pack            # produces partylayer-react-2.0.0.tgz
+tar -tzf partylayer-react-2.0.0.tgz   # list the files that would publish
+```
+
+`pnpm pack` resolves the workspace dependency ranges to concrete versions exactly as
+publishing does (for example `@partylayer/core` resolves to `^0.10.0`), so the packed
+manifest is what a consumer installs. You can also run the full verification gate
+(`pnpm build`, `pnpm typecheck`, `pnpm lint`, `pnpm test`) to reproduce the checks that
+gate every release.
+
+### Note on the version commit
+
+The M2 coordinated release (core `0.10.0`, react `2.0.0`, vue `1.0.0`, plus the
+dependency cascade) was built from the version-record commit on `main`; each package's
+GitHub tag points to that commit, where its `package.json` already carries the published
+version. Checking out a tag therefore gives you the precise source state behind that
+version on npm.
 
 ---
 
