@@ -11,9 +11,9 @@
 npm install @partylayer/sdk @partylayer/react
 ```
 
-**No need to install wallet adapters separately** — Console, Loop, Cantor8, and Nightly are all bundled in the SDK!
+**No need to install wallet adapters separately**, Console, Loop, Cantor8, and Nightly are all bundled in the SDK!
 
-## React — Zero Config (Recommended)
+## React: Zero Config (Recommended)
 
 The fastest way to add wallet connectivity:
 
@@ -66,7 +66,7 @@ Use `"auto"` to follow the user's OS preference.
 </PartyLayerKit>
 ```
 
-## React — Custom UI with Hooks
+## React: Custom UI with Hooks
 
 For full control, use hooks directly:
 
@@ -132,13 +132,13 @@ No React? Use the SDK directly:
 ```typescript
 import { createPartyLayer } from '@partylayer/sdk';
 
-// Create client — all wallet adapters are automatically included!
+// Create client, all wallet adapters are automatically included!
 const client = createPartyLayer({
   network: 'devnet',
   app: { name: 'My dApp' },
 });
 
-// List available wallets (Console, Loop, Cantor8, Nightly — all ready to use)
+// List available wallets (Console, Loop, Cantor8, Nightly, all ready to use)
 const wallets = await client.listWallets();
 console.log('Available wallets:', wallets.map(w => w.name));
 
@@ -176,7 +176,7 @@ await client.disconnect();
 | Nightly | Multichain Wallet | Injected | ✅ Yes |
 | Bron | Enterprise | OAuth2 / API | ⚙️ Requires config |
 
-Additionally, any **CIP-0103 compliant wallet** injected at `window.canton.*` is auto-discovered at runtime — no adapter needed.
+Additionally, any **CIP-0103 compliant wallet** injected at `window.canton.*` is auto-discovered at runtime, no adapter needed.
 
 ## Error Handling
 

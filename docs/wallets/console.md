@@ -25,7 +25,7 @@ The default mode. Tries the browser extension first; if not detected, falls back
 ```typescript
 import { ConsoleAdapter } from '@partylayer/adapter-console';
 
-// Combined mode is the default — no config needed
+// Combined mode is the default, no config needed
 const adapter = new ConsoleAdapter();
 ```
 
@@ -74,7 +74,7 @@ Console Wallet supports:
 
 **Cause**: User rejected connection or signing request.
 
-**Solution**: User action required — no programmatic fix.
+**Solution**: User action required, no programmatic fix.
 
 ### ORIGIN_NOT_ALLOWED
 
@@ -89,7 +89,7 @@ Console Wallet supports:
 1. Ensure Console Wallet extension is installed and enabled
 2. Refresh the page
 3. Check browser console for extension errors
-4. Use `combined` mode — the adapter will fall back to QR code
+4. Use `combined` mode: the adapter will fall back to QR code
 
 ### Connection Fails
 

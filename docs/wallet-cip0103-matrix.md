@@ -11,14 +11,14 @@ was actually read. Where a claim could not be confirmed from code or public
 docs, it is marked **requires live browser check** rather than guessed.
 
 Verdict legend:
-- **NATIVE `window.canton`** — speaks the CIP-0103 provider protocol (the
+- **NATIVE `window.canton`**: speaks the CIP-0103 provider protocol (the
   splice-wallet-kernel OpenRPC surface at `window.canton`).
-- **CUSTOM injected** — injects its own object (not `window.canton`) with a
+- **CUSTOM injected**: injects its own object (not `window.canton`) with a
   non-CIP-0103 interface.
-- **DEEP-LINK** — mobile deep-link / universal-link transport.
-- **WALLETCONNECT / SDK** — QR + WebSocket / proprietary SDK relay.
-- **OAUTH / remote** — server-side remote signer over an authenticated HTTP API.
-- **STUBBED/UNCONFIRMED** — the in-tree integration is a scaffold; the real
+- **DEEP-LINK**: mobile deep-link / universal-link transport.
+- **WALLETCONNECT / SDK**: QR + WebSocket / proprietary SDK relay.
+- **OAUTH / remote**: server-side remote signer over an authenticated HTTP API.
+- **STUBBED/UNCONFIRMED**: the in-tree integration is a scaffold; the real
   wallet transport is not confirmed.
 
 ---
@@ -27,12 +27,12 @@ Verdict legend:
 
 | walletId | Transport | Detection mechanism (cited) | CIP-0103 verdict | Registry `cip0103.native` | Sunset implication |
 |---|---|---|---|---|---|
-| console | SDK: extension postMessage (local) / QR-relay (remote) / combined | `consoleWallet.checkExtensionAvailability()` postMessage probe — [console-adapter.ts:657-682](../packages/adapters/console/src/console-adapter.ts#L657-L682) | **NATIVE (CIP-0103 via official SDK)** | `true` (stable + beta) | Likely removable once native path covers extension **and** remote QR-relay; until then keep as SDK shim. Live-check whether Console injects `window.canton`. |
-| send | Announce (`canton:announceProvider`) | Announce-gated: `detectInstalled` is true iff Send announces via `canton:announceProvider`, independent of who owns `window.canton` — [send-adapter.ts:104-126](../packages/adapters/send/src/send-adapter.ts#L104-L126), [send-provider.ts:233](../packages/adapters/send/src/send-provider.ts#L233) | **NATIVE (CIP-0103, announce-discovered)** | `true` (stable + beta) | Strongest native candidate. Already announce-based, so Send and Console no longer collide at `window.canton`. |
-| loop | QR + WebSocket popup via `@fivenorth/loop-sdk` | None — `detectInstalled` always `true` in a browser (SDK bundled) — [loop-adapter.ts:77-89](../packages/adapters/loop/src/loop-adapter.ts#L77-L89) | **WALLETCONNECT / SDK (not CIP-0103)** | absent | Cannot be removed by native+WC alone. Needs Loop to ship a CIP-0103 `window.canton` provider or a standard WC interface. **Keep.** |
-| cantor8 | Deep-link (`DeepLinkTransport`) + stub vendor module | Mobile user-agent only: `/iPhone\|iPad\|iPod\|Android/i.test(navigator.userAgent)` — [cantor8-adapter.ts:91-98](../packages/adapters/cantor8/src/cantor8-adapter.ts#L91-L98) | **STUBBED/UNCONFIRMED (deep-link)** | absent | Real C8 transport (extension? WC? deep-link?) unconfirmed from public docs. **Requires live browser check before any sunset decision. Keep.** |
-| bron | OAuth2 popup + remote HTTP API | None — `detectInstalled` always `true` ("remote signer service") — [bron-adapter.ts:106-113](../packages/adapters/bron/src/bron-adapter.ts#L106-L113) | **OAUTH / remote (not CIP-0103)** | absent | Server-side remote signer; fundamentally not injected/WC. Cannot be removed unless Bron exposes CIP-0103. **Keep.** |
-| nightly | Injected `window.nightly.canton` (custom callback API) | `window.nightly?.canton` presence — [nightly-adapter.ts:144-161](../packages/adapters/nightly/src/nightly-adapter.ts#L144-L161) | **CUSTOM injected (non-CIP-0103)** | absent | Keep until Nightly exposes a CIP-0103 `window.canton` provider (their template claims CIP-0103 — verify live), or until a bridge is built. |
+| console | SDK: extension postMessage (local) / QR-relay (remote) / combined | `consoleWallet.checkExtensionAvailability()` postMessage probe, [console-adapter.ts:657-682](../packages/adapters/console/src/console-adapter.ts#L657-L682) | **NATIVE (CIP-0103 via official SDK)** | `true` (stable + beta) | Likely removable once native path covers extension **and** remote QR-relay; until then keep as SDK shim. Live-check whether Console injects `window.canton`. |
+| send | Announce (`canton:announceProvider`) | Announce-gated: `detectInstalled` is true iff Send announces via `canton:announceProvider`, independent of who owns `window.canton`, [send-adapter.ts:104-126](../packages/adapters/send/src/send-adapter.ts#L104-L126), [send-provider.ts:233](../packages/adapters/send/src/send-provider.ts#L233) | **NATIVE (CIP-0103, announce-discovered)** | `true` (stable + beta) | Strongest native candidate. Already announce-based, so Send and Console no longer collide at `window.canton`. |
+| loop | QR + WebSocket popup via `@fivenorth/loop-sdk` | None, `detectInstalled` always `true` in a browser (SDK bundled), [loop-adapter.ts:77-89](../packages/adapters/loop/src/loop-adapter.ts#L77-L89) | **WALLETCONNECT / SDK (not CIP-0103)** | absent | Cannot be removed by native+WC alone. Needs Loop to ship a CIP-0103 `window.canton` provider or a standard WC interface. **Keep.** |
+| cantor8 | Deep-link (`DeepLinkTransport`) + stub vendor module | Mobile user-agent only: `/iPhone\|iPad\|iPod\|Android/i.test(navigator.userAgent)`, [cantor8-adapter.ts:91-98](../packages/adapters/cantor8/src/cantor8-adapter.ts#L91-L98) | **STUBBED/UNCONFIRMED (deep-link)** | absent | Real C8 transport (extension? WC? deep-link?) unconfirmed from public docs. **Requires live browser check before any sunset decision. Keep.** |
+| bron | OAuth2 popup + remote HTTP API | None, `detectInstalled` always `true` ("remote signer service"), [bron-adapter.ts:106-113](../packages/adapters/bron/src/bron-adapter.ts#L106-L113) | **OAUTH / remote (not CIP-0103)** | absent | Server-side remote signer; fundamentally not injected/WC. Cannot be removed unless Bron exposes CIP-0103. **Keep.** |
+| nightly | Injected `window.nightly.canton` (custom callback API) | `window.nightly?.canton` presence, [nightly-adapter.ts:144-161](../packages/adapters/nightly/src/nightly-adapter.ts#L144-L161) | **CUSTOM injected (non-CIP-0103)** | absent | Keep until Nightly exposes a CIP-0103 `window.canton` provider (their template claims CIP-0103, verify live), or until a bridge is built. |
 
 ---
 
@@ -41,7 +41,7 @@ Verdict legend:
 Whether `connect()` sets `session.network` to the wallet's **effective** network
 (enabling the SDK's `networkEnforcement` mismatch detection) or merely echoes the
 requested `ctx.network`. Echo-only adapters get **no** mismatch detection (no
-false positives, but limited protection) — this is the
+false positives, but limited protection), this is the
 `checkNetworkTruthfulness` conformance contract.
 
 | walletId | network-reported | source |
@@ -58,11 +58,11 @@ false positives, but limited protection) — this is the
 
 ## Per-wallet detail
 
-### console — `@partylayer/adapter-console`
+### console: `@partylayer/adapter-console`
 
 - **Transport.** Uses the official `@console-wallet/dapp-sdk` (`consoleWallet`,
   imported at [console-adapter.ts:49](../packages/adapters/console/src/console-adapter.ts#L49)).
-  Three modes — `local` (extension via postMessage), `remote` (mobile QR / deep
+  Three modes, `local` (extension via postMessage), `remote` (mobile QR / deep
   link via the consolewallet.io relay), `combined` (auto-detect)
   ([console-adapter.ts:54-72](../packages/adapters/console/src/console-adapter.ts#L54-L72)).
 - **Detection.** No direct `window.*` check. `detectInstalled()` calls the SDK's
@@ -88,7 +88,7 @@ false positives, but limited protection) — this is the
   does not provide). **Live-check** whether the Console extension injects
   `window.canton` directly.
 
-### send — `@partylayer/adapter-send`
+### send: `@partylayer/adapter-send`
 
 - **Transport.** Announce-based: Send advertises over `canton:announceProvider`
   and is driven through the extension postMessage `target` channel it announces,
@@ -109,7 +109,7 @@ false positives, but limited protection) — this is the
   `status, connect, disconnect, isConnected, getActiveNetwork, listAccounts,
   getPrimaryAccount, signMessage, prepareExecute, prepareExecuteAndWait,
   ledgerApi` ([send-provider.ts:144-188](../packages/adapters/send/src/send-provider.ts#L144-L188)).
-- **Missing / fused.** `signTransaction` is intentionally not supported — Send
+- **Missing / fused.** `signTransaction` is intentionally not supported: Send
   fuses sign-and-submit through `prepareExecuteAndWait`
   ([send-adapter.ts:253-262](../packages/adapters/send/src/send-adapter.ts#L253-L262)).
 - **Capabilities** ([send-adapter.ts:67-76](../packages/adapters/send/src/send-adapter.ts#L67-L76)):
@@ -124,7 +124,7 @@ false positives, but limited protection) — this is the
   mistaken for Console or vice-versa at `window.canton`), dApps can talk to Send
   through the native path and this adapter becomes redundant.
 
-### loop — `@partylayer/adapter-loop`
+### loop: `@partylayer/adapter-loop`
 
 - **Transport.** QR code / popup over WebSocket via the official
   `@fivenorth/loop-sdk` (`loop`, imported at
@@ -153,11 +153,11 @@ false positives, but limited protection) — this is the
   interface PartyLayer can target generically. **Keep** until wallet-side
   CIP-0103 adoption.
 
-### cantor8 — `@partylayer/adapter-cantor8`
+### cantor8: `@partylayer/adapter-cantor8`
 
 - **Transport.** `DeepLinkTransport` by default, `MockTransport` in development
   ([cantor8-adapter.ts:64-69](../packages/adapters/cantor8/src/cantor8-adapter.ts#L64-L69)).
-- **Detection.** Mobile user-agent sniff only —
+- **Detection.** Mobile user-agent sniff only,
   `/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)`, returning
   `installed: isMobile` ([cantor8-adapter.ts:91-98](../packages/adapters/cantor8/src/cantor8-adapter.ts#L91-L98)).
   No `window.*` probe of any kind.
@@ -169,7 +169,7 @@ false positives, but limited protection) — this is the
   nor `universalLinkBase` is set
   ([vendor.ts:113-115](../packages/adapters/cantor8/src/vendor.ts#L113-L115),
   [vendor.ts:170](../packages/adapters/cantor8/src/vendor.ts#L170)).
-- **CIP-0103.** None. There is no confirmed live C8 interface in-tree — the
+- **CIP-0103.** None. There is no confirmed live C8 interface in-tree: the
   integration is a deep-link scaffold.
 - **Capabilities** ([cantor8-adapter.ts:72-81](../packages/adapters/cantor8/src/cantor8-adapter.ts#L72-L81)):
   `connect, disconnect, restore, deeplink, signMessage, signTransaction`.
@@ -183,7 +183,7 @@ false positives, but limited protection) — this is the
 - **Sunset implication:** Indeterminate until the real C8 transport is verified
   live. **Keep** and flag for verification.
 
-### bron — `@partylayer/adapter-bron`
+### bron: `@partylayer/adapter-bron`
 
 - **Transport.** OAuth2 + remote HTTP API via `BronAuthClient` / `BronApiClient`
   ([bron-adapter.ts:30-31](../packages/adapters/bron/src/bron-adapter.ts#L30-L31),
@@ -208,9 +208,9 @@ false positives, but limited protection) — this is the
   an injected/WC wallet; native+WC does not subsume it. **Keep** unless Bron
   exposes a CIP-0103 surface.
 
-### nightly — `@partylayer/adapter-nightly`
+### nightly: `@partylayer/adapter-nightly`
 
-- **Transport.** Injected at `window.nightly.canton` — a **custom, non-CIP-0103**
+- **Transport.** Injected at `window.nightly.canton`: a **custom, non-CIP-0103**
   interface ([nightly-adapter.ts:94-107](../packages/adapters/nightly/src/nightly-adapter.ts#L94-L107)).
   Confirmed against the official docs (read:
   <https://docs.nightly.app/docs/canton/canton/connect/>): Nightly injects at
@@ -224,9 +224,9 @@ false positives, but limited protection) — this is the
   [nightly-adapter.ts:42-99](../packages/adapters/nightly/src/nightly-adapter.ts#L42-L99)):
   - `connect(): Promise<{ partyId: string; publicKey: string }>`
   - `disconnect(): Promise<void>`, `isConnected(): boolean`
-  - `signMessage(message: string, onResponse: (r: SignRequestResponse) => void): void` — **callback**
+  - `signMessage(message: string, onResponse: (r: SignRequestResponse) => void): void`: **callback**
   - `createTransferCommand(params): Promise<TransactionCommand>`
-  - `submitTransactionCommand(cmd, onResponse: (r: SignRequestResponse) => void): void` — **callback**
+  - `submitTransactionCommand(cmd, onResponse: (r: SignRequestResponse) => void): void`: **callback**
   - `getPendingTransactions(): Promise<unknown[] | null>`, `getHoldingUtxos(): Promise<unknown[] | null>`
   - `SignRequestResponse` is a discriminated union over
     `sign_request_approved | sign_request_rejected | sign_request_error`
@@ -236,29 +236,29 @@ false positives, but limited protection) — this is the
   (CIP-0103-shaped) at runtime "that may be present in newer wallet versions"
   ([nightly-adapter.ts:407-464](../packages/adapters/nightly/src/nightly-adapter.ts#L407-L464)).
   Base interface is still non-CIP-0103.
-- **Missing / fused.** `signTransaction` throws `CapabilityNotSupportedError` —
+- **Missing / fused.** `signTransaction` throws `CapabilityNotSupportedError`,
   Nightly fuses signing and submission via `submitTransactionCommand`
   ([nightly-adapter.ts:325-334](../packages/adapters/nightly/src/nightly-adapter.ts#L325-L334)).
 - **Capabilities** ([nightly-adapter.ts:127-138](../packages/adapters/nightly/src/nightly-adapter.ts#L127-L138)):
   `connect, disconnect, restore, signMessage, submitTransaction, ledgerApi,
   events, injected`. (Note: `events` is declared as a capability but the adapter
-  exposes no `on()` subscription method — wallet-side events are not wired.)
+  exposes no `on()` subscription method, wallet-side events are not wired.)
 - **Verdict:** CUSTOM injected (non-CIP-0103, `window.nightly.canton`).
 - **What a `window.nightly.canton` → CIP-0103 bridge would require:**
   1. Wrap the callback `signMessage` / `submitTransactionCommand` into the
      CIP-0103 `request({ method, params })` Promise shape.
   2. Map `SignRequestResponse` (`approved/rejected/error`) onto CIP-0103
      results and `ProviderRpcError` codes (rejected → 4001, etc.).
-  3. Synthesize the CIP-0103 read methods Nightly doesn't expose natively —
+  3. Synthesize the CIP-0103 read methods Nightly doesn't expose natively,
      `status`, `getActiveNetwork`, `listAccounts`, `getPrimaryAccount`,
-     `prepareExecute` — from `connect()`'s `{ partyId, publicKey }` and the
+     `prepareExecute`, from `connect()`'s `{ partyId, publicKey }` and the
      transfer-command helpers.
   4. Emit CIP-0103 events (`statusChanged`, `accountsChanged`, `txChanged`).
 - **Discrepancy to verify live.** The Nightly Canton template
   (<https://github.com/nightly-labs/canton-web3-template>) README claims it
   "supports the CIP-0103 standard," yet the in-tree adapter targets the legacy
   `window.nightly.canton` callback interface. This suggests Nightly may be (or
-  may be moving to) exposing a CIP-0103 `window.canton` provider — **verify in a
+  may be moving to) exposing a CIP-0103 `window.canton` provider, **verify in a
   live browser** whether current Nightly builds inject `window.canton`.
 - **Sunset implication:** **Keep** until either Nightly ships a CIP-0103
   `window.canton` provider (then it routes through the native path) or the bridge
@@ -271,31 +271,31 @@ false positives, but limited protection) — this is the
 These cannot be settled from code or public docs and need a human with each
 extension/app installed in a real browser:
 
-1. **console** — With the Console extension installed: does it inject
+1. **console**: With the Console extension installed: does it inject
    `window.canton`? Does `window.canton.status().kernel.id` identify Console?
    Confirm CIP-0103 methods resolve (`status`, `getPrimaryAccount`,
    `getActiveNetwork`, `ledgerApi`). Confirm the remote QR-relay mode still
    needs the SDK (i.e. is not reachable via the injected provider).
-2. **send** — With the Send extension installed: confirm `window.canton` is
+2. **send**: With the Send extension installed: confirm `window.canton` is
    present and `status().kernel.id` matches `SEND_KERNEL_ID` / the known
    extension IDs in the registry `providerDetection`. Confirm
    `prepareExecuteAndWait` and `ledgerApi` round-trip.
-3. **nightly** — With Nightly installed: (a) confirm `window.nightly.canton`
+3. **nightly**: With Nightly installed: (a) confirm `window.nightly.canton`
    exists with the callback interface above; (b) **critically**, check whether
    `window.canton` (CIP-0103) is ALSO injected, since the template claims
    CIP-0103 support; (c) confirm `signMessage` fires its callback with an
    `approved` response; (d) check whether `provider.ledgerApi` / `provider.request`
    exist on current builds; (e) check for any WalletConnect support.
-4. **cantor8** — Confirm whether C8 ships a Chrome/browser extension and, if so,
+4. **cantor8**: Confirm whether C8 ships a Chrome/browser extension and, if so,
    whether it injects a provider (`window.canton` or `window.cantor8`); confirm
    whether C8 supports WalletConnect; confirm the deep-link scheme (is it
    `cantor8://`?) and obtain the real vendor endpoints
    (`universalLinkBase` / `deepLinkScheme` / `connect` / `sign` / `status`); run
    the mobile deep-link connect+sign flow end-to-end. **Until then the cantor8
    integration must be treated as unconfirmed.**
-5. **loop** — Confirm whether Loop exposes any CIP-0103 `window.canton` provider
+5. **loop**: Confirm whether Loop exposes any CIP-0103 `window.canton` provider
    or only the QR/WebSocket SDK; confirm whether Loop supports WalletConnect.
-6. **bron** — Exercise the real OAuth callback completion in a host app (the
+6. **bron**: Exercise the real OAuth callback completion in a host app (the
    adapter intentionally defers it); confirm whether Bron offers any CIP-0103 or
    WalletConnect endpoint.
 

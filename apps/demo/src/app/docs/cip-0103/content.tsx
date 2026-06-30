@@ -9,7 +9,7 @@ export default function CIP0103Page() {
     <>
       <H1>CIP-0103 Provider</H1>
       <P>
-        CIP-0103 is the Canton dApp Standard — the specification for how wallets and dApps communicate
+        CIP-0103 is the Canton dApp Standard, the specification for how wallets and dApps communicate
         on the Canton Network. PartyLayer fully implements CIP-0103 with 10 methods, 4 events, and a
         typed error model.
       </P>
@@ -18,18 +18,18 @@ export default function CIP0103Page() {
       <P>PartyLayer supports two ways to integrate:</P>
       <UL>
         <LI>
-          <Strong>Adapter SDK</Strong> (recommended) — Use <Code>{'PartyLayerKit'}</Code> and React hooks.
+          <Strong>Adapter SDK</Strong> (recommended), Use <Code>{'PartyLayerKit'}</Code> and React hooks.
           The SDK abstracts CIP-0103 behind a higher-level API.
         </LI>
         <LI>
-          <Strong>Native CIP-0103 Provider</Strong> — Work directly with the CIP-0103 provider interface.
+          <Strong>Native CIP-0103 Provider</Strong>, Work directly with the CIP-0103 provider interface.
           Useful for non-React apps or when you need raw CIP-0103 compliance.
         </LI>
       </UL>
 
       <H2 id="provider-api">Provider API</H2>
       <P>
-        The CIP-0103 provider uses a JSON-RPC–style <Code>{'request()'}</Code> method:
+        The CIP-0103 provider uses a JSON-RPC-style <Code>{'request()'}</Code> method:
       </P>
       <CodeBlock language="typescript">{`interface CIP0103Provider {
   request<T>(args: { method: string; params?: unknown }): Promise<T>;
@@ -218,21 +218,21 @@ isValidCAIP2('not-a-network');      // → false (no colon separator)`}</CodeBlo
       </P>
 
       <H3>EIP-1193 Codes</H3>
-      <CodeBlock language="typescript">{`// 4001 — User Rejected
-// 4100 — Unauthorized
-// 4200 — Unsupported Method
-// 4900 — Disconnected
-// 4901 — Chain Disconnected`}</CodeBlock>
+      <CodeBlock language="typescript">{`// 4001, User Rejected
+// 4100, Unauthorized
+// 4200, Unsupported Method
+// 4900, Disconnected
+// 4901, Chain Disconnected`}</CodeBlock>
 
       <H3>EIP-1474 Codes</H3>
-      <CodeBlock language="typescript">{`// -32700 — Parse Error
-// -32600 — Invalid Request
-// -32601 — Method Not Found
-// -32602 — Invalid Params
-// -32603 — Internal Error
-// -32000 — Invalid Input
-// -32003 — Transaction Rejected
-// -32005 — Limit Exceeded`}</CodeBlock>
+      <CodeBlock language="typescript">{`// -32700, Parse Error
+// -32600, Invalid Request
+// -32601, Method Not Found
+// -32602, Invalid Params
+// -32603, Internal Error
+// -32000, Invalid Input
+// -32003, Transaction Rejected
+// -32005, Limit Exceeded`}</CodeBlock>
 
       <H3>Error Mapping</H3>
       <P>

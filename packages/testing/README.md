@@ -3,14 +3,14 @@
 Offline test foundation for PartyLayer: a **mock CIP-0103 wallet provider** with
 configurable failure scenarios, a **controllable transaction lifecycle**, a
 **session-lifecycle harness** over the real `@partylayer/session` store, **TanStack
-Query** test utilities, and **browser/e2e primitives** — so unit, integration, and
+Query** test utilities, and **browser/e2e primitives**, so unit, integration, and
 real-browser tests run with no DevNet or live-wallet dependency.
 
 The TanStack Query utilities live in the `@partylayer/testing/query` subpath
 (`@tanstack/query-core` is an optional peer) so the main entry stays
 dependency-free for non-Query consumers.
 
-## A. Mock CIP-0103 wallet — `createMockWallet(config?)`
+## A. Mock CIP-0103 wallet: `createMockWallet(config?)`
 
 Returns a real `CIP0103Provider`, built by wrapping a configurable in-memory
 client in the repo's canonical `createProviderBridge`. **The default/happy
@@ -30,7 +30,7 @@ const flaky = createMockWallet({ scenarios: { submitTransaction: 'synchronizerEr
 ### Failure scenarios (per-method, existing error codes only)
 
 Scenarios are toggled per method. Every named scenario maps to a code that
-**already exists** in `@partylayer/provider`'s error model — no new codes are
+**already exists** in `@partylayer/provider`'s error model, no new codes are
 invented. You may also pass a raw `ProviderRpcError` or a `{ code, message }`.
 
 | scenario name | code | constructor |
@@ -44,7 +44,7 @@ invented. You may also pass a raw `ProviderRpcError` or a `{ code, message }`.
 `createMockWalletClient(config?)` exposes the underlying `BridgeableClient` as
 an extension point for advanced wrapping/inspection.
 
-## B. Simulated transaction lifecycle — `createTransactionLifecycle(config?)`
+## B. Simulated transaction lifecycle: `createTransactionLifecycle(config?)`
 
 A controllable lifecycle with phase flags
 `isPreparing → isSubmitting → isConfirming → isFinalized` plus a `failed`
@@ -53,16 +53,16 @@ terminal, emitting the same CIP-0103 `txChanged` events the real provider does.
 ```ts
 import { createTransactionLifecycle } from '@partylayer/testing';
 
-// manual stepping — deterministic, phase by phase
+// manual stepping, deterministic, phase by phase
 const lc = createTransactionLifecycle({ commandId: 'cmd-1' });
 lc.on('txChanged', (e) => console.log(e.status));
 lc.advance();   // → 'preparing'  emits { status: 'pending' }
 lc.advance();   // → 'submitting' emits { status: 'signed', payload }
-lc.advance();   // → 'confirming' (no CIP-0103 event — see below)
+lc.advance();   // → 'confirming' (no CIP-0103 event, see below)
 lc.advance();   // → 'finalized'  emits { status: 'executed', payload }
 // or lc.fail() at any point → emits { status: 'failed' }
 
-// auto mode — fake-timer friendly
+// auto mode, fake-timer friendly
 const auto = createTransactionLifecycle({ delays: { preparing: 10, finalized: 50 } });
 await auto.start();   // walks every phase using the delays
 ```
@@ -88,7 +88,7 @@ rec.stop();
 Optional `delays` use `setTimeout`, so `vi.useFakeTimers()` +
 `vi.advanceTimersByTimeAsync()` give tests full control over time.
 
-## D. Session-lifecycle harness — `createSessionHarness(config?)`
+## D. Session-lifecycle harness: `createSessionHarness(config?)`
 
 Drives a **real** `@partylayer/session` store through a controllable provider, so
 each scenario exercises the store's own machinery (no synthetic shortcuts).
@@ -107,11 +107,11 @@ const tabB = h.openTab();     // a 2nd store sharing the broadcast hub (multi-ta
 h.destroy(); tabB.destroy();  // per-harness teardown (children are separate)
 ```
 
-`expire()` advances the store's real `setTimeout`-based expiry — it never emits a
+`expire()` advances the store's real `setTimeout`-based expiry, it never emits a
 fake `session:expired`, so pass `advanceTimers` (e.g. `vi.advanceTimersByTimeAsync`)
 and install fake timers.
 
-## E. Offline composition — `createOfflineHarness({ wallet?, session? })`
+## E. Offline composition: `createOfflineHarness({ wallet?, session? })`
 
 Wires a mock wallet to a real session store, fully offline:
 
@@ -120,7 +120,7 @@ import { createOfflineHarness } from '@partylayer/testing';
 const { provider, store, destroy } = createOfflineHarness({ wallet: { partyId: 'party::a' } });
 ```
 
-## F. TanStack Query utilities — `@partylayer/testing/query`
+## F. TanStack Query utilities: `@partylayer/testing/query`
 
 ```ts
 import {

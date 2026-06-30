@@ -2,7 +2,7 @@
 
 import { useDocs } from '../layout';
 // Generated from the wallet registry (registry/v1/stable/registry.json) by
-// scripts/gen-readme.mjs — `pnpm gate:readme` keeps this in sync. Table 1 below
+// scripts/gen-readme.mjs, `pnpm gate:readme` keeps this in sync. Table 1 below
 // renders from it so the built-in wallet list can never drift from the registry.
 import { GENERATED_WALLETS } from './wallets.generated';
 
@@ -47,7 +47,7 @@ export default function WalletsPage() {
 
       <Callout type="note">
         Wallets marked <Strong>Opt-in</Strong> (<Strong>Bron</Strong>, <Strong>WalletConnect</Strong>) require explicit
-        configuration — register them via <Code>{'config.adapters'}</Code> (Bron needs an OAuth client ID;
+        configuration, register them via <Code>{'config.adapters'}</Code> (Bron needs an OAuth client ID;
         WalletConnect needs the optional <Code>{'@walletconnect/*'}</Code> peers). The rest are auto-registered
         when using <Code>{'PartyLayerKit'}</Code>.
       </Callout>
@@ -108,25 +108,25 @@ export default function WalletsPage() {
 
       <H3 id="capability-notes">Capability Notes</H3>
       <UL>
-        <LI><Strong>Loop / Nightly / Send — signTransaction:</Strong> these wallets combine signing
+        <LI><Strong>Loop / Nightly / Send, signTransaction:</Strong> these wallets combine signing
           and submission into a single step. Use <Code>{'submitTransaction'}</Code> directly instead
           of the separate sign-then-submit pattern. Calling <Code>{'signTransaction'}</Code> on any of
           them throws <Code>{'CapabilityNotSupportedError'}</Code> pointing you at this fix.</LI>
-        <LI><Strong>Send — passkey signing &amp; namespace guard:</Strong> Send injects at the bare{' '}
+        <LI><Strong>Send, passkey signing &amp; namespace guard:</Strong> Send injects at the bare{' '}
           <Code>{'window.canton'}</Code> slot (the same slot any splice-wallet-kernel-compatible
           extension would use). The Send adapter verifies the running provider{"'"}s{' '}
           <Code>{'kernel.id'}</Code> before forwarding any RPC, so installing Send next to a
           Console-class wallet never claims the wrong provider. Send is currently <Strong>mainnet-only</Strong>{' '}
           and signs every transaction via WebAuthn-PRF (Touch ID / Face ID), so the user sees a
           passkey prompt rather than an extension popup.</LI>
-        <LI><Strong>Loop — ledgerApi (limited):</Strong> Supports <Code>{'POST /v2/state/acs'}</Code>,{' '}
+        <LI><Strong>Loop, ledgerApi (limited):</Strong> Supports <Code>{'POST /v2/state/acs'}</Code>,{' '}
           <Code>{'GET /v2/state/acs/active-contracts'}</Code>, <Code>{'POST /v2/commands/submit'}</Code>,{' '}
-          and <Code>{'POST /v2/commands/submit-and-wait'}</Code>. Other endpoints are not available —
+          and <Code>{'POST /v2/commands/submit-and-wait'}</Code>. Other endpoints are not available,
           for full Ledger API access, use Console, Nightly, or Bron.</LI>
         <LI><Strong>Cantor8:</Strong> Mobile-only deep link transport. Supports <Code>{'signMessage'}</Code>{' '}
           and <Code>{'signTransaction'}</Code> via the deep link flow, but does not expose{' '}
           <Code>{'submitTransaction'}</Code> or <Code>{'ledgerApi'}</Code>.</LI>
-        <LI><Strong>Bron — submitTransaction:</Strong> Bron is a remote signer (OAuth) — it signs commands
+        <LI><Strong>Bron, submitTransaction:</Strong> Bron is a remote signer (OAuth), it signs commands
           but does not submit them directly to the ledger. Pair{' '}
           <Code>{'signTransaction'}</Code> with your own participant submission, or call{' '}
           <Code>{'ledgerApi'}</Code> against <Code>{'/v2/commands/submit-and-wait'}</Code> and let Bron sign
@@ -174,7 +174,7 @@ import { BronAdapter } from '@partylayer/adapter-bron';
       <H3>1. Registry Discovery</H3>
       <P>
         On initialization, the SDK fetches the wallet registry from <Code>{'registry.partylayer.xyz'}</Code>.
-        The registry contains verified wallet metadata — names, icons, capabilities, install hints,
+        The registry contains verified wallet metadata, names, icons, capabilities, install hints,
         and supported networks. Registry entries are cryptographically signed.
       </P>
       <P>

@@ -62,11 +62,11 @@ Loop Wallet supports:
 - Connect/Disconnect
 - Sign Message
 - Submit Transaction (signs and submits in one call)
-- Ledger API (partial — ACS queries and command submission)
+- Ledger API (partial: ACS queries and command submission)
 - Events
 - Popup (QR code flow)
 
-**Note**: Loop SDK combines signing and submission. `signTransaction()` is not supported — use `submitTransaction()` instead.
+**Note**: Loop SDK combines signing and submission. `signTransaction()` is not supported, use `submitTransaction()` instead.
 
 ### Ledger API Support
 

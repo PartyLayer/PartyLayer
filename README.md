@@ -48,14 +48,14 @@ PartyLayer is a production-grade SDK that enables decentralized applications (dA
 
 > **Note**: Bron is an enterprise wallet that requires OAuth configuration. See [Using Bron](#using-bron-enterprise-wallet) for setup instructions.
 >
-> **Native CIP-0103 wallets** are also auto-discovered at runtime via `window.canton.*` — no configuration needed.
+> **Native CIP-0103 wallets** are also auto-discovered at runtime via `window.canton.*`, no configuration needed.
 
 ---
 
 ## Try it live
 
-- **[PartyLayer Studio](https://studio.partylayer.xyz)** — an interactive Sandpack workbench with 7 runnable, editable scenarios (connect, sign, submit, session resilience reconnect/disconnect, React Query + DevTools, and a React / Vue / Vanilla framework toggle) running against a mock CIP-0103 wallet — no install required.
-- **[Pattern Cookbook](https://partylayer.xyz/docs/cookbook)** — 9 copy-paste recipes built on the real hooks, each linked to its Studio scenario with a frank "when not to use" note.
+- **[PartyLayer Studio](https://studio.partylayer.xyz)**: an interactive Sandpack workbench with 7 runnable, editable scenarios (connect, sign, submit, session resilience reconnect/disconnect, React Query + DevTools, and a React / Vue / Vanilla framework toggle) running against a mock CIP-0103 wallet, no install required.
+- **[Pattern Cookbook](https://partylayer.xyz/docs/cookbook)**: 9 copy-paste recipes built on the real hooks, each linked to its Studio scenario with a frank "when not to use" note.
 
 ---
 
@@ -190,7 +190,7 @@ client.on('session:disconnected', () => {
 await client.disconnect();
 ```
 
-### React — PartyLayerKit (Recommended)
+### React: PartyLayerKit (Recommended)
 
 The simplest way to add wallet connectivity to a React app:
 
@@ -524,7 +524,7 @@ PartyLayer implements [CIP-0103](https://www.canton.network/cip-0103), the Canto
 
 PartyLayer offers two paths to CIP-0103 compliance:
 
-**Native Provider** (`PartyLayerProvider`) — wraps any CIP-0103-compliant wallet provider (e.g. `window.canton.*`). This is the recommended path for new integrations.
+**Native Provider** (`PartyLayerProvider`), wraps any CIP-0103-compliant wallet provider (e.g. `window.canton.*`). This is the recommended path for new integrations.
 
 ```typescript
 import { PartyLayerProvider, discoverInjectedProviders } from '@partylayer/provider';
@@ -536,7 +536,7 @@ const wallets = discoverInjectedProviders();
 const provider = new PartyLayerProvider({ wallet: wallets[0].provider });
 ```
 
-**Legacy Bridge** (`createProviderBridge`) — wraps an existing `PartyLayerClient` instance as a CIP-0103 Provider. Use this for backward compatibility with the adapter-based SDK.
+**Legacy Bridge** (`createProviderBridge`), wraps an existing `PartyLayerClient` instance as a CIP-0103 Provider. Use this for backward compatibility with the adapter-based SDK.
 
 ```typescript
 import { createPartyLayer } from '@partylayer/sdk';
@@ -791,7 +791,7 @@ Want to add support for a new wallet? See the [Wallet Provider Guide](./docs/wal
 <details>
 <summary><strong>What is PartyLayerKit vs PartyLayerProvider?</strong></summary>
 
-`PartyLayerKit` is a zero-config wrapper that creates the SDK client, registers adapters, discovers native wallets, and sets up theming — all automatically. `PartyLayerProvider` is the lower-level context provider for advanced use cases where you need full control over client configuration. For most apps, use `PartyLayerKit`.
+`PartyLayerKit` is a zero-config wrapper that creates the SDK client, registers adapters, discovers native wallets, and sets up theming, all automatically. `PartyLayerProvider` is the lower-level context provider for advanced use cases where you need full control over client configuration. For most apps, use `PartyLayerKit`.
 </details>
 
 <details>

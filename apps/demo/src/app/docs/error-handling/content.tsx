@@ -140,7 +140,7 @@ try {
 
   // Report to error tracking service
   if (!error.isOperational) {
-    // This is a bug — report it
+    // This is a bug, report it
     Sentry.captureException(error);
   }
 });`}</CodeBlock>

@@ -14,7 +14,7 @@
 
 ## Overview
 
-`@partylayer/sdk` provides a unified interface for connecting your decentralized application (dApp) to multiple Canton Network wallets. It abstracts wallet-specific implementations behind a simple, type-safe API — one integration for every Canton wallet.
+`@partylayer/sdk` provides a unified interface for connecting your decentralized application (dApp) to multiple Canton Network wallets. It abstracts wallet-specific implementations behind a simple, type-safe API, one integration for every Canton wallet.
 
 ### Features
 
@@ -130,7 +130,7 @@ await client.disconnect();
 | WalletConnect | devnet, testnet, mainnet | signMessage, submitTransaction | Yes | `@partylayer/adapter-walletconnect` |
 <!-- WALLETS:END -->
 
-> **Try it live:** [PartyLayer Studio](https://studio.partylayer.xyz) — runnable, editable scenarios · [Pattern Cookbook](https://partylayer.xyz/docs/cookbook) — copy-paste recipes.
+> **Try it live:** [PartyLayer Studio](https://studio.partylayer.xyz), runnable, editable scenarios · [Pattern Cookbook](https://partylayer.xyz/docs/cookbook), copy-paste recipes.
 
 ---
 

@@ -214,9 +214,9 @@ import { PartyLayerKit } from '@partylayer/react';
 
 | Prop | Type | Default | Description |
 |------|------|---------|-------------|
-| `network` | `'devnet' \| 'testnet' \| 'mainnet'` | — | Target network (required) |
-| `appName` | `string` | — | App name shown to wallets (required) |
-| `children` | `ReactNode` | — | Child components (required) |
+| `network` | `'devnet' \| 'testnet' \| 'mainnet'` |, | Target network (required) |
+| `appName` | `string` |, | App name shown to wallets (required) |
+| `children` | `ReactNode` |, | Child components (required) |
 | `registryUrl` | `string` | `https://registry.partylayer.xyz` | Registry URL override |
 | `channel` | `'stable' \| 'beta'` | `'stable'` | Registry channel |
 | `adapters` | `(WalletAdapter \| AdapterClass)[]` | Built-in adapters | Custom adapters |
@@ -238,9 +238,9 @@ import { ConnectButton } from '@partylayer/react';
 |------|------|---------|-------------|
 | `label` | `string` | `"Connect Wallet"` | Button label when disconnected |
 | `connectedLabel` | `'address' \| 'wallet' \| 'custom'` | `'address'` | What to show when connected |
-| `formatAddress` | `(partyId: string) => string` | — | Custom address formatter |
-| `className` | `string` | — | CSS class |
-| `style` | `CSSProperties` | — | Inline styles |
+| `formatAddress` | `(partyId: string) => string` |, | Custom address formatter |
+| `className` | `string` |, | CSS class |
+| `style` | `CSSProperties` |, | Inline styles |
 | `showDisconnect` | `boolean` | `true` | Show disconnect in dropdown |
 
 **States:**
@@ -270,11 +270,11 @@ import { WalletModal } from '@partylayer/react';
 | `walletIcons` | `Record<string, string>` | Additional wallet icon overrides |
 
 **Views:**
-- **list** — Wallet selection. CIP-0103 native wallets displayed first with indigo highlight, registry wallets below
-- **connecting** — Animated spinner with "Opening {WalletName}"
-- **success** — Green checkmark, auto-closes after 800ms
-- **error** — Red error badge with retry/back buttons
-- **not-installed** — Orange download badge with install link and retry
+- **list**: Wallet selection. CIP-0103 native wallets displayed first with indigo highlight, registry wallets below
+- **connecting**: Animated spinner with "Opening {WalletName}"
+- **success**: Green checkmark, auto-closes after 800ms
+- **error**: Red error badge with retry/back buttons
+- **not-installed**: Orange download badge with install link and retry
 
 ---
 
@@ -290,8 +290,8 @@ function usePartyLayer(): PartyLayerClient
 
 ### useSession
 
-Reactive session state + actions (re-renders on every session change). As of
-M1-S4 this returns `UseSessionReturn`, not the legacy SDK session getter.
+Reactive session state + actions (re-renders on every session change). In v2
+this returns `UseSessionReturn`, not the legacy SDK session getter.
 
 ```typescript
 function useSession(): UseSessionReturn
@@ -460,7 +460,7 @@ Opt-in, privacy-safe telemetry for monitoring SDK usage.
 
 ```typescript
 interface TelemetryConfig {
-  /** Enable telemetry (default: false — fully opt-in) */
+  /** Enable telemetry (default: false, fully opt-in) */
   enabled: boolean;
   /** Metrics backend URL */
   endpoint?: string;
@@ -480,10 +480,10 @@ interface TelemetryConfig {
 ```
 
 **Metrics tracked:**
-- `wallet_connect_attempts` / `wallet_connect_success` — Connection success rate
-- `sessions_created` / `sessions_restored` — Session lifecycle
-- `registry_fetch` / `registry_cache_hit` / `registry_stale` — Registry health
-- `error_*` — Error counts by code
+- `wallet_connect_attempts` / `wallet_connect_success`: Connection success rate
+- `sessions_created` / `sessions_restored`: Session lifecycle
+- `registry_fetch` / `registry_cache_hit` / `registry_stale`: Registry health
+- `error_*`: Error counts by code
 
 **Privacy guarantees:**
 - All telemetry is opt-in (disabled by default)

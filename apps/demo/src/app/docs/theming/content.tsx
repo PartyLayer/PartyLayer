@@ -23,7 +23,7 @@ export default function ThemingPage() {
 // Dark theme
 <PartyLayerKit theme="dark" network="mainnet" appName="My dApp">
 
-// Auto — follows system preference (prefers-color-scheme)
+// Auto, follows system preference (prefers-color-scheme)
 <PartyLayerKit theme="auto" network="mainnet" appName="My dApp">`}</CodeBlock>
 
       <H2 id="custom-theme">Custom Theme</H2>
