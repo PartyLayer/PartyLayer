@@ -75,7 +75,21 @@ jobs:
           rm -rf "$DIR"; mkdir -p "$DIR"; cd "$DIR"
           npm init -y >/dev/null
 
-          # The packages a real downstream user installs (latest published).
+          # Install exactly what a real downstream consumer of BOTH the React and Vue
+          # bindings installs: the @partylayer/* packages plus their runtime peers.
+          #
+          # The peers are REQUIRED for honest resolution (no --force/--legacy-peer-deps):
+          #   react@^18 + react-dom@^18      -> peer of @partylayer/react
+          #   @tanstack/react-query@^5       -> peer of @partylayer/react (the /query hooks)
+          #   vue@^3.4                       -> peer of @partylayer/vue (needs >=3.4.0)
+          #   @tanstack/vue-query@^5         -> peer of @partylayer/vue
+          #   @tanstack/query-core@^5        -> peer of @partylayer/testing/query
+          #
+          # Pin vue@^3.4 EXPLICITLY. If vue is left unspecified, npm satisfies
+          # @tanstack/vue-query's loose peer (vue "^2.6.0 || ^3.3.0") with vue@2.6.14,
+          # which then conflicts with @partylayer/vue's vue >=3.4.0 peer and fails with
+          # ERESOLVE. vue@^3.4 satisfies both ranges, so resolution is clean. Do NOT
+          # "simplify" this back to dropping the explicit vue pin.
           npm install --no-fund --no-audit \
             @partylayer/sdk@latest \
             @partylayer/react@latest \
@@ -84,6 +98,10 @@ jobs:
             @partylayer/session@latest \
             @partylayer/vue@latest \
             @partylayer/testing@latest \
+            react@^18 react-dom@^18 \
+            vue@^3.4 \
+            @tanstack/react-query@^5 \
+            @tanstack/vue-query@^5 \
             @tanstack/query-core@^5 \
             typescript@^5
 
@@ -117,12 +135,16 @@ jobs:
           // 1.0: encrypted-storage default + the session store, now PUBLISHED.
           import { createSessionStore, createEncryptedIndexedDBStorage } from '@partylayer/session';
           import { createProviderBridge } from '@partylayer/provider';
-          // React 0.7.0 reactive session hook + a component prop type.
-          import { useSession, type WalletModalProps } from '@partylayer/react';
+          // react@2.0.0: the reactive session hooks + a component prop type.
+          import { useSession, usePartyState, type WalletModalProps } from '@partylayer/react';
+          // react@2.0.0: the TanStack Query data layer lives on the /query subpath.
+          // Importing from it verifies that entrypoint's published types resolve for
+          // consumers (this would catch a /query packaging or type regression).
+          import { useDamlContract, useTransactionCostEstimate } from '@partylayer/react/query';
           import { SendAdapter } from '@partylayer/adapter-send';
-          // Vue 0.1.0 composables + provisioning.
+          // vue@1.0.0 composables + provisioning.
           import { useSession as useVueSession, useAccount as useVueAccount, provideSessionStore } from '@partylayer/vue';
-          // Testing 1.0 — BOTH entry points: main (session harness) + the /query subpath.
+          // testing@1.x: BOTH entry points: main (session harness) + the /query subpath.
           import { createSessionHarness } from '@partylayer/testing';
           import { createTestQueryClient } from '@partylayer/testing/query';
 
@@ -133,6 +155,9 @@ jobs:
             createEncryptedIndexedDBStorage,
             createProviderBridge,
             useSession,
+            usePartyState,
+            useDamlContract,
+            useTransactionCostEstimate,
             SendAdapter,
             useVueSession,
             useVueAccount,
