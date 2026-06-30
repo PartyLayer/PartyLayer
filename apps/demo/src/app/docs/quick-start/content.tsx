@@ -18,7 +18,7 @@ export default function QuickStartPage() {
         Add the PartyLayer packages to your existing React project. If you{"'"}re starting fresh with
         Vite, run <Code>{'npm create vite@latest my-dapp -- --template react-ts'}</Code> first.
       </P>
-      <CodeBlock language="bash">{`npm install @partylayer/sdk @partylayer/react`}</CodeBlock>
+      <CodeBlock language="bash">{`npm install @partylayer/sdk @partylayer/react @tanstack/react-query`}</CodeBlock>
 
       <H2 id="step-2">Step 2: Wrap Your App</H2>
       <P>
@@ -32,14 +32,19 @@ export default function QuickStartPage() {
           content: `// src/main.tsx
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { PartyLayerKit } from '@partylayer/react';
 import App from './App';
 
+const queryClient = new QueryClient();
+
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <PartyLayerKit network="mainnet" appName="My dApp">
-      <App />
-    </PartyLayerKit>
+    <QueryClientProvider client={queryClient}>
+      <PartyLayerKit network="mainnet" appName="My dApp">
+        <App />
+      </PartyLayerKit>
+    </QueryClientProvider>
   </StrictMode>,
 );`,
         },
@@ -49,13 +54,19 @@ createRoot(document.getElementById('root')!).render(
           content: `// app/providers.tsx
 'use client';
 
+import { useState } from 'react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { PartyLayerKit } from '@partylayer/react';
 
 export function Providers({ children }: { children: React.ReactNode }) {
+  // useState gives each client one stable QueryClient (never shared across requests).
+  const [queryClient] = useState(() => new QueryClient());
   return (
-    <PartyLayerKit network="mainnet" appName="My dApp">
-      {children}
-    </PartyLayerKit>
+    <QueryClientProvider client={queryClient}>
+      <PartyLayerKit network="mainnet" appName="My dApp">
+        {children}
+      </PartyLayerKit>
+    </QueryClientProvider>
   );
 }`,
         },
@@ -65,6 +76,14 @@ export function Providers({ children }: { children: React.ReactNode }) {
         <Code>{'PartyLayerKit'}</Code> automatically registers all built-in wallet adapters
         (Console, Loop, Cantor8, Nightly), fetches the wallet registry, and sets up session persistence.
         Send is discovered through the CIP-0103 announce path, so it appears in the picker without being registered.
+      </Callout>
+
+      <Callout type="note" title="Why QueryClientProvider">
+        v2{"'"}s data hooks (the <Code>{'@partylayer/react/query'}</Code> entrypoint) are built on
+        TanStack Query, so they need a <Code>{'QueryClient'}</Code> in context. The base connect flow
+        below (<Code>{'PartyLayerKit'}</Code>, <Code>{'ConnectButton'}</Code>, <Code>{'useAccount'}</Code>)
+        works without it, but wrapping in <Code>{'QueryClientProvider'}</Code> now means the data hooks
+        are ready when you reach for them. See the <A href="/docs/hooks">Hooks</A> reference.
       </Callout>
 
       <H2 id="step-3">Step 3: Add ConnectButton</H2>
@@ -119,7 +138,10 @@ export default function Home() {
           content: `// src/main.tsx
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { PartyLayerKit, ConnectButton } from '@partylayer/react';
+
+const queryClient = new QueryClient();
 
 function App() {
   return (
@@ -137,31 +159,36 @@ function App() {
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <PartyLayerKit network="mainnet" appName="My dApp">
-      <App />
-    </PartyLayerKit>
+    <QueryClientProvider client={queryClient}>
+      <PartyLayerKit network="mainnet" appName="My dApp">
+        <App />
+      </PartyLayerKit>
+    </QueryClientProvider>
   </StrictMode>,
 );`,
         },
         {
           label: 'Next.js',
           language: 'tsx',
-          content: `// app/layout.tsx
+          content: `// app/providers.tsx
+'use client';
+
+import { useState } from 'react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { PartyLayerKit, ConnectButton } from '@partylayer/react';
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export function Providers({ children }: { children: React.ReactNode }) {
+  const [queryClient] = useState(() => new QueryClient());
   return (
-    <html lang="en">
-      <body>
-        <PartyLayerKit network="mainnet" appName="My dApp">
-          <nav>
-            <h1>My dApp</h1>
-            <ConnectButton />
-          </nav>
-          {children}
-        </PartyLayerKit>
-      </body>
-    </html>
+    <QueryClientProvider client={queryClient}>
+      <PartyLayerKit network="mainnet" appName="My dApp">
+        <nav>
+          <h1>My dApp</h1>
+          <ConnectButton />
+        </nav>
+        {children}
+      </PartyLayerKit>
+    </QueryClientProvider>
   );
 }`,
         },
@@ -201,7 +228,8 @@ function Profile() {
       <OL>
         <LI><A href="/docs/partylayer-kit">PartyLayerKit</A>: Configuration options (network, adapters, theme)</LI>
         <LI><A href="/docs/connect-button">ConnectButton</A>: Customize the button appearance and behavior</LI>
-        <LI><A href="/docs/hooks">React Hooks</A>: Use <Code>{'useSignMessage'}</Code>, <Code>{'useSubmitTransaction'}</Code>, and more</LI>
+        <LI><A href="/docs/hooks">React Hooks</A>: Use <Code>{'useSignMessage'}</Code>, <Code>{'useSubmitTransaction'}</Code>, and the <Code>{'/query'}</Code> data hooks (<Code>{'useDamlContract'}</Code>, <Code>{'useChoice'}</Code>, cost hooks)</LI>
+        <LI><A href="/docs/cookbook">Pattern Cookbook</A>: Copy-paste recipes for the data hooks, optimistic updates, and Suspense</LI>
         <LI><A href="/docs/theming">Theming</A>: Switch between light, dark, and custom themes</LI>
         <LI><A href="/docs/wallets">Wallets & Adapters</A>: Add custom wallet adapters or the Bron enterprise wallet</LI>
       </OL>

@@ -16,19 +16,28 @@ export default function InstallationPage() {
       <UL>
         <LI><Strong>Node.js</Strong> 18 or later</LI>
         <LI><Strong>React</Strong> 18 or later (for React integration)</LI>
-        <LI>A <Strong>Canton Network</Strong> dApp — PartyLayer works with devnet, testnet, and mainnet</LI>
+        <LI>A <Strong>Canton Network</Strong> dApp (PartyLayer works with devnet, testnet, and mainnet)</LI>
       </UL>
 
       <H2 id="install-packages">Install Packages</H2>
       <P>
-        Install the core SDK and React bindings:
+        Install the core SDK, the React bindings, and the TanStack Query peer:
       </P>
 
       <TabGroup tabs={[
-        { label: 'npm', content: 'npm install @partylayer/sdk @partylayer/react', language: 'bash' },
-        { label: 'pnpm', content: 'pnpm add @partylayer/sdk @partylayer/react', language: 'bash' },
-        { label: 'yarn', content: 'yarn add @partylayer/sdk @partylayer/react', language: 'bash' },
+        { label: 'npm', content: 'npm install @partylayer/sdk @partylayer/react @tanstack/react-query', language: 'bash' },
+        { label: 'pnpm', content: 'pnpm add @partylayer/sdk @partylayer/react @tanstack/react-query', language: 'bash' },
+        { label: 'yarn', content: 'yarn add @partylayer/sdk @partylayer/react @tanstack/react-query', language: 'bash' },
       ]} />
+
+      <Callout type="note" title="Why @tanstack/react-query">
+        It is a required peer dependency of <Code>{'@partylayer/react'}</Code> v2. The data
+        hooks in the <Code>{'@partylayer/react/query'}</Code> entrypoint (DAML reads/writes,
+        cost estimation) are built on TanStack Query, and you supply the <Code>{'QueryClient'}</Code> via
+        {' '}<Code>{'QueryClientProvider'}</Code>. The base session and connect surface works without
+        it; the provider is required only for the <Code>{'/query'}</Code> hooks. See the
+        {' '}<A href="/docs/quick-start">Quick Start</A> for the setup.
+      </Callout>
 
       <Callout type="note">
         <Code>{'@partylayer/core'}</Code> is installed automatically as a dependency of <Code>{'@partylayer/sdk'}</Code>.

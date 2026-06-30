@@ -9,9 +9,12 @@ export default function HooksPage() {
     <>
       <H1>React Hooks</H1>
       <P>
-        PartyLayer provides 12 React hooks for accessing wallet state, performing operations,
-        and managing sessions. All hooks must be used within a <Code>{'PartyLayerKit'}</Code> or
-        {' '}<Code>{'PartyLayerProvider'}</Code>.
+        PartyLayer provides React hooks for accessing wallet state, performing operations,
+        and managing sessions. The hooks below are the main entrypoint (<Code>{'@partylayer/react'}</Code>):
+        they use <Code>{'useSyncExternalStore'}</Code> and must be used within a <Code>{'PartyLayerKit'}</Code> or
+        {' '}<Code>{'PartyLayerProvider'}</Code>. v2 also adds a TanStack Query powered{' '}
+        <Code>{'@partylayer/react/query'}</Code> entrypoint for ledger data and cost, documented in
+        {' '}<A href="#query-hooks">Data hooks</A> at the end of this page.
       </P>
 
       {/* ── Core Hooks ── */}
@@ -57,7 +60,7 @@ function Profile() {
   );
 }`}</CodeBlock>
       <P>
-        <Strong>Return type:</Strong> <Code>{'UseSessionReturn'}</Code> — the reactive{' '}
+        <Strong>Return type:</Strong> <Code>{'UseSessionReturn'}</Code>, the reactive{' '}
         <Code>{'SessionState'}</Code> (<Code>{'status'}</Code>, <Code>{'account'}</Code>,{' '}
         <Code>{'accounts'}</Code>, <Code>{'networkId'}</Code>, <Code>{'lastError'}</Code>) plus{' '}
         <Code>{'isConnected'}</Code>/<Code>{'isConnecting'}</Code>/<Code>{'isReconnecting'}</Code>/
@@ -67,7 +70,7 @@ function Profile() {
       <Callout type="warning">
         <Strong>Migration:</Strong> <Code>{'useSession()'}</Code> was re-pointed from the
         SDK-layer session getter (<Code>{'Session | null'}</Code>) to the reactive store. The old
-        getter is preserved VERBATIM as <Code>{'useClientSession()'}</Code> (deprecated) — it still
+        getter is preserved VERBATIM as <Code>{'useClientSession()'}</Code> (deprecated): it still
         returns the <Code>{'Session'}</Code> object (<Code>{'sessionId'}</Code>, <Code>{'walletId'}</Code>,
         {' '}<Code>{'partyId'}</Code>, <Code>{'network'}</Code>, …). Migrate{' '}
         <Code>{'useSession()'}</Code> → <Code>{'useClientSession()'}</Code> if you need that shape.
@@ -91,7 +94,7 @@ function WalletList() {
     <ul>
       {wallets.map(w => (
         <li key={w.walletId}>
-          {w.name} — {w.capabilities.join(', ')}
+          {w.name}: {w.capabilities.join(', ')}
         </li>
       ))}
     </ul>
@@ -136,7 +139,7 @@ function CustomConnect() {
         <Strong>Return type:</Strong> <Code>{'{ connect: (options?) => Promise<Session | null>, isConnecting: boolean, error: Error | null, reset: () => void }'}</Code>
       </P>
       <P>
-        The <Code>{'options'}</Code> parameter accepts: <Code>{'walletId'}</Code> (optional — if omitted, opens the modal).
+        The <Code>{'options'}</Code> parameter accepts: <Code>{'walletId'}</Code> (optional: if omitted, opens the modal).
       </P>
 
       <HR />
@@ -292,7 +295,7 @@ function BalanceQuery() {
         <Strong>Return type:</Strong> <Code>{'{ ledgerApi: (params) => Promise<LedgerApiResult | null>, isLoading: boolean, error: Error | null }'}</Code>
       </P>
       <P>
-        Requires a wallet with <Code>{'ledgerApi'}</Code> capability — see{' '}
+        Requires a wallet with <Code>{'ledgerApi'}</Code> capability, see{' '}
         <A href="/docs/wallets#capability-matrix">Capability Matrix</A>. Throws{' '}
         <Code>{'CapabilityNotSupportedError'}</Code> for wallets that don{"'"}t support it (e.g. Cantor8).
       </P>
@@ -360,7 +363,60 @@ function ThemedComponent() {
   );
 }`}</CodeBlock>
       <P>
-        <Strong>Return type:</Strong> <Code>{'PartyLayerTheme'}</Code> — see <A href="/docs/theming">Theming</A> for the full interface.
+        <Strong>Return type:</Strong> <Code>{'PartyLayerTheme'}</Code>, see <A href="/docs/theming">Theming</A> for the full interface.
+      </P>
+
+      {/* ── Data hooks (/query) ── */}
+      <H2 id="query-hooks">Data hooks (<Code>{'@partylayer/react/query'}</Code>)</H2>
+      <P>
+        v2 adds a TanStack Query powered entrypoint for reading and writing ledger data and for
+        cost estimation. These hooks import from <Code>{'@partylayer/react/query'}</Code> and require a
+        {' '}<Code>{'QueryClientProvider'}</Code> (see <A href="/docs/quick-start">Quick Start</A>).
+        PartyLayer does not own ledger transport: you supply the fetcher, and the hook wraps it in
+        {' '}<Code>{'useQuery'}</Code> / <Code>{'useMutation'}</Code>.
+      </P>
+      <Callout type="note" title="Requires QueryClientProvider">
+        The hooks above (the main entrypoint) work without TanStack Query. The data hooks here need
+        a <Code>{'QueryClient'}</Code> in context, so wrap your app in <Code>{'QueryClientProvider'}</Code>{' '}
+        (in addition to <Code>{'PartyLayerKit'}</Code> / <Code>{'PartyLayerProvider'}</Code>). The entrypoint
+        also exports query-backed variants of <Code>{'useConnect'}</Code>, <Code>{'useWallets'}</Code>,
+        {' '}<Code>{'useDisconnect'}</Code>, <Code>{'useSignMessage'}</Code>, and <Code>{'useSubmitTransaction'}</Code>.
+      </Callout>
+
+      <H3 id="use-daml-contract">useDamlContract / useChoice (DAML, Model 2)</H3>
+      <P>Read a contract (generic over its type) and exercise a choice. You supply the fetcher.</P>
+      <CodeBlock language="tsx">{`import { useDamlContract, useChoice } from '@partylayer/react/query';
+
+// read: you supply the \`read\` fetcher; null is a valid (absent) value, not an error.
+const { contract, isLoading } = useDamlContract<MyContract>({ read: fetchContract });
+
+// write: exposes exerciseChoice / exerciseChoiceAsync.
+const { exerciseChoice, exerciseChoiceAsync } = useChoice<MyResult, MyVars>({ exercise });`}</CodeBlock>
+
+      <H3 id="use-cost">useTransactionCostEstimate / usePaidTrafficCost (CIP-0104)</H3>
+      <CodeBlock language="tsx">{`import { useTransactionCostEstimate, usePaidTrafficCost } from '@partylayer/react/query';
+
+const { costEstimate } = useTransactionCostEstimate({ estimate: fetchEstimate });
+const { paidTrafficCost } = usePaidTrafficCost({ fetch: fetchPaid });`}</CodeBlock>
+      <P>
+        <Code>{'useTransactionCostEstimate'}</Code> is the pre-submission <Code>{'CostEstimation'}</Code>;
+        {' '}<Code>{'usePaidTrafficCost'}</Code> is the post-execution paid cost.
+      </P>
+
+      <H3 id="use-suspense">Suspense twins</H3>
+      <P>
+        The query hooks have <Code>{'useSuspense*'}</Code> twins (<Code>{'useSuspenseTransactionCostEstimate'}</Code>,
+        {' '}<Code>{'useSuspensePaidTrafficCost'}</Code>, <Code>{'useSuspenseWallets'}</Code>) for declarative
+        loading inside a React <Code>{'<Suspense>'}</Code> boundary: the value is always present (no loading
+        flag), and the boundary shows the fallback while it resolves.
+      </P>
+
+      <H3 id="use-optimistic">Optimistic updates</H3>
+      <P>
+        <Code>{'optimisticMutationOptions'}</Code> wires an optimistic cache update with automatic rollback
+        on error into <Code>{'useChoice'}</Code>. The <Code>{'partyLayerKeys'}</Code> factory (also exported
+        here) produces the hierarchical cache keys, so manual cache reads/writes line up with the hooks.
+        See the <A href="/docs/cookbook">Pattern Cookbook</A> for full recipes.
       </P>
 
       <PrevNext />

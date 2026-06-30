@@ -22,8 +22,9 @@
 - **React Hooks**: `useSession`, `useWallets`, `useConnect`, `useSignMessage`, and more
 - **Ready-to-Use Components**: Pre-built wallet modal with customizable styling
 - **State Management**: Automatic session state synchronization
+- **TanStack Query data layer (v2)**: a `@partylayer/react/query` entrypoint for DAML reads/writes (`useDamlContract`, `useChoice`), CIP-0104 cost (`useTransactionCostEstimate`, `usePaidTrafficCost`), Suspense twins, and optimistic updates
 - **TypeScript**: Full type safety for all hooks and components
-- **SSR Compatible**: Works with Next.js and other SSR frameworks
+- **SSR Compatible**: Works with Next.js and other SSR frameworks (cookieStorage hydration, Server Components compatible)
 
 ---
 
@@ -49,8 +50,15 @@
 ## Installation
 
 ```bash
-npm install @partylayer/sdk @partylayer/react
+npm install @partylayer/sdk @partylayer/react @tanstack/react-query
 ```
+
+`@tanstack/react-query` is a required peer dependency of v2. The data hooks in the
+`@partylayer/react/query` entrypoint are built on TanStack Query, and you supply the
+`QueryClient` via `QueryClientProvider` (the same model wagmi uses). The base session
+and connect surface (the main entrypoint: `useSession`, `useAccount`, `useConnect`,
+`ConnectButton`, `WalletModal`, `PartyLayerKit`) works without it; the
+`QueryClientProvider` is required only for the `/query` data hooks.
 
 ---
 
@@ -58,7 +66,12 @@ npm install @partylayer/sdk @partylayer/react
 
 ### 1. Set Up the Provider
 
+Wrap your app in `QueryClientProvider` (you own the `QueryClient`; PartyLayer does not
+create one) and `PartyLayerProvider`. `PartyLayerKit` is the zero-config alternative to
+`PartyLayerProvider`; the nesting is the same.
+
 ```tsx
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { createPartyLayer } from '@partylayer/sdk';
 import { PartyLayerProvider } from '@partylayer/react';
 
@@ -67,14 +80,23 @@ const client = createPartyLayer({
   app: { name: 'My dApp' },
 });
 
+const queryClient = new QueryClient();
+
 function App() {
   return (
-    <PartyLayerProvider client={client}>
-      <MyApp />
-    </PartyLayerProvider>
+    <QueryClientProvider client={queryClient}>
+      <PartyLayerProvider client={client}>
+        <MyApp />
+      </PartyLayerProvider>
+    </QueryClientProvider>
   );
 }
 ```
+
+> The base session and connect hooks (`useSession`, `useAccount`, `useConnect`, etc.)
+> work without `QueryClientProvider`. It is required for the `@partylayer/react/query`
+> data hooks (DAML reads/writes, cost estimation). Migrating from v1? See the
+> [v1 to v2 migration guide](../../docs/react-v2-migration.md).
 
 ### 2. Use Hooks in Your Components
 
@@ -144,9 +166,10 @@ if (isConnected) {
 }
 ```
 
-> Need the legacy SDK `Session` getter (`{ sessionId, walletId, … }`)? It's
-> preserved as **`useClientSession()`** (deprecated). `useSession()` was
-> re-pointed to the reactive store. See the migration note below.
+> In v2, `useSession()` returns the reactive session store (`UseSessionReturn`). The
+> legacy SDK `Session` getter (`{ sessionId, walletId, … }`) is preserved as
+> **`useClientSession()`** (deprecated). See the
+> [v1 to v2 migration guide](../../docs/react-v2-migration.md).
 
 ### `useWallets()`
 
@@ -235,6 +258,70 @@ if (status?.stale) {
   console.log('Registry data may be outdated');
 }
 ```
+
+---
+
+## Data hooks (`@partylayer/react/query`)
+
+v2 adds a TanStack Query powered entrypoint, `@partylayer/react/query`, for reading and
+writing ledger data and for cost estimation. These hooks require a `QueryClientProvider`
+(see [Installation](#installation)). PartyLayer does not own ledger transport: you supply
+the fetcher, and the hook wraps it in `useQuery` / `useMutation` for caching, loading
+state, and invalidation. (The entrypoint also exports query-backed variants of the wallet
+hooks: `useConnect`, `useWallets`, `useDisconnect`, `useSignMessage`, `useSubmitTransaction`.)
+
+### DAML read and write (Model 2)
+
+```tsx
+import { useDamlContract, useChoice } from '@partylayer/react/query';
+
+// read: generic over the contract type; you supply the `read` fetcher.
+const { contract, isLoading } = useDamlContract<MyContract>({ read: fetchContract });
+
+// write: generic over result/variables; exposes exerciseChoice / exerciseChoiceAsync.
+const { exerciseChoice, exerciseChoiceAsync } = useChoice<MyResult, MyVars>({ exercise });
+```
+
+`null` is a valid resolved value (the contract is absent), not an error.
+
+### CIP-0104 cost
+
+```tsx
+import { useTransactionCostEstimate, usePaidTrafficCost } from '@partylayer/react/query';
+
+const { costEstimate } = useTransactionCostEstimate({ estimate: fetchEstimate });
+const { paidTrafficCost } = usePaidTrafficCost({ fetch: fetchPaid });
+```
+
+- `useTransactionCostEstimate`: the pre-submission `CostEstimation`.
+- `usePaidTrafficCost`: the post-execution paid cost.
+
+### Suspense twins
+
+The query hooks have `useSuspense*` twins (`useSuspenseTransactionCostEstimate`,
+`useSuspensePaidTrafficCost`, `useSuspenseWallets`) for declarative loading inside a
+React `<Suspense>` boundary: the value is always present (no loading flag), and the
+boundary shows the fallback while it resolves.
+
+### Optimistic updates
+
+`optimisticMutationOptions` wires an optimistic cache update with automatic rollback on
+error into `useChoice` (the wagmi-style onMutate/rollback pattern). The `partyLayerKeys`
+factory (also exported here) produces the hierarchical cache keys, so manual cache
+reads/writes line up with the hooks.
+
+```tsx
+import { useChoice, optimisticMutationOptions } from '@partylayer/react/query';
+
+const { exerciseChoice } = useChoice({
+  exercise,
+  mutation: optimisticMutationOptions({ queryClient, queryKey, update }),
+});
+```
+
+See the [v1 to v2 migration guide](../../docs/react-v2-migration.md) and the
+[Pattern Cookbook](https://partylayer.xyz/docs/cookbook) for full recipes, optimistic
+patterns, and the SSR (cookieStorage) and Server Components details.
 
 ---
 
@@ -456,21 +543,30 @@ Adopt the session layer via `PartyLayerKit`:
 }}>…</PartyLayerKit>
 ```
 
-### ⚠️ BREAKING: `useSession` re-pointed
-`useSession()` is now the **reactive session-store** hook (`UseSessionReturn`:
-live `SessionState` + `connect`/`disconnect`/`restore`/`on`). The previous
-SDK-layer getter (`(): Session | null`) is preserved **verbatim** as
-**`useClientSession()`**.
+## Migrating from v1
 
-| Before | After |
+In v2, `useSession()` is the reactive session-store hook (`UseSessionReturn`: live
+`SessionState` plus `connect`/`disconnect`/`restore`/`on`). The previous SDK-layer getter
+(`(): Session | null`) is preserved verbatim as `useClientSession()` (deprecated). v2 also
+moves the data layer to TanStack Query (the `@partylayer/react/query` entrypoint), which
+adds the `QueryClientProvider` setup shown above.
+
+| Before (v1) | After (v2) |
 |---|---|
 | `const session = useSession(); session?.partyId` | `const session = useClientSession(); session?.partyId` |
-| (new) reactive state + actions | `const { status, account, connect } = useSession()` |
+| (no reactive session) | `const { status, account, connect } = useSession()` |
 
-### React ↔ planned Vue composable parity (seeds S5)
-| React (`@partylayer/react`) | Planned Vue (`@partylayer/vue`) |
+For the full upgrade (renames, the query peer, and the provider change), see the
+[v1 to v2 migration guide](../../docs/react-v2-migration.md).
+
+## Vue parity
+
+The Vue bindings ship as [`@partylayer/vue`](https://www.npmjs.com/package/@partylayer/vue)
+with the same surface as composables.
+
+| React (`@partylayer/react`) | Vue (`@partylayer/vue`) |
 |---|---|
 | `useSession()` | `useSession()` |
 | `useAccount()` | `useAccount()` |
-| `useAccountEffect()` | `onAccountEffect()` (watch-based) |
+| `useAccountEffect()` | `useAccountEffect()` |
 | `useClientSession()` (legacy) | None (not ported) |
