@@ -4,8 +4,8 @@
 
 PartyLayer provides a unified SDK for dApps to connect to multiple Canton Network wallets through a single integration. The architecture supports two integration paths:
 
-1. **CIP-0103 Provider path** (recommended) — Uses `@partylayer/provider` to wrap native CIP-0103 wallet providers directly
-2. **Adapter-based SDK path** (legacy) — Uses `@partylayer/sdk` with wallet adapters for wallet-specific integrations
+1. **CIP-0103 Provider path** (recommended): Uses `@partylayer/provider` to wrap native CIP-0103 wallet providers directly
+2. **Adapter-based SDK path** (legacy): Uses `@partylayer/sdk` with wallet adapters for wallet-specific integrations
 
 The architecture is designed to be:
 
@@ -327,7 +327,7 @@ The wallet registry is a versioned JSON document:
 
 The CIP-0103 Provider uses `ProviderRpcError` with standard numeric codes:
 
-- **EIP-1193 codes** (4001–4901): User Rejected, Unauthorized, Unsupported Method, Disconnected, Chain Disconnected
+- **EIP-1193 codes** (4001 to 4901): User Rejected, Unauthorized, Unsupported Method, Disconnected, Chain Disconnected
 - **EIP-1474 codes** (-32700 to -32005): Parse Error, Invalid Request, Method Not Found, Invalid Params, Internal Error, and more
 
 All SDK error classes are bidirectionally mapped to `ProviderRpcError` codes via `toProviderRpcError()` and `toPartyLayerError()` in `@partylayer/provider`.
@@ -356,7 +356,7 @@ All SDK error classes are bidirectionally mapped to `ProviderRpcError` codes via
 - **PartyLayerKit** zero-config React wrapper with theme support
 - **ConnectButton** and enhanced **WalletModal** with multi-state flow
 - **Nightly wallet adapter** with callback-based signing
-- **Registry resilience** — `listWallets()` falls back to adapter-generated WalletInfo
+- **Registry resilience**: `listWallets()` falls back to adapter-generated WalletInfo
 - **Opt-in telemetry** with privacy-safe metrics (SHA-256 hashed identifiers, PII validation)
 - **Theme system** with light/dark/auto presets and full token customization
 

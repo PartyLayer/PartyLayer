@@ -143,7 +143,7 @@ window.nightly?.canton // NightlyCantonProvider
 - **Session restoration**: Uses `isConnected()` to check if a previous session is still valid.
 
 ```typescript
-// Nightly is auto-registered — no manual setup needed
+// Nightly is auto-registered, no manual setup needed
 const client = createPartyLayer({
   network: 'devnet',
   app: { name: 'My dApp' },

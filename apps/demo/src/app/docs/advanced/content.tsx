@@ -48,15 +48,15 @@ const client = createPartyLayer({
       <H3>Collected Metrics</H3>
       <P>The SDK collects 9 canonical metrics:</P>
       <UL>
-        <LI><Code>{'wallet_connect_attempts'}</Code> — Total connection attempts</LI>
-        <LI><Code>{'wallet_connect_success'}</Code> — Successful connections</LI>
-        <LI><Code>{'sessions_created'}</Code> — New sessions created</LI>
-        <LI><Code>{'sessions_restored'}</Code> — Sessions restored from storage</LI>
-        <LI><Code>{'restore_attempts'}</Code> — Session restore attempts</LI>
-        <LI><Code>{'registry_fetch'}</Code> — Registry fetch operations</LI>
-        <LI><Code>{'registry_cache_hit'}</Code> — Registry cache hits</LI>
-        <LI><Code>{'registry_stale'}</Code> — Stale registry data usage</LI>
-        <LI><Code>{'error_<CODE>'}</Code> — Error counts by error code</LI>
+        <LI><Code>{'wallet_connect_attempts'}</Code>, Total connection attempts</LI>
+        <LI><Code>{'wallet_connect_success'}</Code>, Successful connections</LI>
+        <LI><Code>{'sessions_created'}</Code>, New sessions created</LI>
+        <LI><Code>{'sessions_restored'}</Code>, Sessions restored from storage</LI>
+        <LI><Code>{'restore_attempts'}</Code>, Session restore attempts</LI>
+        <LI><Code>{'registry_fetch'}</Code>, Registry fetch operations</LI>
+        <LI><Code>{'registry_cache_hit'}</Code>, Registry cache hits</LI>
+        <LI><Code>{'registry_stale'}</Code>, Stale registry data usage</LI>
+        <LI><Code>{'error_<CODE>'}</Code>, Error counts by error code</LI>
       </UL>
 
       <Callout type="tip" title="Privacy">
@@ -75,7 +75,7 @@ const client = createPartyLayer({
       <H3>How It Works</H3>
       <UL>
         <LI>Sessions are stored encrypted in <Code>{'localStorage'}</Code> under the key <Code>{'partylayer_active_session'}</Code></LI>
-        <LI>Sessions are bound to the dApp <Strong>origin</Strong> — a session from <Code>{'app-a.com'}</Code> cannot be restored on <Code>{'app-b.com'}</Code></LI>
+        <LI>Sessions are bound to the dApp <Strong>origin</Strong>, a session from <Code>{'app-a.com'}</Code> cannot be restored on <Code>{'app-b.com'}</Code></LI>
         <LI>Expired sessions (past <Code>{'expiresAt'}</Code>) are automatically pruned</LI>
         <LI>On mount, <Code>{'PartyLayerKit'}</Code> attempts to restore the last session via the adapter{"'"}s <Code>{'restore()'}</Code> method</LI>
       </UL>
@@ -86,11 +86,11 @@ const client = createPartyLayer({
         reload depends on the wallet:
       </P>
       <UL>
-        <LI><Strong>Console</Strong> — checks extension availability + <Code>{'isConnected()'}</Code> state; restores if the wallet reports a live session</LI>
-        <LI><Strong>Loop</Strong> — calls <Code>{'loop.init()'}</Code> with a 5s auto-connect timeout; restores if the Loop auth token is still valid</LI>
-        <LI><Strong>Nightly</Strong> — checks <Code>{'window.nightly.canton'}</Code> provider is connected; restores if so</LI>
-        <LI><Strong>Cantor8</Strong> — restores if the stored session token hasn{"'"}t expired (pure metadata-based)</LI>
-        <LI><Strong>Bron</Strong> — requires a live OAuth access token; user must be signed in to Bron{"'"}s auth provider</LI>
+        <LI><Strong>Console</Strong>, checks extension availability + <Code>{'isConnected()'}</Code> state; restores if the wallet reports a live session</LI>
+        <LI><Strong>Loop</Strong>, calls <Code>{'loop.init()'}</Code> with a 5s auto-connect timeout; restores if the Loop auth token is still valid</LI>
+        <LI><Strong>Nightly</Strong>, checks <Code>{'window.nightly.canton'}</Code> provider is connected; restores if so</LI>
+        <LI><Strong>Cantor8</Strong>, restores if the stored session token hasn{"'"}t expired (pure metadata-based)</LI>
+        <LI><Strong>Bron</Strong>, requires a live OAuth access token; user must be signed in to Bron{"'"}s auth provider</LI>
       </UL>
 
       <H3>Handling Null Session</H3>
@@ -105,7 +105,7 @@ function App() {
   const { isConnected, status } = useAccount();
 
   if (!isConnected) {
-    // status is 'disconnected' | 'connecting' | 'reconnecting' here —
+    // status is 'disconnected' | 'connecting' | 'reconnecting' here,
     // no prior session, restore failed, or still restoring.
     return <ConnectButton />;
   }
@@ -138,10 +138,10 @@ const client = createPartyLayer({
 
       <H3>How the Registry Works</H3>
       <UL>
-        <LI><Strong>Fetch</Strong> — On init, the SDK fetches the registry from <Code>{'registry.partylayer.xyz'}</Code></LI>
-        <LI><Strong>Verify</Strong> — The registry payload is verified against embedded public keys</LI>
-        <LI><Strong>Cache</Strong> — Verified data is cached with ETag support for efficient updates</LI>
-        <LI><Strong>Fallback</Strong> — If the registry is unreachable, the SDK falls back to adapter-only discovery</LI>
+        <LI><Strong>Fetch</Strong>, On init, the SDK fetches the registry from <Code>{'registry.partylayer.xyz'}</Code></LI>
+        <LI><Strong>Verify</Strong>, The registry payload is verified against embedded public keys</LI>
+        <LI><Strong>Cache</Strong>, Verified data is cached with ETag support for efficient updates</LI>
+        <LI><Strong>Fallback</Strong>, If the registry is unreachable, the SDK falls back to adapter-only discovery</LI>
       </UL>
 
       <H3>Custom Registry</H3>
@@ -185,10 +185,10 @@ frame-src 'self';  /* For popup-based wallets */`}</CodeBlock>
 
       <H3>Transport Security</H3>
       <UL>
-        <LI><Strong>PostMessage</Strong> — Origin is validated on every message exchange</LI>
-        <LI><Strong>Deep Links</Strong> — HTTPS-only with app-link verification</LI>
-        <LI><Strong>Injected</Strong> — Direct in-process communication (no network)</LI>
-        <LI><Strong>QR/Popup</Strong> — Encrypted channel with session key exchange</LI>
+        <LI><Strong>PostMessage</Strong>, Origin is validated on every message exchange</LI>
+        <LI><Strong>Deep Links</Strong>, HTTPS-only with app-link verification</LI>
+        <LI><Strong>Injected</Strong>, Direct in-process communication (no network)</LI>
+        <LI><Strong>QR/Popup</Strong>, Encrypted channel with session key exchange</LI>
       </UL>
 
       <HR />

@@ -44,7 +44,7 @@ const client = createPartyLayer({
       <H3>listWallets</H3>
       <P>
         List all available wallets from the registry and registered adapters.
-        Resilient — falls back to adapter-only list if the registry is unreachable.
+        Resilient, falls back to adapter-only list if the registry is unreachable.
       </P>
       <CodeBlock language="typescript">{`const wallets = await client.listWallets();
 
@@ -185,7 +185,7 @@ const submitResult = await client.ledgerApi({
         <Strong>Params:</Strong> <Code>{'{ requestMethod: "GET" | "POST" | "PUT" | "DELETE", resource: string, body?: string }'}</Code>
       </P>
       <P>
-        <Strong>Returns:</Strong> <Code>{'{ response: string }'}</Code> — raw JSON from the Canton Ledger API.
+        <Strong>Returns:</Strong> <Code>{'{ response: string }'}</Code>, raw JSON from the Canton Ledger API.
       </P>
       <Callout type="note">
         Not all wallets support <Code>{'ledgerApi'}</Code>. Cantor8 does not support it at all.

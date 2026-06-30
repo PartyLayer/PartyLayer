@@ -126,12 +126,12 @@ const response = await transport.openConnectRequest(
 ### Session Restore (token-less)
 
 Popup/remote wallets surfaced through the **`discovery-adapter`** transport (e.g.
-Walley) typically **do not provide a reusable session token or public key** — and
+Walley) typically **do not provide a reusable session token or public key**, and
 they don't need to. PartyLayer restores their session by **polling the wallet**
 (`status` / `listAccounts`) and persisting on a fresh connect, not by replaying a
 stored credential. Their adapter capabilities never include `events`.
 
-**Don't add your own "no token / no public key" check** in app code — a popup/remote
+**Don't add your own "no token / no public key" check** in app code, a popup/remote
 wallet legitimately lacks one, and rejecting the connection on that basis breaks an
 otherwise-valid session. Let PartyLayer's poll-based restore handle it.
 

@@ -99,7 +99,7 @@ function ConnectWithSend() {
       </UL>
       <Callout type="note">
         Every signature operation (<Code>{'signMessage'}</Code>, <Code>{'submitTransaction'}</Code>) prompts
-        a fresh passkey unlock — this is by design. Send does not cache passkey approval across calls.
+        a fresh passkey unlock, this is by design. Send does not cache passkey approval across calls.
       </Callout>
 
       <H2 id="reading-the-ledger">Reading the Ledger</H2>
@@ -127,7 +127,7 @@ function LedgerEndDisplay() {
 }`}</CodeBlock>
       <P>
         For active-contracts queries with <Code>{'eventFormat'}</Code>, see the{' '}
-        <A href="/docs/wallet-balances">Wallet Balances</A> guide — Send accepts the same
+        <A href="/docs/wallet-balances">Wallet Balances</A> guide, Send accepts the same
         request shape as the other ledger-API-capable adapters.
       </P>
 
@@ -165,25 +165,25 @@ await submit({
         choice-context tagged-union shape.
       </P>
       <Callout type="warning">
-        The Send adapter ships the same <Strong>templateId migration warning</Strong> as Loop —
+        The Send adapter ships the same <Strong>templateId migration warning</Strong> as Loop,
         passing a legacy <Code>{'Amulet_Transfer'}</Code> exercise on{' '}
         <Code>{'Splice.Amulet:Amulet'}</Code> throws an actionable error pointing at this page.
       </Callout>
 
       <H2 id="capabilities">Capability Matrix</H2>
       <UL>
-        <LI><Strong>connect</Strong> — supported (Sigilry <Code>{'connect'}</Code> RPC + <Code>{'getPrimaryAccount'}</Code>)</LI>
-        <LI><Strong>disconnect</Strong> — supported</LI>
-        <LI><Strong>restore</Strong> — supported (silent <Code>{'status'}</Code> probe; no popup on reload)</LI>
-        <LI><Strong>signMessage</Strong> — supported (passkey-signed)</LI>
-        <LI><Strong>signTransaction</Strong> — <Strong>not supported</Strong>; fused into{' '}
+        <LI><Strong>connect</Strong>, supported (Sigilry <Code>{'connect'}</Code> RPC + <Code>{'getPrimaryAccount'}</Code>)</LI>
+        <LI><Strong>disconnect</Strong>, supported</LI>
+        <LI><Strong>restore</Strong>, supported (silent <Code>{'status'}</Code> probe; no popup on reload)</LI>
+        <LI><Strong>signMessage</Strong>, supported (passkey-signed)</LI>
+        <LI><Strong>signTransaction</Strong>, <Strong>not supported</Strong>; fused into{' '}
           <Code>{'prepareExecute'}</Code>. Calling it throws{' '}
           <Code>{'CapabilityNotSupportedError'}</Code> pointing at <Code>{'submitTransaction'}</Code>.</LI>
-        <LI><Strong>submitTransaction</Strong> — supported via{' '}
+        <LI><Strong>submitTransaction</Strong>, supported via{' '}
           <Code>{'prepareExecuteAndWait'}</Code>; receipt populated from{' '}
           <Code>{'tx.payload.updateId'}</Code>.</LI>
-        <LI><Strong>ledgerApi</Strong> — supported (full Sigilry passthrough; matches Console / Nightly).</LI>
-        <LI><Strong>events</Strong> — supported; <Code>{'txChanged'}</Code> bridged to PartyLayer{' '}
+        <LI><Strong>ledgerApi</Strong>, supported (full Sigilry passthrough; matches Console / Nightly).</LI>
+        <LI><Strong>events</Strong>, supported; <Code>{'txChanged'}</Code> bridged to PartyLayer{' '}
           <Code>{'tx:status'}</Code>.</LI>
         <LI><Strong>injected</Strong>: declared as a capability, but Send is discovered and driven over the <Code>{'canton:announceProvider'}</Code> channel rather than by binding the shared <Code>{'window.canton'}</Code> slot.</LI>
       </UL>
@@ -195,7 +195,7 @@ await submit({
       <Callout type="note">
         <Strong>Demo-app display caveat:</Strong> the PartyLayer demo at{' '}
         <Code>{'localhost:3000'}</Code> defaults its network label to{' '}
-        <Code>{'devnet'}</Code>. That label reflects the demo{"'"}s configuration — not the actual
+        <Code>{'devnet'}</Code>. That label reflects the demo{"'"}s configuration, not the actual
         network the connected wallet sits on. Send{"'"}s adapter reads the live network via its{' '}
         <Code>{'getActiveNetwork()'}</Code> provider call and reports{' '}
         <Code>{'canton:mainnet'}</Code> when Send is active. dApps that ship to production should
@@ -209,13 +209,13 @@ await submit({
           announce over <Code>{'canton:announceProvider'}</Code> within the detection window. Send
           announces on its own channel and does not depend on owning{' '}
           <Code>{'window.canton'}</Code>; install Send and reload.</LI>
-        <LI><Strong>{'"Connection cancelled"'}</Strong> — the user dismissed the passkey prompt or the
+        <LI><Strong>{'"Connection cancelled"'}</Strong>, the user dismissed the passkey prompt or the
           extension popup. Triggering connect again is safe.</LI>
-        <LI><Strong>{'"Authentication Failed: Cannot reach authentication server"'}</Strong> — Send{"'"}s
+        <LI><Strong>{'"Authentication Failed: Cannot reach authentication server"'}</Strong>, Send{"'"}s
           backend at <Code>{'auth.cantonwallet.com'}</Code> is unreachable. Check network and retry.</LI>
-        <LI><Strong>{'"OAuth state mismatch"'}</Strong> — stale Send session. Clear cookies for{' '}
+        <LI><Strong>{'"OAuth state mismatch"'}</Strong>, stale Send session. Clear cookies for{' '}
           <Code>{'cantonwallet.com'}</Code> and reconnect.</LI>
-        <LI><Strong>Transaction errors with hint{' '}{'"Execute Unknown on Unknown"'}</Strong> — legacy{' '}
+        <LI><Strong>Transaction errors with hint{' '}{'"Execute Unknown on Unknown"'}</Strong>, legacy{' '}
           <Code>{'Amulet_Transfer'}</Code> exercise on <Code>{'Splice.Amulet:Amulet'}</Code>. Migrate to
           CIP-56 <Code>{'TransferFactory_Transfer'}</Code>; see{' '}
           <A href="/docs/token-transfers">Token Transfers</A>.</LI>
@@ -240,7 +240,7 @@ await submit({
       <H3 id="references">References</H3>
       <UL>
         <LI><A href="https://cantonwallet.com">Send (cantonwallet.com)</A></LI>
-        <LI><A href="https://sigilry.org">Sigilry — open-source dApp SDK powering Send</A></LI>
+        <LI><A href="https://sigilry.org">Sigilry, open-source dApp SDK powering Send</A></LI>
         <LI><A href="/docs/token-transfers">CIP-56 Token Standard guide</A></LI>
         <LI><A href="/docs/wallets">Capability matrix across all six wallets</A></LI>
       </UL>

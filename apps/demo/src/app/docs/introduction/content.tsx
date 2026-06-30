@@ -10,12 +10,12 @@ export default function IntroductionPage() {
       <H1>Introduction</H1>
       <P>
         <Strong>PartyLayer</Strong> is an open-source SDK for integrating Canton Network wallets into your dApp.
-        It provides a unified interface across every Canton wallet — registry-backed, verified, and type-safe —
+        It provides a unified interface across every Canton wallet, registry-backed, verified, and type-safe,
         so you can focus on building your application, not wrestling with wallet APIs.
       </P>
 
       <P>
-        Transfers follow Canton{"'"}s Token Standard (<Strong>CIP-56</Strong>) — the current
+        Transfers follow Canton{"'"}s Token Standard (<Strong>CIP-56</Strong>), the current
         protocol for Amulet and other token transfers. See the{' '}
         <A href="/docs/token-transfers">Token Transfers</A> guide for the full flow.
       </P>
@@ -57,11 +57,11 @@ export default function IntroductionPage() {
       <P>
         With PartyLayer, you get a single, consistent interface that works with every Canton wallet.
         The SDK handles registry discovery, adapter negotiation, session management, and provides
-        ready-to-use React components — all with TypeScript types and meaningful error messages.
+        ready-to-use React components, all with TypeScript types and meaningful error messages.
       </P>
 
       <H3>Before PartyLayer</H3>
-      <CodeBlock language="tsx">{`// Manual wallet integration — per wallet
+      <CodeBlock language="tsx">{`// Manual wallet integration, per wallet
 const consoleWallet = await window.canton.console.request({ method: 'connect' });
 const loopWallet = await connectViaQR('loop', { ... });
 const nightlyWallet = window.nightly?.canton?.connect();
@@ -81,10 +81,10 @@ function App() {
       <H2 id="packages">Packages</H2>
 
       <UL>
-        <LI><Code>{'@partylayer/sdk'}</Code> — Core SDK with <Code>{'createPartyLayer'}</Code>, client, adapters, and events</LI>
-        <LI><Code>{'@partylayer/react'}</Code> — React hooks (<Code>{'useSession'}</Code>, <Code>{'useConnect'}</Code>, ...) and components (<Code>{'PartyLayerKit'}</Code>, <Code>{'ConnectButton'}</Code>, <Code>{'WalletModal'}</Code>)</LI>
-        <LI><Code>{'@partylayer/core'}</Code> — Shared types, errors, and CIP-0103 type definitions</LI>
-        <LI><Code>{'@partylayer/provider'}</Code> — CIP-0103 native Provider implementation and bridge</LI>
+        <LI><Code>{'@partylayer/sdk'}</Code>, Core SDK with <Code>{'createPartyLayer'}</Code>, client, adapters, and events</LI>
+        <LI><Code>{'@partylayer/react'}</Code>, React hooks (<Code>{'useSession'}</Code>, <Code>{'useConnect'}</Code>, ...) and components (<Code>{'PartyLayerKit'}</Code>, <Code>{'ConnectButton'}</Code>, <Code>{'WalletModal'}</Code>)</LI>
+        <LI><Code>{'@partylayer/core'}</Code>, Shared types, errors, and CIP-0103 type definitions</LI>
+        <LI><Code>{'@partylayer/provider'}</Code>, CIP-0103 native Provider implementation and bridge</LI>
       </UL>
 
       <H2 id="getting-started">Getting Started</H2>

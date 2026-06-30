@@ -13,8 +13,8 @@ export default function CookbookContent() {
       <P>
         Copy-paste-ready recipes for the most common Canton wallet flows, built on the real
         PartyLayer hooks. Every recipe has a matching <Strong>live, editable scenario</Strong> in{' '}
-        <A href={STUDIO}>PartyLayer Studio</A> — open it, edit the code, and watch it run against a
-        mock CIP-0103 wallet — plus a frank <Strong>“When not to use”</Strong> note so you reach for
+        <A href={STUDIO}>PartyLayer Studio</A>, open it, edit the code, and watch it run against a
+        mock CIP-0103 wallet, plus a frank <Strong>“When not to use”</Strong> note so you reach for
         the right tool. PartyLayer is MIT-licensed and fully open source.
       </P>
 
@@ -32,7 +32,7 @@ function ConnectPanel() {
   const { connect, isConnecting, error } = useConnect();
   const { party } = useAccount();
 
-  if (party) return <p>Connected — {party}</p>;
+  if (party) return <p>Connected, {party}</p>;
 
   return (
     <>
@@ -58,7 +58,7 @@ export default function App() {
         <A href={STUDIO}>Try it live in Studio → “Connect a wallet”</A>
       </P>
       <Callout type="warning" title="When not to use">
-        Connect is a <Strong>browser</Strong> wallet flow — it needs a user gesture and a wallet
+        Connect is a <Strong>browser</Strong> wallet flow, it needs a user gesture and a wallet
         extension/provider, so it has no place in server-side or headless code. Don’t call{' '}
         <Code>{'connect()'}</Code> on mount or automatically; trigger it from an explicit user
         action. To revive an <em>existing</em> session after a reload, use Reconnect (recipe 4), not
@@ -96,10 +96,10 @@ function SignButton() {
         <A href={STUDIO}>Try it live in Studio → “Sign a message”</A>
       </P>
       <Callout type="warning" title="When not to use">
-        A signed message proves control of a key at a <Strong>single moment</Strong> — it is not an
+        A signed message proves control of a key at a <Strong>single moment</Strong>, it is not an
         ongoing session and it changes no on-chain state. Don’t use it as a session substitute
         (track the session via <Code>{'useAccount()'}</Code> / <Code>{'useSession()'}</Code>), and
-        don’t use it to move funds or update a contract — that’s a transaction (recipe 3).
+        don’t use it to move funds or update a contract, that’s a transaction (recipe 3).
       </Callout>
 
       {/* ── E3 ─────────────────────────────────────────────────────────── */}
@@ -127,7 +127,7 @@ function SubmitButton({ signedTx }: { signedTx: unknown }) {
       <button onClick={onSubmit} disabled={isSubmitting}>
         {isSubmitting ? 'Submitting…' : 'Submit transaction'}
       </button>
-      {updateId && <p>Executed — updateId {updateId}</p>}
+      {updateId && <p>Executed, updateId {updateId}</p>}
       {error && <p role="alert">{error.message}</p>}
     </>
   );
@@ -139,7 +139,7 @@ function SubmitButton({ signedTx }: { signedTx: unknown }) {
       <Callout type="warning" title="When not to use">
         Submit is <Strong>capability-gated</Strong>: it only works when the connected wallet’s
         adapter implements it, otherwise it throws <Code>{'CapabilityNotSupportedError'}</Code>.
-        Don’t assume every wallet can submit — check capabilities first (recipe 9). For
+        Don’t assume every wallet can submit, check capabilities first (recipe 9). For
         sign-only proof without broadcasting, use recipe 2.
       </Callout>
 
@@ -164,13 +164,13 @@ function ReconnectButton() {
   );
 }`}</CodeBlock>
       <P>
-        <A href={STUDIO}>Try it live in Studio → “Session resilience — reconnect”</A>
+        <A href={STUDIO}>Try it live in Studio → “Session resilience, reconnect”</A>
       </P>
       <Callout type="warning" title="When not to use">
         <Code>{'restore()'}</Code> re-probes an <Strong>existing</Strong> session (reload / transient
-        drop) — it is not a fresh login. If there is no session to revive it simply lands{' '}
+        drop), it is not a fresh login. If there is no session to revive it simply lands{' '}
         <Code>{'disconnected'}</Code>; for a first-time connection use recipe 1. And after an{' '}
-        <em>explicit</em> disconnect (recipe 5) restore won’t bring it back — that’s intentional.
+        <em>explicit</em> disconnect (recipe 5) restore won’t bring it back, that’s intentional.
       </Callout>
 
       {/* ── E5 ─────────────────────────────────────────────────────────── */}
@@ -178,7 +178,7 @@ function ReconnectButton() {
       <P>
         <Code>{'useSession().disconnect()'}</Code> ends the session deliberately. It is{' '}
         <Strong>terminal</Strong>: the session is cleared and never auto-reconnects, which is exactly
-        the resilience boundary — a transient drop reconnects, an explicit disconnect does not.
+        the resilience boundary, a transient drop reconnects, an explicit disconnect does not.
       </P>
       <CodeBlock language="tsx">{`import { useSession, useAccount } from '@partylayer/react';
 
@@ -190,11 +190,11 @@ function DisconnectButton() {
   return <button onClick={() => disconnect()}>Disconnect</button>;
 }`}</CodeBlock>
       <P>
-        <A href={STUDIO}>Try it live in Studio → “Session resilience — disconnect”</A>
+        <A href={STUDIO}>Try it live in Studio → “Session resilience, disconnect”</A>
       </P>
       <Callout type="warning" title="When not to use">
         Use this only for a <Strong>user-intended</Strong> sign-out. Don’t call{' '}
-        <Code>{'disconnect()'}</Code> on a transient network blip you actually want to recover from —
+        <Code>{'disconnect()'}</Code> on a transient network blip you actually want to recover from,
         that suppresses auto-reconnect; let the resilience path (recipe 4) handle transient drops
         instead.
       </Callout>
@@ -238,7 +238,7 @@ export default function App() {
       </P>
       <Callout type="warning" title="When not to use">
         Only reach for this if you already use (or want) React Query. PartyLayer’s built-in hooks are
-        reactive on their own — for non-React apps or simple cases, adding a query client is extra
+        reactive on their own, for non-React apps or simple cases, adding a query client is extra
         weight for no gain.
       </Callout>
 
@@ -249,12 +249,12 @@ export default function App() {
         Vue uses <Code>{'@partylayer/vue'}</Code>’s plugin + composables; Vanilla uses the SDK client
         directly.
       </P>
-      <CodeBlock language="tsx">{`// React — @partylayer/react
+      <CodeBlock language="tsx">{`// React, @partylayer/react
 import { useConnect, useWallets } from '@partylayer/react';
 const { wallets } = useWallets();
 const { connect } = useConnect();
 // connect({ walletId: wallets[0].walletId })`}</CodeBlock>
-      <CodeBlock language="html">{`<!-- Vue — @partylayer/vue -->
+      <CodeBlock language="html">{`<!-- Vue, @partylayer/vue -->
 <script setup>
   import { useSession, useAccount } from '@partylayer/vue';
   const { connect, isConnecting } = useSession();
@@ -267,7 +267,7 @@ const { connect } = useConnect();
 
 <!-- main.js: install the plugin with a CIP-0103 provider -->
 <!-- app.use(createPartyLayerSession({ provider })) -->`}</CodeBlock>
-      <CodeBlock language="ts">{`// Vanilla — @partylayer/sdk
+      <CodeBlock language="ts">{`// Vanilla, @partylayer/sdk
 import { createPartyLayer } from '@partylayer/sdk';
 
 const client = createPartyLayer({ network: 'devnet', app: { name: 'My dApp' } });
@@ -280,13 +280,13 @@ console.log(session.partyId);`}</CodeBlock>
       </P>
       <Callout type="warning" title="When not to use">
         The toggle is a <Strong>teaching device</Strong>, not a runtime switch. Pick one binding for
-        your app — don’t ship all three or swap frameworks at runtime.
+        your app, don’t ship all three or swap frameworks at runtime.
       </Callout>
 
       {/* ── E8 ─────────────────────────────────────────────────────────── */}
       <H2 id="error-handling">8. Error handling</H2>
       <P>
-        <Code>{'useConnect()'}</Code> never throws — it resolves <Code>{'null'}</Code> and exposes a
+        <Code>{'useConnect()'}</Code> never throws, it resolves <Code>{'null'}</Code> and exposes a
         typed <Code>{'error'}</Code> (a <Code>{'PartyLayerError'}</Code> subclass). Branch on the
         class (or <Code>{'error.code'}</Code>), and clear it with <Code>{'reset()'}</Code>.
       </P>
@@ -304,7 +304,7 @@ function ConnectWithErrors({ walletId }: { walletId: string }) {
   function friendly(e: NonNullable<typeof error>) {
     if (e instanceof UserRejectedError) return 'You cancelled the request.';
     if (e instanceof WalletNotInstalledError) return 'That wallet isn’t installed.';
-    return 'Something went wrong — please try again.';
+    return 'Something went wrong, please try again.';
   }
 
   return (
@@ -315,14 +315,14 @@ function ConnectWithErrors({ walletId }: { walletId: string }) {
   );
 }`}</CodeBlock>
       <P>
-        <A href={STUDIO}>Try it live in Studio → “Connect a wallet”</A> — the Mock driver’s failure
+        <A href={STUDIO}>Try it live in Studio → “Connect a wallet”</A>, the Mock driver’s failure
         picker fires each path (User rejected, Insufficient traffic, Synchronizer error, Transaction
         timeout, Generic error). See also <A href="/docs/error-handling">Error Handling</A>.
       </P>
       <Callout type="warning" title="When not to use">
         Don’t swallow errors silently, and don’t surface a raw <Code>{'error.code'}</Code> to end
-        users — map codes to friendly copy as above. A cancelled request
-        (<Code>{'UserRejectedError'}</Code>) is normal, not a crash — handle it as a no-op.
+        users, map codes to friendly copy as above. A cancelled request
+        (<Code>{'UserRejectedError'}</Code>) is normal, not a crash, handle it as a no-op.
       </Callout>
 
       {/* ── E9 (headroom) ──────────────────────────────────────────────── */}
@@ -361,7 +361,7 @@ function SubmitIfSupported({ signedTx }: { signedTx: unknown }) {
         submit; a wallet without it throws here).
       </P>
       <Callout type="warning" title="When not to use">
-        Don’t gate on capabilities you don’t actually call — over-checking clutters the UI. And don’t
+        Don’t gate on capabilities you don’t actually call, over-checking clutters the UI. And don’t
         rely on a stale snapshot across reconnects; re-read capabilities after the session changes.
       </Callout>
 

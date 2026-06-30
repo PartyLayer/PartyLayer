@@ -39,18 +39,18 @@ export default function TokenTransfersContent() {
         <LI>
           <Strong>Recipient</Strong> exercises{' '}
           <Code>{'TransferInstruction_Accept'}</Code> on the instruction contract. The ledger
-          settles the transfer — input holdings are burned, output holdings are minted.
+          settles the transfer, input holdings are burned, output holdings are minted.
         </LI>
       </UL>
       <P>
         The sender does <Strong>not</Strong> exercise a choice on their own{' '}
-        <Code>{'Splice.Amulet:Amulet'}</Code> contract — under CIP-56 the Amulet is a{' '}
+        <Code>{'Splice.Amulet:Amulet'}</Code> contract, under CIP-56 the Amulet is a{' '}
         <Code>{'Holding'}</Code> (data only), and transfer logic lives on the factory.
       </P>
 
       <H2 id="prerequisites">Prerequisites</H2>
       <UL>
-        <LI>Wallet connected — see <a href="/docs/quick-start" style={{ color: '#E6B800' }}>Quick Start</a></LI>
+        <LI>Wallet connected, see <a href="/docs/quick-start" style={{ color: '#E6B800' }}>Quick Start</a></LI>
         <LI>
           A <Strong>TransferFactory contractId</Strong>, fetched from the app-provider{"'"}s
           Scan token-standard registry API. For Amulet, that is the{' '}
@@ -60,7 +60,7 @@ export default function TokenTransfersContent() {
           <Code>{'extraArgs.context'}</Code>).
         </LI>
         <LI>
-          One or more <Strong>input holding contractIds</Strong> — fetched from your own ACS (see{' '}
+          One or more <Strong>input holding contractIds</Strong>, fetched from your own ACS (see{' '}
           <a href="/docs/wallet-balances" style={{ color: '#E6B800' }}>Wallet Balances</a>) using the{' '}
           <Code>{'#splice-api-token-holding-v1:Splice.Api.Token.HoldingV1:Holding'}</Code> interfaceId.
         </LI>
@@ -188,7 +188,7 @@ function TransferButton({
         PartyLayer does not abstract it.
       </Callout>
 
-      <H2 id="loop-fast-path">Loop wallet — convenience helper</H2>
+      <H2 id="loop-fast-path">Loop wallet, convenience helper</H2>
       <P>
         Loop{"'"}s own SDK ships a <Code>{'loop.wallet.transfer()'}</Code> helper that handles the
         Scan lookup, factory resolution, and submission for you. If your dApp targets Loop
@@ -277,7 +277,7 @@ await client.ledgerApi({
 
       <H3 id="template-id-format">Template / interface ID format</H3>
       <P>
-        Loop requires the fully-qualified Daml form with the package-name prefix —{' '}
+        Loop requires the fully-qualified Daml form with the package-name prefix , {' '}
         <Code>{'#splice-amulet:...'}</Code> or{' '}
         <Code>{'#splice-api-token-transfer-instruction-v1:...'}</Code>, not the short Canton form.
         Our adapter surfaces the short-form mistake as a clear error pointing at this fix.
@@ -305,7 +305,7 @@ try {
   });
 } catch (err) {
   if (err instanceof UserRejectedError) {
-    // User declined in the wallet — safe to retry
+    // User declined in the wallet, safe to retry
   } else if (err instanceof SessionExpiredError) {
     await client.connect();
   } else if (err instanceof CapabilityNotSupportedError) {
@@ -323,11 +323,11 @@ try {
           <a href="https://github.com/hyperledger-labs/splice/tree/main/token-standard" target="_blank" rel="noopener noreferrer" style={{ color: '#E6B800' }}>
             hyperledger-labs/splice &rarr; token-standard
           </a>
-          {' '}— Daml sources for <Code>{'TransferFactory'}</Code>, <Code>{'TransferInstruction'}</Code>, and <Code>{'Holding'}</Code>.
+          {' '},  Daml sources for <Code>{'TransferFactory'}</Code>, <Code>{'TransferInstruction'}</Code>, and <Code>{'Holding'}</Code>.
         </LI>
         <LI>
           <a href="https://github.com/canton-foundation/cips/blob/main/cip-0078/cip-0078.md" target="_blank" rel="noopener noreferrer" style={{ color: '#E6B800' }}>
-            CIP-56 / CIP-78 — Canton Token Standard
+            CIP-56 / CIP-78, Canton Token Standard
           </a>
         </LI>
         <LI>
