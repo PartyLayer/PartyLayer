@@ -11,11 +11,11 @@
  *   - CIP-0103 native wallet priority display
  *   - Full dark/light theme support
  *
- * Uses existing hooks (useWallets, useConnect, useRegistryStatus) under the hood.
+ * Uses existing hooks (useWallets, useConnect) under the hood.
  */
 
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { useWallets, useConnect, useRegistryStatus } from './hooks';
+import { useWallets, useConnect } from './hooks';
 import { useTheme } from './theme';
 import { useWalletIcons, useWalletOrder, useAttribution, resolveWalletIcon } from './kit';
 import type { WalletInfo } from '@partylayer/sdk';
@@ -315,15 +315,17 @@ function PartyLayerMark({ size = 16 }: { size?: number }) {
   return (
     <svg width={size} height={size} viewBox="0 0 32 32" fill="none" aria-hidden="true" style={{ display: 'block', flexShrink: 0 }}>
       <defs>
-        <linearGradient id="pl-mark-grad" x1="4" y1="2" x2="28" y2="30" gradientUnits="userSpaceOnUse">
+        {/* Vertical gradient, matching the real mark: #F6C400 -> #E6B800 (75%) -> #C99700. */}
+        <linearGradient id="pl-mark-grad" x1="16" y1="0" x2="16" y2="32" gradientUnits="userSpaceOnUse">
           <stop stopColor="#F6C400" />
-          <stop offset="0.55" stopColor="#E6B800" />
+          <stop offset="0.75" stopColor="#E6B800" />
           <stop offset="1" stopColor="#C99700" />
         </linearGradient>
       </defs>
-      <rect x="0.5" y="0.5" width="31" height="31" rx="8" fill="url(#pl-mark-grad)" />
-      <circle cx="16" cy="16" r="7.5" stroke="#0B0F1A" strokeWidth="2.6" />
-      <circle cx="16" cy="16" r="2.7" fill="#0B0F1A" />
+      {/* Proportions scaled from the 289px source: rx 24.2%, ring r 32% + stroke 6.9%, dot r 12.1%. */}
+      <rect width="32" height="32" rx="7.7" fill="url(#pl-mark-grad)" />
+      <circle cx="16" cy="16" r="10.2" stroke="#0F0F0F" strokeWidth="2.2" />
+      <circle cx="16" cy="16" r="3.9" fill="#0F0F0F" />
     </svg>
   );
 }
@@ -455,7 +457,6 @@ export function WalletModal({
 }: WalletModalProps) {
   const { wallets, isLoading } = useWallets();
   const { connect, error, reset: resetConnect } = useConnect();
-  const { status: registryStatus } = useRegistryStatus();
   const theme = useTheme();
 
   let contextIcons: WalletIconMap = {};
@@ -1186,66 +1187,55 @@ export function WalletModal({
         )}
       </div>
 
-      {/* Footer: optional disclaimer, then the CIP-0103 compliance note, then the
-          muted "Powered by PartyLayer" attribution (toggleable). Stacked + centered,
-          compact, none competing with the wallet list. */}
-      <div style={{
-        padding: '12px 24px 16px',
-        borderTop: `1px solid ${theme.colors.border}`,
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        gap: '7px',
-      }}>
-        {disclaimer && (
-          <div style={{
-            fontSize: '11px',
-            lineHeight: 1.4,
-            color: theme.colors.textSecondary,
-            textAlign: 'center',
-            maxWidth: '340px',
-          }}>
-            {disclaimer}
-          </div>
-        )}
+      {/* Footer: an optional disclaimer line, then the muted "Powered by PartyLayer"
+          attribution (toggleable). Centered and compact, not competing with the list.
+          Rendered only when there is something to show, so hiding both leaves no
+          empty bordered strip. */}
+      {(disclaimer || showAttribution) && (
+        <div style={{
+          padding: '14px 24px 16px',
+          borderTop: `1px solid ${theme.colors.border}`,
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          gap: '8px',
+        }}>
+          {disclaimer && (
+            <div style={{
+              fontSize: '11px',
+              lineHeight: 1.4,
+              color: theme.colors.textSecondary,
+              textAlign: 'center',
+              maxWidth: '340px',
+            }}>
+              {disclaimer}
+            </div>
+          )}
 
-        {/* Compliance note (always shown; independent of attribution) */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
-          <ShieldIcon size={12} color={theme.colors.textSecondary} />
-          <span style={{ fontSize: '11px', color: theme.colors.textSecondary }}>
-            CIP-0103 compliant
-          </span>
-          {registryStatus?.verified && (
-            <>
-              <span style={{ fontSize: '11px', color: theme.colors.textSecondary }}>·</span>
-              <span style={{ fontSize: '11px', color: theme.colors.success }}>Verified</span>
-            </>
+          {/* Powered by PartyLayer (toggleable via showAttribution, default true) */}
+          {showAttribution && (
+            <a
+              className="pl-attribution"
+              href="https://partylayer.xyz"
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                fontSize: '12px',
+                color: theme.colors.textSecondary,
+                textDecoration: 'none',
+              }}
+            >
+              <PartyLayerMark size={16} />
+              <span>
+                Powered by <span style={{ fontWeight: 600, color: theme.colors.text }}>PartyLayer</span>
+              </span>
+            </a>
           )}
         </div>
-
-        {/* Powered by PartyLayer (toggleable via showAttribution, default true) */}
-        {showAttribution && (
-          <a
-            className="pl-attribution"
-            href="https://partylayer.xyz"
-            target="_blank"
-            rel="noopener noreferrer"
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '6px',
-              fontSize: '12px',
-              color: theme.colors.textSecondary,
-              textDecoration: 'none',
-            }}
-          >
-            <PartyLayerMark size={16} />
-            <span>
-              Powered by <span style={{ fontWeight: 600, color: theme.colors.text }}>PartyLayer</span>
-            </span>
-          </a>
-        )}
-      </div>
+      )}
     </>
   );
 
