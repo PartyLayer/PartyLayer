@@ -17,7 +17,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useWallets, useConnect, useRegistryStatus } from './hooks';
 import { useTheme } from './theme';
-import { useWalletIcons, useWalletOrder, resolveWalletIcon } from './kit';
+import { useWalletIcons, useWalletOrder, useAttribution, resolveWalletIcon } from './kit';
 import type { WalletInfo } from '@partylayer/sdk';
 import { isCip0103Native } from '@partylayer/sdk';
 import type { WalletIconMap } from './kit';
@@ -42,6 +42,17 @@ export interface WalletModalProps {
    * structure. When omitted, the discovered order is preserved (default).
    */
   walletOrder?: readonly string[];
+  /**
+   * Show the muted "Powered by PartyLayer" attribution line in the footer.
+   * Default: true. Set false to hide it. The CIP-0103 compliance note is
+   * independent of this and always shown.
+   */
+  showAttribution?: boolean;
+  /**
+   * Optional legal disclaimer (e.g. Terms / Privacy) rendered as a small muted
+   * line above the footer notes. Accepts any node, so you can include links.
+   */
+  disclaimer?: React.ReactNode;
 }
 
 type ModalView = 'list' | 'connecting' | 'success' | 'error' | 'not-installed' | 'network-mismatch';
@@ -295,6 +306,28 @@ function ShieldIcon({ size = 14, color = 'currentColor' }: { size?: number; colo
   );
 }
 
+/**
+ * The PartyLayer wordless mark: a brand-yellow gradient rounded square with the
+ * ring + dot motif. Self-contained inline SVG (no external asset) so it renders in
+ * any consumer environment, and crisp at footer size (~16-18px) on light and dark.
+ */
+function PartyLayerMark({ size = 16 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 32 32" fill="none" aria-hidden="true" style={{ display: 'block', flexShrink: 0 }}>
+      <defs>
+        <linearGradient id="pl-mark-grad" x1="4" y1="2" x2="28" y2="30" gradientUnits="userSpaceOnUse">
+          <stop stopColor="#F6C400" />
+          <stop offset="0.55" stopColor="#E6B800" />
+          <stop offset="1" stopColor="#C99700" />
+        </linearGradient>
+      </defs>
+      <rect x="0.5" y="0.5" width="31" height="31" rx="8" fill="url(#pl-mark-grad)" />
+      <circle cx="16" cy="16" r="7.5" stroke="#0B0F1A" strokeWidth="2.6" />
+      <circle cx="16" cy="16" r="2.7" fill="#0B0F1A" />
+    </svg>
+  );
+}
+
 function DownloadIcon({ size = 16, color = 'currentColor' }: { size?: number; color?: string }) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -417,6 +450,8 @@ export function WalletModal({
   onConnect,
   walletIcons: propIcons,
   walletOrder: propWalletOrder,
+  showAttribution: propShowAttribution,
+  disclaimer: propDisclaimer,
 }: WalletModalProps) {
   const { wallets, isLoading } = useWallets();
   const { connect, error, reset: resetConnect } = useConnect();
@@ -433,6 +468,13 @@ export function WalletModal({
   let contextWalletOrder: readonly string[] | undefined;
   try { contextWalletOrder = useWalletOrder(); } catch { /* no Kit context */ }
   const walletOrder = propWalletOrder ?? contextWalletOrder;
+
+  // Footer attribution: prop > Kit context > default (shown). The disclaimer is
+  // opt-in (undefined = none). Compliance note is independent and always shown.
+  let contextAttribution: { showAttribution?: boolean; disclaimer?: React.ReactNode } | undefined;
+  try { contextAttribution = useAttribution(); } catch { /* no Kit context */ }
+  const showAttribution = propShowAttribution ?? contextAttribution?.showAttribution ?? true;
+  const disclaimer = propDisclaimer ?? contextAttribution?.disclaimer;
 
   const [view, setView] = useState<ModalView>('list');
   // `view` is the logical state the connect flow drives. `displayedView` is what is
@@ -1144,24 +1186,64 @@ export function WalletModal({
         )}
       </div>
 
-      {/* Footer */}
+      {/* Footer: optional disclaimer, then the CIP-0103 compliance note, then the
+          muted "Powered by PartyLayer" attribution (toggleable). Stacked + centered,
+          compact, none competing with the wallet list. */}
       <div style={{
-        padding: '14px 24px 18px',
+        padding: '12px 24px 16px',
         borderTop: `1px solid ${theme.colors.border}`,
         display: 'flex',
+        flexDirection: 'column',
         alignItems: 'center',
-        justifyContent: 'center',
-        gap: '6px',
+        gap: '7px',
       }}>
-        <ShieldIcon size={12} color={theme.colors.textSecondary} />
-        <span style={{ fontSize: '11px', color: theme.colors.textSecondary }}>
-          CIP-0103 compliant
-        </span>
-        {registryStatus?.verified && (
-          <>
-            <span style={{ fontSize: '11px', color: theme.colors.textSecondary }}>·</span>
-            <span style={{ fontSize: '11px', color: theme.colors.success }}>Verified</span>
-          </>
+        {disclaimer && (
+          <div style={{
+            fontSize: '11px',
+            lineHeight: 1.4,
+            color: theme.colors.textSecondary,
+            textAlign: 'center',
+            maxWidth: '340px',
+          }}>
+            {disclaimer}
+          </div>
+        )}
+
+        {/* Compliance note (always shown; independent of attribution) */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
+          <ShieldIcon size={12} color={theme.colors.textSecondary} />
+          <span style={{ fontSize: '11px', color: theme.colors.textSecondary }}>
+            CIP-0103 compliant
+          </span>
+          {registryStatus?.verified && (
+            <>
+              <span style={{ fontSize: '11px', color: theme.colors.textSecondary }}>·</span>
+              <span style={{ fontSize: '11px', color: theme.colors.success }}>Verified</span>
+            </>
+          )}
+        </div>
+
+        {/* Powered by PartyLayer (toggleable via showAttribution, default true) */}
+        {showAttribution && (
+          <a
+            className="pl-attribution"
+            href="https://partylayer.xyz"
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '6px',
+              fontSize: '12px',
+              color: theme.colors.textSecondary,
+              textDecoration: 'none',
+            }}
+          >
+            <PartyLayerMark size={16} />
+            <span>
+              Powered by <span style={{ fontWeight: 600, color: theme.colors.text }}>PartyLayer</span>
+            </span>
+          </a>
         )}
       </div>
     </>
@@ -2074,6 +2156,10 @@ export function WalletModal({
         /* !important so the press scale beats the inline translateY the JS hover
            handlers set on the row (otherwise the inline transform would win). */
         .pl-wallet-row:active { transform: translateY(0) scale(0.985) !important; }
+
+        /* Footer "Powered by PartyLayer": muted, subtle hover (raise opacity). */
+        .pl-attribution { opacity: 0.72; transition: opacity 150ms cubic-bezier(0.2, 0.8, 0.2, 1); }
+        .pl-attribution:hover { opacity: 1; }
 
         /* Connecting: a soft, diffuse breathing halo behind the wallet icon. The
            element is a large blurred radial gradient (see the inline style); this

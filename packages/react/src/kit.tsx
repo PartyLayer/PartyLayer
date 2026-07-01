@@ -39,6 +39,21 @@ export function useWalletOrder(): readonly string[] | undefined {
   return useContext(WalletOrderContext);
 }
 
+// ─── Attribution Context ──────────────────────────────────────────────────────
+
+/** Footer attribution config threaded from PartyLayerKit to the modal. */
+export interface AttributionConfig {
+  showAttribution?: boolean;
+  disclaimer?: React.ReactNode;
+}
+
+const AttributionContext = createContext<AttributionConfig | undefined>(undefined);
+
+/** Access the footer attribution config from PartyLayerKit. */
+export function useAttribution(): AttributionConfig | undefined {
+  return useContext(AttributionContext);
+}
+
 /**
  * Resolve icon URL for a wallet. Priority:
  * 1. walletIcons map (exact match or fuzzy)
@@ -116,6 +131,16 @@ export interface PartyLayerKitProps {
    * and multi-tab sync. Omitted ⇒ today's defaults.
    */
   sessionOptions?: Partial<SessionStoreOptions>;
+  /**
+   * Show the muted "Powered by PartyLayer" line in the connect modal footer.
+   * Default: true. Set false to hide the attribution.
+   */
+  showAttribution?: boolean;
+  /**
+   * Optional legal disclaimer (Terms / Privacy) shown as a small muted line in
+   * the connect modal footer. Accepts any node, so you can include links.
+   */
+  disclaimer?: React.ReactNode;
 }
 
 // ─── Component ───────────────────────────────────────────────────────────────
@@ -131,6 +156,8 @@ export function PartyLayerKit({
   walletIcons = {},
   walletOrder,
   sessionOptions,
+  showAttribution,
+  disclaimer,
 }: PartyLayerKitProps) {
   // Stable reference for adapters array to avoid re-creating client on every render
   const adaptersRef = useRef(adapters);
@@ -158,15 +185,18 @@ export function PartyLayerKit({
   }, [client]);
 
   const themeValue = typeof theme === 'string' ? theme : theme;
+  const attribution = useMemo<AttributionConfig>(() => ({ showAttribution, disclaimer }), [showAttribution, disclaimer]);
 
   return (
     <WalletIconsContext.Provider value={walletIcons}>
       <WalletOrderContext.Provider value={walletOrder}>
-        <ThemeProvider theme={themeValue}>
-          <PartyLayerProvider client={client} network={network} sessionOptions={sessionOptions}>
-            {children}
-          </PartyLayerProvider>
-        </ThemeProvider>
+        <AttributionContext.Provider value={attribution}>
+          <ThemeProvider theme={themeValue}>
+            <PartyLayerProvider client={client} network={network} sessionOptions={sessionOptions}>
+              {children}
+            </PartyLayerProvider>
+          </ThemeProvider>
+        </AttributionContext.Provider>
       </WalletOrderContext.Provider>
     </WalletIconsContext.Provider>
   );

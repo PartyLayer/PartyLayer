@@ -732,6 +732,7 @@ export default function KitDemoPage() {
   const [mounted, setMounted] = useState(false);
   const [theme, setTheme] = useState<'light' | 'dark' | 'auto'>('light');
   const [accent, setAccent] = useState<'default' | 'blue' | 'green' | 'purple' | 'orange' | 'pink' | 'red'>('default');
+  const [showAttr, setShowAttr] = useState(true);
   const [systemDark, setSystemDark] = useState(false);
 
   useEffect(() => { setMounted(true); }, []);
@@ -796,7 +797,7 @@ export default function KitDemoPage() {
         fontFamily: font,
         transition: 'background-color 200ms, color 200ms',
       }}>
-        <PartyLayerKit network="devnet" appName="PartyLayer Kit Demo" theme={kitTheme} walletIcons={WALLET_LOGOS} walletOrder={CANONICAL_WALLET_ORDER} adapters={buildDemoAdapters()} registryUrl="/registry">
+        <PartyLayerKit network="devnet" appName="PartyLayer Kit Demo" theme={kitTheme} showAttribution={showAttr} walletIcons={WALLET_LOGOS} walletOrder={CANONICAL_WALLET_ORDER} adapters={buildDemoAdapters()} registryUrl="/registry">
           <div style={{ maxWidth: '880px', margin: '0 auto', padding: '0 24px' }}>
 
             {/* Navbar */}
@@ -882,9 +883,33 @@ export default function KitDemoPage() {
                   );
                 })}
               </div>
+
+              {/* Powered-by attribution toggle (footer of the connect modal) */}
+              <button
+                onClick={() => setShowAttr((v) => !v)}
+                style={{
+                  display: 'inline-flex', alignItems: 'center', gap: '8px',
+                  padding: '6px 12px', borderRadius: '8px', cursor: 'pointer',
+                  border: `1px solid ${c.border}`, background: c.bg, color: c.fg,
+                  fontSize: '12px', fontWeight: 500, fontFamily: font,
+                }}
+              >
+                <span style={{
+                  width: '30px', height: '18px', borderRadius: '9px', position: 'relative',
+                  background: showAttr ? '#10B981' : c.border, transition: 'background 150ms',
+                }}>
+                  <span style={{
+                    position: 'absolute', top: '2px', left: showAttr ? '14px' : '2px',
+                    width: '14px', height: '14px', borderRadius: '50%', background: '#fff',
+                    transition: 'left 150ms', boxShadow: '0 1px 2px rgba(0,0,0,0.2)',
+                  }} />
+                </span>
+                showAttribution
+              </button>
+
               <span style={{ fontSize: '12px', color: c.slate500, marginLeft: 'auto' }}>
                 {accent === 'default'
-                  ? 'theme={darkTheme}'
+                  ? `<PartyLayerKit showAttribution={${showAttr}}>`
                   : `theme={darkTheme({ ...accentPresets.${accent} })}`}
               </span>
             </div>
