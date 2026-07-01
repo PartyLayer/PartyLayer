@@ -499,7 +499,7 @@ export function WalletModal({
     const t = setTimeout(() => {
       setDisplayedView(view);
       setViewExiting(false);
-    }, 150);
+    }, 120); // must match the pl-view-exit animation duration
     return () => clearTimeout(t);
   }, [view, displayedView, closing]);
 
@@ -2039,7 +2039,7 @@ export function WalletModal({
           to { opacity: 0; transform: translateY(-6px); }
         }
         .pl-view { animation: pl-view-enter 220ms cubic-bezier(0.2, 0.8, 0.2, 1) both; }
-        .pl-view-exit { animation: pl-view-exit 150ms cubic-bezier(0.4, 0, 1, 1) both; }
+        .pl-view-exit { animation: pl-view-exit 120ms cubic-bezier(0.4, 0, 1, 1) both; }
 
         /* Wallet list: staggered fade + rise per row (delay set inline, capped). */
         @keyframes pl-list-item-enter {
@@ -2065,12 +2065,12 @@ export function WalletModal({
 
         /* Connecting: a soft, diffuse breathing halo behind the wallet icon. The
            element is a large blurred radial gradient (see the inline style); this
-           keyframe just breathes its scale + opacity. Peak opacity is theme-aware
-           via --pl-glow-peak (lower in dark mode) so it never dominates. */
+           keyframe breathes its scale + opacity between the theme-aware peak
+           (--pl-glow-peak, lower in dark mode) and a 0.4x floor, so it stays gently
+           present at the trough (never fully vanishing) while still never dominating. */
         @keyframes pl-pulse-ring {
-          0%   { transform: scale(0.82); opacity: var(--pl-glow-peak, 0.18); }
-          70%  { transform: scale(1.12); opacity: 0; }
-          100% { transform: scale(1.12); opacity: 0; }
+          0%, 100% { transform: scale(0.94); opacity: calc(var(--pl-glow-peak, 0.18) * 0.4); }
+          50%      { transform: scale(1.08); opacity: var(--pl-glow-peak, 0.18); }
         }
         .pl-pulse-ring { animation: pl-pulse-ring 2.4s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
 
