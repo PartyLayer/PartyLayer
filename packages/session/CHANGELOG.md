@@ -1,5 +1,12 @@
 # @partylayer/session
 
+## 1.1.3
+
+### Patch Changes
+
+- 5635703: Documentation: sync the published README with the repository. This is a
+  documentation-only release: the package code and public API are unchanged.
+
 ## 1.1.2
 
 ### Patch Changes
