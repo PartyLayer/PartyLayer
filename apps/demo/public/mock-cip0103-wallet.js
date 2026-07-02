@@ -213,15 +213,74 @@
     }
   }
 
-  // ─── Inject into window.canton namespace ───────────────────────────
+  // ─── Inject into window.canton namespace (collision-resilient) ───────
+  //
+  // A REAL wallet extension's content script can own window.canton before this
+  // script runs (document_start beats any page script), may have defined it
+  // non-writable/frozen (assignment would THROW under 'use strict' and kill the
+  // injection), or may OVERWRITE window.canton after this script ran. The demo
+  // must coexist, never fight the real extension destructively:
+  //   1. Always publish the provider on the demo-owned fallback global
+  //      window.__plDemoMock (no extension touches it; the demo adapter checks
+  //      it too, so discovery works even when window.canton is hostile).
+  //   2. Best-effort attach to window.canton.demoWallet in try/catch.
+  //   3. Re-assert on DOMContentLoaded plus a short bounded retry window, to
+  //      survive an extension that replaces window.canton after page scripts.
   if (typeof window !== 'undefined') {
-    if (!window.canton) window.canton = {};
-    window.canton.demoWallet = {
+    var demoProvider = {
       request: request,
       on: on,
       emit: emit,
       removeListener: removeListener,
     };
-    console.log('[CIP-0103] Demo Wallet injected at window.canton.demoWallet');
+
+    // (1) Collision-proof channel, always available to the demo adapter.
+    try {
+      Object.defineProperty(window, '__plDemoMock', {
+        value: demoProvider,
+        writable: true,
+        configurable: true,
+      });
+    } catch (e) {
+      try { window.__plDemoMock = demoProvider; } catch (e2) { /* give up */ }
+    }
+
+    // (2) + (3) Best-effort attach to the canonical namespace, re-asserted.
+    var attachToCanton = function () {
+      try {
+        if (!window.canton) window.canton = {};
+        if (window.canton.demoWallet !== demoProvider) {
+          window.canton.demoWallet = demoProvider;
+        }
+        return window.canton.demoWallet === demoProvider;
+      } catch (e) {
+        return false;
+      }
+    };
+
+    if (attachToCanton()) {
+      console.log('[CIP-0103] Demo Wallet injected at window.canton.demoWallet');
+    } else {
+      console.warn(
+        '[CIP-0103] Demo Wallet could not attach to window.canton (a real ' +
+          'extension owns it); available via the window.__plDemoMock fallback.',
+      );
+    }
+
+    // Re-assert after DOM ready plus a bounded retry window (8 x 250ms, ~2s), in
+    // case an extension replaces window.canton late. Never removes or replaces a
+    // real extension's own providers; only (re)adds the demoWallet key.
+    var reassertsLeft = 8;
+    var reassert = function () {
+      attachToCanton();
+      reassertsLeft -= 1;
+      if (reassertsLeft > 0) setTimeout(reassert, 250);
+    };
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', function () {
+        attachToCanton();
+      });
+    }
+    setTimeout(reassert, 250);
   }
 })();

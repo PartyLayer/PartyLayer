@@ -528,14 +528,26 @@ export function WalletModal({
   // Cross-fade between views: when `view` changes, exit the currently-displayed
   // view, then swap. Skipped while closing (the panel exit handles that) and under
   // reduced motion (instant swap). Display-only: the connect logic reads `view`.
+  //
+  // Robust to RAPID view sequences: a change during a pending exit cancels the
+  // timer (the cleanup) and this effect re-evaluates against the LATEST view. The
+  // view===displayedView branch must clear a stale `viewExiting`: in a fast
+  // A -> B -> A bounce the B-exit timer is cancelled and the effect lands here
+  // with the exit class still applied, which would otherwise park the container
+  // at opacity 0 (a blank modal). Always converge to the entered, visible state.
   useEffect(() => {
-    if (closing || view === displayedView) return;
+    if (closing) return;
+    if (view === displayedView) {
+      setViewExiting(false);
+      return;
+    }
     const reduce =
       typeof window !== 'undefined' &&
       typeof window.matchMedia === 'function' &&
       window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     if (reduce) {
       setDisplayedView(view);
+      setViewExiting(false);
       return;
     }
     setViewExiting(true);

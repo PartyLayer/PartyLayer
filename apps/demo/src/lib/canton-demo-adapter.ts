@@ -77,8 +77,16 @@ interface DemoProvider {
 
 function readProvider(): DemoProvider | null {
   if (typeof window === 'undefined') return null;
-  const w = window as unknown as { canton?: { demoWallet?: DemoProvider } };
-  const demo = w.canton?.demoWallet;
+  const w = window as unknown as {
+    canton?: { demoWallet?: DemoProvider };
+    __plDemoMock?: DemoProvider;
+  };
+  // Canonical namespace first; then the demo-owned fallback the mock script
+  // always publishes. A REAL extension can own window.canton (frozen or
+  // replaced after page scripts), in which case the mock cannot attach there;
+  // the fallback keeps the demo wallet discoverable without fighting the
+  // extension. Both sides of this channel are demo-only code.
+  const demo = w.canton?.demoWallet ?? w.__plDemoMock;
   if (!demo || typeof demo.request !== 'function') return null;
   return demo;
 }

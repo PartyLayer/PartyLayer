@@ -13,6 +13,7 @@ import {
   accentPresets,
   PartyAvatar,
 } from '@partylayer/react';
+import { isCip0103Native } from '@partylayer/sdk';
 import { useBreakpoint, responsive } from '../hooks/useBreakpoint';
 import { buildDemoAdapters } from '../../lib/canton-demo-adapter';
 import { sortByCanonicalOrder, CANONICAL_WALLET_ORDER } from '../../lib/wallet-order';
@@ -121,12 +122,17 @@ function DemoContent() {
   const client = usePartyLayer();
   const [signResult, setSignResult] = useState<string | null>(null);
 
+  // Same definition as the modal's "CIP-0103 Native" section (the registry
+  // cip0103.native flag via isCip0103Native). The previous filter counted the
+  // pre-registry runtime-promotion marker (metadata.source === 'native-cip0103'),
+  // which no longer exists, so this panel showed 0 while the modal showed the
+  // registry count. One predicate, one number.
   const nativeWallets = sortByCanonicalOrder(
-    wallets.filter((w) => w.metadata?.source === 'native-cip0103'),
+    wallets.filter((w) => isCip0103Native(w)),
     (w) => w.walletId
   );
   const registryWallets = sortByCanonicalOrder(
-    wallets.filter((w) => !w.metadata?.source),
+    wallets.filter((w) => !isCip0103Native(w)),
     (w) => w.walletId
   );
 
@@ -997,7 +1003,9 @@ export default function KitDemoPage() {
                     left: 0,
                     width: '100%',
                     height: '12px',
-                    backgroundColor: c.brand100,
+                    // brand100 on dark (#2A2510) reads muddy behind light text;
+                    // a translucent brand yellow reads as a proper highlight.
+                    backgroundColor: isDark ? 'rgba(255, 204, 0, 0.30)' : c.brand100,
                     zIndex: 0,
                     transform: 'skewX(-3deg)',
                   }} />
