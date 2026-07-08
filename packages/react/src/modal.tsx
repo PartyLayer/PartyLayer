@@ -53,9 +53,14 @@ export interface WalletModalProps {
    * line above the footer notes. Accepts any node, so you can include links.
    */
   disclaimer?: React.ReactNode;
+  /**
+   * Show the muted "New to Canton wallets?" education row at the bottom of the
+   * list, which opens a short in-modal explainer. Default: true. Set false to hide it.
+   */
+  showWalletGuide?: boolean;
 }
 
-type ModalView = 'list' | 'connecting' | 'success' | 'error' | 'not-installed' | 'network-mismatch';
+type ModalView = 'list' | 'connecting' | 'success' | 'error' | 'not-installed' | 'network-mismatch' | 'wallet-guide';
 
 /**
  * Sub-view for the connecting state when a wallet supports dual transport
@@ -203,20 +208,38 @@ function getWalletUrl(wallet: WalletInfo): string | null {
   return null;
 }
 
+/** Transport class (from the registry) → the picker's clean subtitle label. */
+const TRANSPORT_LABELS: Record<string, string> = {
+  extension: 'Browser Extension',
+  extensionMobile: 'Extension + Mobile',
+  mobile: 'Mobile wallet',
+  popup: 'Popup / Remote',
+  scan: 'Scan to connect',
+  enterprise: 'Enterprise',
+};
+
 function getWalletTransportLabel(wallet: WalletInfo): string {
-  // Prompt 7.6: no longer short-circuits to "Ready" for native wallets.
-  // Every wallet now reports its static transport family, derived purely
-  // from the registry's capabilities array, so the picker reads as a
-  // directory, not a status board.
+  // Primary: the registry-derived transport class, surfaced on metadata by the
+  // registry read (installation hints + adapter transport). This is the correct
+  // source; the old code read the capability method list and leaked raw method
+  // names (e.g. "connect, disconnect, signMessage") for wallets like Walley.
+  const key = wallet.metadata?.transport;
+  if (key && TRANSPORT_LABELS[key]) return TRANSPORT_LABELS[key];
+
+  // Fallback for registry snapshots without the transport metadata: infer from
+  // the transport capability tokens the conversion adds (injected/deeplink/
+  // remoteSigner). Console/Send/etc. still read correctly here.
   const hasInjected = wallet.capabilities.includes('injected');
   const hasDeeplink = wallet.capabilities.includes('deeplink');
   const hasRemoteSigner = wallet.capabilities.includes('remoteSigner');
-  if (hasInjected && (hasDeeplink || hasRemoteSigner)) return 'Extension + Mobile';
-  if (hasInjected) return 'Browser Extension';
-  if (wallet.capabilities.includes('popup')) return 'Scan to connect';
-  if (hasDeeplink) return 'Mobile wallet';
-  if (hasRemoteSigner) return 'Enterprise';
-  return wallet.capabilities.slice(0, 3).join(', ');
+  if (hasInjected && (hasDeeplink || hasRemoteSigner)) return TRANSPORT_LABELS.extensionMobile;
+  if (hasInjected) return TRANSPORT_LABELS.extension;
+  if (hasDeeplink) return TRANSPORT_LABELS.mobile;
+  if (hasRemoteSigner) return TRANSPORT_LABELS.enterprise;
+
+  // Safe generic. NEVER a raw capability/method join; no wallet, present or
+  // future, should surface method names as its subtitle.
+  return 'Canton wallet';
 }
 
 /**
@@ -268,6 +291,25 @@ function CloseIcon({ size = 20, color = 'currentColor' }: { size?: number; color
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <line x1="18" y1="6" x2="6" y2="18" />
       <line x1="6" y1="6" x2="18" y2="18" />
+    </svg>
+  );
+}
+
+function SearchIcon({ size = 16, color = 'currentColor' }: { size?: number; color?: string }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="11" cy="11" r="7" />
+      <line x1="21" y1="21" x2="16.65" y2="16.65" />
+    </svg>
+  );
+}
+
+function HelpIcon({ size = 16, color = 'currentColor' }: { size?: number; color?: string }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="12" r="10" />
+      <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
+      <line x1="12" y1="17" x2="12.01" y2="17" />
     </svg>
   );
 }
@@ -454,6 +496,7 @@ export function WalletModal({
   walletOrder: propWalletOrder,
   showAttribution: propShowAttribution,
   disclaimer: propDisclaimer,
+  showWalletGuide = true,
 }: WalletModalProps) {
   const { wallets, isLoading } = useWallets();
   const { connect, error, reset: resetConnect } = useConnect();
@@ -488,6 +531,7 @@ export function WalletModal({
   const [mismatchInfo, setMismatchInfo] = useState<{ expected: string; actual: string } | null>(null);
   const [closing, setClosing] = useState(false);
   const [connectError, setConnectError] = useState<Error | null>(null);
+  const [walletQuery, setWalletQuery] = useState('');
 
   // Dual-transport connect state (RainbowKit-style flow)
   const [connectPhase, setConnectPhase] = useState<ConnectPhase>('default');
@@ -521,6 +565,7 @@ export function WalletModal({
       setConnectPhase('default');
       setQrSvgHtml(null);
       setDeepLinkUrl(null);
+      setWalletQuery('');
       cleanupConnectResources();
     }
   }, [isOpen, cleanupConnectResources]);
@@ -779,6 +824,17 @@ export function WalletModal({
   const registryWalletsRaw = wallets.filter((w) => !isNativeWallet(w));
   const nativeWallets = walletOrder ? sortByWalletOrder(nativeWalletsRaw, walletOrder) : nativeWalletsRaw;
   const registryWallets = walletOrder ? sortByWalletOrder(registryWalletsRaw, walletOrder) : registryWalletsRaw;
+
+  // Presentational search filter over the existing wallet arrays (does not touch
+  // the connect flow). Gated on a list long enough to warrant it, so a short
+  // list stays uncluttered.
+  const totalWallets = nativeWallets.length + registryWallets.length;
+  const showSearch = totalWallets > 5;
+  const query = walletQuery.trim().toLowerCase();
+  const matchesQuery = (w: WalletInfo) => !query || w.name.toLowerCase().includes(query);
+  const nativeShown = query ? nativeWallets.filter(matchesQuery) : nativeWallets;
+  const registryShown = query ? registryWallets.filter(matchesQuery) : registryWallets;
+  const noMatches = query.length > 0 && nativeShown.length === 0 && registryShown.length === 0;
 
   const isDark = theme.mode === 'dark';
 
@@ -1127,6 +1183,46 @@ export function WalletModal({
         </button>
       </div>
 
+      {/* Search: shown only when the list is long enough to warrant it, so a
+          short list stays uncluttered. Filters by name across both sections. */}
+      {showSearch && !isLoading && wallets.length > 0 && (
+        <div style={{ padding: '0 24px 12px' }}>
+          <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+            <span style={{ position: 'absolute', left: '12px', display: 'inline-flex', pointerEvents: 'none' }}>
+              <SearchIcon size={16} color={theme.colors.textSecondary} />
+            </span>
+            <input
+              type="text"
+              value={walletQuery}
+              onChange={(e) => setWalletQuery(e.target.value)}
+              placeholder="Search wallets"
+              aria-label="Search wallets"
+              style={{
+                width: '100%',
+                boxSizing: 'border-box',
+                padding: '10px 12px 10px 38px',
+                fontSize: '14px',
+                fontFamily: theme.fontFamily,
+                color: theme.colors.text,
+                backgroundColor: theme.colors.surface,
+                border: `1px solid ${theme.colors.border}`,
+                borderRadius: '10px',
+                outline: 'none',
+                transition: 'border-color 150ms, box-shadow 150ms',
+              }}
+              onFocus={(e) => {
+                e.currentTarget.style.borderColor = theme.colors.primary;
+                e.currentTarget.style.boxShadow = `0 0 0 3px ${theme.colors.primary}22`;
+              }}
+              onBlur={(e) => {
+                e.currentTarget.style.borderColor = theme.colors.border;
+                e.currentTarget.style.boxShadow = 'none';
+              }}
+            />
+          </div>
+        </div>
+      )}
+
       {/* Content */}
       <div style={{
         padding: '0 24px 20px',
@@ -1173,27 +1269,71 @@ export function WalletModal({
               Install a CIP-0103 compatible Canton wallet to get started.
             </div>
           </div>
+        ) : noMatches ? (
+          <div style={{ padding: '36px 20px', textAlign: 'center' }}>
+            <div style={{ fontSize: '13px', color: theme.colors.textSecondary }}>
+              No wallets match &ldquo;{walletQuery.trim()}&rdquo;
+            </div>
+          </div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
             {/* CIP-0103 Native */}
-            {nativeWallets.length > 0 && (
+            {nativeShown.length > 0 && (
               <>
-                {renderSectionHeader('CIP-0103 Native', nativeWallets.length, '#6366f1')}
-                {nativeWallets.map(renderWalletItem)}
+                {renderSectionHeader('CIP-0103 Native', nativeShown.length, '#6366f1')}
+                {nativeShown.map(renderWalletItem)}
               </>
             )}
 
             {/* Registry */}
-            {registryWallets.length > 0 && (
+            {registryShown.length > 0 && (
               <>
-                {nativeWallets.length > 0 && <div style={{ height: '8px' }} />}
+                {nativeShown.length > 0 && <div style={{ height: '8px' }} />}
                 {renderSectionHeader(
-                  nativeWallets.length > 0 ? 'Available' : 'Wallets',
-                  registryWallets.length,
+                  nativeShown.length > 0 ? 'Available' : 'Wallets',
+                  registryShown.length,
                   theme.colors.primary,
                 )}
-                {registryWallets.map(renderWalletItem)}
+                {registryShown.map(renderWalletItem)}
               </>
+            )}
+
+            {/* New to Canton wallets? A subtle education row (toggleable via
+                showWalletGuide) that opens a short in-modal explainer. Hidden
+                while searching so it never competes with results. */}
+            {showWalletGuide && !query && (
+              <button
+                onClick={() => setView('wallet-guide')}
+                style={{
+                  marginTop: '4px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '7px',
+                  width: '100%',
+                  padding: '12px',
+                  border: 'none',
+                  background: 'transparent',
+                  color: theme.colors.textSecondary,
+                  cursor: 'pointer',
+                  fontFamily: theme.fontFamily,
+                  fontSize: '13px',
+                  fontWeight: 500,
+                  borderRadius: '10px',
+                  transition: 'color 150ms, background-color 150ms',
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.color = theme.colors.text;
+                  e.currentTarget.style.backgroundColor = theme.colors.surface;
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.color = theme.colors.textSecondary;
+                  e.currentTarget.style.backgroundColor = 'transparent';
+                }}
+              >
+                <HelpIcon size={15} color="currentColor" />
+                New to Canton wallets?
+              </button>
             )}
           </div>
         )}
@@ -1248,6 +1388,74 @@ export function WalletModal({
           )}
         </div>
       )}
+    </>
+  );
+
+  // ─── Wallet Guide View ─────────────────────────────────────────────
+  // A short, jargon-free explainer for users new to Canton wallets. Reuses the
+  // shared sub-header (Back + Close) and the same view-transition machinery as
+  // every other view, so it animates consistently.
+
+  const renderWalletGuideView = () => (
+    <>
+      {renderSubHeader(handleBackToList)}
+      <div style={{ padding: '4px 28px 28px', textAlign: 'center' }}>
+        <div style={{
+          width: '56px',
+          height: '56px',
+          borderRadius: '16px',
+          backgroundColor: theme.colors.surface,
+          border: `1px solid ${theme.colors.border}`,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          margin: '4px auto 18px',
+        }}>
+          <HelpIcon size={26} color={theme.colors.primary} />
+        </div>
+        <h2 style={{
+          margin: '0 0 10px',
+          fontSize: '18px',
+          fontWeight: 700,
+          color: theme.colors.text,
+          letterSpacing: '-0.01em',
+        }}>
+          New to Canton wallets?
+        </h2>
+        <p style={{
+          margin: '0 auto 20px',
+          maxWidth: '330px',
+          fontSize: '14px',
+          lineHeight: 1.6,
+          color: theme.colors.textSecondary,
+        }}>
+          A wallet is an app that holds your Canton account and approves actions on
+          your behalf. You pick one from the list to connect this app. It keeps your
+          keys, so only you can sign, and this app never sees them.
+        </p>
+        <button
+          onClick={handleBackToList}
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '6px',
+            padding: '10px 18px',
+            border: `1px solid ${theme.colors.border}`,
+            borderRadius: '10px',
+            backgroundColor: theme.colors.surface,
+            color: theme.colors.text,
+            cursor: 'pointer',
+            fontFamily: theme.fontFamily,
+            fontSize: '14px',
+            fontWeight: 600,
+            transition: 'background-color 150ms, border-color 150ms',
+          }}
+          onMouseEnter={(e) => { e.currentTarget.style.borderColor = isDark ? 'rgba(255,255,255,0.15)' : 'rgba(15,23,42,0.18)'; }}
+          onMouseLeave={(e) => { e.currentTarget.style.borderColor = theme.colors.border; }}
+        >
+          Browse wallets
+        </button>
+      </div>
     </>
   );
 
@@ -2084,6 +2292,7 @@ export function WalletModal({
             view renders, so this two-state display is visual-only. */}
         <div key={displayedView} className={viewExiting ? 'pl-view pl-view-exit' : 'pl-view'}>
           {displayedView === 'list' && renderListView()}
+          {displayedView === 'wallet-guide' && renderWalletGuideView()}
           {displayedView === 'connecting' && renderConnectingView()}
           {displayedView === 'success' && renderSuccessView()}
           {displayedView === 'error' && renderErrorView()}

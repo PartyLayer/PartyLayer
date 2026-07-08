@@ -297,10 +297,37 @@ export function validateWalletEntry(
 /**
  * Convert registry entry to wallet info
  */
+/**
+ * Classify a wallet's connection transport from its registry entry, using the
+ * real signals (the adapter transport and the installation hints), NOT the
+ * capability method list. Returned as a stable key that the picker maps to a
+ * display label. `undefined` when the entry carries no transport signal, so the
+ * picker can fall back to a safe generic rather than guessing.
+ */
+function classifyWalletTransport(entry: RegistryWalletEntry): string | undefined {
+  const inst = entry.installation;
+  // Popup/remote wallets are bridged through the generic discovery adapter
+  // (e.g. Walley), so the adapter transport is the authoritative signal.
+  if (entry.adapter?.transport === 'discovery-adapter') return 'popup';
+  if (inst?.oauth) return 'enterprise';
+  if (inst?.windowProperty && (inst.deeplink || entry.capabilities.mobileConnect)) {
+    return 'extensionMobile';
+  }
+  if (inst?.windowProperty) return 'extension';
+  // Mobile wallets connect by deep link or a mobile-connect relay (e.g.
+  // WalletConnect: installation.remote + capabilities.mobileConnect).
+  if (inst?.deeplink || entry.capabilities.mobileConnect) return 'mobile';
+  // A script-injected SDK wallet connects by opening its own QR/popup flow.
+  if (inst?.scriptTag) return 'scan';
+  if (entry.capabilities.remoteSigner) return 'enterprise';
+  return undefined;
+}
+
 export function registryEntryToWalletInfo(
   entry: RegistryWalletEntry,
   channel: RegistryChannel
 ): WalletInfo {
+  const transport = classifyWalletTransport(entry);
   const capabilities: CapabilityKey[] = ['connect', 'disconnect'];
   if (entry.capabilities.signMessage) {
     capabilities.push('signMessage');
@@ -361,13 +388,16 @@ export function registryEntryToWalletInfo(
     //   - originAllowlist: SDK-side origin enforcement
     //   - beta:            UI badge ("Beta" tag in modal + capability matrix)
     // Both are optional — only emitted when the registry entry sets them.
-    ...((entry.originAllowlist || entry.beta)
+    ...((entry.originAllowlist || entry.beta || transport)
       ? {
           metadata: {
             ...(entry.originAllowlist
               ? { originAllowlist: JSON.stringify(entry.originAllowlist) }
               : {}),
             ...(entry.beta ? { beta: 'true' } : {}),
+            // Transport class (extension / extensionMobile / mobile / popup /
+            // scan / enterprise) → the picker's clean subtitle label.
+            ...(transport ? { transport } : {}),
           },
         }
       : {}),
