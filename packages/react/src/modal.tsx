@@ -872,6 +872,12 @@ export function WalletModal({
     maxWidth: '94vw',
     maxHeight: '85vh',
     overflow: 'hidden',
+    // Flex column so the body scrolls WITHIN the panel and the header/footer stay
+    // pinned. Avoids the old fragile `maxHeight: calc(85vh - Npx)` on the body,
+    // which broke when the header grew (e.g. the search field pushed the footer
+    // out of view). The body now flexes to whatever space is left.
+    display: 'flex',
+    flexDirection: 'column',
     fontFamily: theme.fontFamily,
     color: theme.colors.text,
     boxShadow: isDark
@@ -891,6 +897,7 @@ export function WalletModal({
     alignItems: 'center',
     justifyContent: 'space-between',
     padding: '20px 24px 16px',
+    flexShrink: 0,
   };
 
   const closeBtnBase: React.CSSProperties = {
@@ -1186,7 +1193,7 @@ export function WalletModal({
       {/* Search: shown only when the list is long enough to warrant it, so a
           short list stays uncluttered. Filters by name across both sections. */}
       {showSearch && !isLoading && wallets.length > 0 && (
-        <div style={{ padding: '0 24px 12px' }}>
+        <div style={{ padding: '0 24px 12px', flexShrink: 0 }}>
           <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
             <span style={{ position: 'absolute', left: '12px', display: 'inline-flex', pointerEvents: 'none' }}>
               <SearchIcon size={16} color={theme.colors.textSecondary} />
@@ -1223,10 +1230,12 @@ export function WalletModal({
         </div>
       )}
 
-      {/* Content */}
+      {/* Content: flexes to fill the space between the (pinned) header/search and
+          footer, and scrolls internally. No magic height constant. */}
       <div style={{
         padding: '0 24px 20px',
-        maxHeight: 'calc(85vh - 140px)',
+        flex: '1 1 auto',
+        minHeight: 0,
         overflowY: 'auto',
       }}>
         {isLoading ? (
@@ -1347,6 +1356,7 @@ export function WalletModal({
         <div style={{
           padding: '14px 24px 16px',
           borderTop: `1px solid ${theme.colors.border}`,
+          flexShrink: 0,
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
@@ -2343,7 +2353,15 @@ export function WalletModal({
           from { opacity: 1; transform: translateY(0); }
           to { opacity: 0; transform: translateY(-6px); }
         }
-        .pl-view { animation: pl-view-enter 220ms cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+        /* Fills the flex-column panel and is itself a flex column, so the view's
+           body can flex + scroll while its header/footer stay pinned. */
+        .pl-view {
+          animation: pl-view-enter 220ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+          display: flex;
+          flex-direction: column;
+          flex: 1 1 auto;
+          min-height: 0;
+        }
         .pl-view-exit { animation: pl-view-exit 120ms cubic-bezier(0.4, 0, 1, 1) both; }
 
         /* Wallet list: staggered fade + rise per row (delay set inline, capped). */
