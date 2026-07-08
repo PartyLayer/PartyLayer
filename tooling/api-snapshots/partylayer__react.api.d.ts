@@ -17,7 +17,7 @@ declare function PartyAvatar({ id, size, className, style }: PartyAvatarProps): 
 declare function PartyLayerKit({ network, appName, children, registryUrl, channel, adapters, theme, walletIcons, walletOrder, sessionOptions, showAttribution, disclaimer, }: PartyLayerKitProps): react_jsx_runtime.JSX.Element;
 declare function PartyLayerProvider({ client, children, sessionOptions, }: PartyLayerProviderProps): react_jsx_runtime.JSX.Element;
 declare function ThemeProvider({ theme, children }: ThemeProviderProps): react_jsx_runtime.JSX.Element;
-declare function WalletModal({ isOpen, onClose, onConnect, walletIcons: propIcons, walletOrder: propWalletOrder, showAttribution: propShowAttribution, disclaimer: propDisclaimer, }: WalletModalProps): react_jsx_runtime.JSX.Element | null;
+declare function WalletModal({ isOpen, onClose, onConnect, walletIcons: propIcons, walletOrder: propWalletOrder, showAttribution: propShowAttribution, disclaimer: propDisclaimer, showWalletGuide, }: WalletModalProps): react_jsx_runtime.JSX.Element | null;
 declare function createLocalStorage(): SessionStorage;
 declare function createNativeAdapter(discovered: DiscoveredProvider): NativeCIP0103Adapter;
 declare function createSyntheticWalletInfo(discovered: EnrichedProvider, network: string): WalletInfo;
@@ -66,7 +66,7 @@ interface UseAccountEffectParameters { onConnect?: (data: { account: SessionAcco
 interface UseAccountReturn { party: string | null; address: string | null; account: SessionAccount | null; accounts: readonly SessionAccount[]; status: SessionStatus; isConnected: boolean; isConnecting: boolean; isReconnecting: boolean; isDisconnected: boolean; networkId: string | null; chain: SessionChain | null; lastError: Error | null; }
 interface UsePartyStateReturn { party: string | null; account: SessionAccount | null; accounts: readonly SessionAccount[]; status: SessionStatus; isConnected: boolean; isDisconnected: boolean; networkId: string | null; lastError: Error | null; }
 interface UseSessionReturn extends SessionState { isConnected: boolean; isConnecting: boolean; isReconnecting: boolean; isDisconnected: boolean; connect(params?: Record<string, unknown>): Promise<SessionState>; disconnect(): Promise<void>; restore(): Promise<SessionState>; on<T extends SessionEvent['type']>(event: T, handler: (event: Extract<SessionEvent, { type: T; }>) => void): () => void; }
-interface WalletModalProps { isOpen: boolean; onClose: () => void; onConnect?: (sessionId: string) => void; walletIcons?: WalletIconMap; walletOrder?: readonly string[]; showAttribution?: boolean; disclaimer?: React.ReactNode; }
+interface WalletModalProps { isOpen: boolean; onClose: () => void; onConnect?: (sessionId: string) => void; walletIcons?: WalletIconMap; walletOrder?: readonly string[]; showAttribution?: boolean; disclaimer?: React.ReactNode; showWalletGuide?: boolean; }
 type CallableTheme = ThemeFn & PartyLayerTheme;
 type ThemeFn = (overrides?: ThemeOverrides) => PartyLayerTheme;
 type ThemeInput = 'light' | 'dark' | 'auto' | PartyLayerTheme | DynamicTheme;
