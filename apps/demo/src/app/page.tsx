@@ -52,7 +52,7 @@ const wallets = sortByCanonicalOrder(
     { id: 'console', name: 'Console Wallet', desc: 'Official Console Wallet for Canton Network', transport: 'Extension + Mobile', logo: '/wallets/console.png' },
     { id: 'send', name: 'Send', desc: 'Passkey-based Canton wallet (mainnet)', transport: 'Injected (window.canton)', logo: '/wallets/send-logo.jpg' },
     { id: 'loop', name: '5N Loop', desc: '5N Loop Wallet for Canton Network', transport: 'QR Code / Popup', logo: '/wallets/loop.svg' },
-    { id: 'walletconnect', name: 'WalletConnect', desc: 'Connect any WalletConnect-compatible Canton wallet', transport: 'WalletConnect', logo: '/wallets/walletconnect.svg' },
+    { id: 'walley', name: 'Walley', desc: 'Popup/remote CIP-0103 wallet for Canton Network', transport: 'Popup / Remote', logo: '/wallets/walley-logo.png' },
     { id: 'cantor8', name: 'Cantor8 (C8)', desc: 'Cantor8 Wallet for Canton Network', transport: 'Deep Link', logo: '/wallets/cantor8.png' },
     { id: 'nightly', name: 'Nightly', desc: 'Multichain wallet with native Canton support', transport: 'Injected', logo: '/wallets/nightly.svg' },
     { id: 'bron', name: 'Bron', desc: 'Enterprise wallet for Canton Network', transport: 'OAuth2 / API', logo: '/wallets/bron.png' },
@@ -771,7 +771,7 @@ function Hero({ onConnect }: { onConnect: () => void }) {
 
             {/* Subtitle */}
             <p style={{ fontSize: 16, lineHeight: 1.6, color: t.slate600, maxWidth: 480, marginBottom: 32 }}>
-              CIP-0103 compliant wallet integration for Canton — registry-backed, verified wallets,
+              CIP-0103 compliant wallet integration for Canton: registry-backed, verified wallets,
               and a clean developer experience.
             </p>
 
@@ -848,10 +848,12 @@ function Hero({ onConnect }: { onConnect: () => void }) {
                       Select a wallet to connect to this dapp.
                     </p>
 
-                    {/* Wallet List Preview — capped to 4 (the real PartyLayerKit
-                        modal shows ALL wallets; this is just a hero mockup). */}
+                    {/* Wallet List Preview, capped to 4 (the real PartyLayerKit
+                        modal shows ALL wallets; this is just a hero mockup).
+                        Selected by id: walley is not in CANONICAL_WALLET_ORDER,
+                        so it sorts after the ranked ids and lands 4th here. */}
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                      {wallets.slice(0, 4).map((wallet, i) => (
+                      {wallets.filter((w) => ['console', 'send', 'loop', 'walley'].includes(w.id)).map((wallet, i) => (
                         <button key={wallet.id} onClick={onConnect}
                           style={{
                             display: 'flex', alignItems: 'center', gap: 12, padding: 12,
@@ -863,7 +865,14 @@ function Hero({ onConnect }: { onConnect: () => void }) {
                           onMouseOver={e => { e.currentTarget.style.background = t.muted; e.currentTarget.style.borderColor = t.slate300; }}
                           onMouseOut={e => { e.currentTarget.style.background = i === 0 ? t.brand50 : t.bg; e.currentTarget.style.borderColor = t.border; }}
                         >
-                          <img src={wallet.logo} alt={`${wallet.name} logo`} width={40} height={40} style={{ borderRadius: t.radius.sm }} />
+                          <div style={{ width: 40, height: 40, borderRadius: t.radius.sm, overflow: 'hidden', flexShrink: 0 }}>
+                            {/* Walley's brand mark has heavy dark padding; a small
+                                zoom-crop enlarges the W so it reads as vividly as the
+                                other logos at this size. Others render 1:1 (cover on a
+                                square asset is a no-op). */}
+                            <img src={wallet.logo} alt={`${wallet.name} logo`} width={40} height={40}
+                              style={{ width: '100%', height: '100%', objectFit: 'cover', transform: wallet.id === 'walley' ? 'scale(1.16)' : undefined }} />
+                          </div>
                           <div style={{ flex: 1, minWidth: 0 }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                               <span style={{ fontWeight: 500, color: t.fg }}>{wallet.name}</span>
@@ -920,7 +929,7 @@ const archNodes: { id: ArchNodeId; label: string; sub: string; icon: ReactNode; 
         }}>
           <span style={{ color: '#C084FC' }}>import</span>{' { PartyLayerKit }'} <span style={{ color: '#C084FC' }}>from</span> <span style={{ color: '#4ADE80' }}>{`'@partylayer/react'`}</span>{'\n'}
           {'\n'}
-          <span style={{ color: '#64748B' }}>{'// Wrap your app — done.'}</span>{'\n'}
+          <span style={{ color: '#64748B' }}>{'// Wrap your app, done.'}</span>{'\n'}
           {'<'}<span style={{ color: '#F87171' }}>PartyLayerKit</span> <span style={{ color: '#FDBA74' }}>network</span>{'='}<span style={{ color: '#4ADE80' }}>{`"mainnet"`}</span>{'>'}{'\n'}
           {'  <'}<span style={{ color: '#F87171' }}>App</span>{' />'}{'\n'}
           {'</'}<span style={{ color: '#F87171' }}>PartyLayerKit</span>{'>'}
@@ -1063,7 +1072,7 @@ function ArchitectureShowcase() {
             How PartyLayer Works
           </h2>
           <p style={{ fontSize: bp === 'mobile' ? 15 : 17, color: t.slate500, maxWidth: 560, margin: '0 auto', lineHeight: 1.6 }}>
-            From your first line of code to a connected wallet — the entire flow, abstracted.
+            From your first line of code to a connected wallet: the entire flow, abstracted.
           </p>
         </div>
 
@@ -1260,7 +1269,7 @@ const proofItems = [
       </svg>
     ),
     title: 'Multi-Wallet',
-    description: 'Console, Send, Loop, Cantor8, Nightly, Bron — one integration for all.',
+    description: 'Console, Send, Loop, Cantor8, Nightly, Bron: one integration for all.',
   },
   {
     icon: (
@@ -1611,7 +1620,7 @@ function DemoCTA({ onConnect }: { onConnect: () => void }) {
             Interactive demo
           </h2>
           <p style={{ fontSize: 16, lineHeight: 1.6, color: t.slate500, maxWidth: 480, margin: '0 auto' }}>
-            Try the wallet connection flow right here — click Connect Wallet to see the modal in action.
+            Try the wallet connection flow right here: click Connect Wallet to see the modal in action.
           </p>
         </div>
 
