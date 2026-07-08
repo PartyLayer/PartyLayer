@@ -52,7 +52,7 @@ const wallets = sortByCanonicalOrder(
     { id: 'console', name: 'Console Wallet', desc: 'Official Console Wallet for Canton Network', transport: 'Extension + Mobile', logo: '/wallets/console.png' },
     { id: 'send', name: 'Send', desc: 'Passkey-based Canton wallet (mainnet)', transport: 'Injected (window.canton)', logo: '/wallets/send-logo.jpg' },
     { id: 'loop', name: '5N Loop', desc: '5N Loop Wallet for Canton Network', transport: 'QR Code / Popup', logo: '/wallets/loop.svg' },
-    { id: 'walletconnect', name: 'WalletConnect', desc: 'Connect any WalletConnect-compatible Canton wallet', transport: 'WalletConnect', logo: '/wallets/walletconnect.svg' },
+    { id: 'walley', name: 'Walley', desc: 'Popup/remote CIP-0103 wallet for Canton Network', transport: 'Popup / Remote', logo: '/wallets/walley-logo.png' },
     { id: 'cantor8', name: 'Cantor8 (C8)', desc: 'Cantor8 Wallet for Canton Network', transport: 'Deep Link', logo: '/wallets/cantor8.png' },
     { id: 'nightly', name: 'Nightly', desc: 'Multichain wallet with native Canton support', transport: 'Injected', logo: '/wallets/nightly.svg' },
     { id: 'bron', name: 'Bron', desc: 'Enterprise wallet for Canton Network', transport: 'OAuth2 / API', logo: '/wallets/bron.png' },
@@ -771,7 +771,7 @@ function Hero({ onConnect }: { onConnect: () => void }) {
 
             {/* Subtitle */}
             <p style={{ fontSize: 16, lineHeight: 1.6, color: t.slate600, maxWidth: 480, marginBottom: 32 }}>
-              CIP-0103 compliant wallet integration for Canton — registry-backed, verified wallets,
+              CIP-0103 compliant wallet integration for Canton: registry-backed, verified wallets,
               and a clean developer experience.
             </p>
 
@@ -848,10 +848,12 @@ function Hero({ onConnect }: { onConnect: () => void }) {
                       Select a wallet to connect to this dapp.
                     </p>
 
-                    {/* Wallet List Preview — capped to 4 (the real PartyLayerKit
-                        modal shows ALL wallets; this is just a hero mockup). */}
+                    {/* Wallet List Preview, capped to 4 (the real PartyLayerKit
+                        modal shows ALL wallets; this is just a hero mockup).
+                        Selected by id: walley is not in CANONICAL_WALLET_ORDER,
+                        so it sorts after the ranked ids and lands 4th here. */}
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                      {wallets.slice(0, 4).map((wallet, i) => (
+                      {wallets.filter((w) => ['console', 'send', 'loop', 'walley'].includes(w.id)).map((wallet, i) => (
                         <button key={wallet.id} onClick={onConnect}
                           style={{
                             display: 'flex', alignItems: 'center', gap: 12, padding: 12,
