@@ -11,9 +11,10 @@
  */
 
 import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
-import { useClientSession, useConnect, useDisconnect } from './hooks';
+import { useClientSession, useConnect, useDisconnect, useWallets } from './hooks';
 import { useTheme } from './theme';
 import { WalletModal } from './modal';
+import { useWalletIcons, resolveWalletIcon } from './kit';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -46,6 +47,19 @@ export interface ConnectButtonProps {
 export function truncatePartyId(id: string, chars = 6): string {
   if (id.length <= chars * 2 + 3) return id;
   return `${id.slice(0, chars)}...${id.slice(-chars)}`;
+}
+
+/** Normalize a wallet id for matching against the registry (same rule as the modal). */
+function normalizeWalletId(id: string): string {
+  return id.replace(/^cip0103:/, '').toLowerCase();
+}
+
+/** A clean display name from a wallet id when the registry has no entry for it. */
+function prettifyWalletId(id: string): string {
+  return id
+    .replace(/^cip0103:/, '')
+    .replace(/[-_]+/g, ' ')
+    .replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
 // ─── Deterministic avatar ──────────────────────────────────────────────────────
@@ -154,6 +168,65 @@ function CheckSmallIcon({ size = 14, color = 'currentColor' }: { size?: number; 
   );
 }
 
+/**
+ * The connected wallet's logo (from the registry, the same source the modal
+ * uses), with a clean letter fallback when no icon resolves. Used as a small
+ * badge overlaid on the identity avatar so the user sees WHICH wallet they are
+ * connected through, like Reown/Privy.
+ */
+function ConnectedWalletIcon({
+  name,
+  iconUrl,
+  size,
+  ringColor,
+}: {
+  name: string;
+  iconUrl: string | null;
+  size: number;
+  ringColor: string;
+}) {
+  const theme = useTheme();
+  const [imgError, setImgError] = useState(false);
+  const radius = `${Math.max(4, Math.round(size * 0.3))}px`;
+  const frame: React.CSSProperties = {
+    width: size,
+    height: size,
+    borderRadius: radius,
+    flexShrink: 0,
+    boxShadow: `0 0 0 2px ${ringColor}`,
+  };
+
+  if (iconUrl && !imgError) {
+    return (
+      <img
+        src={iconUrl}
+        alt={name}
+        onError={() => setImgError(true)}
+        style={{ ...frame, objectFit: 'cover', display: 'block' }}
+      />
+    );
+  }
+
+  return (
+    <span
+      aria-hidden="true"
+      style={{
+        ...frame,
+        display: 'inline-flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: theme.colors.surface,
+        color: theme.colors.textSecondary,
+        fontSize: `${Math.round(size * 0.5)}px`,
+        fontWeight: 700,
+        fontFamily: theme.fontFamily,
+      }}
+    >
+      {name.charAt(0).toUpperCase()}
+    </span>
+  );
+}
+
 // ─── Component ───────────────────────────────────────────────────────────────
 
 export function ConnectButton({
@@ -168,7 +241,19 @@ export function ConnectButton({
   const session = useClientSession();
   const { isConnecting } = useConnect();
   const { disconnect } = useDisconnect();
+  const { wallets } = useWallets();
+  const walletIcons = useWalletIcons();
   const theme = useTheme();
+
+  // Match the connected session's wallet to its registry entry (name + icon),
+  // the same source the modal uses. Falls back gracefully when the wallet has no
+  // registry entry (e.g. a dev fixture): a clean name and a letter badge.
+  const walletIdStr = session ? String(session.walletId) : '';
+  const connectedWallet = useMemo(() => {
+    if (!walletIdStr || !wallets) return undefined;
+    const target = normalizeWalletId(walletIdStr);
+    return wallets.find((w) => normalizeWalletId(String(w.walletId)) === target);
+  }, [wallets, walletIdStr]);
 
   const [modalOpen, setModalOpen] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
@@ -347,6 +432,12 @@ export function ConnectButton({
 
   const connectedPartyId = String(session!.partyId);
   const connectedWalletId = String(session!.walletId);
+  const walletName = connectedWallet?.name ?? prettifyWalletId(connectedWalletId);
+  const walletIconUrl = resolveWalletIcon(
+    connectedWallet?.walletId ?? connectedWalletId,
+    walletIcons,
+    connectedWallet?.icons?.sm,
+  );
 
   return (
     <div ref={dropdownRef} style={{ position: 'relative', display: 'inline-block' }}>
@@ -419,19 +510,26 @@ export function ConnectButton({
         )}
 
         {showDisconnect && (
-          <ChevronIcon
-            size={12}
-            color={theme.colors.textSecondary}
-          />
+          <span
+            className="pl-account-chevron"
+            style={{
+              display: 'inline-flex',
+              transform: dropdownOpen ? 'rotate(180deg)' : 'rotate(0deg)',
+              transition: 'transform 180ms cubic-bezier(0.2, 0.8, 0.2, 1)',
+            }}
+          >
+            <ChevronIcon size={12} color={theme.colors.textSecondary} />
+          </span>
         )}
       </button>
 
       {/* Dropdown Menu */}
       {dropdownOpen && showDisconnect && (
         <div
+          className="pl-account-menu"
           style={{
             position: 'absolute',
-            top: 'calc(100% + 6px)',
+            top: 'calc(100% + 8px)',
             right: 0,
             backgroundColor: theme.colors.background,
             border: `1px solid ${theme.colors.border}`,
@@ -439,27 +537,39 @@ export function ConnectButton({
             boxShadow: isDark
               ? '0 4px 16px rgba(0,0,0,0.3), 0 16px 48px rgba(0,0,0,0.2)'
               : '0 4px 16px rgba(15,23,42,0.08), 0 16px 48px rgba(15,23,42,0.12)',
-            minWidth: '220px',
+            minWidth: '250px',
             zIndex: 1000,
             overflow: 'hidden',
-            animation: 'partylayer-dropdown 150ms cubic-bezier(0.2, 0.8, 0.2, 1)',
+            transformOrigin: 'top right',
           }}
         >
-          {/* Session Info: the same identity avatar (larger) next to the details. */}
+          {/* Identity header: the party avatar (identity) with the connected
+              wallet's logo as a corner badge, then a composed identity block:
+              a subtle Connected label, the party id (primary), the wallet (secondary). */}
           <div style={{
-            padding: '14px 16px',
+            padding: '16px',
             borderBottom: `1px solid ${theme.colors.border}`,
             display: 'flex',
             alignItems: 'center',
             gap: '12px',
           }}>
-            <PartyAvatar id={connectedPartyId} size={38} />
+            <span style={{ position: 'relative', display: 'inline-flex', flexShrink: 0 }}>
+              <PartyAvatar id={connectedPartyId} size={44} />
+              <span style={{ position: 'absolute', right: '-3px', bottom: '-3px', display: 'inline-flex' }}>
+                <ConnectedWalletIcon
+                  name={walletName}
+                  iconUrl={walletIconUrl}
+                  size={20}
+                  ringColor={theme.colors.background}
+                />
+              </span>
+            </span>
             <div style={{ minWidth: 0, flex: 1 }}>
               <div style={{
                 display: 'flex',
                 alignItems: 'center',
-                gap: '6px',
-                marginBottom: '5px',
+                gap: '5px',
+                marginBottom: '3px',
               }}>
                 <span style={{
                   width: '6px',
@@ -468,102 +578,132 @@ export function ConnectButton({
                   backgroundColor: theme.colors.success,
                 }} />
                 <span style={{
-                  fontSize: '12px',
+                  fontSize: '10px',
                   fontWeight: 600,
                   color: theme.colors.success,
                   textTransform: 'uppercase',
-                  letterSpacing: '0.5px',
+                  letterSpacing: '0.6px',
                 }}>
                   Connected
                 </span>
               </div>
-              <div style={{
-                fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace',
-                fontSize: '12px',
-                color: theme.colors.text,
-                wordBreak: 'break-all',
-                lineHeight: 1.4,
-              }}>
+              <div
+                title={connectedPartyId}
+                style={{
+                  fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace',
+                  fontSize: '13px',
+                  fontWeight: 600,
+                  color: theme.colors.text,
+                  lineHeight: 1.3,
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap',
+                }}
+              >
                 {truncatePartyId(connectedPartyId, 10)}
               </div>
               <div style={{
-                marginTop: '4px',
+                marginTop: '2px',
                 fontSize: '12px',
                 color: theme.colors.textSecondary,
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
               }}>
-                {connectedWalletId}
+                {walletName}
               </div>
             </div>
           </div>
 
-          {/* Copy address (the FULL party id; brief "Copied" feedback) */}
-          <button
-            onClick={() => handleCopy(connectedPartyId)}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-              width: '100%',
-              padding: '12px 16px',
-              border: 'none',
-              backgroundColor: 'transparent',
-              color: copied ? theme.colors.success : theme.colors.text,
-              cursor: 'pointer',
-              textAlign: 'left',
-              fontSize: '13px',
-              fontWeight: 500,
-              fontFamily: theme.fontFamily,
-              transition: 'background-color 150ms, color 150ms',
-            }}
-            onMouseEnter={(e) => {
-              (e.currentTarget as HTMLButtonElement).style.backgroundColor = theme.colors.surface;
-            }}
-            onMouseLeave={(e) => {
-              (e.currentTarget as HTMLButtonElement).style.backgroundColor = 'transparent';
-            }}
-          >
-            {copied
-              ? <CheckSmallIcon size={14} color={theme.colors.success} />
-              : <CopyIcon size={14} color={theme.colors.textSecondary} />}
-            {copied ? 'Copied' : 'Copy address'}
-          </button>
+          {/* Action rows: icon-led, aligned, comfortable spacing. */}
+          <div style={{ padding: '6px' }}>
+            {/* Copy address (the FULL party id; brief "Copied" feedback) */}
+            <button
+              className="pl-account-row"
+              onClick={() => handleCopy(connectedPartyId)}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '10px',
+                width: '100%',
+                padding: '10px 12px',
+                border: 'none',
+                borderRadius: `calc(${theme.borderRadius} - 4px)`,
+                backgroundColor: 'transparent',
+                color: copied ? theme.colors.success : theme.colors.text,
+                cursor: 'pointer',
+                textAlign: 'left',
+                fontSize: '13px',
+                fontWeight: 500,
+                fontFamily: theme.fontFamily,
+                transition: 'background-color 150ms, color 150ms',
+              }}
+              onMouseEnter={(e) => {
+                (e.currentTarget as HTMLButtonElement).style.backgroundColor = theme.colors.surface;
+              }}
+              onMouseLeave={(e) => {
+                (e.currentTarget as HTMLButtonElement).style.backgroundColor = 'transparent';
+              }}
+            >
+              <span style={{ display: 'inline-flex', width: '16px', justifyContent: 'center', flexShrink: 0 }}>
+                {copied
+                  ? <CheckSmallIcon size={15} color={theme.colors.success} />
+                  : <CopyIcon size={15} color={theme.colors.textSecondary} />}
+              </span>
+              {copied ? 'Copied' : 'Copy address'}
+            </button>
 
-          {/* Disconnect Button */}
-          <button
-            onClick={handleDisconnect}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-              width: '100%',
-              padding: '12px 16px',
-              border: 'none',
-              backgroundColor: 'transparent',
-              color: theme.colors.error,
-              cursor: 'pointer',
-              textAlign: 'left',
-              fontSize: '13px',
-              fontWeight: 500,
-              fontFamily: theme.fontFamily,
-              transition: 'background-color 150ms',
-            }}
-            onMouseEnter={(e) => {
-              (e.currentTarget as HTMLButtonElement).style.backgroundColor = theme.colors.errorBg;
-            }}
-            onMouseLeave={(e) => {
-              (e.currentTarget as HTMLButtonElement).style.backgroundColor = 'transparent';
-            }}
-          >
-            <PowerIcon size={14} color={theme.colors.error} />
-            Disconnect
-          </button>
+            {/* Divider before the terminal action. */}
+            <div style={{ height: '1px', backgroundColor: theme.colors.border, margin: '6px 8px' }} />
+
+            {/* Disconnect: the terminal action, in the danger color. */}
+            <button
+              className="pl-account-row"
+              onClick={handleDisconnect}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '10px',
+                width: '100%',
+                padding: '10px 12px',
+                border: 'none',
+                borderRadius: `calc(${theme.borderRadius} - 4px)`,
+                backgroundColor: 'transparent',
+                color: theme.colors.error,
+                cursor: 'pointer',
+                textAlign: 'left',
+                fontSize: '13px',
+                fontWeight: 500,
+                fontFamily: theme.fontFamily,
+                transition: 'background-color 150ms',
+              }}
+              onMouseEnter={(e) => {
+                (e.currentTarget as HTMLButtonElement).style.backgroundColor = theme.colors.errorBg;
+              }}
+              onMouseLeave={(e) => {
+                (e.currentTarget as HTMLButtonElement).style.backgroundColor = 'transparent';
+              }}
+            >
+              <span style={{ display: 'inline-flex', width: '16px', justifyContent: 'center', flexShrink: 0 }}>
+                <PowerIcon size={15} color={theme.colors.error} />
+              </span>
+              Disconnect
+            </button>
+          </div>
         </div>
       )}
 
       <style>{`
         @keyframes partylayer-dropdown {
-          from { opacity: 0; transform: translateY(-4px); }
-          to { opacity: 1; transform: translateY(0); }
+          from { opacity: 0; transform: translateY(-6px) scale(0.98); }
+          to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        .pl-account-menu {
+          animation: partylayer-dropdown 160ms cubic-bezier(0.2, 0.8, 0.2, 1);
+        }
+        @media (prefers-reduced-motion: reduce) {
+          .pl-account-menu { animation: none; }
+          .pl-account-chevron { transition: none; }
         }
       `}</style>
     </div>

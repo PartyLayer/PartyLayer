@@ -1,10 +1,10 @@
 'use client';
 
-import { useState, useRef, useEffect, useCallback, type ReactNode } from 'react';
+import { useState, useRef, useEffect, type ReactNode } from 'react';
 import Link from 'next/link';
 // Note: useClientSession = the legacy SDK-layer getter (partyId/walletId here);
 // useAccount = the new reactive session-store hook (the live session indicator).
-import { PartyLayerKit, WalletModal, useClientSession, useDisconnect, truncatePartyId, useAccount, usePartyLayer } from '@partylayer/react';
+import { PartyLayerKit, WalletModal, useClientSession, ConnectButton, truncatePartyId, useAccount, usePartyLayer } from '@partylayer/react';
 import { DEFAULT_RETRY_POLICY, type SessionStoreOptions } from '@partylayer/session';
 import { buildDemoAdapters } from '../lib/canton-demo-adapter';
 import { sortByCanonicalOrder, CANONICAL_WALLET_ORDER } from '../lib/wallet-order';
@@ -533,30 +533,9 @@ function SessionIndicator() {
 function Nav({ onConnect }: { onConnect: () => void }) {
   const bp = useBreakpoint();
   const session = useClientSession();
-  const { disconnect } = useDisconnect();
-  const [dropdownOpen, setDropdownOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const dropdownRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (!dropdownOpen) return;
-    const handler = (e: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
-        setDropdownOpen(false);
-      }
-    };
-    document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
-  }, [dropdownOpen]);
-
-  const handleDisconnect = useCallback(async () => {
-    setDropdownOpen(false);
-    try { await disconnect(); } catch { /* hook stores error */ }
-  }, [disconnect]);
 
   const isConnected = !!session;
-  const partyId = session ? String(session.partyId) : '';
-  const walletId = session ? String(session.walletId) : '';
 
   return (
     <header style={{
@@ -595,68 +574,10 @@ function Nav({ onConnect }: { onConnect: () => void }) {
         )}
 
         {isConnected ? (
-          /* ── Connected: dropdown button ── */
-          <div ref={dropdownRef} style={{ position: 'relative' }}>
-            <button onClick={() => setDropdownOpen(o => !o)}
-              style={{
-                display: 'inline-flex', alignItems: 'center', gap: 8,
-                padding: '8px 14px', borderRadius: t.radius.sm,
-                fontSize: 13, fontWeight: 500, color: t.fg,
-                border: `1px solid ${t.border}`, cursor: 'pointer',
-                background: t.muted, boxShadow: t.shadow.button,
-                fontFamily: t.font, transition: `all 150ms ${t.ease}`,
-              }}
-              onMouseOver={e => { e.currentTarget.style.borderColor = 'rgba(15,23,42,0.18)'; e.currentTarget.style.boxShadow = t.shadow.buttonHover; }}
-              onMouseOut={e => { e.currentTarget.style.borderColor = t.border; e.currentTarget.style.boxShadow = t.shadow.button; }}
-            >
-              <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#10B981', boxShadow: `0 0 0 2px ${t.muted}` }} />
-              <span style={{ fontFamily: t.mono, fontSize: 13, color: t.fg }}>{truncatePartyId(partyId)}</span>
-              <svg width={12} height={12} fill="none" viewBox="0 0 24 24" stroke={t.slate400} strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
-                <polyline points="6 9 12 15 18 9" />
-              </svg>
-            </button>
-
-            {dropdownOpen && (
-              <div style={{
-                position: 'absolute', top: 'calc(100% + 6px)', right: 0,
-                background: t.bg, border: `1px solid ${t.border}`, borderRadius: t.radius.sm,
-                boxShadow: '0 4px 16px rgba(15,23,42,0.08), 0 16px 48px rgba(15,23,42,0.12)',
-                minWidth: 240, zIndex: 1000, overflow: 'hidden',
-                animation: `plDropdown 150ms ${t.ease}`,
-              }}>
-                {/* Session info */}
-                <div style={{ padding: '14px 16px', borderBottom: `1px solid ${t.border}` }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
-                    <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#10B981' }} />
-                    <span style={{ fontSize: 12, fontWeight: 600, color: '#10B981', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Connected</span>
-                  </div>
-                  <div style={{ fontFamily: t.mono, fontSize: 12, color: t.fg, wordBreak: 'break-all', lineHeight: 1.4 }}>
-                    {truncatePartyId(partyId, 10)}
-                  </div>
-                  <div style={{ marginTop: 6, fontSize: 12, color: t.slate500 }}>{walletId}</div>
-                </div>
-
-                {/* Disconnect */}
-                <button onClick={handleDisconnect}
-                  style={{
-                    display: 'flex', alignItems: 'center', gap: 8,
-                    width: '100%', padding: '12px 16px', border: 'none',
-                    background: 'transparent', color: '#EF4444', cursor: 'pointer',
-                    textAlign: 'left', fontSize: 13, fontWeight: 500, fontFamily: t.font,
-                    transition: `background 150ms ${t.ease}`,
-                  }}
-                  onMouseOver={e => { e.currentTarget.style.background = '#FEF2F2'; }}
-                  onMouseOut={e => { e.currentTarget.style.background = 'transparent'; }}
-                >
-                  <svg width={14} height={14} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M18.36 6.64a9 9 0 1 1-12.73 0" />
-                    <line x1="12" y1="2" x2="12" y2="12" />
-                  </svg>
-                  Disconnect
-                </button>
-              </div>
-            )}
-          </div>
+          /* ── Connected: the shipped ConnectButton (real upgraded component:
+                PartyAvatar + wallet-badge identity header, Copy address, Disconnect).
+                It self-manages its dropdown, so the demo no longer hand-rolls one. ── */
+          <ConnectButton accountStatus="full" />
         ) : (
           /* ── Disconnected: connect button ── */
           <button onClick={onConnect}
