@@ -127,6 +127,7 @@ export {
   NightlyAdapter,
   BronAdapter,
   SendAdapter,
+  CauriRemoteAdapter,
   getBuiltinAdapters,
 } from './builtin-adapters';
 
@@ -135,6 +136,11 @@ export type {
   BronAdapterConfig,
   BronAuthConfig,
   BronApiConfig,
+} from './builtin-adapters';
+
+// Re-export Cauri adapter config types (for advanced usage)
+export type {
+  CauriRemoteAdapterConfig,
 } from './builtin-adapters';
 
 // Telemetry and metrics (0.3.0+)
