@@ -850,6 +850,10 @@ export class PartyLayerClient {
       origin: this.origin,
       capabilitiesSnapshot: result.capabilities,
       metadata: result.session.metadata as Record<string, string> | undefined,
+      // Fund-safety passthrough: the wallet's payout-preapproval signal, if the
+      // adapter surfaced it at connect. Optional; absent when not reported.
+      hasPreapproval: result.session.hasPreapproval,
+      utilityPreapprovalAdmins: result.session.utilityPreapprovalAdmins,
     };
 
     // Network-mismatch detection: the wallet connected on a different network

@@ -31,13 +31,70 @@ import {
   toPartyId,
   toTransactionHash,
   toSignature,
+  PartyLayerError,
   WalletNotInstalledError,
   CapabilityNotSupportedError,
   mapUnknownErrorToPartyLayerError,
   ledgerApiBodyToString,
 } from '@partylayer/core';
-import { loop } from '@fivenorth/loop-sdk';
-import type { LoopProvider } from '@fivenorth/loop-sdk';
+import type { ErrorCode } from '@partylayer/core';
+import {
+  loop,
+  RequestTimeoutError,
+  UnauthorizedError,
+  PaymentRequiredError,
+  RejectRequestError,
+  PopupClosedError,
+} from '@fivenorth/loop-sdk';
+
+// The SDK does not re-export its `Provider` type by name from the package root,
+// so derive it from `loop.init`'s `onAccept` parameter. This is the REAL 0.13.x
+// provider (with getAccount, signMessage, submitTransaction, getActiveContracts).
+type LoopProvider = Parameters<NonNullable<Parameters<typeof loop.init>[0]['onAccept']>>[0];
+type LoopSubmitPayload = Parameters<LoopProvider['submitTransaction']>[0];
+
+/**
+ * Map a Loop SDK 0.13 structured error onto the PartyLayer error taxonomy so a
+ * consumer can distinguish auth from rate-limit from timeout from a user
+ * rejection by a stable `code` (plus `details.status` where the SDK reports one),
+ * rather than parsing a message string. Returns `null` when `err` is not one of
+ * the SDK's structured errors, so callers keep their existing descriptive
+ * wrapping for everything else. The original error is always preserved as `cause`.
+ */
+function mapLoopStructuredError(
+  err: unknown,
+  context: { operation: string; hint?: string },
+): PartyLayerError | null {
+  const suffix = context.hint ? ` ${context.hint}` : '';
+  const make = (message: string, code: ErrorCode, details?: Record<string, unknown>) =>
+    new PartyLayerError(message, code, { cause: err, details: { operation: context.operation, ...details } });
+
+  if (err instanceof RequestTimeoutError) {
+    return make(`Loop ${context.operation} timed out. ${err.message}${suffix}`, 'TIMEOUT');
+  }
+  if (err instanceof UnauthorizedError) {
+    // A 401 from Loop means the auth token is no longer valid; the user must reconnect.
+    return make(
+      `Loop rejected ${context.operation}: unauthorized. Reconnect your Loop wallet.${suffix}`,
+      'SESSION_EXPIRED',
+      { status: 401, loopCode: err.code },
+    );
+  }
+  if (err instanceof PaymentRequiredError) {
+    // 402/limit-class: payment/gas required or a request limit was hit.
+    return make(
+      `Loop ${context.operation} needs payment or gas, or hit a request limit. ${err.message}${suffix}`,
+      'TRANSPORT_ERROR',
+      { status: 402, loopCode: err.code, gasAmount: err.gasAmount, trackingId: err.trackingId, loopStatus: err.status },
+    );
+  }
+  if (err instanceof RejectRequestError || err instanceof PopupClosedError) {
+    return make(`User rejected Loop ${context.operation}. ${err.message}`, 'USER_REJECTED', {
+      loopCode: err instanceof RejectRequestError ? err.code : undefined,
+    });
+  }
+  return null;
+}
 
 /**
  * Loop Wallet adapter
@@ -149,7 +206,7 @@ export class LoopAdapter implements WalletAdapter {
             openMode: 'popup',
             requestSigningMode: 'popup',
           },
-          onAccept: (provider: LoopProvider) => {
+          onAccept: async (provider: LoopProvider) => {
             if (resolved) return;
             resolved = true;
             clearTimeout(timeoutId);
@@ -161,6 +218,12 @@ export class LoopAdapter implements WalletAdapter {
               partyId: provider.party_id,
             });
 
+            // Fund-safety passthrough: read the wallet's payout-preapproval signal
+            // so consumers can tell whether a payout to this party lands directly
+            // or may strand as an unaccepted offer. Best-effort: getAccount()
+            // failing must NOT break connect; proceed with the fields absent.
+            const preapproval = await this.readPreapproval(provider, ctx);
+
             resolve({
               partyId,
               session: {
@@ -170,6 +233,7 @@ export class LoopAdapter implements WalletAdapter {
                 // limited for this adapter (echoes the requested ctx.network).
                 network: ctx.network,
                 createdAt: Date.now(),
+                ...preapproval,
               },
               capabilities: this.getCapabilities(),
             });
@@ -200,6 +264,30 @@ export class LoopAdapter implements WalletAdapter {
           network: ctx.network,
         },
       });
+    }
+  }
+
+  /**
+   * Read the wallet's payout-preapproval signal via the SDK's getAccount(),
+   * mapping the SDK's snake_case fields to our camelCase session fields. Purely
+   * a passthrough of what the wallet reports; nothing is inferred. Best-effort:
+   * any failure is logged and yields an empty object so connect still succeeds.
+   */
+  private async readPreapproval(
+    provider: LoopProvider,
+    ctx: AdapterContext,
+  ): Promise<Pick<Session, 'hasPreapproval' | 'utilityPreapprovalAdmins'>> {
+    try {
+      const account = await provider.getAccount();
+      return {
+        hasPreapproval: account.has_preapproval,
+        utilityPreapprovalAdmins: account.utility_preapproval_admins,
+      };
+    } catch (err) {
+      ctx.logger.debug('Loop getAccount() failed; preapproval signal unavailable', {
+        error: (err as Error)?.message,
+      });
+      return {};
     }
   }
 
@@ -367,7 +455,8 @@ export class LoopAdapter implements WalletAdapter {
       });
 
       const result = await this.currentProvider.submitTransaction(
-        params.signedTx,
+        // Passthrough: signedTx is opaque, the caller owns its shape.
+        params.signedTx as unknown as LoopSubmitPayload,
         {
           message: 'Submit transaction via PartyLayer',
         },
@@ -580,9 +669,14 @@ export class LoopAdapter implements WalletAdapter {
             + ` (e.g., '#splice-amulet:Splice.Amulet:Amulet'), not the short Canton format`
             + ` ('Splice.Amulet:Amulet').`
           : '';
+      // Structured Loop errors (timeout/auth/limit) get a stable code; everything
+      // else keeps the descriptive query context. Original error preserved as cause.
+      const structured = mapLoopStructuredError(err, { operation: `getActiveContracts (${filterDesc})` });
+      if (structured) throw structured;
       throw new Error(
         `Loop getActiveContracts() failed for ${filterDesc}.${hint}`
         + ` Original error: ${err instanceof Error ? err.message : String(err)}`,
+        { cause: err as Error },
       );
     }
 
@@ -628,16 +722,25 @@ export class LoopAdapter implements WalletAdapter {
     const normalized = resource.replace(/\/+$/, '');
     const waitForResult = normalized.includes('wait');
 
+    // The adapter is a passthrough: `payload` is opaque JSON whose shape is the
+    // caller's responsibility, so cast to the SDK's payload type at the boundary.
+    const submitPayload = payload as unknown as LoopSubmitPayload;
     let result: unknown;
     try {
       result = waitForResult
-        ? await provider.submitAndWaitForTransaction(payload)
-        : await provider.submitTransaction(payload);
+        ? await provider.submitAndWaitForTransaction(submitPayload)
+        : await provider.submitTransaction(submitPayload);
     } catch (err) {
-      const message = (err as Error)?.message || 'Loop SDK submission failed without an error message';
+      const op = waitForResult ? 'submitAndWaitForTransaction' : 'submitTransaction';
       const hint = this.templateIdHint(payload);
+      // Structured Loop errors (timeout/auth/limit/reject) get a stable code so a
+      // consumer can react (retry vs reconnect vs top-up); everything else keeps
+      // the descriptive message. Original error preserved as cause in both paths.
+      const structured = mapLoopStructuredError(err, { operation: `Loop Wallet ${op}`, hint });
+      if (structured) throw structured;
+      const message = (err as Error)?.message || 'Loop SDK submission failed without an error message';
       throw new Error(
-        `Loop Wallet ${waitForResult ? 'submitAndWaitForTransaction' : 'submitTransaction'} failed: ${message}.${hint} `
+        `Loop Wallet ${op} failed: ${message}.${hint} `
         + `Original error preserved as cause.`,
         { cause: err as Error },
       );

@@ -73,7 +73,7 @@ interface AdapterConnectResult { partyId: PartyId; session: Partial<Session>; ca
 interface AdapterContext { appName: string; origin: string; network: NetworkId; logger: LoggerAdapter; telemetry?: TelemetryAdapter; registry: RegistryClientAdapter; crypto: CryptoAdapter; storage: StorageAdapter; timeout: (ms: number) => Promise<never>; abortSignal?: AbortSignal; }
 interface AdapterDetectResult { installed: boolean; reason?: string; }
 interface AdapterMetadata { packageName: string; versionRange: string; }
-interface CIP0103Account { primary: boolean; partyId: string; status: CIP0103AccountStatus; hint: string; publicKey: string; namespace: string; networkId: string; signingProviderId: string; }
+interface CIP0103Account { primary: boolean; partyId: string; status: CIP0103AccountStatus; hint: string; publicKey: string; namespace: string; networkId: string; signingProviderId: string; hasPreapproval?: boolean; utilityPreapprovalAdmins?: string[]; }
 interface CIP0103ConnectResult { isConnected: boolean; reason?: string; isNetworkConnected?: boolean; networkReason?: string; userUrl?: string; }
 interface CIP0103LedgerApiRequest { requestMethod: 'get' | 'post' | 'patch' | 'put' | 'delete'; resource: string; body?: Record<string, unknown>; }
 interface CIP0103LedgerApiResponse { response: string; }
@@ -107,7 +107,7 @@ interface OfficialProviderAdapter { readonly providerId: string; readonly name: 
 interface PersistedSession extends Session { encrypted: string; }
 interface ProviderDetection { transport: 'window.canton'; matchers: ProviderMatcher[]; }
 interface RegistryClientAdapter { getWallet(walletId: WalletId): Promise<unknown>; }
-interface Session { sessionId: SessionId; walletId: WalletId; partyId: PartyId; network: NetworkId; createdAt: number; expiresAt?: number; origin: string; capabilitiesSnapshot: CapabilityKey[]; metadata?: Record<string, string>; networkMismatch?: { expected: string; actual: string; }; }
+interface Session { sessionId: SessionId; walletId: WalletId; partyId: PartyId; network: NetworkId; createdAt: number; expiresAt?: number; origin: string; capabilitiesSnapshot: CapabilityKey[]; metadata?: Record<string, string>; networkMismatch?: { expected: string; actual: string; }; hasPreapproval?: boolean; utilityPreapprovalAdmins?: string[]; }
 interface SignMessageParams { message: string; nonce?: string; domain?: string; }
 interface SignRequest { message?: string; transaction?: unknown; state: string; redirectUri?: string; }
 interface SignResponse { state: string; signature?: string; transactionHash?: string; jobId?: string; error?: { code: string; message: string; }; }

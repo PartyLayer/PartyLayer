@@ -324,7 +324,7 @@ function wireEvents(
   client.on('session:connected', (event: unknown) => {
     const e = event as { type: string; session: BridgeableClient extends { getActiveSession(): Promise<infer S> } ? NonNullable<S> : never };
     if (!e || typeof e !== 'object' || !('session' in e)) return;
-    const session = (e as { session: { partyId: unknown; network: string; expiresAt?: number } }).session;
+    const session = (e as { session: { partyId: unknown; network: string; expiresAt?: number; hasPreapproval?: boolean; utilityPreapprovalAdmins?: string[] } }).session;
 
     eventBus.emit(CIP0103_EVENTS.STATUS_CHANGED, {
       connection: { isConnected: true },
@@ -350,6 +350,9 @@ function wireEvents(
         namespace: '',
         networkId: toCAIP2Network(session.network).networkId,
         signingProviderId: '',
+        // Fund-safety passthrough, present only when the wallet reported it.
+        hasPreapproval: session.hasPreapproval,
+        utilityPreapprovalAdmins: session.utilityPreapprovalAdmins,
       },
     ] satisfies CIP0103Account[]);
 
@@ -454,6 +457,8 @@ function normalizeParams(
 function sessionToAccount(session: {
   partyId: unknown;
   network: string;
+  hasPreapproval?: boolean;
+  utilityPreapprovalAdmins?: string[];
 }): CIP0103Account {
   return {
     primary: true,
@@ -464,5 +469,8 @@ function sessionToAccount(session: {
     namespace: '',
     networkId: toCAIP2Network(session.network).networkId,
     signingProviderId: '',
+    // Fund-safety passthrough, present only when the wallet reported it.
+    hasPreapproval: session.hasPreapproval,
+    utilityPreapprovalAdmins: session.utilityPreapprovalAdmins,
   };
 }

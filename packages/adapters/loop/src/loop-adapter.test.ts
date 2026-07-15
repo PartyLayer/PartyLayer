@@ -9,10 +9,12 @@ import { LoopAdapter } from './loop-adapter';
 import type { AdapterContext, Session, CapabilityKey, SessionId } from '@partylayer/core';
 import {
   CapabilityNotSupportedError,
+  PartyLayerError,
   toWalletId,
   toPartyId,
   toSessionId,
 } from '@partylayer/core';
+import { UnauthorizedError, PaymentRequiredError, RequestTimeoutError } from '@fivenorth/loop-sdk';
 
 // Check if we're in a browser environment
 const isBrowser = typeof window !== 'undefined';
@@ -108,6 +110,7 @@ describe('LoopAdapter', () => {
       const mockProvider = {
         party_id: 'party::test',
         public_key: 'key123',
+        getAccount: vi.fn(),
         getActiveContracts: vi.fn(),
         submitTransaction: vi.fn(),
         submitAndWaitForTransaction: vi.fn(),
@@ -119,6 +122,74 @@ describe('LoopAdapter', () => {
         // Inject mock provider via private field
         (adapter as unknown as { currentProvider: unknown }).currentProvider = mockProvider;
         vi.clearAllMocks();
+      });
+
+      type ReadPreapproval = (p: unknown, c: AdapterContext) => Promise<Record<string, unknown>>;
+      const readPreapproval = () =>
+        (adapter as unknown as { readPreapproval: ReadPreapproval }).readPreapproval(mockProvider, ctx);
+
+      // ── Preapproval passthrough (fund-safety, PART 2) ──────────────
+
+      describe('preapproval passthrough', () => {
+        it('surfaces has_preapproval + utility_preapproval_admins from getAccount, camelCased', async () => {
+          mockProvider.getAccount.mockResolvedValue({
+            party_id: 'party::test',
+            auth_token: 't',
+            public_key: 'key123',
+            has_preapproval: true,
+            utility_preapproval_admins: ['admin::1', 'admin::2'],
+          });
+          expect(await readPreapproval()).toEqual({
+            hasPreapproval: true,
+            utilityPreapprovalAdmins: ['admin::1', 'admin::2'],
+          });
+        });
+
+        it('is absent (never faked) when the wallet does not report preapproval', async () => {
+          mockProvider.getAccount.mockResolvedValue({ party_id: 'party::test', auth_token: 't', public_key: 'k' });
+          expect(await readPreapproval()).toEqual({ hasPreapproval: undefined, utilityPreapprovalAdmins: undefined });
+        });
+
+        it('does not break connect: a getAccount failure yields an empty object', async () => {
+          mockProvider.getAccount.mockRejectedValue(new Error('ws closed'));
+          expect(await readPreapproval()).toEqual({});
+          expect(ctx.logger.debug).toHaveBeenCalled();
+        });
+      });
+
+      // ── Structured errors (PART 3) ─────────────────────────────────
+
+      describe('structured errors', () => {
+        const acsCall = () =>
+          adapter.ledgerApi(ctx, createMockSession(), {
+            requestMethod: 'POST',
+            resource: '/v2/state/acs',
+            body: JSON.stringify({ templateId: '#pkg:Mod:Tmpl' }),
+          });
+
+        it('maps Loop UnauthorizedError to SESSION_EXPIRED with status 401', async () => {
+          mockProvider.getActiveContracts.mockRejectedValue(new UnauthorizedError('401'));
+          await expect(acsCall()).rejects.toMatchObject({
+            code: 'SESSION_EXPIRED',
+            details: expect.objectContaining({ status: 401 }),
+          });
+        });
+
+        it('maps Loop PaymentRequiredError to TRANSPORT_ERROR with status 402 and preserves cause', async () => {
+          const loopErr = new PaymentRequiredError({ code: 'PAY', gas_amount: '5' });
+          mockProvider.getActiveContracts.mockRejectedValue(loopErr);
+          let caught: PartyLayerError | undefined;
+          try { await acsCall(); } catch (e) { caught = e as PartyLayerError; }
+          expect(caught).toBeInstanceOf(PartyLayerError);
+          expect(caught?.code).toBe('TRANSPORT_ERROR');
+          expect(caught?.details).toMatchObject({ status: 402, gasAmount: '5' });
+          expect(caught?.cause).toBe(loopErr);
+        });
+
+        it('maps Loop RequestTimeoutError to TIMEOUT', async () => {
+          mockProvider.getActiveContracts.mockRejectedValue(new RequestTimeoutError(1000));
+          await expect(acsCall()).rejects.toMatchObject({ code: 'TIMEOUT' });
+        });
       });
 
       // ── ACS query ─────────────────────────────────────────────────

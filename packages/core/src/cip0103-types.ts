@@ -70,6 +70,15 @@ export interface CIP0103Account {
   /** CAIP-2 network identifier */
   networkId: string;
   signingProviderId: string;
+  /**
+   * Wallet-reported payout preapproval (fund-safety signal). When true, a payout
+   * to this party lands directly; when false/absent, it may strand as an
+   * unaccepted offer. Passthrough of what the wallet reports; absent when the
+   * wallet does not report it. Do not infer this from outcomes.
+   */
+  hasPreapproval?: boolean;
+  /** Admin party ids that can administer the payout preapproval (wallet-reported). */
+  utilityPreapprovalAdmins?: string[];
 }
 
 // ─── Status ──────────────────────────────────────────────────────────────────
