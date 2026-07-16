@@ -10,9 +10,9 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "@partylayer/react": "^2.0.0",
-    "@partylayer/sdk": "^0.14.1",
-    "@partylayer/session": "^1.1.2",
+    "@partylayer/react": "^2.1.0",
+    "@partylayer/sdk": "^0.15.0",
+    "@partylayer/session": "^1.1.4",
     "@tanstack/react-query": "^5.0.0",
     "next": "^14.2.5",
     "react": "^18.3.1",

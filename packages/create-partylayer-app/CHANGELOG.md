@@ -1,5 +1,11 @@
 # create-partylayer-app
 
+## 0.4.1
+
+### Patch Changes
+
+- Refresh the scaffold template package pins to the current release so a newly scaffolded app installs the latest PartyLayer packages.
+
 ## 0.4.0
 
 ### Minor Changes

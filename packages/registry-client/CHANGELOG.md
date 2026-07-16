@@ -1,5 +1,16 @@
 # @partylayer/registry-client
 
+## 0.6.0
+
+### Minor Changes
+
+- Classify each wallet's connection transport from its registry entry so the wallet picker can show a clean label (for example Browser Extension, Mobile wallet, or Scan to connect) instead of raw method names.
+
+### Patch Changes
+
+- Updated dependencies
+  - @partylayer/core@0.11.0
+
 ## 0.5.3
 
 ### Patch Changes

@@ -1,6 +1,6 @@
 {
   "name": "@partylayer/registry-cli",
-  "version": "0.1.11",
+  "version": "0.1.12",
   "description": "CLI tool for managing PartyLayer wallet registry",
   "type": "module",
   "bin": {

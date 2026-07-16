@@ -1,5 +1,16 @@
 # @partylayer/adapter-loop
 
+## 0.4.0
+
+### Minor Changes
+
+- Update to Loop SDK 0.13, which restores wallet pairing after a Loop server change, read the wallet's payout preapproval signal so consumers can tell whether a payout lands directly or may strand as an unaccepted offer, and surface structured wallet errors (timeout, unauthorized, payment required, and user rejection) with stable error codes.
+
+### Patch Changes
+
+- Updated dependencies
+  - @partylayer/core@0.11.0
+
 ## 0.3.15
 
 ### Patch Changes

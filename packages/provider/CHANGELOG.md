@@ -1,5 +1,16 @@
 # @partylayer/provider
 
+## 0.4.0
+
+### Minor Changes
+
+- Carry the wallet's payout preapproval signal through to the account exposed by the session hooks.
+
+### Patch Changes
+
+- Updated dependencies
+  - @partylayer/core@0.11.0
+
 ## 0.3.2
 
 ### Patch Changes

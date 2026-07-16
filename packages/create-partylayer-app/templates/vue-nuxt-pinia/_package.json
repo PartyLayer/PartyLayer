@@ -10,9 +10,9 @@
     "postinstall": "nuxt prepare"
   },
   "dependencies": {
-    "@partylayer/sdk": "^0.14.1",
-    "@partylayer/session": "^1.1.2",
-    "@partylayer/vue": "^1.0.0",
+    "@partylayer/sdk": "^0.15.0",
+    "@partylayer/session": "^1.1.4",
+    "@partylayer/vue": "^1.0.1",
     "@pinia/nuxt": "^0.5.5",
     "@tanstack/vue-query": "^5.0.0",
     "pinia": "^2.2.0",

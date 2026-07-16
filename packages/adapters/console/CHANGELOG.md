@@ -1,5 +1,12 @@
 # @partylayer/adapter-console
 
+## 0.3.15
+
+### Patch Changes
+
+- Updated dependencies
+  - @partylayer/core@0.11.0
+
 ## 0.3.14
 
 ### Patch Changes

@@ -1,5 +1,11 @@
 # @partylayer/core
 
+## 0.11.0
+
+### Minor Changes
+
+- Add optional payout preapproval fields (`hasPreapproval` and `utilityPreapprovalAdmins`) to the session and account types, a fund safety signal from the wallet so consumers can tell whether a payout to a party lands directly. Additive and backward compatible.
+
 ## 0.10.0
 
 ### Minor Changes

@@ -1,5 +1,13 @@
 # @partylayer/vue
 
+## 1.0.1
+
+### Patch Changes
+
+- Updated dependencies
+  - @partylayer/core@0.11.0
+  - @partylayer/session@1.1.4
+
 ## 1.0.0
 
 ### Major Changes

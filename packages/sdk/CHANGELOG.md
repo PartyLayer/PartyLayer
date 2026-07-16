@@ -1,5 +1,27 @@
 # @partylayer/sdk
 
+## 0.15.0
+
+### Minor Changes
+
+- Carry the wallet's payout preapproval signal through to the active session.
+
+### Patch Changes
+
+- Updated dependencies
+- Updated dependencies
+- Updated dependencies
+- Updated dependencies
+  - @partylayer/core@0.11.0
+  - @partylayer/adapter-loop@0.4.0
+  - @partylayer/provider@0.4.0
+  - @partylayer/registry-client@0.6.0
+  - @partylayer/adapter-bron@0.2.19
+  - @partylayer/adapter-cantor8@0.2.18
+  - @partylayer/adapter-console@0.3.15
+  - @partylayer/adapter-nightly@0.2.18
+  - @partylayer/adapter-send@1.2.3
+
 ## 0.14.1
 
 ### Patch Changes

@@ -1,5 +1,14 @@
 # @partylayer/adapter-send
 
+## 1.2.3
+
+### Patch Changes
+
+- Updated dependencies
+- Updated dependencies
+  - @partylayer/core@0.11.0
+  - @partylayer/provider@0.4.0
+
 ## 1.2.2
 
 ### Patch Changes

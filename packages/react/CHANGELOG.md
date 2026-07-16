@@ -1,5 +1,21 @@
 # @partylayer/react
 
+## 2.1.0
+
+### Minor Changes
+
+- Refine the connect experience: smoother modal motion with reduced motion support, a themeable connect UI (callable light and dark themes with an accent color, corner radius, backdrop blur, and font stack, plus ready made accent presets and a dynamic light/dark option), a toggleable "Powered by PartyLayer" attribution footer with an optional disclaimer, a deterministic account avatar with an `accountStatus` option and a connected dropdown that can copy the address, and a cleaner wallet picker with accurate transport labels, wallet search, and a first time onboarding explainer.
+
+### Patch Changes
+
+- Updated dependencies
+- Updated dependencies
+- Updated dependencies
+  - @partylayer/core@0.11.0
+  - @partylayer/registry-client@0.6.0
+  - @partylayer/sdk@0.15.0
+  - @partylayer/session@1.1.4
+
 ## 2.0.0
 
 ### Major Changes

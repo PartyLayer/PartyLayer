@@ -1,5 +1,12 @@
 # @partylayer/adapter-nightly
 
+## 0.2.18
+
+### Patch Changes
+
+- Updated dependencies
+  - @partylayer/core@0.11.0
+
 ## 0.2.17
 
 ### Patch Changes

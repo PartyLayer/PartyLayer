@@ -1,5 +1,12 @@
 # @partylayer/session
 
+## 1.1.4
+
+### Patch Changes
+
+- Updated dependencies
+  - @partylayer/core@0.11.0
+
 ## 1.1.3
 
 ### Patch Changes

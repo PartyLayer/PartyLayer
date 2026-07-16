@@ -20,7 +20,8 @@
 ### Features
 
 - **React Hooks**: `useSession`, `useWallets`, `useConnect`, `useSignMessage`, and more
-- **Ready-to-Use Components**: Pre-built wallet modal with customizable styling
+- **Ready-to-Use Components**: a pre-built wallet modal (with wallet search and a "New to Canton wallets?" explainer) and a `ConnectButton` with a deterministic account avatar and a copy-address dropdown
+- **Themeable**: callable `lightTheme`/`darkTheme` with an accent color, radius, blur, and font stack, ready-made `accentPresets`, and a dynamic light/dark option
 - **State Management**: Automatic session state synchronization
 - **TanStack Query data layer (v2)**: a `@partylayer/react/query` entrypoint for DAML reads/writes (`useDamlContract`, `useChoice`), CIP-0104 cost (`useTransactionCostEstimate`, `usePaidTrafficCost`), Suspense twins, and optimistic updates
 - **TypeScript**: Full type safety for all hooks and components
@@ -365,6 +366,87 @@ A pre-built modal for wallet selection.
 | `isOpen` | `boolean` | Yes | Whether the modal is visible |
 | `onClose` | `() => void` | Yes | Called when modal should close |
 | `onConnect` | `(sessionId: string) => void` | No | Optional; called with the new session id after a successful connection |
+| `walletIcons` | `Record<string, string>` | No | Override wallet logos by wallet id |
+| `walletOrder` | `readonly string[]` | No | Wallet ids in display order; unlisted wallets fall to the end |
+| `showAttribution` | `boolean` | No | Show the muted "Powered by PartyLayer" footer line (default `true`) |
+| `disclaimer` | `ReactNode` | No | Optional legal line (e.g. Terms / Privacy) shown above the footer |
+| `showWalletGuide` | `boolean` | No | Show the "New to Canton wallets?" explainer row (default `true`) |
+
+The modal also shows a search field once the wallet list is long enough, and a clean transport label under each wallet (for example "Browser Extension" or "Scan to connect").
+
+### `ConnectButton`
+
+A drop-in button that opens the wallet modal, then, once connected, shows a deterministic account avatar with the truncated party id and a dropdown with a copy-address action and disconnect.
+
+```tsx
+import { ConnectButton } from '@partylayer/react';
+
+<ConnectButton accountStatus="full" />
+```
+
+**Props:**
+
+| Prop | Type | Required | Description |
+|------|------|----------|-------------|
+| `label` | `string` | No | Text when disconnected (default `"Connect Wallet"`) |
+| `accountStatus` | `'avatar' \| 'address' \| 'full'` | No | What the connected button shows (default `'full'` = avatar + id) |
+| `connectedLabel` | `'address' \| 'wallet' \| 'custom'` | No | Which identity to display when connected |
+| `formatAddress` | `(partyId: string) => string` | No | Custom formatter (with `connectedLabel="custom"`) |
+| `showDisconnect` | `boolean` | No | Show the dropdown with copy and disconnect (default `true`) |
+| `className` / `style` | `string` / `CSSProperties` | No | Styling overrides |
+
+### `PartyAvatar`
+
+A small deterministic avatar generated from a Canton party id (the same id always yields the same avatar). Reused inside `ConnectButton`, and exported so you can render the same identity mark elsewhere.
+
+```tsx
+import { PartyAvatar } from '@partylayer/react';
+
+<PartyAvatar id={partyId} size={24} />
+```
+
+| Prop | Type | Required | Description |
+|------|------|----------|-------------|
+| `id` | `string` | Yes | The party id the avatar is generated from |
+| `size` | `number` | No | Diameter in px (default `20`) |
+| `className` / `style` | `string` / `CSSProperties` | No | Styling overrides |
+
+---
+
+## Theming
+
+`lightTheme` and `darkTheme` are callable: call them with a few friendly overrides to customize, or pass them as-is. The default look is unchanged.
+
+```tsx
+import { PartyLayerKit, darkTheme, accentPresets } from '@partylayer/react';
+
+// A custom accent, larger radius, and a stronger backdrop blur:
+<PartyLayerKit
+  network="mainnet"
+  appName="My dApp"
+  theme={darkTheme({ accentColor: '#7B3FE4', borderRadius: 'large', overlayBlur: 'large' })}
+>
+  {children}
+</PartyLayerKit>
+
+// Or a ready-made preset:
+<PartyLayerKit network="mainnet" appName="My dApp" theme={darkTheme({ ...accentPresets.purple })}>
+  {children}
+</PartyLayerKit>
+```
+
+**`ThemeOverrides`** (accepted by `lightTheme(...)` / `darkTheme(...)` / `createTheme(base, overrides)`):
+
+| Field | Type | Description |
+|------|------|-------------|
+| `accentColor` | `string` | Sets the primary accent (a hover shade is derived) |
+| `accentColorForeground` | `string` | Text/icon color on the accent (auto-derived if omitted) |
+| `borderRadius` | `'none' \| 'small' \| 'medium' \| 'large' \| string` | Corner radius keyword or a raw CSS length |
+| `overlayBlur` | `'none' \| 'small' \| 'large' \| string` | Modal backdrop blur keyword or a raw CSS length |
+| `fontStack` | `'system' \| 'rounded' \| string` | Font family keyword or a raw CSS font-family |
+| `colors` | `Partial<PartyLayerTheme['colors']>` | Deep color overrides |
+
+`accentPresets` ships `partyYellow`, `blue`, `green`, `purple`, `orange`, `pink`, and `red`. Pass a static theme, or a dynamic `{ lightMode, darkMode }` object that follows the OS preference. The `showAttribution` and `disclaimer` props are also available on `PartyLayerKit` and apply to the modal footer.
 
 ---
 

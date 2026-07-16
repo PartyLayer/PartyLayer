@@ -1,6 +1,6 @@
 {
   "name": "@partylayer/vue",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Vue 3 composables for PartyLayer sessions",
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",
