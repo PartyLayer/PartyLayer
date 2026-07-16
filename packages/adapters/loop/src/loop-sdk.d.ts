@@ -1,106 +1,12 @@
 /**
- * Type declarations for @fivenorth/loop-sdk
+ * @fivenorth/loop-sdk ships its own type declarations as of 0.13.x
+ * (see the package's `exports["."].types` → dist/index.d.ts). The adapter now
+ * consumes those real types directly, so this file intentionally declares
+ * nothing. It is kept as a pointer; a `declare module '@fivenorth/loop-sdk'`
+ * block here would merge with (and conflict against) the package's own exports.
  *
- * The SDK does not ship its own .d.ts files, so we maintain
- * minimal ambient types here based on the published README and
- * source inspection (v0.10.0).
+ * The provider type is not re-exported by name from the SDK root, so the adapter
+ * derives it from `loop.init`'s `onAccept` parameter. `Account` and the
+ * structured error classes ARE exported from the root and are imported directly.
  */
-
-declare module '@fivenorth/loop-sdk' {
-  export interface LoopProvider {
-    party_id: string;
-    public_key: string;
-    email?: string;
-    signMessage(message: string): Promise<string>;
-    submitTransaction(
-      command: unknown,
-      options?: {
-        message?: string;
-        estimateTraffic?: boolean;
-        requestTimeout?: number;
-      },
-    ): Promise<{ command_id: string; submission_id: string }>;
-    submitAndWaitForTransaction(
-      command: unknown,
-      options?: {
-        message?: string;
-        estimateTraffic?: boolean;
-        requestTimeout?: number;
-      },
-    ): Promise<unknown>;
-    getHolding(): Promise<unknown>;
-    getActiveContracts(params: {
-      templateId?: string;
-      interfaceId?: string;
-    }): Promise<unknown>;
-  }
-
-  export interface LoopInitConfig {
-    appName: string;
-    network: 'local' | 'devnet' | 'mainnet';
-    walletUrl?: string;
-    apiUrl?: string;
-    onAccept: (provider: LoopProvider) => void;
-    onReject: () => void;
-    onTransactionUpdate?: (payload: unknown) => void;
-    options?: {
-      openMode?: 'popup' | 'tab';
-      requestSigningMode?: 'popup' | 'tab';
-      redirectUrl?: string;
-    };
-  }
-
-  export interface LoopWalletTransferInstrument {
-    instrument_admin?: string;
-    instrument_id?: string;
-  }
-
-  export interface LoopWalletTransferOptions {
-    message?: string;
-    memo?: string;
-    executionMode?: 'async' | 'wait';
-    requestedAt?: string;
-    executeBefore?: string;
-    requestTimeout?: number;
-    estimateTraffic?: boolean;
-  }
-
-  export interface LoopWallet {
-    transfer(
-      recipient: string,
-      amount: string | number,
-      instrument?: LoopWalletTransferInstrument,
-      options?: LoopWalletTransferOptions,
-    ): Promise<unknown>;
-    extension: {
-      usdcBridge: {
-        withdrawalUSDCxToEthereum(
-          ethAddress: string,
-          amount: string,
-          options?: { reference?: string; message?: string; requestTimeout?: number },
-        ): Promise<unknown>;
-      };
-    };
-  }
-
-  export interface LoopSDK {
-    init(config: LoopInitConfig): void;
-    connect(): Promise<void>;
-    autoConnect(): Promise<void>;
-    logout(): void;
-    wallet: LoopWallet;
-    provider: LoopProvider | null;
-    session: unknown;
-  }
-
-  export const loop: LoopSDK;
-
-  export enum MessageType {
-    HANDSHAKE_ACCEPT = 'handshake_accept',
-    HANDSHAKE_REJECT = 'handshake_reject',
-    TRANSACTION_COMPLETED = 'transaction_completed',
-    RUN_TRANSACTION = 'run_transaction',
-    SIGN_RAW_MESSAGE = 'sign_raw_message',
-    REJECT_REQUEST = 'reject_request',
-  }
-}
+export {};

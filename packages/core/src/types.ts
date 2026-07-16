@@ -238,6 +238,18 @@ export interface Session {
    * mismatch was detected. See `networkEnforcement` for blocking behavior.
    */
   networkMismatch?: { expected: string; actual: string };
+  /**
+   * Wallet-reported payout preapproval (fund-safety signal). When true, a payout
+   * to this party lands directly; when false/absent, it may strand as an
+   * unaccepted offer. A passthrough of what the wallet reports at connect;
+   * absent when the wallet does not report it. Do not infer this from outcomes.
+   */
+  hasPreapproval?: boolean;
+  /**
+   * Admin party ids that can administer the payout preapproval (wallet-reported).
+   * Absent when the wallet does not report it.
+   */
+  utilityPreapprovalAdmins?: string[];
 }
 
 /**
