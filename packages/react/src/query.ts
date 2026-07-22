@@ -102,6 +102,20 @@ export type {
   UseTokenHoldingsReturnType,
 } from './token-holdings';
 
+// CIP-0056 typed allocations read: a typed specialization of useDamlContract for
+// the AllocationV1 interface (the read-side allocation sibling of useTokenHoldings).
+// Allocation read only; the write side lands later as separate typed hooks.
+export { useTokenAllocations } from './token-allocations';
+export type {
+  TokenAllocation,
+  TokenAllocationSpecification,
+  TokenSettlementInfo,
+  TokenSettlementReference,
+  TokenTransferLeg,
+  UseTokenAllocationsParameters,
+  UseTokenAllocationsReturnType,
+} from './token-allocations';
+
 export { useChoice } from './use-choice';
 export type {
   UseChoiceParameters,
