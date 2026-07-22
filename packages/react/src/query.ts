@@ -91,6 +91,17 @@ export type {
   UseDamlContractReturnType,
 } from './use-daml-contract';
 
+// CIP-0056 (Canton Token Standard) typed holdings read: a typed specialization
+// of useDamlContract for the HoldingV1 interface. Holdings read only.
+export { useTokenHoldings } from './token-holdings';
+export type {
+  TokenHolding,
+  TokenInstrumentId,
+  TokenLock,
+  UseTokenHoldingsParameters,
+  UseTokenHoldingsReturnType,
+} from './token-holdings';
+
 export { useChoice } from './use-choice';
 export type {
   UseChoiceParameters,

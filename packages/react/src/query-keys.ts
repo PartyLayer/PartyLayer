@@ -68,6 +68,16 @@ export const partyLayerKeys = {
     [...partyLayerKeys.all, 'damlContract', params ?? {}] as const,
 
   /**
+   * Query: a CIP-0056 token-holdings read (a typed sibling of `damlContract`).
+   * Optional opaque params (e.g. a `key` identifying the owner/instrument filter
+   * the dApp keys on) are folded into the key so different reads cache
+   * independently. PartyLayer is schema-agnostic, so the key is opaque (the dApp's
+   * fetcher owns the actual query).
+   */
+  tokenHoldings: (params?: { key?: unknown }) =>
+    [...partyLayerKeys.all, 'tokenHoldings', params ?? {}] as const,
+
+  /**
    * Mutation: exercise a DAML choice (the write counterpart of `damlContract`).
    * The dApp owns the exercise transport (Model 2), so this is just a stable
    * mutation key; the variables/result are the dApp's, not folded into the key.
