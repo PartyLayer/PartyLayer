@@ -8,8 +8,7 @@ import {
   useWallets,
   useSignMessage,
   usePartyLayer,
-  lightTheme,
-  darkTheme,
+  themes,
   accentPresets,
   PartyAvatar,
 } from '@partylayer/react';
@@ -738,6 +737,7 @@ function CodeBlock() {
 export default function KitDemoPage() {
   const [mounted, setMounted] = useState(false);
   const [theme, setTheme] = useState<'light' | 'dark' | 'auto'>('light');
+  const [family, setFamily] = useState<'default' | 'midnight' | 'slate' | 'teal' | 'gold' | 'warm'>('default');
   const [accent, setAccent] = useState<'default' | 'blue' | 'green' | 'purple' | 'orange' | 'pink' | 'red'>('default');
   const [showAttr, setShowAttr] = useState(true);
   const [accountStatus, setAccountStatus] = useState<'full' | 'avatar' | 'address'>('full');
@@ -759,16 +759,21 @@ export default function KitDemoPage() {
   const isDark = theme === 'dark' || (theme === 'auto' && systemDark);
   const c = isDark ? darkTokens : lightTokens;
 
-  // Build the theme passed to PartyLayerKit from the light/dark choice + the accent.
-  // 'default' = no override (base look). For 'auto' we pass the dynamic
-  // { lightMode, darkMode } form so it follows the OS preference AND stays accented.
+  // Build the theme passed to PartyLayerKit from the selected family + the
+  // light/dark choice + the accent. The family resolves to its callable
+  // light/dark pair from the `themes` catalog; the accent override then composes
+  // on top (all family themes are callable). 'default' = the base yellow family,
+  // so family='default' with no accent reproduces exactly today's look. For
+  // 'auto' we pass the dynamic { lightMode, darkMode } form so it follows the OS
+  // preference AND stays on the chosen family and accent.
   const accentOverride = accent === 'default' ? undefined : accentPresets[accent];
+  const fam = themes[family];
   const kitTheme =
     theme === 'auto'
-      ? { lightMode: lightTheme(accentOverride), darkMode: darkTheme(accentOverride) }
+      ? { lightMode: fam.light(accentOverride), darkMode: fam.dark(accentOverride) }
       : theme === 'dark'
-        ? darkTheme(accentOverride)
-        : lightTheme(accentOverride);
+        ? fam.dark(accentOverride)
+        : fam.light(accentOverride);
 
   const ACCENT_SWATCHES = [
     { key: 'default', color: '#FFCC00', label: 'Default' },
@@ -778,6 +783,18 @@ export default function KitDemoPage() {
     { key: 'orange', color: '#F97316', label: 'Orange' },
     { key: 'pink', color: '#EC4899', label: 'Pink' },
     { key: 'red', color: '#EF4444', label: 'Red' },
+  ] as const;
+
+  // The professional theme families for the gallery. Colors are read live from
+  // the exported `themes` catalog, so the swatches always reflect the real
+  // palettes. 'default' is the base yellow family (themes.default).
+  const FAMILY_CARDS = [
+    { key: 'default', label: 'Default', descriptor: 'brand' },
+    { key: 'midnight', label: 'Midnight', descriptor: 'navy' },
+    { key: 'slate', label: 'Slate', descriptor: 'neutral' },
+    { key: 'teal', label: 'Teal', descriptor: 'trading' },
+    { key: 'gold', label: 'Gold', descriptor: 'premium' },
+    { key: 'warm', label: 'Warm', descriptor: 'rose' },
   ] as const;
 
   if (!mounted) return (
@@ -920,6 +937,78 @@ export default function KitDemoPage() {
                   ? `<PartyLayerKit showAttribution={${showAttr}}>`
                   : `theme={darkTheme({ ...accentPresets.${accent} })}`}
               </span>
+            </div>
+
+            {/* Theme gallery: pick one of the professional theme families and it
+                retints the ConnectButton, modal, connecting glow, and dropdown live.
+                The accent picker above still composes on top of the chosen family. */}
+            <div style={{
+              padding: '14px 16px', marginTop: '10px',
+              borderRadius: '12px', border: `1px solid ${c.border}`, backgroundColor: c.muted,
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap', marginBottom: '12px' }}>
+                <span style={{ fontSize: '13px', fontWeight: 600, color: c.fg }}>Theme gallery</span>
+                <span style={{ fontSize: '12px', color: c.slate500 }}>
+                  pick a family, then open Connect to see it applied
+                </span>
+                <span style={{ fontSize: '12px', color: c.slate500, marginLeft: 'auto' }}>
+                  {family === 'default'
+                    ? '<PartyLayerKit theme={kitTheme}>'
+                    : `themes.${family}.${theme === 'dark' ? 'dark' : 'light'}(accent)`}
+                </span>
+              </div>
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: `repeat(auto-fit, minmax(${bp === 'mobile' ? '96px' : '116px'}, 1fr))`,
+                gap: '10px',
+              }}>
+                {FAMILY_CARDS.map((fc) => {
+                  const pair = themes[fc.key];
+                  const lightBg = pair.light.colors.background;
+                  const lightDot = pair.light.colors.primary;
+                  const darkBg = pair.dark.colors.background;
+                  const darkDot = pair.dark.colors.primary;
+                  const selected = family === fc.key;
+                  return (
+                    <button
+                      key={fc.key}
+                      onClick={() => setFamily(fc.key)}
+                      title={`${fc.label} (${fc.descriptor})`}
+                      aria-label={`${fc.label} theme family, ${fc.descriptor}`}
+                      aria-pressed={selected}
+                      style={{
+                        display: 'flex', flexDirection: 'column', gap: '8px',
+                        padding: '10px', cursor: 'pointer', textAlign: 'left',
+                        borderRadius: '10px',
+                        border: selected ? `2px solid ${c.fg}` : `2px solid ${c.border}`,
+                        background: c.bg,
+                        boxShadow: selected ? `0 0 0 2px ${c.bg}, 0 0 0 4px ${lightDot}55` : 'none',
+                        transform: selected ? 'scale(1.03)' : 'scale(1)',
+                        transition: 'transform 120ms, box-shadow 120ms, border-color 120ms',
+                        fontFamily: font,
+                      }}
+                    >
+                      {/* Split swatch: light variant on the left, dark on the right,
+                          each showing its background with its accent dot. */}
+                      <div style={{
+                        display: 'flex', width: '100%', height: '38px',
+                        borderRadius: '8px', overflow: 'hidden', border: `1px solid ${c.border}`,
+                      }}>
+                        <div style={{ flex: 1, background: lightBg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                          <span style={{ width: '12px', height: '12px', borderRadius: '50%', background: lightDot }} />
+                        </div>
+                        <div style={{ flex: 1, background: darkBg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                          <span style={{ width: '12px', height: '12px', borderRadius: '50%', background: darkDot }} />
+                        </div>
+                      </div>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '1px' }}>
+                        <span style={{ fontSize: '12px', fontWeight: 600, color: c.fg }}>{fc.label}</span>
+                        <span style={{ fontSize: '10px', color: c.slate500 }}>{fc.descriptor}</span>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
             </div>
 
             {/* Connected-button avatar showcase: accountStatus control + a preview of
