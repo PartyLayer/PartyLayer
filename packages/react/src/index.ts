@@ -31,6 +31,23 @@ export type { SynchronizerSwitcherProps, SynchronizerOption } from './synchroniz
 export { ThemeProvider, useTheme, lightTheme, darkTheme, createTheme, accentPresets } from './theme';
 export type { PartyLayerTheme, ThemeOverrides, ThemeInput, DynamicTheme, CallableTheme } from './theme';
 
+// Professional theme families (additive; original palettes, WCAG AA verified).
+// Each family ships a light and a dark callable theme, plus the `themes` catalog
+// (e.g. `themes.midnight.dark`) for discoverability.
+export {
+  midnightLightTheme,
+  midnightDarkTheme,
+  slateLightTheme,
+  slateDarkTheme,
+  tealLightTheme,
+  tealDarkTheme,
+  goldLightTheme,
+  goldDarkTheme,
+  warmLightTheme,
+  warmDarkTheme,
+  themes,
+} from './theme';
+
 // Native CIP-0103 adapter (for advanced usage)
 export { NativeCIP0103Adapter, createNativeAdapter, createSyntheticWalletInfo } from './native-cip0103-adapter';
 
