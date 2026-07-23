@@ -1,0 +1,361 @@
+/* App chrome. Two token sets follow the light/dark toggle; the PartyLayer
+   primitives retint from the teal theme independently. */
+.app {
+  --bg: #ffffff;
+  --surface: #f0fdfa;
+  --card: #ffffff;
+  --text: #0f1e1c;
+  --muted: #5f6b6a;
+  --border: rgba(19, 78, 74, 0.14);
+  --accent: #0d9488;
+  --accent-contrast: #ffffff;
+  --error-bg: #fef2f2;
+  --error-text: #b00020;
+  --lock-bg: #fff7ed;
+  --lock-text: #9a3412;
+  min-height: 100vh;
+  background: var(--bg);
+  color: var(--text);
+  transition: background 200ms, color 200ms;
+}
+
+.app-dark {
+  --bg: #0a1414;
+  --surface: #0f1d1d;
+  --card: #122423;
+  --text: #e6fbf6;
+  --muted: #8fa8a6;
+  --border: rgba(255, 255, 255, 0.1);
+  --accent: #2dd4bf;
+  --accent-contrast: #0a1414;
+  --error-bg: #2a0f10;
+  --error-text: #fca5a5;
+  --lock-bg: #2a1c0f;
+  --lock-text: #fbbf24;
+}
+
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  padding: 16px 24px;
+  border-bottom: 1px solid var(--border);
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.brand-mark {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  background: var(--accent);
+  display: inline-block;
+}
+.brand-title {
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+.brand-sub {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.topbar-controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.party-switch {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+.party-switch-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+  margin-right: 2px;
+}
+.party-chip {
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  padding: 4px 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+}
+.party-chip-on {
+  background: var(--accent);
+  color: var(--accent-contrast);
+}
+
+.acting-line {
+  max-width: 1100px;
+  margin: 16px auto 0;
+  padding: 0 24px;
+  color: var(--muted);
+  font-size: 14px;
+}
+.acting-line code {
+  font-size: 12px;
+}
+
+.grid {
+  max-width: 1100px;
+  margin: 16px auto 0;
+  padding: 0 24px 40px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 20px;
+}
+
+.card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  overflow: hidden;
+}
+.card-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--border);
+}
+.card-head h2 {
+  margin: 0;
+  font-size: 16px;
+}
+.card-hint {
+  font-size: 11px;
+  color: var(--muted);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+.card-body {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+.row-block {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 10px;
+}
+.row-block .row-actions {
+  justify-content: flex-start;
+}
+.row-main {
+  flex: 1;
+  min-width: 0;
+}
+.row-title {
+  font-weight: 600;
+}
+.row-sub {
+  font-size: 12px;
+  word-break: break-all;
+}
+.row-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.muted {
+  color: var(--muted);
+}
+
+.badge {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+.badge-neutral {
+  background: var(--surface);
+  color: var(--muted);
+}
+.badge-lock {
+  background: var(--lock-bg);
+  color: var(--lock-text);
+}
+.badge-ok {
+  background: var(--surface);
+  color: var(--accent);
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px;
+  align-items: end;
+}
+.field-action .btn {
+  width: 100%;
+}
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.field-label {
+  font-size: 12px;
+  color: var(--muted);
+}
+.field-action {
+  justify-content: flex-end;
+}
+.field input,
+.field select,
+.topbar-controls select {
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 14px;
+}
+
+.btn {
+  border: 1px solid transparent;
+  border-radius: 8px;
+  padding: 8px 14px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+.btn-primary {
+  background: var(--accent);
+  color: var(--accent-contrast);
+}
+.btn-ghost {
+  background: transparent;
+  color: var(--text);
+  border-color: var(--border);
+}
+.btn-small {
+  padding: 5px 10px;
+  font-size: 13px;
+}
+
+.review {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding-top: 4px;
+}
+.review-line,
+.balance-line,
+.hint-line {
+  font-size: 14px;
+}
+
+.state {
+  padding: 16px;
+  border-radius: 10px;
+  font-size: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.state-empty {
+  background: var(--surface);
+  color: var(--muted);
+}
+.state-error {
+  background: var(--error-bg);
+  color: var(--error-text);
+}
+
+.skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.skeleton-row {
+  height: 40px;
+  border-radius: 10px;
+  background: linear-gradient(90deg, var(--surface), var(--border), var(--surface));
+  background-size: 200% 100%;
+  animation: shimmer 1.2s ease-in-out infinite;
+}
+@keyframes shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+.issuer-summary {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.supply {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+}
+.freeze {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.alloc-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.footer {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 24px;
+  color: var(--muted);
+  font-size: 13px;
+  border-top: 1px solid var(--border);
+}

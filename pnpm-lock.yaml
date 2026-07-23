@@ -211,6 +211,46 @@ importers:
         specifier: ^5.3.3
         version: 5.9.3
 
+  apps/tokenization:
+    dependencies:
+      '@partylayer/adapter-console':
+        specifier: workspace:^
+        version: link:../../packages/adapters/console
+      '@partylayer/core':
+        specifier: workspace:^
+        version: link:../../packages/core
+      '@partylayer/react':
+        specifier: workspace:^
+        version: link:../../packages/react
+      '@partylayer/sdk':
+        specifier: workspace:^
+        version: link:../../packages/sdk
+      '@tanstack/react-query':
+        specifier: ^5.0.0
+        version: 5.101.1(react@18.3.1)
+      react:
+        specifier: ^18.3.1
+        version: 18.3.1
+      react-dom:
+        specifier: ^18.3.1
+        version: 18.3.1(react@18.3.1)
+    devDependencies:
+      '@types/react':
+        specifier: ^18.3.3
+        version: 18.3.27
+      '@types/react-dom':
+        specifier: ^18.3.0
+        version: 18.3.7(@types/react@18.3.27)
+      '@vitejs/plugin-react':
+        specifier: ^4.3.1
+        version: 4.7.0(vite@5.4.21(@types/node@25.9.2))
+      typescript:
+        specifier: ^5.6.2
+        version: 5.9.3
+      vite:
+        specifier: ^5.4.2
+        version: 5.4.21(@types/node@25.9.2)
+
   examples/test-dapp:
     dependencies:
       '@partylayer/react':

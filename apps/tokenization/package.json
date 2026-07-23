@@ -1,0 +1,30 @@
+{
+  "name": "partylayer-tokenization",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "description": "PartyLayer M3 Tokenization vertical example: composes the full CIP-0056 helper surface against a typed demo backend.",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview",
+    "lint": "eslint src --ext .ts,.tsx",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@partylayer/react": "workspace:^",
+    "@partylayer/sdk": "workspace:^",
+    "@partylayer/core": "workspace:^",
+    "@partylayer/adapter-console": "workspace:^",
+    "@tanstack/react-query": "^5.0.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.3",
+    "@types/react-dom": "^18.3.0",
+    "@vitejs/plugin-react": "^4.3.1",
+    "typescript": "^5.6.2",
+    "vite": "^5.4.2"
+  }
+}
