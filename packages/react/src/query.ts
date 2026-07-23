@@ -176,6 +176,27 @@ export type {
   UseAllocationActionReturnType,
 } from './allocation-action';
 
+// CIP-0056 typed allocation-requests read: a settlement app's on-ledger request
+// that wallets discover as leg-sender observers (the read sibling of
+// useTransferInstructions).
+export { useAllocationRequests } from './token-allocation-requests';
+export type {
+  TokenAllocationRequest,
+  TokenAllocationRequestRef,
+  UseAllocationRequestsParameters,
+  UseAllocationRequestsReturnType,
+} from './token-allocation-requests';
+
+// CIP-0056 typed allocation-request response: reject or withdraw an allocation
+// request (the action sibling of useTransferInstructionAction).
+export { useAllocationRequestAction } from './allocation-request-action';
+export type {
+  AllocationRequestActionKind,
+  AllocationRequestActionRequest,
+  UseAllocationRequestActionParameters,
+  UseAllocationRequestActionReturnType,
+} from './allocation-request-action';
+
 // Optimistic update + automatic rollback helper for the mutation hooks.
 export { optimisticMutationOptions } from './use-optimistic';
 export type {

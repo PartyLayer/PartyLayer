@@ -142,6 +142,24 @@ export const partyLayerKeys = {
    * key; the request/result are the dApp's, not folded into the key.
    */
   allocationAction: () => [...partyLayerKeys.all, 'allocationAction'] as const,
+
+  /**
+   * Query: a CIP-0056 allocation-requests read (a typed sibling of
+   * `transferInstructions`). Optional opaque params (e.g. a `key` identifying the
+   * party/filter the dApp keys on) are folded into the key so different reads cache
+   * independently. PartyLayer is schema-agnostic, so the key is opaque (the dApp's
+   * fetcher owns the actual query).
+   */
+  allocationRequests: (params?: { key?: unknown }) =>
+    [...partyLayerKeys.all, 'allocationRequests', params ?? {}] as const,
+
+  /**
+   * Mutation: respond to a CIP-0056 allocation request (reject or withdraw), a typed
+   * sibling of `transferInstructionAction`. The dApp owns the submit transport
+   * (Model 2), so this is just a stable mutation key; the request/result are the
+   * dApp's, not folded into the key.
+   */
+  allocationRequestAction: () => [...partyLayerKeys.all, 'allocationRequestAction'] as const,
 } as const;
 
 export type PartyLayerKeys = typeof partyLayerKeys;
