@@ -21,7 +21,11 @@ import type { DemoPartyKey, InstrumentConfig } from '../lib/types';
 export function Issuer() {
   const { party, backend } = useDemo();
   const queryClient = useQueryClient();
-  const isIssuer = party === 'issuer';
+  // In live mode issuance is disabled: on Canton Coin the registry controls Amulet
+  // issuance, so mint and freeze are demo-only. The panel stays visible to showcase
+  // the issuance UI, with actions disabled and a short explanation.
+  const isLive = import.meta.env.VITE_BACKEND === 'live';
+  const isIssuer = party === 'issuer' && !isLive;
 
   const instrument = useDamlContract<InstrumentConfig>({
     read: (signal) => backend.readInstrument(signal),
@@ -92,7 +96,16 @@ export function Issuer() {
 
       {!isIssuer ? (
         <div className="state state-empty">
-          Switch the demo party to <strong>Issuer</strong> to mint and freeze.
+          {isLive ? (
+            <>
+              Issuance is not available on Canton Coin: the registry controls Amulet issuance. Mint and
+              freeze are shown here in demo mode to showcase the issuance UI.
+            </>
+          ) : (
+            <>
+              Switch the demo party to <strong>Issuer</strong> to mint and freeze.
+            </>
+          )}
         </div>
       ) : (
         <>

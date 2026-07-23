@@ -7,7 +7,7 @@
  * party changes whose data every section reads and who acts. It is app state,
  * separate from the wallet session.
  */
-import { useState } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import {
   PartyLayerKit,
   ConnectButton,
@@ -18,6 +18,7 @@ import {
 import { ConsoleAdapter } from '@partylayer/adapter-console';
 import { DemoProvider } from './context/DemoContext';
 import { demoBackend } from './lib/backend';
+import { createLiveBackend, fetchGatewayParties } from './lib/liveBackend';
 import { PARTIES, PARTY_ORDER } from './lib/fixtures';
 import type { DemoPartyKey } from './lib/types';
 import { Holdings } from './sections/Holdings';
@@ -41,11 +42,23 @@ export default function App() {
   const [party, setParty] = useState<DemoPartyKey>('alice');
   const [synchronizer, setSynchronizer] = useState('canton:da-devnet');
 
+  // Backend selection: demo (default, unchanged) or live (the DevNet gateway). The
+  // browser never holds a ledger credential; live routes every read and submit to
+  // the gateway at VITE_GATEWAY_URL.
+  const isLive = import.meta.env.VITE_BACKEND === 'live';
+  const gatewayUrl = import.meta.env.VITE_GATEWAY_URL || '';
+  const backend = useMemo(() => (isLive ? createLiveBackend(gatewayUrl) : demoBackend), [isLive, gatewayUrl]);
+  const [gatewayLabels, setGatewayLabels] = useState<Partial<Record<DemoPartyKey, string>>>({});
+  useEffect(() => {
+    if (isLive && gatewayUrl) fetchGatewayParties(gatewayUrl).then(setGatewayLabels);
+  }, [isLive, gatewayUrl]);
+  const label = (p: DemoPartyKey) => gatewayLabels[p] ?? PARTIES[p].label;
+
   const theme = mode === 'dark' ? themes.teal.dark : themes.teal.light;
 
   return (
     <PartyLayerKit network="devnet" appName="PartyLayer Tokenization" theme={theme} adapters={ADAPTERS}>
-      <DemoProvider value={{ party, setParty, backend: demoBackend, mode }}>
+      <DemoProvider value={{ party, setParty, backend, mode }}>
         <div className={'app app-' + mode}>
           <header className="topbar">
             <div className="brand">
@@ -65,7 +78,7 @@ export default function App() {
                     className={'party-chip' + (party === p ? ' party-chip-on' : '')}
                     onClick={() => setParty(p)}
                   >
-                    {PARTIES[p].label}
+                    {label(p)}
                   </button>
                 ))}
               </div>
