@@ -2,9 +2,9 @@
   "metadata": {
     "registryVersion": "1.0.0",
     "schemaVersion": "1.0.0",
-    "publishedAt": "2026-06-10T00:00:00Z",
+    "publishedAt": "2026-06-30T00:00:00Z",
     "channel": "beta",
-    "sequence": 6,
+    "sequence": 7,
     "publisher": "PartyLayer"
   },
   "wallets": [
@@ -132,6 +132,29 @@
       },
       "installation": {
         "windowProperty": "nightly"
+      },
+      "sdkVersion": ">=0.1.0"
+    },
+    {
+      "id": "cauri",
+      "name": "Cauri Wallet",
+      "description": "Non-custodial passkey-based wallet for Canton Network",
+      "homepage": "https://cauri.cc",
+      "icon": "https://registry.partylayer.xyz/wallets/cauri.svg",
+      "supportedNetworks": ["devnet", "mainnet"],
+      "capabilities": {
+        "signMessage": true,
+        "signTransaction": true,
+        "submitTransaction": true,
+        "transactionStatus": true,
+        "switchNetwork": false,
+        "multiParty": false,
+        "remoteSigner": true,
+        "events": true
+      },
+      "adapter": {
+        "type": "@partylayer/adapter-cauri",
+        "requiresConfig": true
       },
       "sdkVersion": ">=0.1.0"
     }
