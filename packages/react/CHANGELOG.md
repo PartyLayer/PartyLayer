@@ -1,5 +1,17 @@
 # @partylayer/react
 
+## 2.2.0
+
+### Minor Changes
+
+- Canton Token Standard (CIP-0056) typed surface, all Model 2 (the dApp supplies the read and submit fetchers; PartyLayer owns no ledger transport). Reads returning contract refs (each view paired with its ACS contract id): `useTokenHoldings`, `useTokenAllocations`, `useTransferInstructions`, and `useAllocationRequests`. Writes and completions: `useTransferInstruction`, `useTransferInstructionAction`, `useAllocationInstruction`, `useAllocationAction`, and `useAllocationRequestAction`. The full type family mirrors the official interfaces (`HoldingV1`, `TransferInstructionV1` including the status union with the internal workflow variant, `AllocationV1`, `AllocationInstructionV1`, and `AllocationRequestV1`), with the `Token*Ref` wrappers pairing each view with its contract id.
+- Matching helpers: `tokenDecimalEquals`, `tokenTransferLegEquals`, `tokenSettlementInfoEquals`, and `allocationMatchesRequestLeg`. Framework free (no React, no TanStack), with decimal as string equality that never converts to a float, so a value like `5` matches `5.00`.
+- UI primitives: `TransactionToast` and `SynchronizerSwitcher`.
+- Five professional theme families (midnight, slate, teal, gold, warm), each in light and dark, WCAG AA verified, plus the `themes` catalog. All are callable with accent overrides.
+- Cost helpers re-exported from core so a react only consumer building `CostPreview` props needs nothing else: `toTrafficCost`, `CostEstimation`, and `TrafficCost`.
+- Renamed the transfer result status type to `TransferInstructionResultStatus` (the result outputs `pending`, `completed`, `failed`), freeing the spec view status name, and added invalidation guidance on the `partyLayerKeys` namespaced query keys (the raw key you pass is nested under the factory, so invalidate through `partyLayerKeys`).
+- Validated in composition by two in-repo vertical examples, Tokenization and DvP, before this release.
+
 ## 2.1.0
 
 ### Minor Changes
