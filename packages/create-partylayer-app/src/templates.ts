@@ -18,6 +18,16 @@ export const TEMPLATES: TemplateMeta[] = [
     hint: 'React 18, Vite, zero-config PartyLayerKit',
   },
   {
+    id: 'react-tokenization',
+    label: 'React + Tokenization vertical',
+    hint: 'CIP-0056 holdings, transfers, and issuance over a typed demo backend',
+  },
+  {
+    id: 'react-dvp',
+    label: 'React + DvP vertical',
+    hint: 'Atomic delivery versus payment over CIP-0056 allocations',
+  },
+  {
     id: 'next-ssr',
     label: 'Next.js (SSR)',
     hint: 'App Router, server-side session via cookieStorage',
