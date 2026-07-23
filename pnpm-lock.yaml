@@ -216,9 +216,6 @@ importers:
       '@partylayer/adapter-console':
         specifier: workspace:^
         version: link:../../packages/adapters/console
-      '@partylayer/core':
-        specifier: workspace:^
-        version: link:../../packages/core
       '@partylayer/react':
         specifier: workspace:^
         version: link:../../packages/react

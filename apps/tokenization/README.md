@@ -30,13 +30,13 @@ synchronizer picker, and a light/dark toggle; then five section cards:
 | --- | --- |
 | Holdings | `useTokenHoldings` |
 | Transfer | `useTransferInstruction` (plus `CostPreview` + `TransactionToast`) |
-| Incoming | `useDamlContract` (read) + `useTransferInstructionAction` |
+| Incoming | `useTransferInstructions` + `useTransferInstructionAction` |
 | Issuer | `useDamlContract` (instrument, supply, refs) + `useChoice` (mint, freeze) |
 | Allocations | `useTokenAllocations` + `useAllocationInstruction` + `useAllocationAction` |
 
-All six CIP-0056 hooks are mounted and exercised, plus the two generic hooks
-(`useDamlContract`, `useChoice`) for the reads and registry-specific writes the
-typed hooks do not cover.
+All seven CIP-0056 hooks are mounted and exercised, plus the two generic hooks
+(`useDamlContract`, `useChoice`) for the instrument reads and registry-specific
+writes the typed hooks do not cover.
 
 ## Demo flows
 
@@ -50,8 +50,11 @@ typed hooks do not cover.
    `TransactionToast` from pending to success. The transfer initiates a pending
    instruction and debits the sender; both sides refresh after invalidation.
 4. **Accept the incoming transfer.** Switch the demo party to the receiver (Bob).
-   The Incoming card shows the pending transfer; Accept completes it and credits
-   the receiver, and the pending item disappears.
+   The Incoming card shows the pending transfer. Accept and Reject render only while
+   the instruction is in the `pendingReceiverAcceptance` state (spec-accurate: those
+   choices are unavailable in the internal-workflow state, which instead shows the
+   `pendingActions` signal). Accept completes it and credits the receiver, and the
+   pending item disappears.
 5. **Issuer mints.** Switch to Issuer, enter a party and an amount under Mint. The
    total supply and the target party's holdings update.
 6. **Issuer freezes.** As Issuer, pick a target party and toggle Freeze / Unfreeze
@@ -85,15 +88,23 @@ should use a decimal library instead of this two-place shortcut.
 To wire this against a live validator and registry, replace the demo backend's
 fetchers. The hooks and the UI stay exactly as they are; only the fetchers change.
 
-**Reads (holdings, allocations).** Query your validator's active-contracts (ACS)
-endpoint with an interface filter and map each contract's interface view into the
-typed shape:
+**Reads (holdings, instructions, allocations).** Query your validator's
+active-contracts (ACS) endpoint with an interface filter and map each contract into
+the typed `{ cid, view }` ref the read hook returns (the `cid` is the ACS contract
+id, needed for the write requests):
 
-- holdings: interface filter `Splice.Api.Token.HoldingV1:Holding`, map each view
-  into `TokenHolding` (keep the contract id alongside the view; see the finding
-  below);
-- allocations: interface filter `Splice.Api.Token.AllocationV1:Allocation`, map
-  into `TokenAllocation`.
+- holdings: interface filter `Splice.Api.Token.HoldingV1:Holding`, map into
+  `TokenHoldingRef` (`{ cid, holding }`); the `cid` feeds `inputHoldingCids`;
+- instructions: interface filter
+  `Splice.Api.Token.TransferInstructionV1:TransferInstruction`, map into
+  `TokenTransferInstructionRef` (`{ cid, instruction }`); the `cid` feeds
+  `TransferInstructionActionRequest.instructionCid`. Discriminate
+  `instruction.status.kind`: only `pendingReceiverAcceptance` allows Accept and
+  Reject; `pendingInternalWorkflow` carries `pendingActions` (which party could act
+  to advance the transfer);
+- allocations: interface filter `Splice.Api.Token.AllocationV1:Allocation`, map into
+  `TokenAllocationRef` (`{ cid, allocation }`); the `cid` feeds
+  `AllocationActionRequest.allocationCid`.
 
 **Transfer initiation (`useTransferInstruction`).** The registry flow is
 off-ledger and not standardized, so it lives in your `submit` fetcher: gather the
@@ -121,24 +132,29 @@ the exact choice fields are registry-defined.
 The official Splice token-standard CLI is the canonical reference for these
 registry flows.
 
-## API findings
+## API findings (now corrected)
 
-Building this example surfaced a few composition frictions in the public API. They
-did not block the app (each was worked around cleanly), but they are reported for
-the API review:
+Building this example surfaced four composition frictions. They have since been
+CORRECTED in `@partylayer/react` (pre-release, nothing published yet), and this app
+was migrated onto the corrected API in the same change:
 
-1. **`toTrafficCost` is not re-exported from `@partylayer/react`.** Composing a
-   `CostPreview` estimate needs the `TrafficCost` constructor, which lives in
-   `@partylayer/core`, so the example pulls in a second package for one call.
-2. **`TokenHolding` and `TokenAllocation` carry no contract id.** The standard
-   views omit the cid, but transfers need `inputHoldingCids` and per-holding /
-   per-allocation actions need to identify a contract, so the dApp must track the
-   cid alongside the view (a real ACS query returns `{ contractId, view }`). The
-   example keeps `{ cid, holding }` refs for exactly this reason.
-3. **No typed instruction view.** There is no exported view for a pending
-   `TransferInstruction`, so the incoming list is an app-level model composed from
-   `TokenTransfer` + `TransferInstructionStatus` and read through the generic
-   `useDamlContract`.
-4. **The `key` prop is not the query key.** The hooks nest `key` inside their own
-   key factory, so invalidation must go through `partyLayerKeys`, not the raw
-   `key`. The `key` prop reads like it is the cache key, but it is one level down.
+1. **`toTrafficCost` re-exported from `@partylayer/react`.** A react-only consumer
+   building `CostPreview` props no longer installs `@partylayer/core`; the fixtures
+   import `toTrafficCost` and the cost types from the react package.
+2. **Contract-ref read shapes.** The read hooks now return `{ cid, view }` refs
+   (`TokenHoldingRef`, `TokenAllocationRef`, `TokenTransferInstructionRef`), so the
+   cid an ACS query returns is carried alongside the byte-exact spec view and feeds
+   the write requests directly. No app-level ref model is needed.
+3. **Typed transfer-instruction view + read hook.** `useTransferInstructions`
+   returns the standard `TransferInstructionView` with a `status` union that models
+   the internal-workflow variant faithfully (`pendingReceiverAcceptance` vs
+   `pendingInternalWorkflow` with `pendingActions`). The Incoming card uses it
+   directly instead of a generic read plus an app model.
+4. **Invalidation guidance.** The `key` prop is namespaced under `partyLayerKeys`,
+   so it is not the raw query key. The hooks' `key` JSDoc and `partyLayerKeys` now
+   spell this out, and `src/lib/invalidate.ts` invalidates through the factories.
+
+A fifth correction rode along: the result-status type was renamed from
+`TransferInstructionStatus` to `TransferInstructionResultStatus`, reclaiming the
+spec's own name (`TransferInstructionStatus` is the instruction's view status, now
+modeled by `TokenTransferInstructionStatus`).

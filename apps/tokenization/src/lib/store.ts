@@ -7,14 +7,19 @@
  * Decimal amounts stay strings throughout; arithmetic goes through the two-decimal
  * helpers in `./format` (documented simplification).
  */
-import type { DemoPartyKey, HoldingRef, IncomingTransfer, AllocationRef } from './types';
+import type {
+  TokenHoldingRef,
+  TokenTransferInstructionRef,
+  TokenAllocationRef,
+} from '@partylayer/react/query';
+import type { DemoPartyKey } from './types';
 import { PARTIES, seedHoldings, seedIncoming, seedAllocations, INSTRUMENT } from './fixtures';
 import { addAmount, subAmount, cmpAmount } from './format';
 
 interface StoreState {
-  holdings: Record<DemoPartyKey, HoldingRef[]>;
-  incoming: Record<DemoPartyKey, IncomingTransfer[]>;
-  allocations: AllocationRef[];
+  holdings: Record<DemoPartyKey, TokenHoldingRef[]>;
+  incoming: Record<DemoPartyKey, TokenTransferInstructionRef[]>;
+  allocations: TokenAllocationRef[];
 }
 
 let state: StoreState = freshState();
@@ -56,15 +61,15 @@ export const demoStore = {
     cidCounter = 0;
   },
 
-  holdingsOf(party: DemoPartyKey): HoldingRef[] {
+  holdingsOf(party: DemoPartyKey): TokenHoldingRef[] {
     return state.holdings[party].map((ref) => ({ cid: ref.cid, holding: { ...ref.holding } }));
   },
 
-  incomingOf(party: DemoPartyKey): IncomingTransfer[] {
+  incomingOf(party: DemoPartyKey): TokenTransferInstructionRef[] {
     return state.incoming[party].map((it) => ({ ...it }));
   },
 
-  allocations(): AllocationRef[] {
+  allocations(): TokenAllocationRef[] {
     return state.allocations.map((a) => ({ cid: a.cid, allocation: a.allocation }));
   },
 
@@ -147,17 +152,19 @@ export const demoStore = {
 
     const instructionCid = nextCid('ti-' + sender + '-' + receiver);
     state.incoming[receiver].push({
-      instructionCid,
-      status: 'pending',
-      transfer: {
-        sender: senderId,
-        receiver: receiverId,
-        amount,
-        instrumentId: { admin: INSTRUMENT.admin, id: INSTRUMENT.id },
-        requestedAt: '2026-07-22T09:00:00Z',
-        executeBefore: '2027-01-01T00:00:00Z',
-        inputHoldingCids: inputCids,
-        meta: memo ? { memo } : {},
+      cid: instructionCid,
+      instruction: {
+        transfer: {
+          sender: senderId,
+          receiver: receiverId,
+          amount,
+          instrumentId: { admin: INSTRUMENT.admin, id: INSTRUMENT.id },
+          requestedAt: '2026-07-22T09:00:00Z',
+          executeBefore: '2027-01-01T00:00:00Z',
+          inputHoldingCids: inputCids,
+          meta: memo ? { memo } : {},
+        },
+        status: { kind: 'pendingReceiverAcceptance' },
       },
     });
     return instructionCid;
@@ -170,16 +177,15 @@ export const demoStore = {
   resolveIncoming(receiverId: string, instructionCid: string, accept: boolean): void {
     const receiver = keyOf(receiverId);
     if (!receiver) throw new Error('Unknown receiver party.');
-    const item = state.incoming[receiver].find((it) => it.instructionCid === instructionCid);
+    const item = state.incoming[receiver].find((it) => it.cid === instructionCid);
     if (!item) throw new Error('Instruction not found: ' + instructionCid);
 
-    state.incoming[receiver] = state.incoming[receiver].filter(
-      (it) => it.instructionCid !== instructionCid,
-    );
+    state.incoming[receiver] = state.incoming[receiver].filter((it) => it.cid !== instructionCid);
+    const transfer = item.instruction.transfer;
     if (accept) {
-      this.credit(receiverId, item.transfer.amount, item.transfer.meta);
+      this.credit(receiverId, transfer.amount, transfer.meta);
     } else {
-      this.credit(item.transfer.sender, item.transfer.amount, { refunded: 'true' });
+      this.credit(transfer.sender, transfer.amount, { refunded: 'true' });
     }
   },
 

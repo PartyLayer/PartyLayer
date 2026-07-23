@@ -1,21 +1,19 @@
 /**
  * Cache invalidation helpers.
  *
- * FINDING (important): the CIP-0056 read hooks fold the consumer's `key` INTO their
- * own query key factory, so the real TanStack queryKey is
- * `partyLayerKeys.tokenHoldings({ key })` = `['partylayer','tokenHoldings',{ key }]`,
- * NOT the raw `key` value the consumer passed. A consumer who wants to invalidate
- * must therefore import `partyLayerKeys` from `@partylayer/react/query` and match on
- * the factory (an empty-args call prefix-matches every party's entry), rather than
- * on the `key` they passed. That is subtle: the `key` prop reads like it IS the
- * cache key, but it is nested one level down.
+ * The CIP-0056 read hooks namespace the consumer's `key` under their own key
+ * factory, so the real TanStack queryKey is `partyLayerKeys.tokenHoldings({ key })`,
+ * NOT the raw `key`. Invalidation therefore goes through the exported
+ * `partyLayerKeys` factories (an empty-args call prefix-matches every party's
+ * entry), as the hooks' `key` JSDoc and the `partyLayerKeys` doc now spell out.
  */
 import type { QueryClient } from '@tanstack/react-query';
 import { partyLayerKeys } from '@partylayer/react/query';
 
-/** Refresh every party's holdings plus the generic reads (incoming, supply, refs). */
+/** Refresh every party's holdings, instructions, and the generic reads (supply, refs). */
 export function invalidateHoldingsAndReads(queryClient: QueryClient): void {
   queryClient.invalidateQueries({ queryKey: partyLayerKeys.tokenHoldings() });
+  queryClient.invalidateQueries({ queryKey: partyLayerKeys.transferInstructions() });
   queryClient.invalidateQueries({ queryKey: partyLayerKeys.damlContract() });
 }
 

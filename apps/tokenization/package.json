@@ -14,7 +14,6 @@
   "dependencies": {
     "@partylayer/react": "workspace:^",
     "@partylayer/sdk": "workspace:^",
-    "@partylayer/core": "workspace:^",
     "@partylayer/adapter-console": "workspace:^",
     "@tanstack/react-query": "^5.0.0",
     "react": "^18.3.1",

@@ -8,6 +8,13 @@
  *
  * Keys are `as const` tuples so TanStack's structural matching is exact and the
  * key shape is part of the public, stable contract.
+ *
+ * INVALIDATION NOTE: the hooks that accept a `key` prop (useDamlContract,
+ * useTokenHoldings, useTokenAllocations, useTransferInstructions) namespace it as
+ * `partyLayerKeys.<name>({ key })`. The raw `key` you pass is NOT the queryKey, so
+ * prefix-invalidating with the raw `key` silently matches nothing. Invalidate with
+ * `queryClient.invalidateQueries({ queryKey: partyLayerKeys.<name>() })` to match
+ * every instance, or `partyLayerKeys.<name>({ key: yourKey })` to match one.
  */
 export const partyLayerKeys = {
   /** Root scope for every PartyLayer query/mutation key. */
@@ -86,6 +93,16 @@ export const partyLayerKeys = {
    */
   tokenAllocations: (params?: { key?: unknown }) =>
     [...partyLayerKeys.all, 'tokenAllocations', params ?? {}] as const,
+
+  /**
+   * Query: a CIP-0056 transfer-instructions read (a typed sibling of
+   * `tokenHoldings`). Optional opaque params (e.g. a `key` identifying the
+   * party/filter the dApp keys on) are folded into the key so different reads cache
+   * independently. PartyLayer is schema-agnostic, so the key is opaque (the dApp's
+   * fetcher owns the actual query).
+   */
+  transferInstructions: (params?: { key?: unknown }) =>
+    [...partyLayerKeys.all, 'transferInstructions', params ?? {}] as const,
 
   /**
    * Mutation: exercise a DAML choice (the write counterpart of `damlContract`).

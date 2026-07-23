@@ -40,11 +40,14 @@
  *       signal,
  *     );
  *     return acs.map((c) => ({
- *       owner: c.view.owner,
- *       instrumentId: { admin: c.view.instrumentId.admin, id: c.view.instrumentId.id },
- *       amount: c.view.amount, // decimal-as-string, verbatim
- *       lock: c.view.lock ?? undefined,
- *       meta: c.view.meta ?? undefined,
+ *       cid: c.contractId, // the ACS contract id, kept alongside the view
+ *       holding: {
+ *         owner: c.view.owner,
+ *         instrumentId: { admin: c.view.instrumentId.admin, id: c.view.instrumentId.id },
+ *         amount: c.view.amount, // decimal-as-string, verbatim
+ *         lock: c.view.lock ?? undefined,
+ *         meta: c.view.meta ?? undefined,
+ *       },
  *     }));
  *   };
  */
@@ -104,35 +107,56 @@ export interface TokenHolding {
   meta?: Record<string, string>;
 }
 
+/**
+ * A holding as an ACS query returns it: a contract id paired with its interface
+ * view. The unit a dApp reads is `{ cid, view }`, not the view alone: the `cid` is
+ * what feeds {@link TokenTransfer.inputHoldingCids} and
+ * `AllocationInstructionRequest.inputHoldingCids`, while `holding` stays a
+ * byte-exact `HoldingView` mirror (the standard view carries no contract id).
+ */
+export interface TokenHoldingRef {
+  /** The holding contract's id (Daml `ContractId Holding`). */
+  cid: string;
+  /** The standard holding view. */
+  holding: TokenHolding;
+}
+
 export interface UseTokenHoldingsParameters {
   /**
    * The dApp's holdings-read fetcher. Queries the dApp's own validator/ledger for
    * the party's CIP-0056 holding contracts and resolves them mapped into
-   * {@link TokenHolding}[], or `null` when there are none yet / the read is
-   * absent (a successful result). Receives the query's `AbortSignal` so the dApp
-   * can cancel in-flight requests.
+   * {@link TokenHoldingRef}[] (each a `{ cid, holding }` pair), or `null` when
+   * there are none yet / the read is absent (a successful result). Receives the
+   * query's `AbortSignal` so the dApp can cancel in-flight requests.
    */
-  read: (signal?: AbortSignal) => Promise<TokenHolding[] | null>;
+  read: (signal?: AbortSignal) => Promise<TokenHoldingRef[] | null>;
   /**
    * Opaque identifier for the holdings query being read (e.g. the owner party and
    * any instrument filter the dApp keys on). Folded into the queryKey so different
    * reads cache independently. Does not need to be forwarded to `read` (the dApp's
    * fetcher already closes over its query).
+   *
+   * INVALIDATION: the hook namespaces this key as
+   * `partyLayerKeys.tokenHoldings({ key })`; the raw `key` is NOT the queryKey, so
+   * prefix-invalidating with the raw `key` silently matches nothing. Invalidate
+   * with `queryClient.invalidateQueries({ queryKey: partyLayerKeys.tokenHoldings() })`
+   * for every instance, or `({ key: yourKey })` for one.
    */
   key?: unknown;
   /**
    * Pass-through TanStack `useQuery` options (e.g. `staleTime`, `enabled`).
    * `queryKey` and `queryFn` are managed by the hook and cannot be overridden.
    */
-  query?: Omit<UseQueryOptions<TokenHolding[] | null, Error>, 'queryKey' | 'queryFn'>;
+  query?: Omit<UseQueryOptions<TokenHoldingRef[] | null, Error>, 'queryKey' | 'queryFn'>;
 }
 
-export type UseTokenHoldingsReturnType = UseQueryResult<TokenHolding[] | null, Error> & {
+export type UseTokenHoldingsReturnType = UseQueryResult<TokenHoldingRef[] | null, Error> & {
   /**
-   * The holdings (alias of `data`). `undefined` until loaded; `null` when there
-   * are no holdings yet / the read is absent (a successful result, not an error).
+   * The holdings (alias of `data`), each a `{ cid, holding }` ref. `undefined`
+   * until loaded; `null` when there are no holdings yet / the read is absent (a
+   * successful result, not an error).
    */
-  holdings: TokenHolding[] | null | undefined;
+  holdings: TokenHoldingRef[] | null | undefined;
 };
 
 export function useTokenHoldings(
@@ -140,7 +164,7 @@ export function useTokenHoldings(
 ): UseTokenHoldingsReturnType {
   const { read, key, query } = parameters;
 
-  const result = useQuery<TokenHolding[] | null, Error>({
+  const result = useQuery<TokenHoldingRef[] | null, Error>({
     ...query,
     queryKey: partyLayerKeys.tokenHoldings({ key }),
     // queryFn is the dApp's fetcher. PartyLayer does not own ledger transport.

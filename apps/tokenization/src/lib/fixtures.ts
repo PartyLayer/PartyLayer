@@ -1,23 +1,20 @@
 /**
  * Typed seed data for the demo backend, built from the REAL exported CIP-0056
  * types. Three demo parties, one instrument (`DEMO`), holdings per party (one
- * carrying a lock), a pending incoming transfer for alice, a static allocation for
- * the allocations card, and a fee estimate for CostPreview.
+ * carrying a lock), a pending incoming transfer instruction for alice, a static
+ * allocation for the allocations card, and a fee estimate for CostPreview.
+ *
+ * The cost constructor and its types now come from `@partylayer/react` (re-exported
+ * from core), so the app no longer imports `@partylayer/core` directly.
  */
-import { toTrafficCost, type CostEstimation } from '@partylayer/core';
+import { toTrafficCost, type CostEstimation } from '@partylayer/react';
 import type {
   TokenHolding,
-  TokenTransfer,
-  TokenAllocation,
+  TokenHoldingRef,
+  TokenTransferInstructionRef,
+  TokenAllocationRef,
 } from '@partylayer/react/query';
-import type {
-  DemoParty,
-  DemoPartyKey,
-  HoldingRef,
-  IncomingTransfer,
-  InstrumentConfig,
-  AllocationRef,
-} from './types';
+import type { DemoParty, DemoPartyKey, InstrumentConfig } from './types';
 
 export const PARTIES: Record<DemoPartyKey, DemoParty> = {
   issuer: { key: 'issuer', label: 'Issuer', partyId: 'issuer::12208a3f9b' },
@@ -48,7 +45,7 @@ function holding(owner: string, amount: string, lock?: TokenHolding['lock']): To
 }
 
 /** The seed holdings, as `{ cid, holding }` refs (the cid is the ACS contract id). */
-export function seedHoldings(): Record<DemoPartyKey, HoldingRef[]> {
+export function seedHoldings(): Record<DemoPartyKey, TokenHoldingRef[]> {
   return {
     issuer: [{ cid: 'h-issuer-treasury', holding: holding(PARTIES.issuer.partyId, '1000000.00') }],
     alice: [
@@ -66,55 +63,68 @@ export function seedHoldings(): Record<DemoPartyKey, HoldingRef[]> {
   };
 }
 
-/** The seed incoming transfers, keyed by receiver party. Alice has one pending. */
-export function seedIncoming(): Record<DemoPartyKey, IncomingTransfer[]> {
-  const transfer: TokenTransfer = {
-    sender: PARTIES.bob.partyId,
-    receiver: PARTIES.alice.partyId,
-    amount: '25.00',
-    instrumentId: { admin: INSTRUMENT.admin, id: INSTRUMENT.id },
-    requestedAt: '2026-07-22T09:00:00Z',
-    executeBefore: FUTURE,
-    inputHoldingCids: ['h-bob-1'],
-    meta: { memo: 'lunch split' },
-  };
+/**
+ * The seed incoming transfer instructions, keyed by receiver party. Alice has one
+ * pending, in the `pendingReceiverAcceptance` state (so Accept and Reject apply).
+ */
+export function seedIncoming(): Record<DemoPartyKey, TokenTransferInstructionRef[]> {
   return {
     issuer: [],
-    alice: [{ instructionCid: 'ti-bob-alice-1', transfer, status: 'pending' }],
+    alice: [
+      {
+        cid: 'ti-bob-alice-1',
+        instruction: {
+          transfer: {
+            sender: PARTIES.bob.partyId,
+            receiver: PARTIES.alice.partyId,
+            amount: '25.00',
+            instrumentId: { admin: INSTRUMENT.admin, id: INSTRUMENT.id },
+            requestedAt: '2026-07-22T09:00:00Z',
+            executeBefore: FUTURE,
+            inputHoldingCids: ['h-bob-1'],
+            meta: { memo: 'lunch split' },
+          },
+          status: { kind: 'pendingReceiverAcceptance' },
+        },
+      },
+    ],
     bob: [],
   };
 }
 
 /** A static allocation for the read-only allocations card (alice funds a settlement leg). */
-export function seedAllocations(): AllocationRef[] {
-  const allocation: TokenAllocation = {
-    allocation: {
-      settlement: {
-        executor: PARTIES.issuer.partyId,
-        settlementRef: { id: 'settlement-demo-1', cid: 'settle-cid-1' },
-        requestedAt: '2026-07-22T09:00:00Z',
-        allocateBefore: FUTURE,
-        settleBefore: FUTURE,
-      },
-      transferLegId: 'leg-1',
-      transferLeg: {
-        sender: PARTIES.alice.partyId,
-        receiver: PARTIES.bob.partyId,
-        amount: '10.00',
-        instrumentId: { admin: INSTRUMENT.admin, id: INSTRUMENT.id },
+export function seedAllocations(): TokenAllocationRef[] {
+  return [
+    {
+      cid: 'alloc-cid-1',
+      allocation: {
+        allocation: {
+          settlement: {
+            executor: PARTIES.issuer.partyId,
+            settlementRef: { id: 'settlement-demo-1', cid: 'settle-cid-1' },
+            requestedAt: '2026-07-22T09:00:00Z',
+            allocateBefore: FUTURE,
+            settleBefore: FUTURE,
+          },
+          transferLegId: 'leg-1',
+          transferLeg: {
+            sender: PARTIES.alice.partyId,
+            receiver: PARTIES.bob.partyId,
+            amount: '10.00',
+            instrumentId: { admin: INSTRUMENT.admin, id: INSTRUMENT.id },
+          },
+        },
+        holdingCids: ['h-alice-1'],
+        meta: { settlement: 'demo' },
       },
     },
-    holdingCids: ['h-alice-1'],
-    meta: { settlement: 'demo' },
-  };
-  return [{ cid: 'alloc-cid-1', allocation }];
+  ];
 }
 
 /**
  * A fixed fee estimate for CostPreview. The three fields are int64-as-string
- * (`TrafficCost`); built with the `toTrafficCost` constructor. FINDING: that
- * constructor lives in `@partylayer/core`, not re-exported from `@partylayer/react`,
- * so composing a CostPreview estimate pulls in a second package.
+ * (`TrafficCost`); built with the `toTrafficCost` constructor now re-exported from
+ * `@partylayer/react`, so no direct core dependency is needed.
  */
 export const FEE_ESTIMATE: CostEstimation = {
   estimationTimestamp: '2026-07-22T09:00:00Z',

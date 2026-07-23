@@ -46,9 +46,12 @@
  *       signal,
  *     );
  *     return acs.map((c) => ({
- *       allocation: c.view.allocation,
- *       holdingCids: c.view.holdingCids,
- *       meta: c.view.meta ?? undefined,
+ *       cid: c.contractId, // the ACS contract id, kept alongside the view
+ *       allocation: {
+ *         allocation: c.view.allocation,
+ *         holdingCids: c.view.holdingCids,
+ *         meta: c.view.meta ?? undefined,
+ *       },
  *     }));
  *   };
  */
@@ -139,35 +142,56 @@ export interface TokenAllocation {
   meta?: Record<string, string>;
 }
 
+/**
+ * An allocation as an ACS query returns it: a contract id paired with its
+ * interface view. The unit a dApp reads is `{ cid, view }`, not the view alone:
+ * the `cid` is what feeds `AllocationActionRequest.allocationCid`, while
+ * `allocation` stays a byte-exact `AllocationView` mirror (the standard view
+ * carries no contract id).
+ */
+export interface TokenAllocationRef {
+  /** The allocation contract's id (Daml `ContractId Allocation`). */
+  cid: string;
+  /** The standard allocation view. */
+  allocation: TokenAllocation;
+}
+
 export interface UseTokenAllocationsParameters {
   /**
    * The dApp's allocations-read fetcher. Queries the dApp's own validator/ledger
    * for the party's CIP-0056 allocation contracts and resolves them mapped into
-   * {@link TokenAllocation}[], or `null` when there are none yet / the read is
-   * absent (a successful result). Receives the query's `AbortSignal` so the dApp
-   * can cancel in-flight requests.
+   * {@link TokenAllocationRef}[] (each a `{ cid, allocation }` pair), or `null`
+   * when there are none yet / the read is absent (a successful result). Receives
+   * the query's `AbortSignal` so the dApp can cancel in-flight requests.
    */
-  read: (signal?: AbortSignal) => Promise<TokenAllocation[] | null>;
+  read: (signal?: AbortSignal) => Promise<TokenAllocationRef[] | null>;
   /**
    * Opaque identifier for the allocations query being read (e.g. the executor
    * party and any filter the dApp keys on). Folded into the queryKey so different
    * reads cache independently. Does not need to be forwarded to `read` (the dApp's
    * fetcher already closes over its query).
+   *
+   * INVALIDATION: the hook namespaces this key as
+   * `partyLayerKeys.tokenAllocations({ key })`; the raw `key` is NOT the queryKey,
+   * so prefix-invalidating with the raw `key` silently matches nothing. Invalidate
+   * with `queryClient.invalidateQueries({ queryKey: partyLayerKeys.tokenAllocations() })`
+   * for every instance, or `({ key: yourKey })` for one.
    */
   key?: unknown;
   /**
    * Pass-through TanStack `useQuery` options (e.g. `staleTime`, `enabled`).
    * `queryKey` and `queryFn` are managed by the hook and cannot be overridden.
    */
-  query?: Omit<UseQueryOptions<TokenAllocation[] | null, Error>, 'queryKey' | 'queryFn'>;
+  query?: Omit<UseQueryOptions<TokenAllocationRef[] | null, Error>, 'queryKey' | 'queryFn'>;
 }
 
-export type UseTokenAllocationsReturnType = UseQueryResult<TokenAllocation[] | null, Error> & {
+export type UseTokenAllocationsReturnType = UseQueryResult<TokenAllocationRef[] | null, Error> & {
   /**
-   * The allocations (alias of `data`). `undefined` until loaded; `null` when there
-   * are no allocations yet / the read is absent (a successful result, not an error).
+   * The allocations (alias of `data`), each a `{ cid, allocation }` ref.
+   * `undefined` until loaded; `null` when there are none yet / the read is absent
+   * (a successful result, not an error).
    */
-  allocations: TokenAllocation[] | null | undefined;
+  allocations: TokenAllocationRef[] | null | undefined;
 };
 
 export function useTokenAllocations(
@@ -175,7 +199,7 @@ export function useTokenAllocations(
 ): UseTokenAllocationsReturnType {
   const { read, key, query } = parameters;
 
-  const result = useQuery<TokenAllocation[] | null, Error>({
+  const result = useQuery<TokenAllocationRef[] | null, Error>({
     ...query,
     queryKey: partyLayerKeys.tokenAllocations({ key }),
     // queryFn is the dApp's fetcher. PartyLayer does not own ledger transport.

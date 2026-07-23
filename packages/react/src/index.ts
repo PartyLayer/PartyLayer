@@ -19,6 +19,12 @@ export type { ConnectButtonProps, PartyAvatarProps } from './connect-button';
 export { CostPreview } from './cost-preview';
 export type { CostPreviewProps } from './cost-preview';
 
+// Cost constructor + types re-exported from core: a react-only consumer building
+// CostPreview props should not need to install @partylayer/core just to construct
+// a TrafficCost / CostEstimation.
+export { toTrafficCost } from '@partylayer/core';
+export type { CostEstimation, TrafficCost } from '@partylayer/core';
+
 // TransactionToast: presentational transaction-status toast (dApp passes mutation state as props)
 export { TransactionToast } from './transaction-toast';
 export type { TransactionToastProps, TransactionToastStatus } from './transaction-toast';

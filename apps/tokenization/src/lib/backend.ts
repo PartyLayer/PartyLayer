@@ -5,14 +5,15 @@
  * registry-mediated command submission (see the README "Real mode" section).
  */
 import type {
-  TokenHolding,
+  TokenHoldingRef,
   TokenTransfer,
-  TokenAllocation,
+  TokenAllocationRef,
+  TokenTransferInstructionRef,
   TransferInstructionActionRequest,
   AllocationInstructionRequest,
   AllocationActionRequest,
 } from '@partylayer/react/query';
-import type { DemoPartyKey, IncomingTransfer, InstrumentConfig, HoldingRef } from './types';
+import type { DemoPartyKey, InstrumentConfig } from './types';
 import { demoStore, latency } from './store';
 import { INSTRUMENT, PARTIES } from './fixtures';
 
@@ -22,22 +23,21 @@ export type IssuerChoice =
   | { kind: 'setFrozen'; party: DemoPartyKey; cid: string; frozen: boolean };
 
 export interface TokenizationBackend {
-  /** ACS read: a party's holdings (the typed view). `null` means none yet. */
-  readHoldings(party: DemoPartyKey, signal?: AbortSignal): Promise<TokenHolding[] | null>;
+  /** ACS read: a party's holdings as `{ cid, holding }` refs. `null` means none yet. */
+  readHoldings(party: DemoPartyKey, signal?: AbortSignal): Promise<TokenHoldingRef[] | null>;
   /** ACS read: a party's pending incoming transfer instructions. `null` means none yet. */
-  readIncoming(party: DemoPartyKey, signal?: AbortSignal): Promise<IncomingTransfer[] | null>;
+  readIncoming(party: DemoPartyKey, signal?: AbortSignal): Promise<TokenTransferInstructionRef[] | null>;
   /**
-   * ACS read: a party's holdings AS `{ cid, view }` refs, for the issuer freeze
-   * panel. Mirrors that a real ACS query returns the contract id alongside the
-   * view (the cid is not part of the {@link TokenHolding} view itself).
+   * ACS read: a party's holdings refs for the issuer freeze panel, read through the
+   * generic `useDamlContract` (so that hook stays exercised alongside the typed ones).
    */
-  readHoldingRefs(party: DemoPartyKey, signal?: AbortSignal): Promise<HoldingRef[] | null>;
+  readHoldingRefs(party: DemoPartyKey, signal?: AbortSignal): Promise<TokenHoldingRef[] | null>;
   /** Read: the instrument configuration (generic contract read). */
   readInstrument(signal?: AbortSignal): Promise<InstrumentConfig | null>;
   /** Read: the total supply across parties (issuer summary). */
   readSupply(signal?: AbortSignal): Promise<string | null>;
-  /** ACS read: the static allocations list (the typed allocation view). */
-  readAllocations(signal?: AbortSignal): Promise<TokenAllocation[] | null>;
+  /** ACS read: the static allocations list as `{ cid, allocation }` refs. */
+  readAllocations(signal?: AbortSignal): Promise<TokenAllocationRef[] | null>;
 
   /** Submit: initiate a transfer (creates a pending instruction for the receiver). */
   submitTransfer(transfer: TokenTransfer, signal?: AbortSignal): Promise<{ ok: true }>;
@@ -70,7 +70,7 @@ export const demoBackend: TokenizationBackend = {
   async readHoldings(party, signal) {
     await latency();
     throwIfAborted(signal);
-    return demoStore.holdingsOf(party).map((ref) => ref.holding);
+    return demoStore.holdingsOf(party);
   },
 
   async readIncoming(party, signal) {
@@ -100,7 +100,7 @@ export const demoBackend: TokenizationBackend = {
   async readAllocations(signal) {
     await latency();
     throwIfAborted(signal);
-    return demoStore.allocations().map((ref) => ref.allocation);
+    return demoStore.allocations();
   },
 
   async submitTransfer(transfer, signal) {
@@ -165,7 +165,7 @@ export const demoBackend: TokenizationBackend = {
 /** Which demo party currently holds a pending instruction, by cid. */
 function findIncomingReceiver(instructionCid: string): DemoPartyKey | null {
   for (const key of Object.keys(PARTIES) as DemoPartyKey[]) {
-    if (demoStore.incomingOf(key).some((it) => it.instructionCid === instructionCid)) return key;
+    if (demoStore.incomingOf(key).some((it) => it.cid === instructionCid)) return key;
   }
   return null;
 }

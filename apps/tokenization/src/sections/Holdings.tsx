@@ -22,13 +22,13 @@ export function Holdings() {
         isPending={q.isPending}
         error={q.error}
         data={q.holdings}
-        isEmpty={(h) => h.length === 0}
+        isEmpty={(refs) => refs.length === 0}
         empty="No holdings yet for this party."
       >
-        {(holdings) => (
+        {(refs) => (
           <ul className="list">
-            {holdings.map((h, i) => (
-              <li key={h.owner + '-' + i} className="row">
+            {refs.map(({ cid, holding: h }) => (
+              <li key={cid} className="row">
                 <PartyAvatar id={h.owner} size={28} />
                 <div className="row-main">
                   <div className="row-title">

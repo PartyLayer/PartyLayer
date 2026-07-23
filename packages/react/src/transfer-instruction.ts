@@ -102,13 +102,19 @@ export interface TokenTransfer {
 }
 
 /**
- * The status of a transfer instruction. Mirrors `TransferInstructionResult`'s
- * `Pending | Completed | Failed` from the CIP-0056 spec, lowercased to match the
- * TypeScript/PartyLayer convention (like `TransactionToastStatus`). The concrete
- * result shape is implementation-specific, so it is the dApp's `R`; this string
- * union is provided for dApps that want to model the standard status.
+ * The status of the RESULT of exercising a transfer choice. Mirrors the
+ * `TransferInstructionResult` output constructors `Pending | Completed | Failed`
+ * from the CIP-0056 spec, lowercased to match the TypeScript/PartyLayer convention
+ * (like `TransactionToastStatus`). The concrete result shape is
+ * implementation-specific, so it is the dApp's `R`; this string union is provided
+ * for dApps that want to model the standard result status.
+ *
+ * Distinct from `TokenTransferInstructionStatus` (in `./token-transfer-instructions`),
+ * which is the different concept of an instruction's lifecycle status (the Daml
+ * `TransferInstructionStatus` view type: pending receiver acceptance vs pending
+ * internal workflow).
  */
-export type TransferInstructionStatus = 'pending' | 'completed' | 'failed';
+export type TransferInstructionResultStatus = 'pending' | 'completed' | 'failed';
 
 export interface UseTransferInstructionParameters<R = unknown> {
   /**

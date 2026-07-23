@@ -58,7 +58,7 @@
  *   };
  *
  * For interpreting the result, the standard `TransferInstructionResult` output
- * variants map to {@link TransferInstructionStatus} (`pending | completed |
+ * variants map to {@link TransferInstructionResultStatus} (`pending | completed |
  * failed`), already exported from `./transfer-instruction`. The concrete result
  * shape is the dApp's, so `R` stays generic (default `unknown`), exactly like
  * `useTransferInstruction`.

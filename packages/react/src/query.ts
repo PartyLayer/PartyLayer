@@ -96,6 +96,7 @@ export type {
 export { useTokenHoldings } from './token-holdings';
 export type {
   TokenHolding,
+  TokenHoldingRef,
   TokenInstrumentId,
   TokenLock,
   UseTokenHoldingsParameters,
@@ -108,6 +109,7 @@ export type {
 export { useTokenAllocations } from './token-allocations';
 export type {
   TokenAllocation,
+  TokenAllocationRef,
   TokenAllocationSpecification,
   TokenSettlementInfo,
   TokenSettlementReference,
@@ -128,10 +130,21 @@ export type {
 export { useTransferInstruction } from './transfer-instruction';
 export type {
   TokenTransfer,
-  TransferInstructionStatus,
+  TransferInstructionResultStatus,
   UseTransferInstructionParameters,
   UseTransferInstructionReturnType,
 } from './transfer-instruction';
+
+// CIP-0056 typed transfer-instruction read: the pending-instruction view + a read
+// hook (the read-side sibling of the transfer write hooks).
+export { useTransferInstructions } from './token-transfer-instructions';
+export type {
+  TokenTransferInstruction,
+  TokenTransferInstructionRef,
+  TokenTransferInstructionStatus,
+  UseTransferInstructionsParameters,
+  UseTransferInstructionsReturnType,
+} from './token-transfer-instructions';
 
 // CIP-0056 typed transfer completion: the accept/reject/withdraw sibling of
 // useTransferInstruction, over the standard TransferInstruction choices.

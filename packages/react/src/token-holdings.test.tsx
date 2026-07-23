@@ -14,21 +14,27 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, waitFor, act } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
-import { useTokenHoldings, type TokenHolding } from './token-holdings';
+import { useTokenHoldings, type TokenHoldingRef } from './token-holdings';
 import { partyLayerKeys } from './query-keys';
 
-const holdings: TokenHolding[] = [
+const holdings: TokenHoldingRef[] = [
   {
-    owner: 'party::owner-1',
-    instrumentId: { admin: 'party::registry-admin', id: 'USDC' },
-    amount: '42.5',
-    meta: { source: 'faucet' },
+    cid: 'holding-cid-1',
+    holding: {
+      owner: 'party::owner-1',
+      instrumentId: { admin: 'party::registry-admin', id: 'USDC' },
+      amount: '42.5',
+      meta: { source: 'faucet' },
+    },
   },
   {
-    owner: 'party::owner-1',
-    instrumentId: { admin: 'party::registry-admin', id: 'CC' },
-    amount: '1000',
-    lock: { holders: ['party::escrow'], expiresAt: '2026-08-01T00:00:00Z' },
+    cid: 'holding-cid-2',
+    holding: {
+      owner: 'party::owner-1',
+      instrumentId: { admin: 'party::registry-admin', id: 'CC' },
+      amount: '1000',
+      lock: { holders: ['party::escrow'], expiresAt: '2026-08-01T00:00:00Z' },
+    },
   },
 ];
 
@@ -59,10 +65,11 @@ describe('useTokenHoldings (CIP-0056 typed read, dApp-supplied read fetcher)', (
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     expect(result.current.holdings).toEqual(holdings); // alias === data
     expect(result.current.data).toEqual(holdings);
-    // Typed shape flows through: instrumentId + decimal-as-string amount.
-    expect(result.current.holdings?.[0].instrumentId.id).toBe('USDC');
-    expect(result.current.holdings?.[0].amount).toBe('42.5');
-    expect(result.current.holdings?.[1].lock?.holders).toEqual(['party::escrow']);
+    // Typed ref shape flows through: cid + view (instrumentId, decimal amount, lock).
+    expect(result.current.holdings?.[0].cid).toBe('holding-cid-1');
+    expect(result.current.holdings?.[0].holding.instrumentId.id).toBe('USDC');
+    expect(result.current.holdings?.[0].holding.amount).toBe('42.5');
+    expect(result.current.holdings?.[1].holding.lock?.holders).toEqual(['party::escrow']);
   });
 
   it('queryFn calls the provided read fetcher with the AbortSignal (no PartyLayer client involved)', async () => {
@@ -105,7 +112,7 @@ describe('useTokenHoldings (CIP-0056 typed read, dApp-supplied read fetcher)', (
   });
 
   it('isPending toggles true while pending, then false', async () => {
-    let resolve: (v: TokenHolding[] | null) => void = () => {};
+    let resolve: (v: TokenHoldingRef[] | null) => void = () => {};
     const reader = vi.fn().mockReturnValue(new Promise((r) => { resolve = r; }));
     const { wrapper } = makeWrapper();
     const { result } = renderHook(() => useTokenHoldings({ read: reader }), { wrapper });
@@ -118,8 +125,11 @@ describe('useTokenHoldings (CIP-0056 typed read, dApp-supplied read fetcher)', (
 
   it('opaque key scopes the cache (different keys cache independently)', async () => {
     const readerA = vi.fn().mockResolvedValue(holdings);
-    const otherHoldings: TokenHolding[] = [
-      { owner: 'party::owner-2', instrumentId: { admin: 'party::registry-admin', id: 'CC' }, amount: '7' },
+    const otherHoldings: TokenHoldingRef[] = [
+      {
+        cid: 'holding-cid-9',
+        holding: { owner: 'party::owner-2', instrumentId: { admin: 'party::registry-admin', id: 'CC' }, amount: '7' },
+      },
     ];
     const readerB = vi.fn().mockResolvedValue(otherHoldings);
     const { queryClient, wrapper } = makeWrapper();

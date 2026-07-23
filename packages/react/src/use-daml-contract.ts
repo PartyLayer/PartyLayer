@@ -45,6 +45,12 @@ export interface UseDamlContractParameters<T> {
    * id, or filter the dApp keys on). Folded into the queryKey so different reads
    * cache independently. Does not need to be forwarded to `read` (the dApp's
    * fetcher already closes over its query).
+   *
+   * INVALIDATION: the hook namespaces this key as
+   * `partyLayerKeys.damlContract({ key })`; the raw `key` is NOT the queryKey, so
+   * prefix-invalidating with the raw `key` silently matches nothing. Invalidate
+   * with `queryClient.invalidateQueries({ queryKey: partyLayerKeys.damlContract() })`
+   * for every instance, or `({ key: yourKey })` for one.
    */
   key?: unknown;
   /**

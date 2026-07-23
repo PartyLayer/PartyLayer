@@ -7,7 +7,7 @@
  */
 import { useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import { useDamlContract, useChoice } from '@partylayer/react/query';
+import { useDamlContract, useChoice, type TokenHoldingRef } from '@partylayer/react/query';
 import { TransactionToast } from '@partylayer/react';
 import { useDemo, partyKey } from '../context/DemoContext';
 import { Card, AsyncView, Badge, Field } from '../ui/primitives';
@@ -16,7 +16,7 @@ import { invalidateHoldingsAndReads } from '../lib/invalidate';
 import { formatAmount, isPositiveAmount } from '../lib/format';
 import { PARTIES, PARTY_ORDER } from '../lib/fixtures';
 import type { IssuerChoice } from '../lib/backend';
-import type { DemoPartyKey, InstrumentConfig, HoldingRef } from '../lib/types';
+import type { DemoPartyKey, InstrumentConfig } from '../lib/types';
 
 export function Issuer() {
   const { party, backend } = useDemo();
@@ -43,7 +43,7 @@ export function Issuer() {
     mutation: { onSuccess: refreshAll },
   });
 
-  const freezeRefs = useDamlContract<HoldingRef[]>({
+  const freezeRefs = useDamlContract<TokenHoldingRef[]>({
     read: (signal) => backend.readHoldingRefs(freezeTarget, signal),
     key: partyKey('holdingRefs', freezeTarget),
   });
@@ -54,7 +54,7 @@ export function Issuer() {
     setMintAmount('');
   };
 
-  const toggleFreeze = (ref: HoldingRef) => {
+  const toggleFreeze = (ref: TokenHoldingRef) => {
     issuerChoice.exerciseChoice({
       kind: 'setFrozen',
       party: freezeTarget,

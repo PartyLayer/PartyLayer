@@ -15,48 +15,54 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, waitFor, act } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
-import { useTokenAllocations, type TokenAllocation } from './token-allocations';
+import { useTokenAllocations, type TokenAllocationRef } from './token-allocations';
 import { partyLayerKeys } from './query-keys';
 
-const allocations: TokenAllocation[] = [
+const allocations: TokenAllocationRef[] = [
   {
+    cid: 'allocation-cid-1',
     allocation: {
-      settlement: {
-        executor: 'party::executor-1',
-        settlementRef: { id: 'settlement-1', cid: '00settlementCid' },
-        requestedAt: '2026-07-22T00:00:00Z',
-        allocateBefore: '2026-07-22T01:00:00Z',
-        settleBefore: '2026-07-22T02:00:00Z',
+      allocation: {
+        settlement: {
+          executor: 'party::executor-1',
+          settlementRef: { id: 'settlement-1', cid: '00settlementCid' },
+          requestedAt: '2026-07-22T00:00:00Z',
+          allocateBefore: '2026-07-22T01:00:00Z',
+          settleBefore: '2026-07-22T02:00:00Z',
+        },
+        transferLegId: 'leg-1',
+        transferLeg: {
+          sender: 'party::sender-1',
+          receiver: 'party::receiver-1',
+          amount: '42.5',
+          instrumentId: { admin: 'party::registry-admin', id: 'USDC' },
+        },
       },
-      transferLegId: 'leg-1',
-      transferLeg: {
-        sender: 'party::sender-1',
-        receiver: 'party::receiver-1',
-        amount: '42.5',
-        instrumentId: { admin: 'party::registry-admin', id: 'USDC' },
-      },
+      holdingCids: ['00holdingA', '00holdingB'],
+      meta: { source: 'dex' },
     },
-    holdingCids: ['00holdingA', '00holdingB'],
-    meta: { source: 'dex' },
   },
   {
+    cid: 'allocation-cid-2',
     allocation: {
-      settlement: {
-        executor: 'party::executor-1',
-        settlementRef: { id: 'settlement-2' }, // cid omitted (Optional)
-        requestedAt: '2026-07-22T00:00:00Z',
-        allocateBefore: '2026-07-22T01:00:00Z',
-        settleBefore: '2026-07-22T02:00:00Z',
+      allocation: {
+        settlement: {
+          executor: 'party::executor-1',
+          settlementRef: { id: 'settlement-2' }, // cid omitted (Optional)
+          requestedAt: '2026-07-22T00:00:00Z',
+          allocateBefore: '2026-07-22T01:00:00Z',
+          settleBefore: '2026-07-22T02:00:00Z',
+        },
+        transferLegId: 'leg-2',
+        transferLeg: {
+          sender: 'party::sender-1',
+          receiver: 'party::receiver-2',
+          amount: '1000',
+          instrumentId: { admin: 'party::registry-admin', id: 'CC' },
+        },
       },
-      transferLegId: 'leg-2',
-      transferLeg: {
-        sender: 'party::sender-1',
-        receiver: 'party::receiver-2',
-        amount: '1000',
-        instrumentId: { admin: 'party::registry-admin', id: 'CC' },
-      },
+      holdingCids: [], // MAY be empty for registries not representing holdings on-ledger
     },
-    holdingCids: [], // MAY be empty for registries not representing holdings on-ledger
   },
 ];
 
@@ -87,11 +93,12 @@ describe('useTokenAllocations (CIP-0056 typed read, dApp-supplied read fetcher)'
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     expect(result.current.allocations).toEqual(allocations); // alias === data
     expect(result.current.data).toEqual(allocations);
-    // Typed shape flows through: nested settlement + transfer leg + decimal amount.
-    expect(result.current.allocations?.[0].allocation.transferLeg.instrumentId.id).toBe('USDC');
-    expect(result.current.allocations?.[0].allocation.transferLeg.amount).toBe('42.5');
-    expect(result.current.allocations?.[0].allocation.settlement.settlementRef.cid).toBe('00settlementCid');
-    expect(result.current.allocations?.[1].holdingCids).toEqual([]);
+    // Typed ref shape flows through: cid + view (nested settlement, transfer leg, amount).
+    expect(result.current.allocations?.[0].cid).toBe('allocation-cid-1');
+    expect(result.current.allocations?.[0].allocation.allocation.transferLeg.instrumentId.id).toBe('USDC');
+    expect(result.current.allocations?.[0].allocation.allocation.transferLeg.amount).toBe('42.5');
+    expect(result.current.allocations?.[0].allocation.allocation.settlement.settlementRef.cid).toBe('00settlementCid');
+    expect(result.current.allocations?.[1].allocation.holdingCids).toEqual([]);
   });
 
   it('queryFn calls the provided read fetcher with the AbortSignal (no PartyLayer client involved)', async () => {
@@ -134,7 +141,7 @@ describe('useTokenAllocations (CIP-0056 typed read, dApp-supplied read fetcher)'
   });
 
   it('isPending toggles true while pending, then false', async () => {
-    let resolve: (v: TokenAllocation[] | null) => void = () => {};
+    let resolve: (v: TokenAllocationRef[] | null) => void = () => {};
     const reader = vi.fn().mockReturnValue(new Promise((r) => { resolve = r; }));
     const { wrapper } = makeWrapper();
     const { result } = renderHook(() => useTokenAllocations({ read: reader }), { wrapper });
@@ -147,25 +154,28 @@ describe('useTokenAllocations (CIP-0056 typed read, dApp-supplied read fetcher)'
 
   it('opaque key scopes the cache (different keys cache independently)', async () => {
     const readerA = vi.fn().mockResolvedValue(allocations);
-    const otherAllocations: TokenAllocation[] = [
+    const otherAllocations: TokenAllocationRef[] = [
       {
+        cid: 'allocation-cid-9',
         allocation: {
-          settlement: {
-            executor: 'party::executor-2',
-            settlementRef: { id: 'settlement-9' },
-            requestedAt: '2026-07-22T00:00:00Z',
-            allocateBefore: '2026-07-22T01:00:00Z',
-            settleBefore: '2026-07-22T02:00:00Z',
+          allocation: {
+            settlement: {
+              executor: 'party::executor-2',
+              settlementRef: { id: 'settlement-9' },
+              requestedAt: '2026-07-22T00:00:00Z',
+              allocateBefore: '2026-07-22T01:00:00Z',
+              settleBefore: '2026-07-22T02:00:00Z',
+            },
+            transferLegId: 'leg-9',
+            transferLeg: {
+              sender: 'party::sender-9',
+              receiver: 'party::receiver-9',
+              amount: '7',
+              instrumentId: { admin: 'party::registry-admin', id: 'CC' },
+            },
           },
-          transferLegId: 'leg-9',
-          transferLeg: {
-            sender: 'party::sender-9',
-            receiver: 'party::receiver-9',
-            amount: '7',
-            instrumentId: { admin: 'party::registry-admin', id: 'CC' },
-          },
+          holdingCids: ['00holdingZ'],
         },
-        holdingCids: ['00holdingZ'],
       },
     ];
     const readerB = vi.fn().mockResolvedValue(otherAllocations);

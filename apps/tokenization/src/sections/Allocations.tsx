@@ -94,13 +94,13 @@ export function Allocations() {
         isEmpty={(a) => a.length === 0}
         empty="No allocations."
       >
-        {(allocations) => (
+        {(refs) => (
           <ul className="list">
-            {allocations.map((a, i) => {
+            {refs.map(({ cid, allocation: a }) => {
               const leg = a.allocation.transferLeg;
               const settle = a.allocation.settlement;
               return (
-                <li key={i} className="row row-block">
+                <li key={cid} className="row row-block">
                   <div className="row-main">
                     <div className="row-title">
                       {formatAmount(leg.amount)} <span className="muted">{leg.instrumentId.id}</span>{' '}
@@ -120,11 +120,8 @@ export function Allocations() {
                         key={action.kind}
                         className="btn btn-ghost btn-small"
                         disabled={busy}
-                        onClick={() =>
-                          // The AllocationView carries no cid (same as holdings), so a real
-                          // dApp tracks it from the ACS query; the demo uses a stable id.
-                          act.submitAction({ allocationCid: 'alloc-cid-' + (i + 1), action: action.kind })
-                        }
+                        // The ref carries the ACS contract id, which feeds allocationCid.
+                        onClick={() => act.submitAction({ allocationCid: cid, action: action.kind })}
                       >
                         {action.label}
                       </button>
