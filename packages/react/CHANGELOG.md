@@ -1,5 +1,17 @@
 # @partylayer/react
 
+## 2.2.0
+
+### Minor Changes
+
+- Canton Token Standard (CIP-0056) typed surface, all Model 2 (the dApp supplies the read and submit fetchers; PartyLayer owns no ledger transport). Reads returning contract refs (each view paired with its ACS contract id): `useTokenHoldings`, `useTokenAllocations`, `useTransferInstructions`, and `useAllocationRequests`. Writes and completions: `useTransferInstruction`, `useTransferInstructionAction`, `useAllocationInstruction`, `useAllocationAction`, and `useAllocationRequestAction`. The full type family mirrors the official interfaces (`HoldingV1`, `TransferInstructionV1` including the status union with the internal workflow variant, `AllocationV1`, `AllocationInstructionV1`, and `AllocationRequestV1`), with the `Token*Ref` wrappers pairing each view with its contract id.
+- Matching helpers: `tokenDecimalEquals`, `tokenTransferLegEquals`, `tokenSettlementInfoEquals`, and `allocationMatchesRequestLeg`. Framework free (no React, no TanStack), with decimal as string equality that never converts to a float, so a value like `5` matches `5.00`.
+- UI primitives: `TransactionToast` and `SynchronizerSwitcher`.
+- Five professional theme families (midnight, slate, teal, gold, warm), each in light and dark, WCAG AA verified, plus the `themes` catalog. All are callable with accent overrides.
+- Cost helpers re-exported from core so a react only consumer building `CostPreview` props needs nothing else: `toTrafficCost`, `CostEstimation`, and `TrafficCost`.
+- Renamed the transfer result status type to `TransferInstructionResultStatus` (the result outputs `pending`, `completed`, `failed`), freeing the spec view status name, and added invalidation guidance on the `partyLayerKeys` namespaced query keys (the raw key you pass is nested under the factory, so invalidate through `partyLayerKeys`).
+- Validated in composition by two in-repo vertical examples, Tokenization and DvP, before this release.
+
 ## 2.1.0
 
 ### Minor Changes
@@ -90,9 +102,9 @@
 
 ### Patch Changes
 
-- 4f6fa01: Reactive wallet list — late-announcing wallets now appear LIVE in the picker (no manual refresh), completing the UX of the announce race fix.
+- 4f6fa01: Reactive wallet list: late-announcing wallets now appear LIVE in the picker (no manual refresh), completing the UX of the announce race fix.
 
-  Previously the persistent accumulator CAPTURED a late `canton:announceProvider` (data layer), but `listWallets()` returned a stale one-shot snapshot and the React picker only loaded once on mount — so a wallet injecting after the modal opened never surfaced.
+  Previously the persistent accumulator CAPTURED a late `canton:announceProvider` (data layer), but `listWallets()` returned a stale one-shot snapshot and the React picker only loaded once on mount, so a wallet injecting after the modal opened never surfaced.
   - **@partylayer/sdk** (minor, additive): new `wallets:changed` event (signal-only `{ type: 'wallets:changed'; reason: 'announced' }`). When the announce accumulator gains a wallet, the client now invalidates the one-shot announce cache (the same invalidation as `refreshDiscovery`) and emits a **debounced** (~50ms, coalesces a burst into one) `wallets:changed`. The authoritative read stays `listWallets()` (which does registry-merge + gating + filtering), mirroring EIP-6963/mipd. `warmPlans` (popup gesture-sync) is a disjoint cache and is untouched; `listWallets()`/`refreshDiscovery()` signatures are unchanged; zero announces → no emit (byte-identical idle); the debounce timer + listener are torn down in `destroy()`.
   - **@partylayer/react** (patch): `PartyLayerProvider` subscribes to `wallets:changed` and re-lists → `useWallets()` re-renders with the new wallet automatically. `useWallets()`'s signature is unchanged (still a pure context read); the one-shot mount load is preserved; SSR-safe (subscription inside the browser-only effect).
 
@@ -112,7 +124,7 @@
 
 ### Minor Changes
 
-- 3285ed8: `PartyLayerKit`'s `adapters` prop now also accepts an `OfficialAdapterFactory` (`{ providerId, create(host) }`). The SDK resolves the host from the wallet's registry entry `networkHosts[network]`, so an app sets `<PartyLayerKit network="mainnet">` and never hardcodes a wallet URL — the same source picks the right host across devnet/testnet/mainnet. The pre-constructed `OfficialProviderAdapter` instance form is unchanged.
+- 3285ed8: `PartyLayerKit`'s `adapters` prop now also accepts an `OfficialAdapterFactory` (`{ providerId, create(host) }`). The SDK resolves the host from the wallet's registry entry `networkHosts[network]`, so an app sets `<PartyLayerKit network="mainnet">` and never hardcodes a wallet URL. The same source picks the right host across devnet/testnet/mainnet. The pre-constructed `OfficialProviderAdapter` instance form is unchanged.
 
 ### Patch Changes
 
@@ -145,7 +157,7 @@
 ### Minor Changes
 
 - 88006e3: Reactive session hooks + demo wiring.
-  - NEW `useSession()` — reactive `SessionState` + bound actions
+  - NEW `useSession()`: reactive `SessionState` + bound actions
     (`connect`/`disconnect`/`restore`) + the narrowed `on(event, handler)` for
     resilience/sync events. Backed by `@partylayer/session` via context. SSR-safe.
   - `useAccountEffect` gains `onPartyChanged({ previous, current })` (the
@@ -158,14 +170,14 @@
 
   ⚠️ BREAKING: `useSession`'s return type changed from the SDK-layer session
   getter (`Session | null`) to `UseSessionReturn` (reactive state + actions). The
-  legacy getter is preserved VERBATIM as **`useClientSession()`** —
-  migration: `useSession()` → `useClientSession()`.
+  legacy getter is preserved VERBATIM as **`useClientSession()`**.
+  Migration: `useSession()` → `useClientSession()`.
 
 - 767b694: Adopt the session 1.0 secure-by-default storage.
 
   `PartyLayerProvider`/`PartyLayerKit` no longer pin a plain `localStorage` marker
   as the default session storage. With no `sessionOptions.storage`, the provider
-  now inherits the `@partylayer/session` default — encrypted IndexedDB snapshots
+  now inherits the `@partylayer/session` default: encrypted IndexedDB snapshots
   where supported, in-memory otherwise.
 
   Behavior change: default session persistence moves from an unencrypted
@@ -201,7 +213,7 @@
   the modal sorts wallets WITHIN the existing CIP-0103 Native / Available sections
   by the given id order (case-insensitive, `cip0103:` prefix stripped; unlisted
   wallets fall to the end), preserving the section structure. When omitted, the
-  discovered order is unchanged — fully backward-compatible. RainbowKit `wallets`
+  discovered order is unchanged. Fully backward-compatible. RainbowKit `wallets`
   parity.
 
 ### Patch Changes
@@ -210,7 +222,7 @@
 
   Adds a `network-mismatch` modal view: on a 'guard'/'off' connect that flags
   `session.networkMismatch`, the modal shows "Your wallet is on X, this app
-  requires Y — switch and reconnect" with Reconnect / All Wallets actions. The
+  requires Y: switch and reconnect" with Reconnect / All Wallets actions. The
   'strict' path (NetworkMismatchError) is handled by the existing error view via a
   new `getErrorMessage` case. No new public props.
 
@@ -233,14 +245,14 @@
     SDK-layer, returns `Session | null`); the two coexist until the M2 react v2
     unification.
   - **@partylayer/provider**: export the existing `BridgeableClient` type
-    (`export type { BridgeableClient }`) — additive, no runtime change.
+    (`export type { BridgeableClient }`), additive, no runtime change.
 
   All changes are additive and backward-compatible (no existing export removed,
   renamed, retyped, or behaviorally changed).
 
   NOTE: `@partylayer/react` now depends on `@partylayer/session` via
   `workspace:^`. `@partylayer/session` is still private (0.1.0) and publishes at
-  the M1 cut — **do not publish `@partylayer/react` until `@partylayer/session`
+  the M1 cut: **do not publish `@partylayer/react` until `@partylayer/session`
   is published; both go out together at M1.**
 
 - 53b1714: WalletConnect / QR-only wallets now show a scannable QR **in the connect modal**
@@ -253,7 +265,7 @@
     Backward-compatible (optional).
   - **adapter-walletconnect:** the official adapter's `onUri` is now always
     wrapped so the pairing URI is fanned out to BOTH the integrator's
-    `config.onUri` AND the per-connect `onDisplayUri` — no hand-wiring needed. The
+    `config.onUri` AND the per-connect `onDisplayUri`. No hand-wiring needed. The
     adapter also narrowly intercepts the official adapter's blank
     `window.open('', 'wallet-popup')` during connect (no config flag exists to
     disable it) and restores `window.open` afterward.
@@ -268,7 +280,7 @@
 ### Patch Changes
 
 - c1d4763: `WalletModal`'s `onConnect` prop is now **optional** (`onConnect?: (sessionId:
-string) => void`). A connect modal shouldn't require a connect callback — it
+string) => void`). A connect modal shouldn't require a connect callback. It
   already self-closes via `onClose` on success, and the session is observable via
   `useSession()` / `useAccount()`. The success path now calls it conditionally
   (`onConnect?.(session.sessionId)`). Backward-compatible widening (existing
@@ -304,11 +316,11 @@ string) => void`). A connect modal shouldn't require a connect callback — it
 
 - 7770870: Registry-driven detection and adapter-aware picker readiness.
 
-  `@partylayer/core` and `@partylayer/registry-client` introduce a multi-signal `providerDetection` schema on `RegistryWalletEntry`. Registry entries can declare a transport plus an ordered list of matcher rules (`domain`, `exact`, `prefix`) over the live CIP-0103 `status` shape — `kernel.url`, `kernel.userUrl`, `kernel.id`. This lets new CIP-0103 wallets be added to the ecosystem through a registry JSON update without an SDK code change, and lets the SDK identify a wallet by stable signals (vendor domain) when the per-install identity field (`kernel.id`) varies. The matcher engine is OR-combined, case-insensitive on domains, case-sensitive on exact values, and short-circuits on first match. 33 unit tests cover the matcher semantics.
+  `@partylayer/core` and `@partylayer/registry-client` introduce a multi-signal `providerDetection` schema on `RegistryWalletEntry`. Registry entries can declare a transport plus an ordered list of matcher rules (`domain`, `exact`, `prefix`) over the live CIP-0103 `status` shape: `kernel.url`, `kernel.userUrl`, `kernel.id`. This lets new CIP-0103 wallets be added to the ecosystem through a registry JSON update without an SDK code change, and lets the SDK identify a wallet by stable signals (vendor domain) when the per-install identity field (`kernel.id`) varies. The matcher engine is OR-combined, case-insensitive on domains, case-sensitive on exact values, and short-circuits on first match. 33 unit tests cover the matcher semantics.
 
   The registry-client schema also gains an optional `RegistryWalletEntry.beta?: boolean` flag and a `RegistryWalletEntry.cip0103?: { native, evidence, since }` marker. The picker UI uses `cip0103.native` to surface CIP-0103-native wallets in a dedicated section regardless of install state. The optional `beta` flag, when present on any entry, propagates through `WalletInfo.metadata.beta = 'true'` so UIs can render a "Beta" badge generically.
 
-  `@partylayer/sdk` re-exports the detection helpers (`isCip0103Native`, `Cip0103Support`, `ProviderDetection`, `matchesProviderDetection`) and adds `getAdapter(walletId)` for adapter-aware UI integrations that need to probe `detectInstalled()` directly. The `tsup` external list grew to externalise all built-in adapter packages — the bundled SDK dist drops from ~80 KB ESM to ~30 KB ESM with no public API change.
+  `@partylayer/sdk` re-exports the detection helpers (`isCip0103Native`, `Cip0103Support`, `ProviderDetection`, `matchesProviderDetection`) and adds `getAdapter(walletId)` for adapter-aware UI integrations that need to probe `detectInstalled()` directly. The `tsup` external list grew to externalise all built-in adapter packages: the bundled SDK dist drops from ~80 KB ESM to ~30 KB ESM with no public API change.
 
   `@partylayer/react` renders the optional Beta badge in the wallet picker modal from `WalletInfo.metadata.beta`. The picker also adds an adapter-aware NATIVE readiness probe: when an adapter implements `detectInstalled()`, the picker reflects its result rather than guessing from a static install hint.
 
