@@ -1,5 +1,11 @@
 # @partylayer/react
 
+## 2.2.1
+
+### Patch Changes
+
+- Corrected the published manifest. 2.2.0 was published with pnpm workspace ranges left in dependencies, which makes it uninstallable for consumers; 2.2.1 ships the identical code with real semver ranges and 2.2.0 is deprecated on the registry.
+
 ## 2.2.0
 
 ### Minor Changes
