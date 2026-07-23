@@ -1,6 +1,6 @@
 {
   "name": "create-partylayer-app",
-  "version": "0.4.1",
+  "version": "0.5.0",
   "description": "Scaffold a PartyLayer dApp (Canton wallet integration) in seconds.",
   "type": "module",
   "bin": {

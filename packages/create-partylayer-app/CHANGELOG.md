@@ -1,5 +1,11 @@
 # create-partylayer-app
 
+## 0.5.0
+
+### Minor Changes
+
+- Two new scaffold templates: react-tokenization (CIP-0056 holdings, transfers, and issuance over a typed demo backend) and react-dvp (atomic delivery versus payment over CIP-0056 allocations), both extracted from the validated vertical examples and pinned to the published @partylayer/react 2.2.1 surface. Both are reference quality, not production audited.
+
 ## 0.4.1
 
 ### Patch Changes
