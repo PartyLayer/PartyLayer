@@ -235,6 +235,33 @@ interface WalletsChangedEvent {
 
 ---
 
+## Event telemetry bridge
+
+Separately from the increment-based metrics above, every emitted event is forwarded
+once to the configured telemetry adapter through `track(name, properties)`, from a
+single central path in the client. The telemetry name is the event's own `type`
+string. This is additive: the increment metrics are unchanged, and when no telemetry
+adapter is configured the bridge is a no-op.
+
+Only privacy-safe, non-identifying properties are sent. Session ids, party ids,
+transaction hashes, origins, and raw wallet payloads are never included; where an
+event's only distinguishing field is such an identifier, the property set is empty
+and the event count itself is the signal.
+
+| Event | Telemetry properties |
+|-------|----------------------|
+| `session:connected`      | `walletId`, `network` |
+| `session:disconnected`   | (none) |
+| `session:expired`        | (none) |
+| `session:networkMismatch`| `expected`, `actual`, `enforced` |
+| `tx:status`              | `status` |
+| `registry:status`        | `source`, `channel`, `verified`, `stale`, `sequence` |
+| `registry:updated`       | `channel`, `version` |
+| `error`                  | `code` (when the error carries one) |
+| `wallets:changed`        | `reason` |
+
+---
+
 ## Privacy Guarantees
 
 Event payloads are designed to be privacy-safe:
