@@ -9,7 +9,7 @@ const app = document.querySelector<HTMLDivElement>('#app')!;
 app.innerHTML = `
   <main class="app">
     <h1>{{PROJECT_NAME}}</h1>
-    <p class="subtitle">A PartyLayer dApp on Canton — vanilla TypeScript, no framework.</p>
+    <p class="subtitle">A PartyLayer dApp on Canton: vanilla TypeScript, no framework.</p>
     <div id="status" class="status"></div>
     <button id="connect" class="btn">Connect Wallet</button>
     <ul id="wallets" class="wallets" hidden></ul>
@@ -34,7 +34,7 @@ function renderConnected(session: Session) {
 }
 
 function renderDisconnected() {
-  statusEl.textContent = 'Not connected — connect a wallet to continue.';
+  statusEl.textContent = 'Not connected. Connect a wallet to continue.';
   connectBtn.hidden = false;
   walletsEl.hidden = true;
 }

@@ -12,29 +12,33 @@ import type {
 /**
  * Default logger (console-based)
  */
+/**
+ * Default logger: a NO-OP.
+ *
+ * A kit stays silent unless the application opts in. With no logger configured the
+ * client prints nothing, so a peer kit never writes to a dApp's console uninvited.
+ * To restore console output, pass the standard `console` as the logger, which
+ * satisfies the LoggerAdapter shape:
+ *
+ *   createPartyLayer({ ...config, logger: console });
+ *
+ * Verbosity is then controlled by `logLevel` on the config (default `info`).
+ */
 export class DefaultLogger implements LoggerAdapter {
-  debug(message: string, ...args: unknown[]): void {
-    if (typeof console !== 'undefined' && console.debug) {
-      console.debug(`[PartyLayer] ${message}`, ...args);
-    }
+  debug(_message: string, ..._args: unknown[]): void {
+    // No-op: silent by default.
   }
 
-  info(message: string, ...args: unknown[]): void {
-    if (typeof console !== 'undefined' && console.info) {
-      console.info(`[PartyLayer] ${message}`, ...args);
-    }
+  info(_message: string, ..._args: unknown[]): void {
+    // No-op: silent by default.
   }
 
-  warn(message: string, ...args: unknown[]): void {
-    if (typeof console !== 'undefined' && console.warn) {
-      console.warn(`[PartyLayer] ${message}`, ...args);
-    }
+  warn(_message: string, ..._args: unknown[]): void {
+    // No-op: silent by default.
   }
 
-  error(message: string, error?: unknown, ...args: unknown[]): void {
-    if (typeof console !== 'undefined' && console.error) {
-      console.error(`[PartyLayer] ${message}`, error, ...args);
-    }
+  error(_message: string, _error?: unknown, ..._args: unknown[]): void {
+    // No-op: silent by default.
   }
 }
 

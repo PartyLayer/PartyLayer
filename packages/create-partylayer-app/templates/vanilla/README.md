@@ -1,6 +1,6 @@
 # {{PROJECT_NAME}}
 
-A [PartyLayer](https://partylayer.xyz) dApp — vanilla TypeScript + Vite, no framework.
+A [PartyLayer](https://partylayer.xyz) dApp: vanilla TypeScript + Vite, no framework.
 
 ## Develop
 
@@ -22,7 +22,7 @@ client.on('session:disconnected', () => { /* … */ });
 const active = await client.getActiveSession();      // restore on load
 ```
 
-`createPartyLayer` is the dApp connect API — no framework bindings needed. See `src/main.ts` for the full hand-rolled connect UI. Switch networks by changing `network` to `"testnet"` or `"mainnet"`.
+`createPartyLayer` is the dApp connect API, no framework bindings needed. See `src/main.ts` for the full hand-rolled connect UI. Switch networks by changing `network` to `"testnet"` or `"mainnet"`.
 
 ## Build
 

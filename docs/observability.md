@@ -122,6 +122,67 @@ hooks. Keep the recorded properties non-identifying, exactly as the bridge does.
 
 ---
 
+## Logging
+
+Logging follows the same convention as telemetry: the kit is silent unless the
+application opts in. The default logger is a no-op, so with no logger configured the
+client prints nothing and never writes to a dApp's console uninvited.
+
+To restore console output, pass the standard `console`, which satisfies the
+`LoggerAdapter` shape:
+
+```ts
+import { createPartyLayer } from '@partylayer/sdk';
+
+const client = createPartyLayer({
+  network: 'devnet',
+  app: { name: 'My dApp' },
+  logger: console,      // opt in to output
+  logLevel: 'info',     // debug | info | warn | error | silent (default info)
+});
+```
+
+`logLevel` sets verbosity. Filtering happens centrally in the client before the
+adapter is called, so an adapter never filters itself. `silent` suppresses everything.
+
+Every log line carries a machine readable payload as its second argument, so logs are
+structured, not just free text:
+
+```ts
+{ event: 'session:connected', correlationId: 'a1b2c3d4e5f6', walletId: 'console', network: 'devnet' }
+```
+
+`event` is a stable machine readable name. Each emitted event produces exactly one
+structured line, at the level below. The safe fields are the same ones telemetry sends,
+reused rather than duplicated.
+
+| Event | Level |
+|-------|-------|
+| `error`                  | error |
+| `session:networkMismatch`| warn  |
+| `session:connected`, `session:disconnected` | info |
+| `registry:status`, `registry:updated`, `session:expired`, `tx:status`, `wallets:changed` | debug |
+
+Failures at the internal call sites (registry fetch failed, session persist or restore
+failed) log at warn.
+
+### Correlation ids
+
+A short, non identifying correlation id is generated at the start of each multi step
+public operation (at minimum connect, session restore, signTransaction, and
+submitTransaction) and threaded through every log line and event during that operation,
+so a multi step wallet flow can be traced end to end. The id is random, never derived
+from party or session data, and browser safe (no node only mechanism), so two
+concurrent operations never share one.
+
+### Privacy
+
+Log payloads follow the telemetry rules exactly: no raw party ids, session ids,
+transaction hashes, or origins ever appear. Where an event's only distinguishing field
+is such an identifier, the payload carries only the `event` and the correlation id.
+
+---
+
 ## Known limits
 
 Stated honestly, so nobody mistakes these for solved:
