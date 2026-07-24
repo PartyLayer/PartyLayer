@@ -132,7 +132,11 @@ export {
 // contracts, choice context, factory-with-context) mirrored from the official token
 // standard OpenAPI, plus a canonical merge utility for combining the disclosures of
 // multiple registry contexts into one submission.
-export { mergeDisclosedContracts } from './disclosed-contracts';
+export {
+  mergeDisclosedContracts,
+  groupDisclosedContractsBySynchronizer,
+  assertSingleSynchronizer,
+} from './disclosed-contracts';
 export type {
   TokenDisclosedContract,
   TokenChoiceContext,
