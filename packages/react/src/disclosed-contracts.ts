@@ -123,3 +123,44 @@ export function mergeDisclosedContracts(
   }
   return out;
 }
+
+/**
+ * Group disclosed contracts by their `synchronizerId`, preserving input order within
+ * each group. Useful for inspecting a combined disclosure set before deciding how to
+ * submit; a set spanning more than one synchronizer cannot go into a single command.
+ */
+export function groupDisclosedContractsBySynchronizer(
+  contracts: TokenDisclosedContract[],
+): Record<string, TokenDisclosedContract[]> {
+  const groups: Record<string, TokenDisclosedContract[]> = {};
+  for (const contract of contracts) {
+    (groups[contract.synchronizerId] ??= []).push(contract);
+  }
+  return groups;
+}
+
+/**
+ * Assert that a set of disclosed contracts is consistent on one synchronizer.
+ *
+ * Returns the sole `synchronizerId` when every entry shares one, `undefined` for an
+ * empty input, and THROWS a descriptive Error listing the distinct synchronizer ids
+ * (sorted) when they are mixed. Call this on the output of {@link mergeDisclosedContracts}
+ * before building a submission: a mixed set means the combined contexts span
+ * synchronizers and cannot go into one command. A contract mid reassignment surfaces
+ * separately as a `409` on the registry side per the schema, not here.
+ *
+ * Broader multi synchronizer party operations (reassigning contracts, coordinating a
+ * party across synchronizers) are participant side ops and stay out of the wallet
+ * kit's scope.
+ */
+export function assertSingleSynchronizer(
+  contracts: TokenDisclosedContract[],
+): string | undefined {
+  const ids = Object.keys(groupDisclosedContractsBySynchronizer(contracts));
+  if (ids.length === 0) return undefined;
+  if (ids.length === 1) return ids[0];
+  throw new Error(
+    'Disclosed contracts span multiple synchronizers and cannot go into one command: ' +
+      ids.slice().sort().join(', '),
+  );
+}

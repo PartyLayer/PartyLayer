@@ -1,12 +1,15 @@
 /**
- * disclosed-contracts tests: the framework-free merge utility. Covers dedupe across
- * several lists (including undefined inputs), stable ordering, first occurrence
- * winning on a repeated contractId, plain duplicate collapse within one list, debug
- * fields surviving untouched, and the all-empty case.
+ * disclosed-contracts tests: the framework-free merge and synchronizer utilities.
+ * Covers dedupe across several lists (including undefined inputs), stable ordering,
+ * first occurrence winning on a repeated contractId, plain duplicate collapse within
+ * one list, debug fields surviving untouched, and the all-empty case; then grouping
+ * by synchronizer with order preserved and the single/empty/mixed assertion matrix.
  */
 import { describe, it, expect } from 'vitest';
 import {
   mergeDisclosedContracts,
+  groupDisclosedContractsBySynchronizer,
+  assertSingleSynchronizer,
   type TokenDisclosedContract,
 } from './disclosed-contracts';
 
@@ -63,5 +66,52 @@ describe('mergeDisclosedContracts', () => {
   it('returns an empty array when every input is empty or undefined', () => {
     expect(mergeDisclosedContracts()).toEqual([]);
     expect(mergeDisclosedContracts(undefined, [], undefined)).toEqual([]);
+  });
+});
+
+const SYNC_A = 'sync::1220aaaa';
+const SYNC_B = 'sync::1220bbbb';
+
+describe('groupDisclosedContractsBySynchronizer', () => {
+  it('groups by synchronizerId, preserving input order within each group', () => {
+    const a1 = dc('a1', { synchronizerId: SYNC_A });
+    const b1 = dc('b1', { synchronizerId: SYNC_B });
+    const a2 = dc('a2', { synchronizerId: SYNC_A });
+    const groups = groupDisclosedContractsBySynchronizer([a1, b1, a2]);
+    expect(Object.keys(groups)).toEqual([SYNC_A, SYNC_B]);
+    expect(groups[SYNC_A]).toEqual([a1, a2]);
+    expect(groups[SYNC_B]).toEqual([b1]);
+  });
+
+  it('returns an empty object for an empty input', () => {
+    expect(groupDisclosedContractsBySynchronizer([])).toEqual({});
+  });
+});
+
+describe('assertSingleSynchronizer', () => {
+  it('returns the sole synchronizerId when every entry shares one', () => {
+    const contracts = [dc('a', { synchronizerId: SYNC_A }), dc('b', { synchronizerId: SYNC_A })];
+    expect(assertSingleSynchronizer(contracts)).toBe(SYNC_A);
+  });
+
+  it('returns undefined for an empty input', () => {
+    expect(assertSingleSynchronizer([])).toBeUndefined();
+  });
+
+  it('throws listing both distinct ids when the set is mixed', () => {
+    const contracts = [dc('a', { synchronizerId: SYNC_B }), dc('b', { synchronizerId: SYNC_A })];
+    expect(() => assertSingleSynchronizer(contracts)).toThrow(SYNC_A);
+    expect(() => assertSingleSynchronizer(contracts)).toThrow(SYNC_B);
+  });
+
+  it('composes with mergeDisclosedContracts output', () => {
+    const factoryCtx = [dc('shared', { synchronizerId: SYNC_A }), dc('f', { synchronizerId: SYNC_A })];
+    const choiceCtx = [dc('shared', { synchronizerId: SYNC_A }), dc('c', { synchronizerId: SYNC_A })];
+    const merged = mergeDisclosedContracts(factoryCtx, choiceCtx);
+    expect(merged.map((e) => e.contractId)).toEqual(['shared', 'f', 'c']);
+    expect(assertSingleSynchronizer(merged)).toBe(SYNC_A);
+
+    const mixed = mergeDisclosedContracts(factoryCtx, [dc('c', { synchronizerId: SYNC_B })]);
+    expect(() => assertSingleSynchronizer(mixed)).toThrow(/multiple synchronizers/);
   });
 });
