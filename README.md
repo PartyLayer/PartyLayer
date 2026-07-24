@@ -825,6 +825,8 @@ PartyLayer exports typed error classes. Use `try-catch` with `instanceof` checks
 - [Quick Start Guide](./docs/quick-start.md)
 - [Dev and Staging guide](./docs/dev-and-staging.md) - From zero to a working integration
 - [PartyLayer and Canton Topology](./docs/partylayer-and-canton-topology.md) - Where your DARs go
+- [Privacy-aware reads on Canton](./docs/privacy-and-reads.md) - Witness-based visibility and cache scoping
+- [Multi-party transaction patterns](./docs/multi-party-patterns.md) - Transfer, DvP, abort paths, registry writes
 - [API Reference](./docs/api.md)
 - [Architecture](./docs/architecture.md)
 - [CIP-0103 Compliance](#cip-0103-canton-dapp-standard-compliance) - Provider model, methods, error codes
