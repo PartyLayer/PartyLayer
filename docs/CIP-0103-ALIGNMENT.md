@@ -1,8 +1,8 @@
-# PartyLayer -- CIP-0103 dApp Standard Alignment
+# PartyLayer: CIP-0103 dApp Standard Alignment
 
 ## 1. Purpose & Scope
 
-CIP-0103 defines a standard interface for communication between decentralized applications (dApps) and wallet providers on the Canton Network. By establishing a shared contract -- the Provider interface -- CIP-0103 enables any dApp to interact with any compliant wallet without wallet-specific integration code. This standardization is foundational for a healthy Canton ecosystem: it lowers the barrier to entry for wallet developers, reduces integration burden for dApp developers, and makes network usage measurable across the ecosystem.
+CIP-0103 defines a standard interface for communication between decentralized applications (dApps) and wallet providers on the Canton Network. By establishing a shared contract, the Provider interface, CIP-0103 enables any dApp to interact with any compliant wallet without wallet-specific integration code. This standardization is foundational for a healthy Canton ecosystem: it lowers the barrier to entry for wallet developers, reduces integration burden for dApp developers, and makes network usage measurable across the ecosystem.
 
 PartyLayer adopted CIP-0103 as its canonical Provider interface for three reasons:
 

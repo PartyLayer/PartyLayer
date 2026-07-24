@@ -23,6 +23,23 @@ All errors extend `PartyLayerError` and have a stable `code` property for progra
 | `INTERNAL_ERROR` | `InternalError` | Internal SDK error | "An unexpected error occurred. Please try again." |
 | `NETWORK_MISMATCH` | `NetworkMismatchError` | Wallet is on a different network than the dApp requires | "Your wallet is on the wrong network. Switch it, then reconnect." |
 | `TIMEOUT` | `TimeoutError` | Operation timed out | "Operation timed out. Please try again." |
+| `INSUFFICIENT_TRAFFIC` | `InsufficientTrafficError` | Submission rejected because the member's traffic allowance (base rate plus purchased extra) is exhausted | "Not enough traffic to submit. Top up traffic, then try again." |
+
+## Synchronizer failures are not part of this taxonomy
+
+Synchronizer level failures do not get a PartyLayer error code, on purpose. They never
+reach the kit's wallet mediated error path. Canton routing failures such as
+`NO_COMMON_DOMAIN`, `NOT_CONNECTED_TO_ALL_CONTRACT_DOMAINS`, and
+`UNKNOWN_CONTRACT_DOMAINS`, and the token standard registry's `409` for a contract that
+is mid reassignment, surface inside the dApp's own ledger and registry calls. That is
+because the CIP-0056 token standard hooks are Model 2: the dApp performs its own reads
+and submissions with its own fetchers, so it observes these failures directly and maps
+them itself.
+
+For the one case the kit can help with ahead of time, use `assertSingleSynchronizer`
+from `@partylayer/react/query` as a preventive check on a combined disclosure set before
+building a submission. It deliberately throws a plain `Error`, not a `PartyLayerError`,
+because that module is framework free and imports nothing.
 
 ## Error Handling
 

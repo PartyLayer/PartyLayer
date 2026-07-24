@@ -25,7 +25,8 @@ export type ErrorCode =
   | 'REGISTRY_SCHEMA_INVALID'
   | 'INTERNAL_ERROR'
   | 'NETWORK_MISMATCH'
-  | 'TIMEOUT';
+  | 'TIMEOUT'
+  | 'INSUFFICIENT_TRAFFIC';
 
 /**
  * Error mapping context
@@ -312,8 +313,24 @@ export class TimeoutError extends PartyLayerError {
 }
 
 /**
+ * Insufficient traffic error: the submission was rejected because the member's
+ * traffic allowance (base rate plus any purchased extra) is exhausted. Canton's
+ * sequencer surfaces this as a submission rejection; the operator or user tops up
+ * traffic to proceed.
+ */
+export class InsufficientTrafficError extends PartyLayerError {
+  constructor(message: string, cause?: unknown, details?: Record<string, unknown>) {
+    super(message, 'INSUFFICIENT_TRAFFIC', {
+      cause,
+      details,
+    });
+    this.name = 'InsufficientTrafficError';
+  }
+}
+
+/**
  * Map unknown errors to PartyLayerError
- * 
+ *
  * This is the single error mapping strategy used by all adapters.
  * It normalizes errors from various sources (wallet SDKs, network, etc.)
  * into typed PartyLayerError instances.
@@ -330,6 +347,21 @@ export function mapUnknownErrorToPartyLayerError(
   // Standard Error
   if (err instanceof Error) {
     const message = err.message.toLowerCase();
+
+    // Traffic exhaustion patterns. Checked BEFORE the rejection branch because
+    // Canton's real rejection string ("Submission was rejected because not traffic
+    // is available: AboveTrafficLimit") contains "rejected". Matches only the
+    // strings Canton actually produces.
+    if (
+      message.includes('insufficient traffic') ||
+      message.includes('abovetrafficlimit')
+    ) {
+      return new InsufficientTrafficError(err.message, err, {
+        walletId: context.walletId,
+        phase: context.phase,
+        transport: context.transport,
+      });
+    }
 
     // User rejection patterns
     if (
