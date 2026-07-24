@@ -34,7 +34,7 @@ function renderConnected(session: Session) {
 }
 
 function renderDisconnected() {
-  statusEl.textContent = 'Not connected — connect a wallet to continue.';
+  statusEl.textContent = 'Not connected. Connect a wallet to continue.';
   connectBtn.hidden = false;
   walletsEl.hidden = true;
 }
