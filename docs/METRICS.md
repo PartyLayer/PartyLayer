@@ -126,6 +126,20 @@ These metric names are stable and should not be changed. Changing them breaks do
 
 ---
 
+## Event Track Counters
+
+In addition to the canonical increment metrics above, the client forwards every
+emitted event to the telemetry adapter's `track()` from one central path. In the
+built-in `MetricsTelemetryAdapter` this records an `event_<type>` counter (for
+example `event_session:connected`), so event volume is visible alongside the named
+metrics. The properties carried are privacy-safe by construction: no session ids,
+party ids, transaction hashes, or origins. The per-event property set is listed in
+the Event telemetry bridge section of [EVENT_SPEC.md](./EVENT_SPEC.md). Where an
+identifier is ever genuinely needed for correlation, hash it with core's
+`hashForPrivacy` rather than sending it raw; today none is sent.
+
+---
+
 ## Privacy Guarantees
 
 ### Never Collected

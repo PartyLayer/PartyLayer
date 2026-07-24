@@ -67,6 +67,7 @@ import {
 } from './adapters';
 import { getBuiltinAdapters } from './builtin-adapters';
 import { createTelemetryAdapter } from './metrics-telemetry';
+import { eventTelemetryProperties } from './event-telemetry';
 import { METRICS, errorMetricName } from '@partylayer/core';
 import type {
   SignMessageParams,
@@ -1450,7 +1451,16 @@ export class PartyLayerClient {
         this.telemetry?.increment?.(errorMetricName(error.code));
       }
     }
-    
+
+    // Bridge every emitted event into telemetry exactly once, from this single
+    // central path, so no event type can bypass it. Only privacy safe properties
+    // are sent (see event-telemetry). Skipped when no adapter was configured (the
+    // default no-op telemetry), so an unconfigured client only pays an instanceof
+    // check and behaves exactly as before.
+    if (this.telemetry && !(this.telemetry instanceof DefaultTelemetry)) {
+      this.telemetry.track(event, eventTelemetryProperties(payload));
+    }
+
     const handlers = this.eventHandlers.get(event);
     if (handlers) {
       for (const handler of handlers) {
