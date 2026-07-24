@@ -68,6 +68,13 @@ import {
 import { getBuiltinAdapters } from './builtin-adapters';
 import { createTelemetryAdapter } from './metrics-telemetry';
 import { eventTelemetryProperties } from './event-telemetry';
+import {
+  shouldLog,
+  newCorrelationId,
+  eventLogLevel,
+  type LogLevel,
+  type EmittableLevel,
+} from './logging';
 import { METRICS, errorMetricName } from '@partylayer/core';
 import type {
   SignMessageParams,
@@ -164,6 +171,8 @@ export class PartyLayerClient {
   private activeSessionNeedsProbe = false;
   public readonly registryClient: RegistryClient; // Expose for React hooks
   private logger: import('@partylayer/core').LoggerAdapter;
+  /** Configured log verbosity; filtering happens centrally in {@link log}. */
+  private readonly logLevel: LogLevel;
   private crypto: import('@partylayer/core').CryptoAdapter;
   private storage: import('@partylayer/core').StorageAdapter;
   private telemetry?: import('@partylayer/core').TelemetryAdapter;
@@ -193,6 +202,7 @@ export class PartyLayerClient {
 
     // Initialize service adapters
     this.logger = config.logger || new DefaultLogger();
+    this.logLevel = config.logLevel ?? 'info';
     this.crypto = config.crypto || new DefaultCrypto();
     this.storage = config.storage || new DefaultStorage();
     
@@ -233,7 +243,7 @@ export class PartyLayerClient {
       }
       
       this.adapters.set(adapter.walletId, adapter);
-      this.logger.debug('Registered wallet adapter', {
+      this.log('debug', 'adapter:registered', 'Registered wallet adapter', {
         walletId: adapter.walletId,
         name: adapter.name,
         capabilities: adapter.getCapabilities(),
@@ -318,7 +328,7 @@ export class PartyLayerClient {
       // Update registry status even on error (may have fallback info)
       this.updateRegistryStatus();
 
-      this.logger.warn('Registry fetch failed, using registered adapters only', {
+      this.log('warn', 'registry:fetch_failed', 'Registry fetch failed, using registered adapters only', {
         error: err instanceof Error ? err.message : String(err),
       });
 
@@ -574,7 +584,9 @@ export class PartyLayerClient {
                     }
                   } catch (err) {
                     // Re-probe failed — leave the session as-is; never break listWallets.
-                    this.logger.warn('Restore re-probe failed; leaving session as-is', err);
+                    this.log('warn', 'session:reprobe_failed', 'Restore re-probe failed; leaving session as-is', {
+                      error: err instanceof Error ? err.message : String(err),
+                    });
                   }
                 }
               }
@@ -651,6 +663,10 @@ export class PartyLayerClient {
   async connect(options?: ConnectOptions): Promise<Session> {
     // Track connect attempt
     this.telemetry?.increment?.(METRICS.WALLET_CONNECT_ATTEMPTS);
+    // One correlation id for the whole connect operation, threaded through its logs
+    // and events so a multi step flow can be traced end to end.
+    const correlationId = newCorrelationId();
+    this.log('debug', 'connect:start', 'connect', {}, correlationId);
 
     try {
       // Popup-safe fast-path: a pre-warmed plan for a popup/remote
@@ -658,14 +674,14 @@ export class PartyLayerClient {
       // ZERO awaits, so the wallet's window.open survives the user gesture.
       // `tryFastConnect` is SYNCHRONOUS — when it returns a promise,
       // completeConnect has already invoked adapter.connect() in this call stack.
-      const fast = this.tryFastConnect(options);
+      const fast = this.tryFastConnect(options, correlationId);
       if (fast) return await fast;
 
       // Normal path (every existing wallet — injected/announce — comes here):
       // resolve the plan (the awaited guards) then connect. Behavior-identical
       // to the pre-fast-path connect.
       const plan = await this.resolveConnectPlan(options);
-      return await this.completeConnect(plan, options);
+      return await this.completeConnect(plan, options, correlationId);
     } catch (err) {
       const timeoutMs = options?.timeoutMs || 30000;
       const error = mapUnknownErrorToPartyLayerError(err, {
@@ -673,7 +689,7 @@ export class PartyLayerClient {
         walletId: options?.walletId ? String(options.walletId) : undefined,
         timeoutMs,
       });
-      this.emit('error', { type: 'error', error });
+      this.emit('error', { type: 'error', error }, correlationId);
       throw error;
     }
   }
@@ -815,7 +831,11 @@ export class PartyLayerClient {
    * build / persist / emit the session. Separated from plan resolution so the
    * popup-safe fast-path can call it gesture-synchronously.
    */
-  private async completeConnect(plan: ConnectPlan, options?: ConnectOptions): Promise<Session> {
+  private async completeConnect(
+    plan: ConnectPlan,
+    options?: ConnectOptions,
+    correlationId: string = newCorrelationId()
+  ): Promise<Session> {
     const { selectedWallet, adapter, ctx } = plan;
 
     // Connect
@@ -869,7 +889,7 @@ export class PartyLayerClient {
         expected: mismatch.expected,
         actual: mismatch.actual,
         enforced: this.enforcement !== 'off',
-      });
+      }, correlationId);
       if (this.enforcement === 'strict') {
         throw new NetworkMismatchError(mismatch.expected, mismatch.actual);
       }
@@ -893,7 +913,7 @@ export class PartyLayerClient {
     this.emit('session:connected', {
       type: 'session:connected',
       session,
-    });
+    }, correlationId);
 
     return session;
   }
@@ -940,7 +960,7 @@ export class PartyLayerClient {
    * Returns the in-flight Session promise, or null to fall back to the normal
    * path (e.g. cold cache, or a non-discovery wallet).
    */
-  private tryFastConnect(options?: ConnectOptions): Promise<Session> | null {
+  private tryFastConnect(options?: ConnectOptions, correlationId?: string): Promise<Session> | null {
     const walletId = options?.walletId;
     if (!walletId) return null;
     // Plan-affecting options must re-resolve (guards) → no fast-path.
@@ -948,7 +968,7 @@ export class PartyLayerClient {
     const plan = this.warmPlans.get(walletId);
     if (!plan) return null;
     this.warmPlans.delete(walletId); // one-shot; re-warmed on the next listWallets
-    return this.completeConnect(plan, options);
+    return this.completeConnect(plan, options, correlationId);
   }
 
   /**
@@ -1055,11 +1075,13 @@ export class PartyLayerClient {
       );
     }
 
+    const correlationId = newCorrelationId();
+    this.log('debug', 'signTransaction:start', 'signTransaction', {}, correlationId);
     try {
       this.assertNetworkOk(session);
       const ctx = this.createAdapterContext();
       const result = await adapter.signTransaction(ctx, session, params);
-      
+
       // Emit transaction status
       this.emit('tx:status', {
         type: 'tx:status',
@@ -1067,7 +1089,7 @@ export class PartyLayerClient {
         txId: result.transactionHash,
         status: 'pending',
         raw: result.signedTx,
-      });
+      }, correlationId);
 
       return result;
     } catch (err) {
@@ -1075,7 +1097,7 @@ export class PartyLayerClient {
         phase: 'signTransaction',
         walletId: String(session.walletId),
       });
-      this.emit('error', { type: 'error', error });
+      this.emit('error', { type: 'error', error }, correlationId);
       throw error;
     }
   }
@@ -1097,6 +1119,8 @@ export class PartyLayerClient {
       );
     }
 
+    const correlationId = newCorrelationId();
+    this.log('debug', 'submitTransaction:start', 'submitTransaction', {}, correlationId);
     try {
       this.assertNetworkOk(session);
       const ctx = this.createAdapterContext();
@@ -1109,7 +1133,7 @@ export class PartyLayerClient {
         txId: result.transactionHash,
         status: 'submitted',
         raw: result,
-      });
+      }, correlationId);
 
       return result;
     } catch (err) {
@@ -1117,7 +1141,7 @@ export class PartyLayerClient {
         phase: 'submitTransaction',
         walletId: String(session.walletId),
       });
-      this.emit('error', { type: 'error', error });
+      this.emit('error', { type: 'error', error }, correlationId);
       throw error;
     }
   }
@@ -1269,7 +1293,9 @@ export class PartyLayerClient {
       const encrypted = await this.crypto.encrypt(data, this.origin);
       await this.storage.set(SESSION_STORAGE_KEY, encrypted);
     } catch (err) {
-      this.logger.warn('Failed to persist session', err);
+      this.log('warn', 'session:persist_failed', 'Failed to persist session', {
+        error: err instanceof Error ? err.message : String(err),
+      });
     }
   }
 
@@ -1283,7 +1309,9 @@ export class PartyLayerClient {
     try {
       await this.storage.remove(SESSION_STORAGE_KEY);
     } catch (err) {
-      this.logger.warn('Failed to remove session', err);
+      this.log('warn', 'session:remove_failed', 'Failed to remove session', {
+        error: err instanceof Error ? err.message : String(err),
+      });
     }
   }
 
@@ -1293,6 +1321,8 @@ export class PartyLayerClient {
   private async restoreSession(): Promise<Session | null> {
     // Track restore attempt
     this.telemetry?.increment?.(METRICS.RESTORE_ATTEMPTS);
+    const correlationId = newCorrelationId();
+    this.log('debug', 'session:restore_start', 'restoreSession', {}, correlationId);
 
     try {
       const encrypted = await this.storage.get(SESSION_STORAGE_KEY);
@@ -1331,17 +1361,17 @@ export class PartyLayerClient {
           expected: mismatch.expected,
           actual: mismatch.actual,
           enforced: this.enforcement !== 'off',
-        });
+        }, correlationId);
         if (this.enforcement !== 'off') {
-          this.logger.warn('Refused session restore — network mismatch', {
+          this.log('warn', 'session:restore_network_mismatch', 'Refused session restore: network mismatch', {
             expected: mismatch.expected,
             actual: mismatch.actual,
-          });
+          }, correlationId);
           await this.removeSession(session.sessionId);
           this.emit('session:expired', {
             type: 'session:expired',
             sessionId: session.sessionId,
-          });
+          }, correlationId);
           return null;
         }
         // 'off': proceed with restore but flag the mismatch on the session.
@@ -1371,7 +1401,7 @@ export class PartyLayerClient {
           this.emit('session:connected', {
             type: 'session:connected',
             session: restored,
-          });
+          }, correlationId);
           return restored;
         } else {
           // Restore failed - clear session
@@ -1379,7 +1409,7 @@ export class PartyLayerClient {
           this.emit('session:expired', {
             type: 'session:expired',
             sessionId: session.sessionId,
-          });
+          }, correlationId);
           return null;
         }
       }
@@ -1393,7 +1423,9 @@ export class PartyLayerClient {
       this.activeSessionNeedsProbe = true;
       return session;
     } catch (err) {
-      this.logger.warn('Failed to restore session', err);
+      this.log('warn', 'session:restore_failed', 'Failed to restore session', {
+        error: err instanceof Error ? err.message : String(err),
+      }, correlationId);
       return null;
     }
   }
@@ -1440,9 +1472,47 @@ export class PartyLayerClient {
   /**
    * Emit event to handlers
    */
+  /**
+   * Central structured log. Filters by the configured level here, before the adapter
+   * is called, so adapters never filter themselves; skips entirely when no real
+   * logger was configured (the no-op default), so a silent client pays only a check.
+   * Every line carries a machine readable payload `{ event, correlationId?, ...fields }`.
+   * Privacy: callers pass only non identifying fields, the same rule as telemetry.
+   */
+  private log(
+    level: EmittableLevel,
+    event: string,
+    message: string,
+    fields?: Record<string, unknown>,
+    correlationId?: string
+  ): void {
+    if (this.logger instanceof DefaultLogger) return;
+    if (!shouldLog(level, this.logLevel)) return;
+    const payload: Record<string, unknown> = {
+      event,
+      ...(correlationId ? { correlationId } : {}),
+      ...(fields ?? {}),
+    };
+    switch (level) {
+      case 'debug':
+        this.logger.debug(message, payload);
+        break;
+      case 'info':
+        this.logger.info(message, payload);
+        break;
+      case 'warn':
+        this.logger.warn(message, payload);
+        break;
+      case 'error':
+        this.logger.error(message, payload);
+        break;
+    }
+  }
+
   private emit<T extends PartyLayerEvent>(
     event: T['type'],
-    payload: T
+    payload: T,
+    correlationId?: string
   ): void {
     // Track error metrics
     if (event === 'error' && 'error' in payload) {
@@ -1461,13 +1531,19 @@ export class PartyLayerClient {
       this.telemetry.track(event, eventTelemetryProperties(payload));
     }
 
+    // Bridge the same event into one structured log line, reusing the safe fields.
+    // The correlation id, when present, ties this event to its operation.
+    this.log(eventLogLevel(event), event, event, eventTelemetryProperties(payload), correlationId);
+
     const handlers = this.eventHandlers.get(event);
     if (handlers) {
       for (const handler of handlers) {
         try {
           handler(payload);
         } catch (err) {
-          this.logger.error('Error in event handler', err);
+          this.log('error', 'event:handler_error', 'Error in event handler', {
+            error: err instanceof Error ? err.message : String(err),
+          });
         }
       }
     }

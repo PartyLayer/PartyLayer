@@ -125,7 +125,7 @@ export class AdapterNotRegisteredError extends PartyLayerError {
     const label = info.name ? `"${info.name}" (${walletId})` : `"${walletId}"`;
     const pkg = info.adapterPackage ? ` (provider from ${info.adapterPackage})` : '';
     super(
-      `Wallet ${label} is a popup/remote (discovery-adapter) wallet — its provider is ` +
+      `Wallet ${label} is a popup/remote (discovery-adapter) wallet: its provider is ` +
         `supplied by your app, not bundled${pkg}. Register it with createPartyLayer: ` +
         `adapters: [{ providerId: '${providerId}', create: (host) => /* new provider adapter */ }]. ` +
         `See https://partylayer.xyz/docs/wallets`,

@@ -194,6 +194,13 @@ export interface PartyLayerConfig {
   telemetry?: TelemetryAdapter | TelemetryConfig;
   /** Logger adapter (optional) */
   logger?: LoggerAdapter;
+  /**
+   * Log verbosity. Filtering happens centrally in the client before the adapter is
+   * called, so adapters never filter themselves. `silent` suppresses everything.
+   * Defaults to `info` when a logger is supplied; with no logger the client is
+   * silent regardless.
+   */
+  logLevel?: 'debug' | 'info' | 'warn' | 'error' | 'silent';
   /** Application metadata */
   app: {
     /** Application name */
