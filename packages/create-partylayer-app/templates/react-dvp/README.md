@@ -126,3 +126,9 @@ fetchers. The hooks and the UI stay exactly as they are.
 - Settle. The venue's trade app exercises its own settle choice, whose body runs
   `Allocation_ExecuteTransfer` for every leg in one transaction. The official Splice
   token-standard trading-app example is the canonical reference for this flow.
+
+For the shapes these fetchers pass around, `@partylayer/react/query` exports the
+disclosed contract and choice context types (`TokenDisclosedContract`,
+`TokenChoiceContext`, `TokenTransferFactory`, `TokenAllocationFactory`) plus
+`mergeDisclosedContracts` for combining the disclosures of several registry contexts
+into one submission.

@@ -128,6 +128,18 @@ export {
   allocationMatchesRequestLeg,
 } from './token-matching';
 
+// Framework-free typed wire shapes every CIP-0056 registry flow carries (disclosed
+// contracts, choice context, factory-with-context) mirrored from the official token
+// standard OpenAPI, plus a canonical merge utility for combining the disclosures of
+// multiple registry contexts into one submission.
+export { mergeDisclosedContracts } from './disclosed-contracts';
+export type {
+  TokenDisclosedContract,
+  TokenChoiceContext,
+  TokenTransferFactory,
+  TokenAllocationFactory,
+} from './disclosed-contracts';
+
 export { useChoice } from './use-choice';
 export type {
   UseChoiceParameters,

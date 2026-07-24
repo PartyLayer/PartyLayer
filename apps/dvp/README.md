@@ -120,6 +120,12 @@ fetchers. The hooks and the UI stay exactly as they are.
   `Allocation_ExecuteTransfer` for every leg in one transaction. The official Splice
   token-standard trading-app example is the canonical reference for this flow.
 
+For the shapes these fetchers pass around, `@partylayer/react/query` exports the
+disclosed contract and choice context types (`TokenDisclosedContract`,
+`TokenChoiceContext`, `TokenTransferFactory`, `TokenAllocationFactory`) plus
+`mergeDisclosedContracts` for combining the disclosures of several registry contexts
+into one submission.
+
 ## API findings (now resolved)
 
 Building this vertical surfaced one composition friction, which has since been

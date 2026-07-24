@@ -123,6 +123,12 @@ the transfer flow against the registry's allocation-instruction factory endpoint
 the per-action choice contexts for `Allocation_ExecuteTransfer`, `Allocation_Cancel`,
 and `Allocation_Withdraw`.
 
+For the shapes these fetchers pass around, `@partylayer/react/query` exports the
+disclosed contract and choice context types (`TokenDisclosedContract`,
+`TokenChoiceContext`, `TokenTransferFactory`, `TokenAllocationFactory`) plus
+`mergeDisclosedContracts` for combining the disclosures of several registry contexts
+into one submission.
+
 Issuer writes (mint, freeze). These are registry-specific admin operations, shown
 here through the generic `useChoice` escape hatch. Real registries typically expose
 issuance through the standard's `BurnMintV1` (`BurnMintFactory_BurnMint`, which
