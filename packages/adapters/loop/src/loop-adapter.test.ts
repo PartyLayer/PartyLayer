@@ -175,14 +175,17 @@ describe('LoopAdapter', () => {
           });
         });
 
-        it('maps Loop PaymentRequiredError to TRANSPORT_ERROR with status 402 and preserves cause', async () => {
+        it('maps Loop PaymentRequiredError to INSUFFICIENT_TRAFFIC with all five detail fields and preserves cause', async () => {
           const loopErr = new PaymentRequiredError({ code: 'PAY', gas_amount: '5' });
           mockProvider.getActiveContracts.mockRejectedValue(loopErr);
           let caught: PartyLayerError | undefined;
           try { await acsCall(); } catch (e) { caught = e as PartyLayerError; }
           expect(caught).toBeInstanceOf(PartyLayerError);
-          expect(caught?.code).toBe('TRANSPORT_ERROR');
-          expect(caught?.details).toMatchObject({ status: 402, gasAmount: '5' });
+          expect(caught?.code).toBe('INSUFFICIENT_TRAFFIC');
+          expect(caught?.details).toMatchObject({ status: 402, loopCode: 'PAY', gasAmount: '5' });
+          // All five detail fields are preserved (trackingId and loopStatus may be undefined).
+          expect(caught?.details).toHaveProperty('trackingId');
+          expect(caught?.details).toHaveProperty('loopStatus');
           expect(caught?.cause).toBe(loopErr);
         });
 

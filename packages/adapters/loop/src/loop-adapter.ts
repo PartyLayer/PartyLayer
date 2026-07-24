@@ -81,10 +81,11 @@ function mapLoopStructuredError(
     );
   }
   if (err instanceof PaymentRequiredError) {
-    // 402/limit-class: payment/gas required or a request limit was hit.
+    // 402/limit-class: the traffic allowance is exhausted (payment/gas required or a
+    // request limit was hit). This is the one real traffic signal reaching the kit.
     return make(
       `Loop ${context.operation} needs payment or gas, or hit a request limit. ${err.message}${suffix}`,
-      'TRANSPORT_ERROR',
+      'INSUFFICIENT_TRAFFIC',
       { status: 402, loopCode: err.code, gasAmount: err.gasAmount, trackingId: err.trackingId, loopStatus: err.status },
     );
   }

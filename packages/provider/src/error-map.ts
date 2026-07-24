@@ -27,6 +27,10 @@ const ERROR_CODE_TO_RPC: Record<ErrorCode, number> = {
   INTERNAL_ERROR: JSON_RPC_ERRORS.INTERNAL_ERROR,
   NETWORK_MISMATCH: JSON_RPC_ERRORS.INVALID_INPUT,
   TIMEOUT: JSON_RPC_ERRORS.INVALID_INPUT,
+  // Traffic allowance exhausted maps to the spec's limit-exceeded code. CIP-0103's
+  // own table lists -32005 as the limit exceeded semantic; it was defined but unused
+  // until now, so no proprietary code is introduced.
+  INSUFFICIENT_TRAFFIC: JSON_RPC_ERRORS.RATE_LIMIT_EXCEEDED,
 };
 
 // ─── CIP-0103 numeric code → PartyLayer ErrorCode (best-effort reverse) ────
@@ -43,6 +47,7 @@ const RPC_TO_ERROR_CODE: Partial<Record<number, ErrorCode>> = {
   [JSON_RPC_ERRORS.RESOURCE_UNAVAILABLE]: 'WALLET_NOT_INSTALLED',
   [JSON_RPC_ERRORS.TRANSACTION_REJECTED]: 'USER_REJECTED',
   [JSON_RPC_ERRORS.INVALID_INPUT]: 'TIMEOUT',
+  [JSON_RPC_ERRORS.RATE_LIMIT_EXCEEDED]: 'INSUFFICIENT_TRAFFIC',
 };
 
 /**
