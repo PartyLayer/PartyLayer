@@ -1,6 +1,6 @@
 # {{PROJECT_NAME}}
 
-A [PartyLayer](https://partylayer.xyz) dApp — React + Vite, with Canton wallet integration.
+A [PartyLayer](https://partylayer.xyz) dApp: React + Vite, with Canton wallet integration.
 
 ## Develop
 
@@ -8,7 +8,7 @@ A [PartyLayer](https://partylayer.xyz) dApp — React + Vite, with Canton wallet
 npm run dev
 ```
 
-Open the app and click **Connect Wallet** — the modal lists every verified Canton wallet from the registry.
+Open the app and click **Connect Wallet**. The modal lists every verified Canton wallet from the registry.
 
 ## How it's wired
 
