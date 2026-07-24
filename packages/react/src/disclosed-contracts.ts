@@ -7,7 +7,8 @@
  * a registry returns for a transfer or an allocation. Mirrored byte-faithfully from
  * the official Canton token standard OpenAPI (the transfer-instruction and
  * allocation-instruction specs), whose schemas keep these definitions self-contained
- * per API; every field is optional so a partial or evolving payload still types.
+ * per API; the required and optional split on each type mirrors the schemas' own
+ * required lists.
  *
  * Nothing here imports anything: no sibling modules, no runtime dependency, so the
  * module stays importable anywhere the wire shapes are handled.
@@ -21,18 +22,19 @@
  * `synchronizerId` is the synchronizer the contract is currently assigned to; if the
  * contract is in the process of being reassigned, the registry returns a `409`.
  *
- * The `debug` fields are provider hints: trust them ONLY if you trust the provider,
- * as they may not match the data in the `createdEventBlob`.
+ * The `debug` fields are provider hints and are the schema's only optional members:
+ * trust them ONLY if you trust the provider, as they may not match the data in the
+ * `createdEventBlob`.
  */
 export interface TokenDisclosedContract {
-  templateId?: string;
-  contractId?: string;
-  createdEventBlob?: string;
+  templateId: string;
+  contractId: string;
+  createdEventBlob: string;
   /**
    * The synchronizer to which the contract is currently assigned. If the contract is
    * in the process of being reassigned, the registry returns a `409` response.
    */
-  synchronizerId?: string;
+  synchronizerId: string;
   /**
    * The name of the Daml package that was used to create the contract. Use this only
    * if you trust the provider, as it might not match the data in the
@@ -58,8 +60,8 @@ export interface TokenDisclosedContract {
  * schema.
  */
 export interface TokenChoiceContext {
-  choiceContextData?: Record<string, unknown>;
-  disclosedContracts?: TokenDisclosedContract[];
+  choiceContextData: Record<string, unknown>;
+  disclosedContracts: TokenDisclosedContract[];
 }
 
 /**
@@ -78,9 +80,9 @@ export interface TokenChoiceContext {
  *   no approval and typically immediate.
  */
 export interface TokenTransferFactory {
-  factoryId?: string;
-  transferKind?: 'offer' | 'direct' | 'self';
-  choiceContext?: TokenChoiceContext;
+  factoryId: string;
+  transferKind: 'offer' | 'direct' | 'self';
+  choiceContext: TokenChoiceContext;
 }
 
 /**
@@ -93,16 +95,15 @@ export interface TokenTransferFactory {
  * since the choice context MAY be specific to the choice being exercised.
  */
 export interface TokenAllocationFactory {
-  factoryId?: string;
-  choiceContext?: TokenChoiceContext;
+  factoryId: string;
+  choiceContext: TokenChoiceContext;
 }
 
 /**
  * Merge disclosed contract lists into one submission's disclosed contracts.
  *
- * Flattens the inputs in order. Entries WITH a `contractId` are deduplicated by
- * `contractId` with the FIRST occurrence winning and order otherwise stable; entries
- * WITHOUT a `contractId` pass through untouched. Entries sharing a `contractId`
+ * Flattens the inputs in order and deduplicates by `contractId` with the FIRST
+ * occurrence winning and order otherwise stable. Entries sharing a `contractId`
  * represent the same created event, so first wins is safe. Use this when combining
  * the disclosures of multiple registry contexts (for example a factory context plus a
  * per action choice context) into one submission's disclosed contracts.
@@ -115,10 +116,6 @@ export function mergeDisclosedContracts(
   for (const list of lists) {
     if (!list) continue;
     for (const entry of list) {
-      if (entry.contractId === undefined) {
-        out.push(entry);
-        continue;
-      }
       if (seen.has(entry.contractId)) continue;
       seen.add(entry.contractId);
       out.push(entry);

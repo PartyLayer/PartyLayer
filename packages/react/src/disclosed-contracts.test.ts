@@ -1,8 +1,8 @@
 /**
  * disclosed-contracts tests: the framework-free merge utility. Covers dedupe across
  * several lists (including undefined inputs), stable ordering, first occurrence
- * winning on a repeated contractId, pass-through of entries lacking a contractId,
- * debug fields surviving untouched, and the all-empty case.
+ * winning on a repeated contractId, plain duplicate collapse within one list, debug
+ * fields surviving untouched, and the all-empty case.
  */
 import { describe, it, expect } from 'vitest';
 import {
@@ -11,8 +11,10 @@ import {
 } from './disclosed-contracts';
 
 const dc = (contractId: string, extra?: Partial<TokenDisclosedContract>): TokenDisclosedContract => ({
+  templateId: 'pkg:Mod:Tpl',
   contractId,
   createdEventBlob: 'blob-' + contractId,
+  synchronizerId: 'sync::1220abcd',
   ...extra,
 });
 
@@ -39,12 +41,9 @@ describe('mergeDisclosedContracts', () => {
     expect(merged.map((e) => e.contractId)).toEqual(['x', 'y', 'z', 'w']);
   });
 
-  it('passes through entries lacking a contractId without deduplicating them', () => {
-    const anon1: TokenDisclosedContract = { createdEventBlob: 'blob-1' };
-    const anon2: TokenDisclosedContract = { createdEventBlob: 'blob-2' };
-    const merged = mergeDisclosedContracts([anon1, dc('a')], [anon2, dc('a')]);
-    // Both anonymous entries survive; the duplicate 'a' is dropped.
-    expect(merged).toEqual([anon1, dc('a'), anon2]);
+  it('collapses a duplicate contractId within a single list to one entry', () => {
+    const merged = mergeDisclosedContracts([dc('a'), dc('b'), dc('a')]);
+    expect(merged.map((e) => e.contractId)).toEqual(['a', 'b']);
   });
 
   it('leaves debug fields untouched on the surviving entry', () => {

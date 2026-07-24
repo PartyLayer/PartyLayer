@@ -45,13 +45,13 @@ interface AllocationInstructionRequest { expectedAdmin: string; allocation: Toke
 interface OptimisticContext<TQueryData> { previous: TQueryData | undefined; }
 interface OptimisticMutationConfig<TQueryData, TVariables> { queryClient: QueryClient; queryKey: QueryKey; update: (previous: TQueryData | undefined, variables: TVariables) => TQueryData; invalidate?: boolean; }
 interface TokenAllocation { allocation: TokenAllocationSpecification; holdingCids: string[]; meta?: Record<string, string>; }
-interface TokenAllocationFactory { factoryId?: string; choiceContext?: TokenChoiceContext; }
+interface TokenAllocationFactory { factoryId: string; choiceContext: TokenChoiceContext; }
 interface TokenAllocationRef { cid: string; allocation: TokenAllocation; }
 interface TokenAllocationRequest { settlement: TokenSettlementInfo; transferLegs: Record<string, TokenTransferLeg>; meta?: Record<string, string>; }
 interface TokenAllocationRequestRef { cid: string; request: TokenAllocationRequest; }
 interface TokenAllocationSpecification { settlement: TokenSettlementInfo; transferLegId: string; transferLeg: TokenTransferLeg; }
-interface TokenChoiceContext { choiceContextData?: Record<string, unknown>; disclosedContracts?: TokenDisclosedContract[]; }
-interface TokenDisclosedContract { templateId?: string; contractId?: string; createdEventBlob?: string; synchronizerId?: string; debugPackageName?: string; debugPayload?: Record<string, unknown>; debugCreatedAt?: string; }
+interface TokenChoiceContext { choiceContextData: Record<string, unknown>; disclosedContracts: TokenDisclosedContract[]; }
+interface TokenDisclosedContract { templateId: string; contractId: string; createdEventBlob: string; synchronizerId: string; debugPackageName?: string; debugPayload?: Record<string, unknown>; debugCreatedAt?: string; }
 interface TokenHolding { owner: string; instrumentId: TokenInstrumentId; amount: string; lock?: TokenLock; meta?: Record<string, string>; }
 interface TokenHoldingRef { cid: string; holding: TokenHolding; }
 interface TokenInstrumentId { admin: string; id: string; }
@@ -59,7 +59,7 @@ interface TokenLock { holders: string[]; expiresAt?: string; expiresAfter?: stri
 interface TokenSettlementInfo { executor: string; settlementRef: TokenSettlementReference; requestedAt: string; allocateBefore: string; settleBefore: string; meta?: Record<string, string>; }
 interface TokenSettlementReference { id: string; cid?: string; }
 interface TokenTransfer { sender: string; receiver: string; amount: string; instrumentId: TokenInstrumentId; lock?: TokenLock; requestedAt: string; executeBefore: string; inputHoldingCids: string[]; meta?: Record<string, string>; }
-interface TokenTransferFactory { factoryId?: string; transferKind?: 'offer' | 'direct' | 'self'; choiceContext?: TokenChoiceContext; }
+interface TokenTransferFactory { factoryId: string; transferKind: 'offer' | 'direct' | 'self'; choiceContext: TokenChoiceContext; }
 interface TokenTransferInstruction { originalInstructionCid?: string; transfer: TokenTransfer; status: TokenTransferInstructionStatus; meta?: Record<string, string>; }
 interface TokenTransferInstructionRef { cid: string; instruction: TokenTransferInstruction; }
 interface TokenTransferLeg { sender: string; receiver: string; amount: string; instrumentId: TokenInstrumentId; meta?: Record<string, string>; }
