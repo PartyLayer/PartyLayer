@@ -1,0 +1,65 @@
+{
+  "name": "@partylayer/react-native",
+  "version": "0.1.0",
+  "description": "Headless React Native compatibility layer for PartyLayer: deep link platform and AsyncStorage session store over the framework-agnostic core (phase A, no UI)",
+  "main": "./dist/index.js",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "clean": "rm -rf dist",
+    "lint": "eslint src --ext .ts",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "keywords": [
+    "canton",
+    "wallet",
+    "cip-0103",
+    "react-native",
+    "mobile",
+    "deeplink"
+  ],
+  "author": "PartyLayer Contributors",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/PartyLayer/PartyLayer.git",
+    "directory": "packages/react-native"
+  },
+  "homepage": "https://partylayer.xyz",
+  "bugs": {
+    "url": "https://github.com/PartyLayer/PartyLayer/issues"
+  },
+  "dependencies": {
+    "@partylayer/core": "workspace:^",
+    "@partylayer/sdk": "workspace:^",
+    "@partylayer/session": "workspace:^"
+  },
+  "peerDependencies": {
+    "react": ">=18.0.0",
+    "react-native": ">=0.70.0",
+    "@react-native-async-storage/async-storage": ">=1.17.0"
+  },
+  "peerDependenciesMeta": {
+    "@react-native-async-storage/async-storage": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "tsup": "^8.0.0",
+    "typescript": "^5.3.3",
+    "vitest": "^1.2.0"
+  }
+}
