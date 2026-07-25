@@ -328,6 +328,27 @@ const warmDarkBase: PartyLayerTheme = {
   overlayBlur: DEFAULT_BLUR,
 };
 
+/** A spreadable accent option fragment, matching the web theme's presets. */
+export interface AccentPreset {
+  accentColor: string;
+  accentColorForeground: string;
+}
+
+/**
+ * Accent presets, copied verbatim from the react package's `accentPresets`. Applying
+ * one sets the theme's primary color and its on-accent text color. Kept in sync with
+ * the web copy by the theme drift test.
+ */
+export const accentPresets = {
+  partyYellow: { accentColor: '#FFCC00', accentColorForeground: '#0B0F1A' },
+  blue: { accentColor: '#3B82F6', accentColorForeground: '#FFFFFF' },
+  green: { accentColor: '#10B981', accentColorForeground: '#052E16' },
+  purple: { accentColor: '#7B3FE4', accentColorForeground: '#FFFFFF' },
+  orange: { accentColor: '#F97316', accentColorForeground: '#FFFFFF' },
+  pink: { accentColor: '#EC4899', accentColorForeground: '#FFFFFF' },
+  red: { accentColor: '#EF4444', accentColorForeground: '#FFFFFF' },
+} as const satisfies Record<string, AccentPreset>;
+
 /** The six families, each with a light and a dark variant (twelve variants total). */
 export const themes = {
   default: { light: lightBase, dark: darkBase },
