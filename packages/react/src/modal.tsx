@@ -451,6 +451,8 @@ function ModalWalletIcon({
       <img
         src={iconUrl}
         alt={wallet.name}
+        loading="lazy"
+        decoding="async"
         onError={() => setImgError(true)}
         style={{
           width: `${size}px`,
