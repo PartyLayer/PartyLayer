@@ -6,7 +6,16 @@
     "orientation": "portrait",
     "scheme": "partylayerdemo",
     "userInterfaceStyle": "automatic",
-    "ios": { "supportsTablet": true, "bundleIdentifier": "xyz.partylayer.connectdemo" },
-    "android": { "package": "xyz.partylayer.connectdemo" }
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "xyz.partylayer.connectdemo"
+    },
+    "android": {
+      "package": "xyz.partylayer.connectdemo"
+    },
+    "web": {
+      "bundler": "metro",
+      "output": "single"
+    }
   }
 }

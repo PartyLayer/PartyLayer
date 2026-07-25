@@ -8,3 +8,6 @@ pnpm-lock.yaml
 
 # Local package tarballs produced by prepare-local.mjs
 vendor/
+
+# Web verification screenshots
+screenshots/
