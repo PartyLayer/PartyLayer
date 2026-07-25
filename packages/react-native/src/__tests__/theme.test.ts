@@ -11,6 +11,8 @@ import {
   themes,
   REM_BASE_PX,
   DEFAULT_BORDER_RADIUS,
+  applyAccent,
+  accentPresets,
 } from '../theme';
 import type { PartyLayerTheme } from '../theme-data';
 
@@ -87,5 +89,33 @@ describe('overlay and pressed adaptations', () => {
     for (const [name, theme] of ALL_VARIANTS) {
       expect(toReactNativeTheme(theme).colors.pressed, name).toBe(theme.colors.primaryHover);
     }
+  });
+});
+
+describe('accent overrides', () => {
+  it('ships the seven presets', () => {
+    expect(Object.keys(accentPresets).sort()).toEqual(
+      ['blue', 'green', 'orange', 'partyYellow', 'pink', 'purple', 'red'].sort(),
+    );
+  });
+
+  it('applies an accent preset: sets primary and its foreground, derives a distinct hover', () => {
+    const themed = applyAccent(themes.default.dark, accentPresets.blue);
+    expect(themed.colors.primary).toBe('#3B82F6');
+    expect(themed.colors.primaryForeground).toBe('#FFFFFF');
+    expect(themed.colors.primaryHover).toMatch(/^#[0-9a-fA-F]{6}$/);
+    expect(themed.colors.primaryHover).not.toBe(themed.colors.primary);
+  });
+
+  it('auto-derives the foreground when only an accent color is given', () => {
+    const light = applyAccent(themes.default.light, { accentColor: '#FFFFFF' });
+    expect(light.colors.primary).toBe('#FFFFFF');
+    expect(light.colors.primaryForeground).toBe('#0B0F1A'); // dark text on a light accent
+  });
+
+  it('does not mutate the input theme', () => {
+    const before = themes.default.light.colors.primary;
+    applyAccent(themes.default.light, { accentColor: '#123456' });
+    expect(themes.default.light.colors.primary).toBe(before);
   });
 });

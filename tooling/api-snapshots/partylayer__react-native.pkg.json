@@ -4,6 +4,11 @@
       "import": "./dist/index.mjs",
       "require": "./dist/index.js",
       "types": "./dist/index.d.ts"
+    },
+    "./ui": {
+      "import": "./dist/ui.mjs",
+      "require": "./dist/ui.js",
+      "types": "./dist/ui.d.ts"
     }
   },
   "main": "./dist/index.js",
@@ -12,7 +17,8 @@
   "peerDependencies": {
     "@react-native-async-storage/async-storage": ">=1.17.0",
     "react": ">=18.0.0",
-    "react-native": ">=0.70.0"
+    "react-native": ">=0.70.0",
+    "react-native-svg": ">=13.0.0"
   },
   "types": "./dist/index.d.ts"
 }

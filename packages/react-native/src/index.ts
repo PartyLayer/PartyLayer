@@ -20,8 +20,16 @@ export {
   themes,
   REM_BASE_PX,
   DEFAULT_BORDER_RADIUS,
+  applyAccent,
+  accentPresets,
 } from './theme';
-export type { ReactNativeTheme, PartyLayerTheme, ThemeFamily } from './theme';
+export type {
+  ReactNativeTheme,
+  PartyLayerTheme,
+  ThemeFamily,
+  AccentOverrides,
+  AccentPreset,
+} from './theme';
 
 // Headless hooks (phase B1): wallets and connect, built on the phase A client.
 export { useWallets } from './use-wallets';
