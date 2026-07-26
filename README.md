@@ -836,6 +836,7 @@ PartyLayer exports typed error classes. Use `try-catch` with `instanceof` checks
 - [Wallet Provider Guide](./docs/wallet-provider-guide.md)
 - [Security Checklist](./docs/security-checklist.md) - For wallet providers
 - [Production Security Guide](./docs/security-production.md) - For dApp developers
+- [Production Migration Checklist](./docs/production-checklist.md) - Pre-production checks for dApp developers
 
 ---
 
