@@ -24,7 +24,7 @@
     "registry:sign": "tsx scripts/registry/sign.ts",
     "registry:verify": "tsx scripts/registry/verify.ts",
     "verify:e2e": "tsx scripts/verify/e2e.ts",
-    "gate": "pnpm gate:lockfile && pnpm gate:build && pnpm typecheck && pnpm lint && pnpm gate:test && pnpm gate:conformance && pnpm gate:api && pnpm gate:registry && pnpm gate:readme && pnpm gate:templates",
+    "gate": "pnpm gate:lockfile && pnpm gate:build && pnpm gate:size && pnpm typecheck && pnpm lint && pnpm gate:test && pnpm gate:conformance && pnpm gate:api && pnpm gate:registry && pnpm gate:readme && pnpm gate:templates",
     "//gate:lockfile": "Fails when a package.json and pnpm-lock.yaml disagree, exactly as Vercel does with --frozen-lockfile (the CI default). A plain local pnpm install regenerates the lockfile silently, so drift never surfaced locally; this stage reproduces the CI install so the same failure is caught before it ships. It runs first because a stale lockfile invalidates every stage after it, and it is a sub-second no-op resolve once deps are already installed.",
     "gate:lockfile": "pnpm install --frozen-lockfile",
     "//gate:build": "Serial (--workspace-concurrency=1): the parallel -r build can start a dependent package (e.g. testing) before a workspace dep (session) has flushed its .d.ts, an intermittent DTS-resolution race; serial enforces topological order deterministically. Reinstall after dependency edits keeps the graph correct — this is belt-and-suspenders (cf. examples.yml serialization precedent).",
@@ -39,7 +39,9 @@
     "gate:readme": "node scripts/gen-readme.mjs",
     "changeset": "changeset",
     "version-packages": "changeset version",
-    "release": "pnpm build && changeset publish"
+    "release": "pnpm build && changeset publish",
+    "size": "size-limit",
+    "gate:size": "size-limit"
   },
   "keywords": [
     "canton",
@@ -52,14 +54,17 @@
   "devDependencies": {
     "@changesets/cli": "^2.29.8",
     "@playwright/test": "^1.58.0",
-    "ajv": "^8.17.1",
+    "@size-limit/esbuild": "^11",
+    "@size-limit/file": "^11",
     "@types/node": "^20.11.0",
     "@typescript-eslint/eslint-plugin": "^6.19.0",
     "@typescript-eslint/parser": "^6.19.0",
+    "ajv": "^8.17.1",
     "commander": "^14.0.2",
     "eslint": "^8.56.0",
     "prettier": "^3.2.4",
     "semver": "^7.8.0",
+    "size-limit": "^11",
     "tsup": "^8.5.1",
     "tsx": "^4.21.0",
     "typescript": "^5.3.3",

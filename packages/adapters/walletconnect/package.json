@@ -1,6 +1,7 @@
 {
   "name": "@partylayer/adapter-walletconnect",
   "version": "0.3.8",
+  "sideEffects": false,
   "description": "WalletConnect adapter for PartyLayer — wraps @canton-network/dapp-sdk's WalletConnectAdapter (opt-in)",
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",

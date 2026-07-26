@@ -1,6 +1,7 @@
 {
   "name": "@partylayer/react-native",
   "version": "0.2.0",
+  "sideEffects": false,
   "description": "Headless React Native compatibility layer for PartyLayer: deep link platform and AsyncStorage session store over the framework-agnostic core (phase A, no UI)",
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",
