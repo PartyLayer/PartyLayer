@@ -4,7 +4,7 @@ export default defineConfig({
   // Two entrypoints: the headless "." and the "./ui" components. Splitting is on so
   // the modules both share (theme, icons, hooks) live in one shared chunk rather than
   // being inlined into each bundle, mirroring how @partylayer/react handles /query.
-  entry: ['src/index.ts', 'src/ui.ts'],
+  entry: ['src/index.ts', 'src/ui.ts', 'src/async-storage.ts'],
   format: ['cjs', 'esm'],
   dts: {
     compilerOptions: {

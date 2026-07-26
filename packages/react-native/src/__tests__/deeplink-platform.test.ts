@@ -6,8 +6,22 @@
  */
 import { describe, it, expect, vi } from 'vitest';
 import { DeepLinkTransport } from '@partylayer/core';
-import { createReactNativeDeepLinkPlatform } from '../deeplink-platform';
 import type { RNLinking } from '../types';
+
+// Mock react-native so the module-top `import { Linking } from 'react-native'` resolves
+// (react-native itself does not run under Node). This also exercises the REAL import
+// path: the no-argument default below comes from this mocked module, so a reversion to a
+// bundler-invisible require would fail here rather than only in a browser.
+const defaultRemove = vi.fn();
+vi.mock('react-native', () => ({
+  Linking: {
+    openURL: vi.fn(async () => undefined),
+    addEventListener: vi.fn(() => ({ remove: defaultRemove })),
+    getInitialURL: vi.fn(async () => null),
+  },
+}));
+
+import { createReactNativeDeepLinkPlatform } from '../deeplink-platform';
 
 function mockLinking(initialUrl: string | null = null): { linking: RNLinking; remove: ReturnType<typeof vi.fn>; handlers: Array<(e: { url: string }) => void> } {
   const handlers: Array<(e: { url: string }) => void> = [];
@@ -67,6 +81,17 @@ describe('createReactNativeDeepLinkPlatform', () => {
 
   it('throws a clear error when Linking is not available', () => {
     expect(() => createReactNativeDeepLinkPlatform({} as unknown as RNLinking)).toThrow(/Linking is not available/);
+  });
+
+  it('resolves with NO argument, using the static react-native Linking import', () => {
+    // The previously latent path: a consumer calling with no argument, as the JSDoc
+    // suggests. It must build a working platform from the default import, not throw.
+    const platform = createReactNativeDeepLinkPlatform();
+    expect(typeof platform.openUrl).toBe('function');
+    expect(typeof platform.subscribe).toBe('function');
+    expect(() => platform.openUrl('mywallet://connect')).not.toThrow();
+    const unsubscribe = platform.subscribe(() => {});
+    expect(typeof unsubscribe).toBe('function');
   });
 
   it('drives a full DeepLinkTransport connect flow with the RN platform', async () => {

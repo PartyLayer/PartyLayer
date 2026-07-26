@@ -68,13 +68,29 @@ supports the React 19 the demo pins.
 
 - The app boots with no redbox.
 - The debug panel shows the local core loaded (DeepLinkPlatform present), the registry
-  wallet count, and the icon format per wallet.
-- The wallet list renders REAL logos. walletconnect's CDN icon is missing, so its row
-  shows the neutral fallback glyph, never a letter.
+  wallet count, the icon format per wallet, and that the two no-argument factory paths
+  (deep link, async storage) resolve rather than throw.
+- The wallet list renders REAL logos: the svg logos through react-native-svg's web build,
+  the raster logos through Image.
 - The theme colors come from the bridge, not React Native defaults.
 - Tapping a wallet starts the connect flow. On a phone with the wallet app installed, the
   OS opens that app through the deep link; without it, the launch is the observable
   outcome and the flow surfaces an honest error rather than a fake success.
+
+## Web smoke (required before publishing @partylayer/react-native)
+
+```bash
+cd demos/expo-connect
+pnpm run prepare-local && pnpm install --ignore-workspace
+pnpm run web-smoke
+```
+
+`web-smoke` exports the app for web, serves it, and drives it with Playwright (resolved
+from the repo root): it boots the app, opens the wallet list, and asserts the
+react-native-svg and Image renderers both work with NO uncaught page error. This is the
+check that catches a reversion to bundler-invisible module loading (see below), which is
+why it is a required pre-publish step in `docs/releasing.md`. The mocked unit tests cannot
+catch that class of bug because they inject the modules through test seams.
 
 ## Web run results (headless, driven with Playwright)
 
@@ -83,16 +99,31 @@ Verified on the web target (static export served locally, driven headlessly):
 - The app boots with no error overlay. The ConnectButton renders.
 - The debug panel shows the LOCAL core loaded (createBrowserDeepLinkPlatform present),
   the live registry returning its wallet list, and the icon format per wallet.
-- The theme is applied from the bridge: the heading text is the dark theme text color
-  and the debug panel uses the dark theme surface color, not React Native defaults.
+- The theme is applied from the bridge, not React Native defaults.
+- The wallet list opens and its rows render their real logos: the svg logos
+  (console, loop, cantor8, bron, nightly) through react-native-svg's web build, and the
+  raster logo (send) through Image.
+- Calling `createReactNativeDeepLinkPlatform()` and the `./async-storage`
+  `createAsyncStorage()` with NO argument both resolve on web, confirming the two
+  previously latent loader paths.
 
-Found and reported (not fixed here): opening the wallet list throws
-`react-native-svg is required by @partylayer/react-native/ui`, which unmounts the app.
-The `./ui` svg loader resolves react-native-svg through a dynamic `require` read from a
-variable, which a bundler (Metro on web and native) cannot see, so react-native-svg is
-never bundled at that call site even though it is installed. This affects every Metro
-consumer of the ui entrypoint, and the mocked B2 tests missed it because they inject the
-components. So on web the wallet list, the SVG logos, the neutral fallback, the tap
-interaction, and the error path remain UNVERIFIED pending a fix to the loader. The
-headless storage and deep link loaders share the pattern but are not triggered here
-because this demo passes those modules in explicitly.
+### Fixed: bundler-invisible module loading
+
+An earlier run found that opening the wallet list threw
+`react-native-svg is required by @partylayer/react-native/ui` and unmounted the app,
+because the loader read `require` through a variable so a bundler (Metro, and Metro on
+web) could not see the module id and never bundled react-native-svg. The same pattern
+sat latent in the deep link and storage loaders. This is now fixed: the ui statically
+imports react-native-svg, the deep link platform defaults to a static `react-native`
+import, and a `./async-storage` subpath statically imports AsyncStorage for the
+no-argument path. The web smoke above now passes.
+
+### Known separate issue: walletconnect renders no logo
+
+walletconnect's registry icon URL returns HTML (the CDN asset is missing), and
+react-native-svg's `SvgUri` on web does not fire `onError` for non-SVG content, so
+WalletIcon's neutral fallback never triggers and the row renders no logo (it also logs a
+one-off SVG parser error). This is a CDN asset plus WalletIcon robustness issue, separate
+from module loading, so the smoke logs it rather than failing on it. The fix belongs with
+the registry icon audit (supply a real walletconnect asset) and a follow-up that makes
+WalletIcon fall back when a fetched SVG is not valid SVG.

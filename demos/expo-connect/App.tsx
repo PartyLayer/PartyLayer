@@ -26,12 +26,35 @@ import {
   useWallets,
 } from '@partylayer/react-native';
 import { ConnectButton } from '@partylayer/react-native/ui';
+import { createAsyncStorage as createDefaultAsyncStorage } from '@partylayer/react-native/async-storage';
 
 const theme = toReactNativeTheme(themes.default.dark);
 
 // Whether the loaded core is the local build (with the phase A deep link additions)
 // rather than the npm 0.11.0 copy that lacks them. Shown in the debug panel.
 const CORE_HAS_DEEPLINK = typeof (core as { createBrowserDeepLinkPlatform?: unknown }).createBrowserDeepLinkPlatform === 'function';
+
+// The two previously bundler-invisible paths, now exercised with NO argument: the deep
+// link platform defaults to a static react-native import, and the async-storage subpath
+// statically imports the package. Both must resolve rather than throw.
+function checkNoArgDeepLink(): string {
+  try {
+    const p = createReactNativeDeepLinkPlatform();
+    return typeof p.openUrl === 'function' ? 'resolved (no argument)' : 'unexpected shape';
+  } catch (e) {
+    return 'threw: ' + (e instanceof Error ? e.message : String(e));
+  }
+}
+function checkNoArgAsyncStorage(): string {
+  try {
+    const s = createDefaultAsyncStorage();
+    return typeof s.getItem === 'function' ? 'resolved (no argument)' : 'unexpected shape';
+  } catch (e) {
+    return 'threw: ' + (e instanceof Error ? e.message : String(e));
+  }
+}
+const NO_ARG_DEEPLINK = checkNoArgDeepLink();
+const NO_ARG_ASYNC_STORAGE = checkNoArgAsyncStorage();
 
 function DebugPanel({ client }: { client: ReturnType<typeof createReactNativeClient> }) {
   const { wallets, walletIcons, isLoading, isError, error } = useWallets(client);
@@ -44,6 +67,8 @@ function DebugPanel({ client }: { client: ReturnType<typeof createReactNativeCli
 
       <Row label="core loaded" value={CORE_HAS_DEEPLINK ? 'local build (DeepLinkPlatform present)' : 'REGISTRY copy (missing DeepLinkPlatform)'} ok={CORE_HAS_DEEPLINK} />
       <Row label="deep link platform" value={deepLinkPlatform ? 'built on RN Linking' : 'unavailable'} ok={!!deepLinkPlatform} />
+      <Row label="deep link (no arg)" value={NO_ARG_DEEPLINK} ok={NO_ARG_DEEPLINK.startsWith('resolved')} />
+      <Row label="async storage (no arg)" value={NO_ARG_ASYNC_STORAGE} ok={NO_ARG_ASYNC_STORAGE.startsWith('resolved')} />
       <Row label="registry" value={isLoading ? 'loading...' : isError ? `error: ${error?.message ?? ''}` : `${wallets?.length ?? 0} wallets`} ok={!isError} />
 
       <Text style={[styles.h3, { color: theme.colors.textSecondary }]}>Wallets and icon formats</Text>
