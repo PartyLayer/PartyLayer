@@ -12,6 +12,22 @@ declare module 'react-native' {
   export const Modal: ComponentType<{ visible: boolean; transparent?: boolean; animationType?: 'none' | 'slide' | 'fade'; onRequestClose?: () => void; testID?: string; children?: ReactNode }>;
   export const FlatList: ComponentType<{ data: readonly unknown[]; renderItem: (info: { item: unknown; index: number }) => ReactNode; keyExtractor?: (item: unknown, index: number) => string; testID?: string; style?: unknown; contentContainerStyle?: unknown }>;
   export const StyleSheet: { create<T extends Record<string, unknown>>(styles: T): T; readonly hairlineWidth: number };
+  export const Linking: {
+    openURL(url: string): Promise<unknown>;
+    addEventListener(type: 'url', handler: (event: { url: string }) => void): { remove(): void };
+    getInitialURL(): Promise<string | null>;
+  };
+}
+
+declare module '@react-native-async-storage/async-storage' {
+  interface AsyncStorageStatic {
+    getItem(key: string): Promise<string | null>;
+    setItem(key: string, value: string): Promise<void>;
+    removeItem(key: string): Promise<void>;
+    clear(): Promise<void>;
+  }
+  const AsyncStorage: AsyncStorageStatic;
+  export default AsyncStorage;
 }
 
 declare module 'react-native-svg' {

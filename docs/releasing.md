@@ -109,6 +109,23 @@ This is enforced by `pnpm gate:templates` (part of the main gate): it fails when
 template's range cannot resolve to the current workspace version. If the gate fails after
 a version bump, update the template pins in the same change.
 
+## React Native web smoke (required before publishing @partylayer/react-native)
+
+`@partylayer/react-native` loads its optional peers (react-native-svg, react-native
+Linking, AsyncStorage) through static imports so a bundler can see them. The unit tests
+inject those modules through test seams, so they CANNOT catch a reversion to
+bundler-invisible loading, which fails only in a real bundle. Before publishing this
+package, run the Expo demo web smoke, which bundles the ui and asserts it renders:
+
+```bash
+cd demos/expo-connect
+pnpm run prepare-local && pnpm install --ignore-workspace
+pnpm run web-smoke
+```
+
+It must exit 0 (wallet list opens, react-native-svg and Image renderers both work, no
+uncaught page error). If it fails, the module loading regressed; do not publish.
+
 ## Pre-Release Checklist
 
 - [ ] All tests pass (`pnpm test`)
@@ -117,6 +134,7 @@ a version bump, update the template pins in the same change.
 - [ ] Type check passes (`pnpm typecheck`)
 - [ ] Registry signatures verified (`pnpm registry:verify`)
 - [ ] Scaffold templates up to date (`pnpm gate:templates`)
+- [ ] React Native web smoke passes if `@partylayer/react-native` changed (`cd demos/expo-connect && pnpm run web-smoke`)
 - [ ] Changesets created for all changes
 - [ ] CHANGELOG.md reviewed
 - [ ] Documentation updated if needed

@@ -1,43 +1,37 @@
 /**
- * AsyncStorage backed persistence for React Native.
+ * AsyncStorage backed persistence for React Native (injection form).
  *
- * `@react-native-async-storage/async-storage` already matches the shapes PartyLayer
- * needs, so these adapters are thin. Pass the AsyncStorage module explicitly, or call
- * with no argument to have it loaded from the peer dependency. A clear error is thrown
- * when it is not installed and none was passed.
+ * `@react-native-async-storage/async-storage` is a genuinely OPTIONAL peer, so the base
+ * "." entrypoint never imports it: these factories take the AsyncStorage module as an
+ * argument. A consumer that wants the convenience of not passing it imports the no
+ * argument factories from the "./async-storage" subpath, which statically imports the
+ * package. A clear error is thrown when the passed module is missing or invalid.
  */
 import type { StorageAdapter } from '@partylayer/core';
 import type { SessionStorage } from '@partylayer/session';
 import type { RNAsyncStorage } from './types';
-import { loadOptionalModule } from './optional-module';
 
-function resolveAsyncStorage(asyncStorage?: RNAsyncStorage): RNAsyncStorage {
-  const resolved =
-    asyncStorage ??
-    loadOptionalModule<RNAsyncStorage>('@react-native-async-storage/async-storage', (mod) => {
-      const m = mod as { default?: RNAsyncStorage } & RNAsyncStorage;
-      return m.default ?? m;
-    });
+function assertAsyncStorage(asyncStorage: RNAsyncStorage): RNAsyncStorage {
   if (
-    !resolved ||
-    typeof resolved.getItem !== 'function' ||
-    typeof resolved.setItem !== 'function' ||
-    typeof resolved.removeItem !== 'function'
+    !asyncStorage ||
+    typeof asyncStorage.getItem !== 'function' ||
+    typeof asyncStorage.setItem !== 'function' ||
+    typeof asyncStorage.removeItem !== 'function'
   ) {
     throw new Error(
-      'AsyncStorage is not available. Install @react-native-async-storage/async-storage ' +
-        '(a peer dependency), or pass the module explicitly to the storage factory.',
+      'AsyncStorage is not available. Pass @react-native-async-storage/async-storage to this ' +
+        'factory, or import the no argument factories from @partylayer/react-native/async-storage.',
     );
   }
-  return resolved;
+  return asyncStorage;
 }
 
 /**
  * A {@link SessionStorage} backed by React Native AsyncStorage.
- * @param asyncStorage Optional AsyncStorage module; loaded from the peer when omitted.
+ * @param asyncStorage The AsyncStorage module.
  */
-export function createAsyncStorage(asyncStorage?: RNAsyncStorage): SessionStorage {
-  const store = resolveAsyncStorage(asyncStorage);
+export function createAsyncStorage(asyncStorage: RNAsyncStorage): SessionStorage {
+  const store = assertAsyncStorage(asyncStorage);
   return {
     getItem: (key) => store.getItem(key),
     setItem: (key, value) => store.setItem(key, value),
@@ -48,10 +42,10 @@ export function createAsyncStorage(asyncStorage?: RNAsyncStorage): SessionStorag
 /**
  * A core {@link StorageAdapter} backed by React Native AsyncStorage, for the client
  * factory (it needs the four-method surface including `clear`).
- * @param asyncStorage Optional AsyncStorage module; loaded from the peer when omitted.
+ * @param asyncStorage The AsyncStorage module.
  */
-export function createAsyncStorageAdapter(asyncStorage?: RNAsyncStorage): StorageAdapter {
-  const store = resolveAsyncStorage(asyncStorage);
+export function createAsyncStorageAdapter(asyncStorage: RNAsyncStorage): StorageAdapter {
+  const store = assertAsyncStorage(asyncStorage);
   return {
     get: (key) => store.getItem(key),
     set: (key, value) => store.setItem(key, value),
