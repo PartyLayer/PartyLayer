@@ -1,5 +1,14 @@
 # @partylayer/adapter-walletconnect
 
+## 0.3.8
+
+### Patch Changes
+
+- Updated dependencies [d7317a5]
+- Updated dependencies [482ec3e]
+- Updated dependencies [d132cf3]
+  - @partylayer/core@0.12.0
+
 ## 0.3.7
 
 ### Patch Changes
@@ -19,11 +28,11 @@
 ### Patch Changes
 
 - eeaddad: Fix `ledgerApi` wallet divergence so one call works across all wallets. The SDK
-  boundary (`LedgerApiParams`) accepts a friendly superset — `requestMethod` in
-  either case (plus `PATCH`) and `body` as a JSON string **or** a plain object — and
+  boundary (`LedgerApiParams`) accepts a friendly superset, `requestMethod` in
+  either case (plus `PATCH`) and `body` as a JSON string **or** a plain object, and
   each adapter normalizes to what its wallet requires:
-  - **CIP-0103 `window.canton` RPC wallets** — Send, Console, Nightly,
-    WalletConnect, and the SDK announce bridge — get a **lower-case** verb + an
+  - **CIP-0103 `window.canton` RPC wallets**, Send, Console, Nightly,
+    WalletConnect, and the SDK announce bridge, get a **lower-case** verb + an
     **object** body, per the canonical CIP-0103 OpenRPC `LedgerApiRequest` schema
     (splice-wallet-kernel). `CIP0103LedgerApiRequest` is corrected to this shape.
   - **Loop** (Loop SDK adapter) and **Bron** (REST proxy) get a **JSON-string**
@@ -34,7 +43,7 @@
   `ledgerApiBodyToString` are retained for Loop/Bron.
 
   The CIP-0103 provider bridge forwards the verb case and the body type (string or
-  object) unchanged to the active wallet's adapter — it no longer `String()`-s an
+  object) unchanged to the active wallet's adapter. It no longer `String()`-s an
   object body into `"[object Object]"`. Generic docs/examples use the canonical
   `/v2/state/active-contracts` endpoint (Loop aliases the older `/v2/state/acs`).
 
@@ -107,7 +116,7 @@ account.networkId ?? ctx.network`. A1 already constrains the requested WC chain;
 
 ### Minor Changes
 
-- e43863b: Add `@partylayer/adapter-walletconnect` — an opt-in PartyLayer `WalletAdapter`
+- e43863b: Add `@partylayer/adapter-walletconnect`: an opt-in PartyLayer `WalletAdapter`
   that wraps the official `@canton-network/dapp-sdk` `WalletConnectAdapter`, so
   dApps can connect Canton wallets over WalletConnect (hosted/mobile wallets, e.g.
   Nightly mobile).
@@ -142,7 +151,7 @@ account.networkId ?? ctx.network`. A1 already constrains the requested WC chain;
     Backward-compatible (optional).
   - **adapter-walletconnect:** the official adapter's `onUri` is now always
     wrapped so the pairing URI is fanned out to BOTH the integrator's
-    `config.onUri` AND the per-connect `onDisplayUri` — no hand-wiring needed. The
+    `config.onUri` AND the per-connect `onDisplayUri`. No hand-wiring needed. The
     adapter also narrowly intercepts the official adapter's blank
     `window.open('', 'wallet-popup')` during connect (no config flag exists to
     disable it) and restores `window.open` afterward.
@@ -160,7 +169,7 @@ account.networkId ?? ctx.network`. A1 already constrains the requested WC chain;
   Previously the adapter listed `signMessage` and `ledgerApi` as capabilities
   while providing no corresponding methods, so `client.signMessage(...)` /
   `client.ledgerApi(...)` threw `CapabilityNotSupportedError` in
-  `@partylayer/sdk` — the request never reached the wallet. Both now delegate to
+  `@partylayer/sdk`. The request never reached the wallet. Both now delegate to
   the official `@canton-network/dapp-sdk` adapter (mirroring `submitTransaction`):
   - `signMessage` → `canton_signMessage` (`SignMessageParams { message }` →
     `SignedMessage { signature, partyId, message, … }`).
@@ -168,7 +177,7 @@ account.networkId ?? ctx.network`. A1 already constrains the requested WC chain;
     normalized to `{ response: string }`).
 
   `signTransaction` intentionally still throws (Canton WalletConnect fuses
-  sign-and-submit — use `submitTransaction` → `canton_prepareSignExecute`).
+  sign-and-submit. Use `submitTransaction` → `canton_prepareSignExecute`).
   A capability/method integrity test now asserts every method-capability has a
   working method, to catch this class of mismatch.
 

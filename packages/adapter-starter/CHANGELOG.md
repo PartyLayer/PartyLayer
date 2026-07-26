@@ -1,5 +1,14 @@
 # @partylayer/adapter-starter
 
+## 0.1.18
+
+### Patch Changes
+
+- Updated dependencies [d7317a5]
+- Updated dependencies [482ec3e]
+- Updated dependencies [d132cf3]
+  - @partylayer/core@0.12.0
+
 ## 0.1.17
 
 ### Patch Changes
