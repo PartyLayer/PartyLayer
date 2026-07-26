@@ -1,5 +1,34 @@
 # @partylayer/react
 
+## 2.3.0
+
+### Minor Changes
+
+- Add typed wire shapes for CIP-0056 registry interactions, mirrored from the official token
+  standard OpenAPI: disclosed contracts (TokenDisclosedContract), choice contexts
+  (TokenChoiceContext), and the transfer and allocation factory shapes (TokenTransferFactory,
+  TokenAllocationFactory). These describe the payloads a registry returns for a token choice,
+  so an app can type them precisely instead of reaching for any.
+
+  Also add mergeDisclosedContracts, a utility for combining the disclosed contract sets from
+  several registry contexts into one, and two synchronizer consistency helpers:
+  groupDisclosedContractsBySynchronizer, which buckets disclosed contracts by their
+  synchronizer id, and assertSingleSynchronizer, which throws when a set spans more than one
+  synchronizer so a caller cannot accidentally mix domains.
+
+  All of these are framework free, plain types and functions with no React dependency. The
+  multi-party patterns and privacy and reads guides in docs reference them.
+
+### Patch Changes
+
+- Updated dependencies [d7317a5]
+- Updated dependencies [482ec3e]
+- Updated dependencies [d132cf3]
+  - @partylayer/core@0.12.0
+  - @partylayer/sdk@0.16.0
+  - @partylayer/registry-client@0.6.1
+  - @partylayer/session@1.1.5
+
 ## 2.2.1
 
 ### Patch Changes

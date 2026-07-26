@@ -1,5 +1,15 @@
 # @partylayer/adapter-send
 
+## 1.2.4
+
+### Patch Changes
+
+- Updated dependencies [d7317a5]
+- Updated dependencies [482ec3e]
+- Updated dependencies [d132cf3]
+  - @partylayer/core@0.12.0
+  - @partylayer/provider@0.5.0
+
 ## 1.2.3
 
 ### Patch Changes
@@ -22,11 +32,11 @@
 ### Patch Changes
 
 - eeaddad: Fix `ledgerApi` wallet divergence so one call works across all wallets. The SDK
-  boundary (`LedgerApiParams`) accepts a friendly superset — `requestMethod` in
-  either case (plus `PATCH`) and `body` as a JSON string **or** a plain object — and
+  boundary (`LedgerApiParams`) accepts a friendly superset, `requestMethod` in
+  either case (plus `PATCH`) and `body` as a JSON string **or** a plain object, and
   each adapter normalizes to what its wallet requires:
-  - **CIP-0103 `window.canton` RPC wallets** — Send, Console, Nightly,
-    WalletConnect, and the SDK announce bridge — get a **lower-case** verb + an
+  - **CIP-0103 `window.canton` RPC wallets**, Send, Console, Nightly,
+    WalletConnect, and the SDK announce bridge, get a **lower-case** verb + an
     **object** body, per the canonical CIP-0103 OpenRPC `LedgerApiRequest` schema
     (splice-wallet-kernel). `CIP0103LedgerApiRequest` is corrected to this shape.
   - **Loop** (Loop SDK adapter) and **Bron** (REST proxy) get a **JSON-string**
@@ -37,7 +47,7 @@
   `ledgerApiBodyToString` are retained for Loop/Bron.
 
   The CIP-0103 provider bridge forwards the verb case and the body type (string or
-  object) unchanged to the active wallet's adapter — it no longer `String()`-s an
+  object) unchanged to the active wallet's adapter. It no longer `String()`-s an
   object body into `"[object Object]"`. Generic docs/examples use the canonical
   `/v2/state/active-contracts` endpoint (Loop aliases the older `/v2/state/acs`).
 
@@ -53,10 +63,10 @@
 
 ### Minor Changes
 
-- a3f2ea4: Fix the announce-discovery race: a wallet that announces (`canton:announceProvider`) **after** the one-shot request window — or on inject before any request — was missed, surfacing as `Wallet "…" did not announce`.
-  - **@partylayer/provider** (additive): new `subscribeAnnouncedProviders(onProvider, opts)` — a PERSISTENT (EIP-6963-style) announce subscription that captures late and inject-time announces until the returned unsubscribe runs — and `waitForAnnouncedProvider(predicate, { timeoutMs })`, which resolves the moment a matching announce arrives (vs a fixed window). The existing one-shot `discoverAnnouncedProviders` / `discoverProviders` are **unchanged**.
+- a3f2ea4: Fix the announce-discovery race: a wallet that announces (`canton:announceProvider`) **after** the one-shot request window, or on inject before any request, was missed, surfacing as `Wallet "…" did not announce`.
+  - **@partylayer/provider** (additive): new `subscribeAnnouncedProviders(onProvider, opts)`, a PERSISTENT (EIP-6963-style) announce subscription that captures late and inject-time announces until the returned unsubscribe runs, and `waitForAnnouncedProvider(predicate, { timeoutMs })`, which resolves the moment a matching announce arrives (vs a fixed window). The existing one-shot `discoverAnnouncedProviders` / `discoverProviders` are **unchanged**.
   - **@partylayer/sdk** (patch): the client mounts one persistent accumulator at construction (read by `aggregateAnnouncedWallets`, torn down in `destroy()`), so a late/inject-time announce surfaces in `listWallets()`. No public API change.
-  - **@partylayer/adapter-send** (minor): `SendProvider` resolves its channel via resolve-on-arrival (`waitForProvider`), so a late Send announce is no longer missed. Detect and connect now use **split bounds** mirroring the EIP-6963 reactive-readiness model — `detectInstalled`/`isInstalled` waits ~1000ms (best-effort readiness, won't stall the UI when Send is absent; the persistent accumulator self-corrects a later announce), while the deliberate connect/request path waits 3000ms. New `SendProviderOptions.detectTimeoutMs` (default 1000) alongside `announceTimeoutMs` (default 3000). The legacy `SendProviderOptions.discover` hook is **kept (deprecated)**, wrapped for backward compatibility.
+  - **@partylayer/adapter-send** (minor): `SendProvider` resolves its channel via resolve-on-arrival (`waitForProvider`), so a late Send announce is no longer missed. Detect and connect now use **split bounds** mirroring the EIP-6963 reactive-readiness model: `detectInstalled`/`isInstalled` waits ~1000ms (best-effort readiness, won't stall the UI when Send is absent; the persistent accumulator self-corrects a later announce), while the deliberate connect/request path waits 3000ms. New `SendProviderOptions.detectTimeoutMs` (default 1000) alongside `announceTimeoutMs` (default 3000). The legacy `SendProviderOptions.discover` hook is **kept (deprecated)**, wrapped for backward compatibility.
 
   Both the Send connect path and the generic announce path now benefit from the shared persistent primitive. Listeners are removed on teardown (no leak).
 
@@ -141,7 +151,7 @@ account.networkId ?? ctx.network` (prefer the wallet-reported network), so the
 - 6103d32: Fix: Send is now found/connectable even when another wallet (Console) owns the
   shared `window.canton` slot.
 
-  Send is announce-only — it advertises via `canton:announceProvider` and routes
+  Send is announce-only: it advertises via `canton:announceProvider` and routes
   RPCs over the splice postMessage `target` channel; it does NOT inject
   `window.canton`. The previous transport bound `window.canton` and guarded by
   `kernel.id`, so when Console owned the slot, `detectInstalled()` reported
@@ -174,9 +184,9 @@ account.networkId ?? ctx.network` (prefer the wallet-reported network), so the
 
 ### Patch Changes
 
-- Republish 1.0.2 with the workspace protocol expanded to a concrete npm range. The 1.0.2 tarball was published with `vanilla npm publish`, which does not expand `workspace:^` literals — the resulting `package.json` on npm declared `"@partylayer/core": "workspace:^"`, causing dependency resolution to fail for external consumers. This release uses `pnpm publish` so the range expands correctly to `^0.3.1`.
+- Republish 1.0.2 with the workspace protocol expanded to a concrete npm range. The 1.0.2 tarball was published with `vanilla npm publish`, which does not expand `workspace:^` literals. The resulting `package.json` on npm declared `"@partylayer/core": "workspace:^"`, causing dependency resolution to fail for external consumers. This release uses `pnpm publish` so the range expands correctly to `^0.3.1`.
 
-  No source code changes — same detection logic as 1.0.2.
+  No source code changes: same detection logic as 1.0.2.
 
 ## 1.0.2
 
@@ -196,7 +206,7 @@ account.networkId ?? ctx.network` (prefer the wallet-reported network), so the
 - Repair the `@partylayer/core` dependency reference.
 
   `1.0.0` was published declaring `@partylayer/core@^0.2.7`, but its compiled
-  bundle imports `matchesProviderDetection` and `ProviderDetection` — symbols
+  bundle imports `matchesProviderDetection` and `ProviderDetection`, symbols
   that only exist in `@partylayer/core@0.3.0+`. External consumers of `1.0.0`
   saw build failures during bundler resolution (Vite/Rollup). This release
   pins the dependency to the correct core range.
@@ -210,9 +220,9 @@ account.networkId ?? ctx.network` (prefer the wallet-reported network), so the
 
 - First stable release of the Send Canton Wallet adapter.
 
-  The adapter ships as a CIP-0103 native adapter and exposes the Send wallet's `window.canton` provider through PartyLayer's standard `WalletAdapter` interface. Capabilities: `connect`, `disconnect`, `restore` (silent `status` probe — no popup on page reload), `signMessage` (passkey-signed via WebAuthn-PRF), `submitTransaction` (via `prepareExecuteAndWait`; receipt populated from `tx.payload.updateId`), `ledgerApi` (full Sigilry passthrough), `events` (`txChanged` bridged to PartyLayer's `tx:status` channel), and `injected` discovery on `window.canton`.
+  The adapter ships as a CIP-0103 native adapter and exposes the Send wallet's `window.canton` provider through PartyLayer's standard `WalletAdapter` interface. Capabilities: `connect`, `disconnect`, `restore` (silent `status` probe: no popup on page reload), `signMessage` (passkey-signed via WebAuthn-PRF), `submitTransaction` (via `prepareExecuteAndWait`; receipt populated from `tx.payload.updateId`), `ledgerApi` (full Sigilry passthrough), `events` (`txChanged` bridged to PartyLayer's `tx:status` channel), and `injected` discovery on `window.canton`.
 
-  `signTransaction` is intentionally not declared and throws `CapabilityNotSupportedError` pointing at `submitTransaction` — Send fuses sign-and-submit through `prepareExecuteAndWait`, so a standalone sign step would mislead callers.
+  `signTransaction` is intentionally not declared and throws `CapabilityNotSupportedError` pointing at `submitTransaction`. Send fuses sign-and-submit through `prepareExecuteAndWait`, so a standalone sign step would mislead callers.
 
   Detection runs through the registry's `providerDetection` rules so the adapter can be added to the ecosystem through a registry JSON update without an SDK code change. A built-in matcher mirror (`SEND_BUILTIN_DETECTION`) ships as a defensive fallback for adapter-only installs where the registry fetch has not yet completed. Parity between the registry rule and the built-in mirror is verified by a test in the adapter's vitest suite.
 

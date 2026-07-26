@@ -1,5 +1,14 @@
 # @partylayer/adapter-cantor8
 
+## 0.2.19
+
+### Patch Changes
+
+- Updated dependencies [d7317a5]
+- Updated dependencies [482ec3e]
+- Updated dependencies [d132cf3]
+  - @partylayer/core@0.12.0
+
 ## 0.2.18
 
 ### Patch Changes

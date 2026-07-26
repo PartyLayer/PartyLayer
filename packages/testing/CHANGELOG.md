@@ -1,5 +1,16 @@
 # @partylayer/testing
 
+## 1.1.7
+
+### Patch Changes
+
+- Updated dependencies [d7317a5]
+- Updated dependencies [482ec3e]
+- Updated dependencies [d132cf3]
+  - @partylayer/core@0.12.0
+  - @partylayer/provider@0.5.0
+  - @partylayer/session@1.1.5
+
 ## 1.1.6
 
 ### Patch Changes
@@ -57,7 +68,7 @@
 
 ### Minor Changes
 
-- adaff8e: Add `sessionDataDbName(origin)` — the origin-bound IndexedDB name for the encrypted session DATA (ciphertext envelope) store, counterpart to `sessionKeyDbName`. Lets an E2E assert BOTH encrypted stores (the AES key and the encrypted snapshot) materialized after a connect.
+- adaff8e: Add `sessionDataDbName(origin)`: the origin-bound IndexedDB name for the encrypted session DATA (ciphertext envelope) store, counterpart to `sessionKeyDbName`. Lets an E2E assert BOTH encrypted stores (the AES key and the encrypted snapshot) materialized after a connect.
 
 ### Patch Changes
 
@@ -71,19 +82,19 @@
 
 ### Major Changes
 
-- dd805a0: 1.0 — offline test foundation, published.
+- dd805a0: 1.0: offline test foundation, published.
 
   `@partylayer/testing` becomes a public, stable package providing everything
   needed to test PartyLayer integrations with no DevNet or live wallet:
   - **Mock CIP-0103 provider** with configurable per-method failure scenarios
     (connect rejection, insufficient traffic, synchronizer error, transaction
-    timeout) — conformant by construction.
+    timeout), conformant by construction.
   - **Transaction lifecycle simulation** with controllable phase transitions
     (`isPreparing → isSubmitting → isConfirming → isFinalized`, plus failure).
   - **Session-lifecycle harness** (`createSessionHarness`) driving the real
     `@partylayer/session` store: forced expiry (via the store's real timer),
     party-switch, transient-disconnect/reconnect, and multi-tab disconnect
-    propagation — never synthetic event shortcuts.
+    propagation. Never synthetic event shortcuts.
   - **Offline composition** (`createOfflineHarness`) wiring a mock wallet to a real
     session store.
   - **TanStack Query utilities** at the `@partylayer/testing/query` subpath

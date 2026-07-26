@@ -1,5 +1,14 @@
 # @partylayer/session
 
+## 1.1.5
+
+### Patch Changes
+
+- Updated dependencies [d7317a5]
+- Updated dependencies [482ec3e]
+- Updated dependencies [d132cf3]
+  - @partylayer/core@0.12.0
+
 ## 1.1.4
 
 ### Patch Changes
@@ -32,13 +41,13 @@
 
 ### Minor Changes
 
-- a88fd0e: Add `createCookieStorage()` — a cookie-backed `SessionStorage`, the SSR-friendly persistence backend.
+- a88fd0e: Add `createCookieStorage()`: a cookie-backed `SessionStorage`, the SSR-friendly persistence backend.
 
-  Readable on both the server (via an injected `CookieAdapter`, e.g. wrapping Next's `cookies()`) and the client (`document.cookie`), so a Server Component can render the connected state in the initial HTML and the client hydrates from the same cookie synchronously — no disconnected→connected flash. `@partylayer/session` stays framework-agnostic (it never imports `next/headers`; the app injects the server adapter).
+  Readable on both the server (via an injected `CookieAdapter`, e.g. wrapping Next's `cookies()`) and the client (`document.cookie`), so a Server Component can render the connected state in the initial HTML and the client hydrates from the same cookie synchronously. No disconnected→connected flash. `@partylayer/session` stays framework-agnostic (it never imports `next/headers`; the app injects the server adapter).
 
-  The cookie stores the same versioned session envelope as the encrypted backends, but **plainly** — full AES-GCM parity is impossible here (that key is non-extractable + IndexedDB-only, so a server can't decrypt it), and the data is non-secret session metadata (party ids are public; PartyLayer is non-custodial). The cookie is not an auth token: the store's `restore()` re-validates against the live provider, so a forged cookie can't forge a connection. Optional tamper-evident signing is a documented future opt-in (`CookieStorageOptions` is extensible).
+  The cookie stores the same versioned session envelope as the encrypted backends, but **plainly**: full AES-GCM parity is impossible here (that key is non-extractable + IndexedDB-only, so a server can't decrypt it), and the data is non-secret session metadata (party ids are public; PartyLayer is non-custodial). The cookie is not an auth token: the store's `restore()` re-validates against the live provider, so a forged cookie can't forge a connection. Optional tamper-evident signing is a documented future opt-in (`CookieStorageOptions` is extensible).
 
-  Purely additive — new `createCookieStorage` / `documentCookieAdapter` exports and `CookieAdapter` / `CookieSetOptions` / `CookieStorageOptions` types. No change to existing storages, exports, or the default backend.
+  Purely additive: new `createCookieStorage` / `documentCookieAdapter` exports and `CookieAdapter` / `CookieSetOptions` / `CookieStorageOptions` types. No change to existing storages, exports, or the default backend.
 
 ## 1.0.4
 
@@ -68,13 +77,13 @@
 
 - d228933: Sessions now persist immediately on connect (previously only after the first reload or a party/network switch).
 
-  The encrypted session snapshot is written the moment the store first holds both a connected status and a primary account — covering connects the store observes via provider events (`statusChanged`/`accountsChanged`), not just connects made through its own `connect()` or recovered on restore. A session is no longer lost if the tab closes before the first reload. Idempotent: replayed connect events do not re-persist, and the restore and party/network-switch persist paths are unchanged.
+  The encrypted session snapshot is written the moment the store first holds both a connected status and a primary account, covering connects the store observes via provider events (`statusChanged`/`accountsChanged`), not just connects made through its own `connect()` or recovered on restore. A session is no longer lost if the tab closes before the first reload. Idempotent: replayed connect events do not re-persist, and the restore and party/network-switch persist paths are unchanged.
 
 ## 1.0.0
 
 ### Major Changes
 
-- 767b694: 1.0 — secure session persistence by default.
+- 767b694: 1.0: secure session persistence by default.
 
   `@partylayer/session` is the framework-agnostic session core for Canton dApps.
   This release makes secure persistence the default and marks the API stable:
@@ -83,17 +92,17 @@
     platform supports it, falling back to in-memory otherwise; `persistSnapshot`
     defaults to `true`. Opt out with `persistSnapshot: false` or
     `storage: createMemoryStorage()`. An explicit `storage` is always respected.
-  - **Encrypted persistence** — two `SessionStorage` backends (IndexedDB and
+  - **Encrypted persistence**: two `SessionStorage` backends (IndexedDB and
     localStorage-blob), versioned session envelope, and a schema-migration scaffold;
     restore is fail-safe (corrupt / wrong-key / unknown-version / expired ⇒ null +
     cleared, never throws).
-  - **Resilience** — automatic reconnect with exponential backoff on transient
+  - **Resilience**: automatic reconnect with exponential backoff on transient
     disconnects, runtime expiry → graceful re-auth with a bounded operation queue.
-  - **Multi-tab sync** — origin-bound BroadcastChannel; a disconnect (and session
+  - **Multi-tab sync**: origin-bound BroadcastChannel; a disconnect (and session
     updates) propagate across tabs, with a graceful no-op where unavailable.
-  - **Party-switch & network-change detection** — structured `party:changed` /
+  - **Party-switch & network-change detection**: structured `party:changed` /
     `network:changed` events plus an invalidation hook.
-  - **Origin isolation** — all persisted key/blob namespaces are origin-scoped.
+  - **Origin isolation**: all persisted key/blob namespaces are origin-scoped.
 
   BREAKING: the default persisted value changed from a plain marker to an encrypted
   snapshot, and the default storage changed from in-memory to encrypted IndexedDB
@@ -102,8 +111,8 @@
 ### Minor Changes
 
 - 60d2205: Encrypted session persistence core. Adds two
-  ADDITIVE `SessionStorage` backends — `createEncryptedIndexedDBStorage` (default)
-  and `createEncryptedLocalStorage` — that encrypt the persisted session at rest
+  ADDITIVE `SessionStorage` backends, `createEncryptedIndexedDBStorage` (default)
+  and `createEncryptedLocalStorage`, that encrypt the persisted session at rest
   with AES-GCM-256. The key is always generated non-extractable and always stored
   in IndexedDB (only the ciphertext blob location varies); a fresh 12-byte IV per
   write; origin-bound key/DB/blob naming. Adds a versioned session envelope
@@ -121,7 +130,7 @@ factor, maxDelayMs, maxAttempts, jitter? }`, sane defaults; `reconnect` option
   - **Runtime expiry → graceful re-auth**: `expiry.ttlMs` arms a timer; on expiry
     the store emits `session:expired` and invokes `onReauthRequired`. New ops via
     the new `store.enqueue(op)` are held in a bounded queue (`pendingQueueSize`,
-    default 32) — resumed on re-auth success, rejected on failure/overflow.
+    default 32), resumed on re-auth success, rejected on failure/overflow.
   - Honest limit (documented): preserves queued intent + session context across
     re-auth; does NOT resurrect a tx already inside the wallet.
 
@@ -159,12 +168,12 @@ factor, maxDelayMs, maxAttempts, jitter? }`, sane defaults; `reconnect` option
 
 ### Minor Changes
 
-- c18a275: Make `@partylayer/session` a published (non-private) package — its initial
+- c18a275: Make `@partylayer/session` a published (non-private) package: its initial
   public release in the 0.x range.
 
   It is a real, framework-agnostic package consumed by `@partylayer/react` (via
   `workspace:^`) for the `useAccount` / `useAccountEffect` hooks, and a Vue layer
-  will consume it later. No runtime/logic or public-API changes — only the
+  will consume it later. No runtime/logic or public-API changes: only the
   `private` flag is removed so publish-coherence validation and the regression
   gate treat it as a first-class published `@partylayer/*` package. changesets
   releases it ahead of `@partylayer/react`, so the two ship together at the M1

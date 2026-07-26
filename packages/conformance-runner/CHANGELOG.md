@@ -1,5 +1,15 @@
 # @partylayer/conformance-runner
 
+## 0.2.8
+
+### Patch Changes
+
+- Updated dependencies [d7317a5]
+- Updated dependencies [482ec3e]
+- Updated dependencies [d132cf3]
+  - @partylayer/core@0.12.0
+  - @partylayer/provider@0.5.0
+
 ## 0.2.7
 
 ### Patch Changes
@@ -90,7 +100,7 @@
   not supported"** in browser bundles (Next dev **and** production), crashing
   `PartyLayerKit` on mount (`asProvider()` is called from the React provider).
   It now uses a top-of-file static `import { createProviderBridge } from
-'@partylayer/provider'` — `asProvider()` stays synchronous with the same
+'@partylayer/provider'`. `asProvider()` stays synchronous with the same
   `CIP0103Provider` return type, and there is no dependency cycle
   (`@partylayer/provider` does not import `@partylayer/sdk`).
 

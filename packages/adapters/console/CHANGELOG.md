@@ -1,5 +1,14 @@
 # @partylayer/adapter-console
 
+## 0.3.16
+
+### Patch Changes
+
+- Updated dependencies [d7317a5]
+- Updated dependencies [482ec3e]
+- Updated dependencies [d132cf3]
+  - @partylayer/core@0.12.0
+
 ## 0.3.15
 
 ### Patch Changes
@@ -25,11 +34,11 @@
 ### Patch Changes
 
 - eeaddad: Fix `ledgerApi` wallet divergence so one call works across all wallets. The SDK
-  boundary (`LedgerApiParams`) accepts a friendly superset — `requestMethod` in
-  either case (plus `PATCH`) and `body` as a JSON string **or** a plain object — and
+  boundary (`LedgerApiParams`) accepts a friendly superset, `requestMethod` in
+  either case (plus `PATCH`) and `body` as a JSON string **or** a plain object, and
   each adapter normalizes to what its wallet requires:
-  - **CIP-0103 `window.canton` RPC wallets** — Send, Console, Nightly,
-    WalletConnect, and the SDK announce bridge — get a **lower-case** verb + an
+  - **CIP-0103 `window.canton` RPC wallets**, Send, Console, Nightly,
+    WalletConnect, and the SDK announce bridge, get a **lower-case** verb + an
     **object** body, per the canonical CIP-0103 OpenRPC `LedgerApiRequest` schema
     (splice-wallet-kernel). `CIP0103LedgerApiRequest` is corrected to this shape.
   - **Loop** (Loop SDK adapter) and **Bron** (REST proxy) get a **JSON-string**
@@ -40,7 +49,7 @@
   `ledgerApiBodyToString` are retained for Loop/Bron.
 
   The CIP-0103 provider bridge forwards the verb case and the body type (string or
-  object) unchanged to the active wallet's adapter — it no longer `String()`-s an
+  object) unchanged to the active wallet's adapter. It no longer `String()`-s an
   object body into `"[object Object]"`. Generic docs/examples use the canonical
   `/v2/state/active-contracts` endpoint (Loop aliases the older `/v2/state/acs`).
 
@@ -64,7 +73,7 @@
 
 - 46ccf16: Fix an SSR crash: lazy-load the Console Wallet SDK so importing `@partylayer/adapter-console` on the server no longer eagerly initializes the SDK's localforage storage (which throws "No available storage method found" with no IndexedDB/localStorage).
 
-  The static value import of `@console-wallet/dapp-sdk` is replaced by a promise-cached dynamic import (`getConsoleWallet()`) that loads the SDK once, lazily, on first browser use. **Behavior-preserving — no public API change:** `on()` keeps its synchronous `(): () => void` signature (the subscription registers one microtask later via the cached import; events arrive via async postMessage, so none are missed). Fixes the localforage error logged by any SSR consumer (Next.js App Router, the demo).
+  The static value import of `@console-wallet/dapp-sdk` is replaced by a promise-cached dynamic import (`getConsoleWallet()`) that loads the SDK once, lazily, on first browser use. **Behavior-preserving, no public API change:** `on()` keeps its synchronous `(): () => void` signature (the subscription registers one microtask later via the cached import; events arrive via async postMessage, so none are missed). Fixes the localforage error logged by any SSR consumer (Next.js App Router, the demo).
 
 ## 0.3.9
 

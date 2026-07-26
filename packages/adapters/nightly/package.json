@@ -1,6 +1,6 @@
 {
   "name": "@partylayer/adapter-nightly",
-  "version": "0.2.18",
+  "version": "0.2.19",
   "description": "Nightly Wallet adapter for PartyLayer",
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",
