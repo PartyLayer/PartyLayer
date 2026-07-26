@@ -1,0 +1,21 @@
+{
+  "expo": {
+    "name": "PartyLayer Connect",
+    "slug": "partylayer-expo-connect",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "scheme": "partylayerdemo",
+    "userInterfaceStyle": "automatic",
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "xyz.partylayer.connectdemo"
+    },
+    "android": {
+      "package": "xyz.partylayer.connectdemo"
+    },
+    "web": {
+      "bundler": "metro",
+      "output": "single"
+    }
+  }
+}

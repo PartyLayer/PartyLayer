@@ -1,0 +1,13 @@
+# Demo install + build output (regenerated locally, never committed)
+node_modules/
+.expo/
+dist/
+web-build/
+*.tsbuildinfo
+pnpm-lock.yaml
+
+# Local package tarballs produced by prepare-local.mjs
+vendor/
+
+# Web verification screenshots
+screenshots/

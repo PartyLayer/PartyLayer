@@ -1,0 +1,49 @@
+{
+  "name": "partylayer-expo-connect-demo",
+  "version": "1.0.0",
+  "private": true,
+  "main": "index.ts",
+  "scripts": {
+    "prepare-local": "node prepare-local.mjs",
+    "start": "expo start",
+    "ios": "expo start --ios",
+    "android": "expo start --android",
+    "verify-core": "node verify-core.mjs",
+    "web": "expo start --web",
+    "export-web": "expo export --platform web"
+  },
+  "dependencies": {
+    "@partylayer/core": "file:./vendor/partylayer-core.tgz",
+    "@partylayer/react-native": "file:./vendor/partylayer-react-native.tgz",
+    "@react-native-async-storage/async-storage": "3.1.1",
+    "expo": "~57.0.0",
+    "expo-linking": "~8.0.0",
+    "expo-status-bar": "~3.0.0",
+    "react": "19.2.3",
+    "react-native": "0.86.0",
+    "react-native-svg": "15.15.5",
+    "react-dom": "19.2.3",
+    "react-native-web": "0.21.2",
+    "@expo/metro-runtime": "~57.0.0"
+  },
+  "devDependencies": {
+    "@types/react": "~19.2.0",
+    "typescript": "~5.9.0"
+  },
+  "pnpm": {
+    "overrides": {
+      "@partylayer/core": "file:./vendor/partylayer-core.tgz",
+      "@partylayer/session": "file:./vendor/partylayer-session.tgz",
+      "@partylayer/registry-client": "file:./vendor/partylayer-registry-client.tgz",
+      "@partylayer/provider": "file:./vendor/partylayer-provider.tgz",
+      "@partylayer/adapter-console": "file:./vendor/partylayer-adapter-console.tgz",
+      "@partylayer/adapter-loop": "file:./vendor/partylayer-adapter-loop.tgz",
+      "@partylayer/adapter-cantor8": "file:./vendor/partylayer-adapter-cantor8.tgz",
+      "@partylayer/adapter-bron": "file:./vendor/partylayer-adapter-bron.tgz",
+      "@partylayer/adapter-nightly": "file:./vendor/partylayer-adapter-nightly.tgz",
+      "@partylayer/adapter-send": "file:./vendor/partylayer-adapter-send.tgz",
+      "@partylayer/sdk": "file:./vendor/partylayer-sdk.tgz",
+      "@partylayer/react-native": "file:./vendor/partylayer-react-native.tgz"
+    }
+  }
+}
