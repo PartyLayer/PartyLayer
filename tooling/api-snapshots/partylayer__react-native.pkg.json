@@ -5,6 +5,11 @@
       "require": "./dist/index.js",
       "types": "./dist/index.d.ts"
     },
+    "./async-storage": {
+      "import": "./dist/async-storage.mjs",
+      "require": "./dist/async-storage.js",
+      "types": "./dist/async-storage.d.ts"
+    },
     "./ui": {
       "import": "./dist/ui.mjs",
       "require": "./dist/ui.js",

@@ -10,7 +10,8 @@
     "android": "expo start --android",
     "verify-core": "node verify-core.mjs",
     "web": "expo start --web",
-    "export-web": "expo export --platform web"
+    "export-web": "expo export --platform web",
+    "web-smoke": "node web-smoke.mjs"
   },
   "dependencies": {
     "@partylayer/core": "file:./vendor/partylayer-core.tgz",

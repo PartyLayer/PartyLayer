@@ -15,6 +15,11 @@
       "types": "./dist/ui.d.ts",
       "import": "./dist/ui.mjs",
       "require": "./dist/ui.js"
+    },
+    "./async-storage": {
+      "types": "./dist/async-storage.d.ts",
+      "import": "./dist/async-storage.mjs",
+      "require": "./dist/async-storage.js"
     }
   },
   "files": [

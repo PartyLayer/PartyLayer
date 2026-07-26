@@ -34,12 +34,8 @@ describe('createAsyncStorage (SessionStorage)', () => {
     expect(await storage.getItem('k')).toBeNull();
   });
 
-  it('throws a clear error when AsyncStorage is not installed', () => {
-    // No module passed and the optional peer is not installed in CI.
-    expect(() => createAsyncStorage()).toThrow(/AsyncStorage is not available/);
-  });
-
-  it('throws a clear error when passed an invalid module', () => {
+  it('throws a clear error when passed a missing or invalid module', () => {
+    expect(() => createAsyncStorage(undefined as unknown as RNAsyncStorage)).toThrow(/AsyncStorage is not available/);
     expect(() => createAsyncStorage({} as unknown as RNAsyncStorage)).toThrow(/AsyncStorage is not available/);
   });
 });
@@ -57,7 +53,9 @@ describe('createAsyncStorageAdapter (core StorageAdapter)', () => {
     expect(await adapter.get('b')).toBeNull();
   });
 
-  it('throws a clear error when AsyncStorage is not installed', () => {
-    expect(() => createAsyncStorageAdapter()).toThrow(/AsyncStorage is not available/);
+  it('throws a clear error when passed a missing or invalid module', () => {
+    expect(() => createAsyncStorageAdapter(undefined as unknown as RNAsyncStorage)).toThrow(
+      /AsyncStorage is not available/,
+    );
   });
 });

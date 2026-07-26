@@ -35,12 +35,23 @@ vi.mock('react-native', () => {
 /** Loose createElement for building mock host elements in this test. */
 const hostEl = createElement as unknown as (type: string, props?: Record<string, unknown> | null) => React.ReactElement;
 
+// Mock react-native-svg so svg-loader's module-top static import resolves, AND so the
+// real import path (not just the test seam) is exercised: the regression test below
+// reads from this mock, so a reversion to a bundler-invisible require would fail here.
+// vi.hoisted makes the mock available to both the (hoisted) factory and the test body.
+const mockRnSvg = vi.hoisted(() => ({
+  default: () => null,
+  Path: () => null,
+  Rect: () => null,
+  SvgUri: () => null,
+}));
+vi.mock('react-native-svg', () => mockRnSvg);
 vi.mock('../use-connect', () => ({ useConnect: vi.fn() }));
 vi.mock('../use-wallets', () => ({ useWallets: vi.fn() }));
 
 import { useConnect } from '../use-connect';
 import { useWallets } from '../use-wallets';
-import { __setSvgComponentsForTest } from '../ui/svg-loader';
+import { __setSvgComponentsForTest, getSvgComponents } from '../ui/svg-loader';
 import { WalletIcon } from '../ui/wallet-icon';
 import { ConnectButton } from '../ui/connect-button';
 import { WalletList } from '../ui/wallet-list';
@@ -73,6 +84,17 @@ function render(el: React.ReactElement): ReactTestRenderer {
 }
 
 const has = (r: ReactTestRenderer, testID: string) => r.root.findAll((n) => n.props.testID === testID).length > 0;
+
+describe('svg-loader real import path (regression guard)', () => {
+  it('resolves react-native-svg from the static import, not only the test seam', () => {
+    // Clear the seam so getSvgComponents must read the module-top static import. It
+    // returns the mocked react-native-svg, proving the import path is bundler-visible.
+    __setSvgComponentsForTest(null);
+    const svg = getSvgComponents();
+    expect(svg.SvgUri).toBe(mockRnSvg.SvgUri);
+    expect(svg.Svg).toBe(mockRnSvg.default);
+  });
+});
 
 describe('WalletIcon renderer matrix', () => {
   it('renders Image for png and jpg', () => {
