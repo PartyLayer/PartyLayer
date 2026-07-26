@@ -51,9 +51,10 @@ describe('createReactNativeClient', () => {
     expect(client).toBeInstanceOf(PartyLayerClient);
   });
 
-  it('throws a clear error when neither storage nor AsyncStorage is available', () => {
-    expect(() =>
-      createReactNativeClient({ network: 'devnet', app: { name: 'RN Test' }, adapters: [] }),
-    ).toThrow(/AsyncStorage is not available/);
+  it('falls back to the sdk default storage when neither storage nor AsyncStorage is passed', () => {
+    // The base client never forces the optional AsyncStorage peer: with nothing passed it
+    // uses the sdk default rather than throwing.
+    const client = createReactNativeClient({ network: 'devnet', app: { name: 'RN Test' }, adapters: [] });
+    expect(client).toBeInstanceOf(PartyLayerClient);
   });
 });

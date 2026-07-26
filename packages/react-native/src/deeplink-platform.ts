@@ -6,32 +6,29 @@
  * while the app runs, and `getInitialURL()` covers a cold start where the callback
  * launched the app. The subscription is removed on unsubscribe.
  *
- * Pass the `Linking` module explicitly (`import { Linking } from 'react-native'`), or
- * call with no argument to have it loaded from react-native. A clear error is thrown
- * when react-native is not available and none was passed.
+ * `Linking` defaults to a static top level import from react-native, which is a REQUIRED
+ * peer present in every React Native app, so a bundler includes it. The optional
+ * parameter stays for injection and testing.
  */
+import { Linking } from 'react-native';
 import type { DeepLinkPlatform } from '@partylayer/core';
 import type { RNLinking } from './types';
-import { loadOptionalModule } from './optional-module';
 
-function resolveLinking(linking?: RNLinking): RNLinking {
-  const resolved =
-    linking ??
-    loadOptionalModule<RNLinking>('react-native', (mod) => (mod as { Linking?: RNLinking }).Linking);
-  if (!resolved || typeof resolved.openURL !== 'function' || typeof resolved.addEventListener !== 'function') {
+function resolveLinking(linking: RNLinking): RNLinking {
+  if (!linking || typeof linking.openURL !== 'function' || typeof linking.addEventListener !== 'function') {
     throw new Error(
       'React Native Linking is not available. Use this platform inside a React Native app, ' +
         "or pass the Linking module: createReactNativeDeepLinkPlatform(Linking) after import { Linking } from 'react-native'.",
     );
   }
-  return resolved;
+  return linking;
 }
 
 /**
  * Create a {@link DeepLinkPlatform} backed by React Native's `Linking`.
- * @param linking Optional `Linking` module; loaded from react-native when omitted.
+ * @param linking `Linking` module; defaults to the static react-native import.
  */
-export function createReactNativeDeepLinkPlatform(linking?: RNLinking): DeepLinkPlatform {
+export function createReactNativeDeepLinkPlatform(linking: RNLinking = Linking): DeepLinkPlatform {
   const link = resolveLinking(linking);
   return {
     openUrl(url: string): void {
