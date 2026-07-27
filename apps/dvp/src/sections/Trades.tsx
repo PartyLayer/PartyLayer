@@ -216,13 +216,18 @@ function VenueTrades() {
   const [bondAmount, setBondAmount] = useState('5.00');
   const busy = createTrade.isPending || settle.isPending || requestAction.isPending || cancel.isPending;
 
+  // On DevNet both legs are Canton Coin, so label the fields by direction and instrument
+  // rather than cash against bond, which is only true of the demo fixtures. This keeps the
+  // form consistent with the on-screen note and the leg cards, which read Amulet.
+  const isLive = import.meta.env.VITE_BACKEND === 'live';
+
   return (
     <Card title="Trades" hint="useAllocationRequests + useTokenAllocations + useChoice + request/allocation actions">
       <div className="form-grid">
-        <Field label="USD amount (Alice pays)">
+        <Field label={isLive ? 'Amount Alice sends (Canton Coin)' : 'USD amount (Alice pays)'}>
           <input inputMode="decimal" value={usdAmount} onChange={(e) => setUsdAmount(e.target.value)} />
         </Field>
-        <Field label="BOND amount (Bob delivers)">
+        <Field label={isLive ? 'Amount Bob sends back (Canton Coin)' : 'BOND amount (Bob delivers)'}>
           <input inputMode="decimal" value={bondAmount} onChange={(e) => setBondAmount(e.target.value)} />
         </Field>
         <div className="field field-action">
