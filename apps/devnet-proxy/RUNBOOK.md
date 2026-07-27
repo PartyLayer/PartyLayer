@@ -136,6 +136,21 @@ and re-upload the DAR, re-allocate alice, bob, and the venue, re-fund alice and 
 update `PARTY_ALICE`/`PARTY_BOB`/`PARTY_VENUE` to the new party ids, and restart the
 gateway. A deployed demo will read empty and its writes will fail until this is done.
 
+## DvP runs on a single instrument
+
+DevNet's registry exposes only the Amulet (Canton Coin) instrument through the token
+standard, so the live DvP trade runs both legs as Canton Coin, in opposite directions
+between alice and bob. The trading app permits this (it does not require the legs to use
+distinct instruments), so the atomic settlement executes exactly as it would with two
+instruments; only the instrument on each leg differs. The DvP page states this on screen.
+
+A genuine two instrument DvP (for example cash against a bond) would require standing up
+a second token standard registry: a service that serves the transfer factory and
+allocation factory for that instrument. DevNet does not provide one, and no such service
+runs on this validator. The splice node ships a dummy holding DAR
+(`splice-token-test-dummy-holding`), which the trading app example pairs with Amulet in
+its own tests; that DAR is the starting point if we ever stand up a second registry.
+
 ## Live wiring notes
 
 The gateway is built on the official wallet sdk (`@canton-network/wallet-sdk` 1.4.0).

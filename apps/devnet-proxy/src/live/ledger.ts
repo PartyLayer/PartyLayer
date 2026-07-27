@@ -22,6 +22,17 @@ export interface SubmitResult {
   updateId: string;
 }
 
+/** A contract created by a submission: its template id and contract id. */
+export interface CreatedContract {
+  templateId: string;
+  contractId: string;
+}
+
+export interface SubmitTreeResult {
+  updateId: string;
+  created: CreatedContract[];
+}
+
 export class LedgerClient {
   private readonly base: string;
 
@@ -122,6 +133,47 @@ export class LedgerClient {
     }
     const body = (await res.json()) as { updateId: string };
     return { updateId: body.updateId };
+  }
+
+  /**
+   * Submit prepared commands as a local party, wait, and return the update id together
+   * with the contracts the transaction created. The multi-step DvP orchestration needs
+   * each created contract id to drive the next step; this is a distinct named operation
+   * so the plain submit-and-wait stays a plain submit-and-wait (no passthrough is added).
+   */
+  async submitAndWaitForTransactionTree(
+    commands: readonly unknown[],
+    disclosedContracts: readonly unknown[],
+    actAs: string[],
+    commandId: string,
+  ): Promise<SubmitTreeResult> {
+    const res = await fetch(this.base + '/v2/commands/submit-and-wait-for-transaction-tree', {
+      method: 'POST',
+      headers: this.headers(),
+      body: JSON.stringify({
+        commands,
+        commandId,
+        actAs,
+        readAs: [],
+        userId: this.userId,
+        disclosedContracts,
+      }),
+    });
+    if (!res.ok) {
+      throw new Error(
+        'submit-and-wait-for-transaction-tree -> HTTP ' + res.status + ' ' + (await res.text()).slice(0, 300),
+      );
+    }
+    const body = (await res.json()) as {
+      transactionTree: { updateId: string; eventsById: Record<string, { CreatedTreeEvent?: { value?: CreatedContract } }> };
+    };
+    const tree = body.transactionTree;
+    const created: CreatedContract[] = [];
+    for (const ev of Object.values(tree.eventsById)) {
+      const v = ev.CreatedTreeEvent?.value;
+      if (v?.contractId && v?.templateId) created.push({ templateId: v.templateId, contractId: v.contractId });
+    }
+    return { updateId: tree.updateId, created };
   }
 }
 

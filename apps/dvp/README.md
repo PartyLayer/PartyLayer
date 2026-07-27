@@ -100,6 +100,14 @@ should use a decimal library.
 To wire this against a live validator and registry, replace the demo backend's
 fetchers. The hooks and the UI stay exactly as they are.
 
+Note on the DevNet deployment: DevNet exposes a single token standard instrument,
+Canton Coin, so both legs of a live trade are Canton Coin (the demo uses two distinct
+instruments, cash and a bond). The atomic settlement is the same mechanism a production
+deployment would run with two distinct instruments; only the instrument on each leg
+differs. The live DvP page states this on screen near the trade panel. A genuine
+two-instrument DvP on DevNet would require standing up a second token standard registry;
+see the gateway RUNBOOK.
+
 - **Discovery.** Read the trades a party can act on with an ACS interface-filter query
   for `Splice.Api.Token.AllocationRequestV1:AllocationRequest`, mapped into
   `TokenAllocationRequestRef`. Implementations SHOULD make at least all transfer-leg

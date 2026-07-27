@@ -127,16 +127,25 @@ export async function createLiveBackends(cfg: GatewayConfig): Promise<Backends> 
     return entries.find((e) => e.contractId === cid);
   }
 
-  /** Map the party fields inside a transfer leg from demo keys to party ids. */
-  const legToIds = (leg: TokenTransferLeg): TokenTransferLeg => ({
-    ...leg,
+  // A Daml Metadata value is `{ values: <TextMap> }`; the gateway holds the flat map.
+  const damlMeta = (m?: Record<string, string>) => ({ values: m ?? {} });
+  // Build the Daml-shaped transfer leg and settlement for a command, mapping demo keys to
+  // party ids and wrapping meta. Used only for the standalone (non-DvP) fallback; the DvP
+  // path takes the raw on-ledger values so they match the trade exactly.
+  const damlLeg = (leg: TokenTransferLeg) => ({
     sender: partyId(leg.sender),
     receiver: partyId(leg.receiver),
+    amount: leg.amount,
     instrumentId: leg.instrumentId,
+    meta: damlMeta(leg.meta),
   });
-  const settlementToIds = (s: TokenSettlementInfo): TokenSettlementInfo => ({
-    ...s,
+  const damlSettlement = (s: TokenSettlementInfo) => ({
     executor: partyId(s.executor),
+    settlementRef: s.settlementRef,
+    requestedAt: s.requestedAt,
+    allocateBefore: s.allocateBefore,
+    settleBefore: s.settleBefore,
+    meta: damlMeta(s.meta),
   });
 
   const tokenization: TokenizationBackend = {
@@ -195,20 +204,39 @@ export async function createLiveBackends(cfg: GatewayConfig): Promise<Backends> 
     },
     async submitAllocation(request) {
       const { asset } = await amulet();
-      // The sdk types the specification with branded Daml types; the gateway's structurally
-      // identical CIP-0056 shapes are adapted through the param type here.
+      const legId = request.allocation.transferLegId;
+      // The settle choice checks each allocation for structural equality with the trade's
+      // expected spec, so the allocation must be built from the trade's own settlement and
+      // leg. Read the on-ledger allocation request this is for (matched by settlement ref)
+      // and take its raw view, which is already the exact Daml shape. Fall back to the
+      // request payload for a standalone allocation with no on-ledger request.
+      // The settlement ref's `id` is a shared constant across trades; only its `cid` is
+      // unique, so match on the cid when present and fall back to the id only without one.
+      const ref = request.allocation.settlement.settlementRef ?? { id: '', cid: undefined };
+      const rawReq = (await ledger.activeByInterface(allParties, ALLOCATION_REQUEST_INTERFACE))
+        .map((e) => e.view as { settlement?: { settlementRef?: { id?: string; cid?: string } }; transferLegs?: Record<string, unknown> })
+        .find((v) => {
+          const r = v.settlement?.settlementRef ?? {};
+          return ref.cid ? r.cid === ref.cid : !!ref.id && r.id === ref.id;
+        });
+      const rawLeg = rawReq?.transferLegs?.[legId];
+      const allocationSpecification = rawLeg
+        ? { settlement: rawReq!.settlement, transferLegId: legId, transferLeg: rawLeg }
+        : {
+            settlement: damlSettlement(request.allocation.settlement),
+            transferLegId: legId,
+            transferLeg: damlLeg(request.allocation.transferLeg),
+          };
+      // The sdk types the spec with branded Daml types; the gateway's structurally identical
+      // shapes are adapted through the param type here.
       const params = {
-        allocationSpecification: {
-          settlement: settlementToIds(request.allocation.settlement),
-          transferLegId: request.allocation.transferLegId,
-          transferLeg: legToIds(request.allocation.transferLeg),
-        },
+        allocationSpecification,
         asset,
         inputUtxos: request.inputHoldingCids.length ? request.inputHoldingCids : undefined,
         requestedAt: request.requestedAt,
       } as unknown as Parameters<typeof sdk.token.allocation.instruction.create>[0];
       const prepared = await sdk.token.allocation.instruction.create(params);
-      const owner = partyId(request.allocation.transferLeg.sender);
+      const owner = partyId((allocationSpecification.transferLeg as { sender: string }).sender);
       await submitPrepared(prepared, [owner], 'allocation-create');
       return { ok: true };
     },
@@ -287,41 +315,97 @@ export async function createLiveBackends(cfg: GatewayConfig): Promise<Backends> 
       return { ok: true };
     },
     async submitSettle(vars) {
-      // OTCTrade_Settle is the venue's choice on the trade contract. Its argument is the
-      // allocations keyed by leg, each paired with its execute context. A Daml TextMap
+      // OTCTrade_Settle is the venue's choice on the trade. Its argument maps each leg to
+      // its allocation and that allocation's execute context. `vars.requestCid` is the
+      // OTCTrade, which is the AllocationRequest. Read it, and for each leg find the
+      // allocation that matches it (matched on settlement + leg by the published helper, so
+      // a stale allocation from another trade is not picked). Fetch the registry execute
+      // context per allocation, thread the disclosed contracts, then settle. A Daml TextMap
       // encodes as a plain object and a (ContractId, ExtraArgs) tuple as { _1, _2 }.
+      const reqEntry = (await ledger.activeByInterface(allParties, ALLOCATION_REQUEST_INTERFACE)).find(
+        (e) => e.contractId === vars.requestCid,
+      );
+      if (!reqEntry) throw new Error('settle: trade ' + vars.requestCid + ' is not an active allocation request');
+      const request = mapAllocationRequest(reqEntry);
       const allocEntries = await ledger.activeByInterface(allParties, ALLOCATION_INTERFACE);
       const allocationsWithContext: Record<string, unknown> = {};
-      for (const e of allocEntries) {
-        const alloc = mapAllocation(e);
-        allocationsWithContext[alloc.allocation.allocation.transferLegId] = {
-          _1: e.contractId,
-          _2: { context: { values: {} }, meta: { values: {} } },
+      const disclosed: unknown[] = [];
+      for (const legId of Object.keys(request.request.transferLegs)) {
+        const match = allocEntries.find((e) =>
+          allocationMatchesRequestLeg(mapAllocation(e).allocation, request.request, legId),
+        );
+        if (!match) throw new Error('settle: no allocation matches leg ' + legId + ' of trade ' + vars.requestCid);
+        const ctx = (await sdk.token.allocation.context.execute({
+          allocationCid: match.contractId,
+          registryUrl,
+        })) as { choiceContextData?: unknown; disclosedContracts?: unknown[] };
+        allocationsWithContext[legId] = {
+          _1: match.contractId,
+          _2: { context: ctx.choiceContextData, meta: { values: {} } },
         };
+        for (const d of ctx.disclosedContracts ?? []) disclosed.push(d);
       }
       const command = exerciseCommand(OTC_TRADE, vars.requestCid, 'OTCTrade_Settle', { allocationsWithContext });
-      await ledger.submitAndWait([command], [], [P.venue], commandId('settle'));
+      await ledger.submitAndWait([command], disclosed, [P.venue], commandId('settle'));
       return { ok: true };
     },
     async submitCreateTrade(vars) {
       // Demo orchestration across the three demo parties: alice proposes an OTC trade with
-      // two symmetric legs, bob approves, the venue initiates settlement. Alice, the first
-      // approver, creates and signs. transferLegs is a bare Daml TextMap (a plain object).
+      // two symmetric legs, bob approves, the venue initiates settlement. Each step consumes
+      // the previous contract and creates the next, so the created id is threaded forward.
+      // transferLegs is a bare Daml TextMap (a plain object) and each leg carries a meta.
       const { instrumentId } = await amulet();
-      const leg = (sender: string, receiver: string, amount: string): TokenTransferLeg => ({
+      const leg = (sender: string, receiver: string, amount: string) => ({
         sender,
         receiver,
         amount,
         instrumentId,
+        meta: { values: {} },
       });
-      const createArguments = {
-        venue: P.venue,
-        tradeCid: null,
-        transferLegs: { leg0: leg(P.alice, P.bob, vars.usdAmount), leg1: leg(P.bob, P.alice, vars.bondAmount) },
-        approvers: [P.alice],
+      const createdId = (created: { templateId: string; contractId: string }[], entity: string): string => {
+        const hit = created.find((c) => c.templateId.endsWith(':' + entity));
+        if (!hit) throw new Error('createTrade: expected a created ' + entity + ' but none was in the transaction');
+        return hit.contractId;
       };
-      const command = { CreateCommand: { templateId: OTC_TRADE_PROPOSAL, createArguments } };
-      await ledger.submitAndWait([command], [], [P.alice], commandId('trade-create'));
+      // 1. alice proposes and signs as the first approver.
+      const r1 = await ledger.submitAndWaitForTransactionTree(
+        [
+          {
+            CreateCommand: {
+              templateId: OTC_TRADE_PROPOSAL,
+              createArguments: {
+                venue: P.venue,
+                tradeCid: null,
+                transferLegs: { leg0: leg(P.alice, P.bob, vars.usdAmount), leg1: leg(P.bob, P.alice, vars.bondAmount) },
+                approvers: [P.alice],
+              },
+            },
+          },
+        ],
+        [],
+        [P.alice],
+        commandId('trade-create'),
+      );
+      // 2. bob approves; the choice recreates the proposal with both approvers.
+      const r2 = await ledger.submitAndWaitForTransactionTree(
+        [exerciseCommand(OTC_TRADE_PROPOSAL, createdId(r1.created, 'OTCTradeProposal'), 'OTCTradeProposal_Accept', { approver: P.bob })],
+        [],
+        [P.bob],
+        commandId('trade-accept'),
+      );
+      // 3. venue initiates settlement, which creates the OTCTrade (the AllocationRequest).
+      const nowMs = Date.now();
+      await ledger.submitAndWaitForTransactionTree(
+        [
+          exerciseCommand(OTC_TRADE_PROPOSAL, createdId(r2.created, 'OTCTradeProposal'), 'OTCTradeProposal_InitiateSettlement', {
+            prepareUntil: new Date(nowMs + 3600_000).toISOString(),
+            settleBefore: new Date(nowMs + 7200_000).toISOString(),
+          }),
+        ],
+        [],
+        [P.venue],
+        commandId('trade-initiate'),
+      );
       return { ok: true };
     },
   };
