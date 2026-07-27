@@ -7,30 +7,11 @@
  * and GET /config. GATEWAY_MODE=mock serves the same endpoints from fixtures so the
  * whole stack is verifiable without DevNet.
  */
-import express, { type Request, type Response, type NextFunction } from 'express';
+import express, { type Request, type Response } from 'express';
 import cors from 'cors';
 import { loadConfig, publicConfig, type GatewayConfig } from './config.js';
 import { createBackends, type Backends } from './backends.js';
-
-// ---- Per IP rate limiter (no external dependency) ----
-function rateLimiter(windowMs: number, max: number) {
-  const hits = new Map<string, { count: number; resetAt: number }>();
-  return (req: Request, res: Response, next: NextFunction) => {
-    const now = Date.now();
-    const ip = req.ip || 'unknown';
-    const entry = hits.get(ip);
-    if (!entry || now > entry.resetAt) {
-      hits.set(ip, { count: 1, resetAt: now + windowMs });
-      return next();
-    }
-    entry.count += 1;
-    if (entry.count > max) {
-      res.status(429).json({ error: 'Too many requests' });
-      return;
-    }
-    next();
-  };
-}
+import { rateLimiter } from './ratelimit.js';
 
 // ---- Mutation serialization: concurrency one, to protect validator traffic ----
 function makeSerializer() {
@@ -50,6 +31,14 @@ async function main(): Promise<void> {
   const backends: Backends = await createBackends(cfg);
   const serialize = makeSerializer();
   const app = express();
+
+  // Trust exactly one proxy hop. The gateway is published on the host loopback only, so
+  // the sole ingress is Caddy, reached through Docker's port-forwarder; the immediate
+  // socket peer is that forwarder (the bridge gateway, not literal 127.0.0.1), so the
+  // numeric single-hop form is used rather than the 'loopback' preset. This makes req.ip
+  // the client address Caddy sets in X-Forwarded-For, so the rate limiter is per client.
+  // It is safe because no client can reach the gateway directly to forge the header.
+  app.set('trust proxy', 1);
 
   app.use(express.json({ limit: '256kb' }));
   app.use(
