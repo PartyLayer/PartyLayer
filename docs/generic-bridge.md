@@ -307,23 +307,20 @@ A page reload tears down the provider. The official `ProviderAdapter.restore` me
 exists for this: a wallet reinstates a previous session, for example from `localStorage`,
 and returns a ready-to-use provider or `null`.
 
-Be aware of a current limitation, which we are fixing. Today PartyLayer's generic
-discovery bridge does not call `restore`. On reload the SDK revives its own persisted
-session record and validates it against the configured network, so the app shows the
-wallet as connected. But it then builds a fresh provider from `provider()`, and for a
-wallet that restores in `restore` that provider has no session. The one internal path
-that would re-validate the revived record is gated on the adapter exposing a `restore`
-capability, which the discovery bridge does not, so it never runs for this path. The
-result is that the first real request after a reload throws and the user has to connect
-again.
+PartyLayer's generic discovery bridge calls your `restore` on reload. The SDK revives its
+persisted session record, validates it against the configured network, then asks the
+official adapter to restore; when `restore` returns a live provider the bridge adopts it,
+so the first request after the reload uses the restored session and succeeds. So put your
+restoration logic in `restore`, as the official interface intends: read your session from
+your own storage and return the live provider.
 
-This matters for where you put your restoration logic:
+One constraint: `restore` runs on the reload path, outside any user gesture, so keep it
+gesture-free, a storage read rather than a popup. If a wallet genuinely needs a fresh
+interaction to reconnect, it falls back to a fresh connect.
 
-- If it lives in `restore`, as the official interface intends, a reload currently needs a
-  fresh connect. This is the case we are fixing: the bridge will call your `restore`, at
-  which point putting restoration there is the right and sufficient place.
-- If your `provider()` reconstructs the session itself, for example by reading your own
-  storage when it is constructed, a reload survives today.
+A wallet whose official adapter has no `restore` revives as-is: the app shows it as
+connected, but the first real request throws until the user reconnects. Implementing
+`restore` is what closes that gap.
 
 ### Popup policy
 
