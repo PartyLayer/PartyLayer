@@ -101,6 +101,14 @@ This builds all packages and publishes to npm (requires authentication).
 > `node_modules/@changesets/cli/dist/changesets-cli.cjs.js` spawns `pnpm publish` when the
 > detected tool is pnpm, with the package directory as the cwd.
 
+## Process notes
+
+Pull requests always target `main`. If a change depends on work that is not merged yet,
+merge that first and then branch from `main`, rather than stacking one feature branch on
+another. A stacked pull request can be closed or silently absorbed when its base branch
+lands, so the change never reaches `main` even though the pull request badge shows as
+merged. Keeping the base as `main` also ensures CI runs on the pull request.
+
 ## Registry Updates
 
 Registry updates are separate from package releases. See [Registry Operations](./registry-ops.md).
