@@ -39,4 +39,5 @@ declare module 'react-native-svg' {
   export const Circle: ComponentType<{ cx: number | string; cy: number | string; r: number | string; fill?: string; stroke?: string; strokeWidth?: number }>;
   export const Rect: ComponentType<{ x?: number | string; y?: number | string; width: number | string; height: number | string; rx?: number | string; fill?: string }>;
   export const SvgUri: ComponentType<{ uri: string | null; width?: number | string; height?: number | string; onError?: () => void; testID?: string }>;
+  export const SvgXml: ComponentType<{ xml: string | null; width?: number | string; height?: number | string; onError?: () => void; testID?: string }>;
 }

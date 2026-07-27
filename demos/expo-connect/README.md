@@ -118,12 +118,11 @@ imports react-native-svg, the deep link platform defaults to a static `react-nat
 import, and a `./async-storage` subpath statically imports AsyncStorage for the
 no-argument path. The web smoke above now passes.
 
-### Known separate issue: walletconnect renders no logo
+### walletconnect renders the neutral fallback (fixed)
 
-walletconnect's registry icon URL returns HTML (the CDN asset is missing), and
-react-native-svg's `SvgUri` on web does not fire `onError` for non-SVG content, so
-WalletIcon's neutral fallback never triggers and the row renders no logo (it also logs a
-one-off SVG parser error). This is a CDN asset plus WalletIcon robustness issue, separate
-from module loading, so the smoke logs it rather than failing on it. The fix belongs with
-the registry icon audit (supply a real walletconnect asset) and a follow-up that makes
-WalletIcon fall back when a fetched SVG is not valid SVG.
+walletconnect's registry icon URL returns HTML, not an SVG, because the CDN asset is
+missing. WalletIcon now fetches an svg url and validates that the body is really SVG
+before rendering it through react-native-svg's `SvgXml`; a response that is not SVG (or a
+failed fetch) falls back to the neutral glyph. So walletconnect shows the neutral fallback
+rather than nothing, and the web smoke asserts that. Supplying a real walletconnect asset
+in the registry remains a separate, optional improvement.

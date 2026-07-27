@@ -86,9 +86,10 @@ export type AdapterClass = new () => WalletAdapter;
  * PartyLayer configuration
  */
 export interface PartyLayerConfig {
-  /** 
-   * Registry URL (optional)
-   * @default 'https://registry.partylayer.xyz/v1/wallets.json'
+  /**
+   * Registry base URL (optional). The client appends `/v1/{channel}/registry.json`,
+   * so the default fetch is `https://registry.partylayer.xyz/v1/stable/registry.json`.
+   * @default 'https://registry.partylayer.xyz'
    */
   registryUrl?: string;
   /** Registry channel */

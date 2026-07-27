@@ -11,7 +11,7 @@
  * entrypoint) so tests can inject mock components.
  */
 import type { ComponentType } from 'react';
-import Svg, { Path, Rect, SvgUri } from 'react-native-svg';
+import Svg, { Path, Rect, SvgUri, SvgXml } from 'react-native-svg';
 
 /** The subset of react-native-svg the ui uses. */
 export interface SvgComponents {
@@ -19,6 +19,7 @@ export interface SvgComponents {
   Path: ComponentType<Record<string, unknown>>;
   Rect: ComponentType<Record<string, unknown>>;
   SvgUri: ComponentType<Record<string, unknown>>;
+  SvgXml: ComponentType<Record<string, unknown>>;
 }
 
 const fromImport: SvgComponents = {
@@ -26,6 +27,7 @@ const fromImport: SvgComponents = {
   Path: Path as SvgComponents['Path'],
   Rect: Rect as SvgComponents['Rect'],
   SvgUri: SvgUri as SvgComponents['SvgUri'],
+  SvgXml: SvgXml as SvgComponents['SvgXml'],
 };
 
 let override: SvgComponents | null = null;

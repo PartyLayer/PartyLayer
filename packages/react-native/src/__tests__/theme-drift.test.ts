@@ -19,15 +19,33 @@ const web = readFileSync(webThemePath, 'utf-8');
 
 const FIX = `Update packages/react-native/src/theme-data.ts to match packages/react/src/theme.tsx.`;
 
-// The web const name backing each RN family and mode.
-const CONST_NAMES: Record<string, { light: string; dark: string }> = {
-  default: { light: 'lightBase', dark: 'darkBase' },
-  midnight: { light: 'midnightLightBase', dark: 'midnightDarkBase' },
-  slate: { light: 'slateLightBase', dark: 'slateDarkBase' },
-  teal: { light: 'tealLightBase', dark: 'tealDarkBase' },
-  gold: { light: 'goldLightBase', dark: 'goldDarkBase' },
-  warm: { light: 'warmLightBase', dark: 'warmDarkBase' },
-};
+/**
+ * The web const backing each family and mode, DERIVED from the web source rather than
+ * hardcoded, so a new family added to packages/react/src/theme.tsx is caught here
+ * automatically instead of being silently skipped. We read the `export const themes`
+ * map (family to its light and dark theme consts) and follow each theme const back to
+ * the base it renders through its `makeCallableTheme(<base>)` declaration.
+ */
+function deriveWebFamilies(): Record<string, { light: string; dark: string }> {
+  const themeToBase: Record<string, string> = {};
+  for (const m of web.matchAll(/const (\w+): CallableTheme = makeCallableTheme\((\w+)\)/g)) {
+    themeToBase[m[1]] = m[2];
+  }
+  const start = web.indexOf('export const themes = {');
+  expect(start, `web themes export not found. ${FIX}`).toBeGreaterThan(-1);
+  const block = web.slice(start, web.indexOf('} as const;', start));
+  const families: Record<string, { light: string; dark: string }> = {};
+  for (const m of block.matchAll(/(\w+):\s*\{\s*light:\s*(\w+),\s*dark:\s*(\w+)\s*\}/g)) {
+    const light = themeToBase[m[2]];
+    const dark = themeToBase[m[3]];
+    expect(light, `web light base for family ${m[1]} not resolved. ${FIX}`).toBeTruthy();
+    expect(dark, `web dark base for family ${m[1]} not resolved. ${FIX}`).toBeTruthy();
+    families[m[1]] = { light, dark };
+  }
+  return families;
+}
+
+const CONST_NAMES = deriveWebFamilies();
 
 /** Resolve the few token references the web file uses inside color values. */
 const DEFAULT_FOREGROUND = (/const DEFAULT_FOREGROUND = '([^']+)'/.exec(web) ?? [])[1];
@@ -54,10 +72,10 @@ function extractWebColors(constName: string): Record<string, string> {
 }
 
 describe('theme drift vs packages/react/src/theme.tsx', () => {
-  it('has the same six families and twelve variants', () => {
+  it('covers exactly the families the web theme defines (derived, not hardcoded)', () => {
     expect(Object.keys(themes).sort(), FIX).toEqual(Object.keys(CONST_NAMES).sort());
     const variants = Object.values(themes).flatMap((p) => [p.light, p.dark]);
-    expect(variants, FIX).toHaveLength(12);
+    expect(variants, FIX).toHaveLength(Object.keys(CONST_NAMES).length * 2);
   });
 
   it('every color value matches the web copy across all twelve variants', () => {
