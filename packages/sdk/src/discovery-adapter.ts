@@ -21,10 +21,15 @@
  * (e.g. `new WalleyAdapter({ host: 'https://dev.walley.cc' })`), so the bridge
  * never sees or sets them.
  *
+ * Session restore forwards to the official adapter's own `restore` (see {@link
+ * GenericDiscoveryAdapter.restore}): on reload the wallet reinstates its session, typically
+ * from its own storage, and the bridge adopts the returned live provider, so the first
+ * request after reload works. If the official adapter has no `restore`, the SDK revives the
+ * persisted record as-is.
+ *
  * Eventless note: the official provider exposes `on`/`emit`/`removeListener`
- * but popup/remote wallets typically never emit. The session layer restores via
- * `status`/`listAccounts` polling + persists on fresh connect, so this is
- * tolerated; `getCapabilities()` therefore NEVER returns `'events'`.
+ * but popup/remote wallets typically never emit, so `getCapabilities()` NEVER
+ * returns `'events'`.
  */
 import type {
   AdapterConnectResult,
@@ -37,6 +42,7 @@ import type {
   NetworkId,
   OfficialAdapterFactory,
   OfficialProviderAdapter,
+  PersistedSession,
   Session,
   SignMessageParams,
   SignedMessage,
@@ -250,6 +256,52 @@ export class GenericDiscoveryAdapter implements WalletAdapter {
       network: network as NetworkId,
     };
     return { partyId, session, capabilities: this.getCapabilities() };
+  }
+
+  /**
+   * Restore a persisted session by delegating to the official adapter's own `restore`.
+   *
+   * The official `ProviderAdapter` shape carries an optional `restore()` that reinstates a
+   * session (for example from the wallet's own storage) and returns a LIVE provider.
+   * Without this method the SDK revived the persisted record as-is and then built a fresh,
+   * SESSION-LESS provider from `provider()`, so a wallet that restores in `restore` looked
+   * connected after a reload but its first real request threw. This forwards to the
+   * official `restore` and, when it yields a provider, adopts it as the cached provider so
+   * the very next request uses the restored session.
+   *
+   * Popup-safe: this runs on the SDK's init/restore path, never inside a user gesture, so a
+   * popup could not open here even if an adapter tried (the browser would block it). Per
+   * the official contract `restore` is storage-based and gesture-free. If the official
+   * adapter has no `restore`, it returns null, or host resolution is not ready, this falls
+   * through to the previous behavior: the persisted session is returned and the provider is
+   * built lazily on first use, exactly as before.
+   */
+  async restore(ctx: AdapterContext, persisted: PersistedSession): Promise<Session | null> {
+    const asIs = { ...persisted, walletId: this.walletId } as Session;
+    // Resolve the official adapter for the active network first (synchronous, as connect
+    // does) so the factory form has its host. If it can't (e.g. host not yet known), fall
+    // through to the as-is revival below.
+    try {
+      this.resolveOfficial(ctx.network);
+    } catch {
+      return asIs;
+    }
+    const restore = this.official?.restore;
+    if (this.official && restore) {
+      let restored: Awaited<ReturnType<NonNullable<OfficialProviderAdapter['restore']>>> | null = null;
+      try {
+        restored = await restore.call(this.official);
+      } catch {
+        restored = null;
+      }
+      if (restored) {
+        // Adopt the restored, live provider so the next request uses the session.
+        this.providerInstance = restored as unknown as CIP0103Provider;
+        return asIs;
+      }
+    }
+    // No official restore, or nothing to restore: revive as-is, exactly as before.
+    return asIs;
   }
 
   async disconnect(): Promise<void> {
