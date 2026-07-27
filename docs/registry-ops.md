@@ -19,6 +19,8 @@ This guide covers how to safely update, promote, and rollback the wallet registr
 
 ## Common Operations
 
+Wallet logos live in `registry/wallets/`; see [registry/wallets/NOTICE.md](../registry/wallets/NOTICE.md) for the trademark notice that covers those marks.
+
 ### Add a New Wallet
 
 ```bash

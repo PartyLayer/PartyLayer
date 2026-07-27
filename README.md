@@ -49,6 +49,8 @@ PartyLayer is a production-grade SDK that enables decentralized applications (dA
 > **Note**: Bron is an enterprise wallet that requires OAuth configuration. See [Using Bron](#using-bron-enterprise-wallet) for setup instructions.
 >
 > **Native CIP-0103 wallets** are also auto-discovered at runtime via `window.canton.*`, no configuration needed.
+>
+> The wallet logos are third-party marks included only to identify each wallet; see [registry/wallets/NOTICE.md](./registry/wallets/NOTICE.md).
 
 ---
 
