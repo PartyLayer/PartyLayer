@@ -58,6 +58,8 @@ PartyLayer is a production-grade SDK that enables decentralized applications (dA
 
 - **[PartyLayer Studio](https://studio.partylayer.xyz)**: an interactive Sandpack workbench with 7 runnable, editable scenarios (connect, sign, submit, session resilience reconnect/disconnect, React Query + DevTools, and a React / Vue / Vanilla framework toggle) running against a mock CIP-0103 wallet, no install required.
 - **[Pattern Cookbook](https://partylayer.xyz/docs/cookbook)**: 9 copy-paste recipes built on the real hooks, each linked to its Studio scenario with a frank "when not to use" note.
+- **[Tokenization demo](https://tokenization.partylayer.xyz)**: the CIP-0056 tokenization vertical, live against Canton DevNet with demo parties. DevNet is reset periodically, so the demo must be onboarded again after a reset; see the [gateway runbook](apps/devnet-proxy/RUNBOOK.md).
+- **[DvP demo](https://dvp.partylayer.xyz)**: the delivery versus payment vertical, live against Canton DevNet with demo parties. Both legs are Canton Coin because DevNet exposes a single token standard instrument. DevNet is reset periodically, so the demo must be onboarded again after a reset; see the [gateway runbook](apps/devnet-proxy/RUNBOOK.md).
 
 ---
 

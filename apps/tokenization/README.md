@@ -19,7 +19,13 @@ pnpm install
 pnpm --filter partylayer-tokenization dev
 ```
 
-Not deployed (Vercel stays demo-only).
+## Live demo
+
+A live build (real backend, not the demo fixtures) runs at
+**[tokenization.partylayer.xyz](https://tokenization.partylayer.xyz)**, against Canton
+DevNet with demo parties. DevNet is reset periodically, so the demo must be onboarded
+again after a reset; see the [gateway runbook](../devnet-proxy/RUNBOOK.md) for what that
+involves.
 
 ## What is on screen
 
