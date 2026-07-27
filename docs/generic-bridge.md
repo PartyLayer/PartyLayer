@@ -304,16 +304,26 @@ factually here so a wallet team does not have to ask.
 ### Session survival
 
 A page reload tears down the provider. The official `ProviderAdapter.restore` member
-exists for this: a wallet may reinstate a previous session, for example from
-`localStorage`, and return a ready-to-use provider or `null`.
+exists for this: a wallet reinstates a previous session, for example from `localStorage`,
+and returns a ready-to-use provider or `null`.
 
-PartyLayer's generic discovery bridge does not itself call `restore`. Instead the SDK
-persists the session, gates it on the configured network on reload, and revives it, then
-re-validates by re-probing the wallet with `status` and `getPrimaryAccount`. The
-practical consequence for a wallet team: a discovery-adapter wallet survives a reload as
-long as its provider answers `status` and `getPrimaryAccount` after the wallet is reached
-again. Implementing `restore` in your adapter is harmless and useful for other Canton
-hosts, but it is `status` and `getPrimaryAccount` that PartyLayer relies on.
+Be aware of a current limitation, which we are fixing. Today PartyLayer's generic
+discovery bridge does not call `restore`. On reload the SDK revives its own persisted
+session record and validates it against the configured network, so the app shows the
+wallet as connected. But it then builds a fresh provider from `provider()`, and for a
+wallet that restores in `restore` that provider has no session. The one internal path
+that would re-validate the revived record is gated on the adapter exposing a `restore`
+capability, which the discovery bridge does not, so it never runs for this path. The
+result is that the first real request after a reload throws and the user has to connect
+again.
+
+This matters for where you put your restoration logic:
+
+- If it lives in `restore`, as the official interface intends, a reload currently needs a
+  fresh connect. This is the case we are fixing: the bridge will call your `restore`, at
+  which point putting restoration there is the right and sufficient place.
+- If your `provider()` reconstructs the session itself, for example by reading your own
+  storage when it is constructed, a reload survives today.
 
 ### Popup policy
 
