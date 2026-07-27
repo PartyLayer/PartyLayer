@@ -20,7 +20,14 @@ pnpm install
 pnpm --filter partylayer-dvp dev
 ```
 
-Not deployed.
+## Live demo
+
+A live build (real backend, not the demo fixtures) runs at
+**[dvp.partylayer.xyz](https://dvp.partylayer.xyz)**, against Canton DevNet with demo
+parties. Both legs are Canton Coin because DevNet exposes a single token standard
+instrument, matching what the page itself states. DevNet is reset periodically, so the
+demo must be onboarded again after a reset; see the
+[gateway runbook](../devnet-proxy/RUNBOOK.md) for what that involves.
 
 ## What is on screen
 
