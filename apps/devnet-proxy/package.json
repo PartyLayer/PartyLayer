@@ -16,6 +16,7 @@
   },
   "dependencies": {
     "@canton-network/wallet-sdk": "1.4.0",
+    "@partylayer/react": "workspace:^",
     "cors": "^2.8.5",
     "express": "^4.18.2"
   },

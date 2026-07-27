@@ -39,13 +39,19 @@ Upload the built DAR to the validator participant:
 
 Use the validator's documented auth when the ledger requires it.
 
-## 4. Allocate the demo parties and grant the gateway user
+## 4. Allocate the demo parties
 
-1. Allocate three parties on the validator participant: alice, bob, and the venue.
-   Record their full party ids.
-2. Create or pick the ledger user the gateway authenticates as, and grant it `actAs`
-   and `readAs` for all three parties. The gateway acts for all demo parties, which is
-   why the DvP createTrade endpoint is documented as demo orchestration.
+Allocate three parties on the validator participant: alice, bob, and the venue. Record
+their full party ids. They live in the participant's own namespace, so the participant
+signs for them; there is no external signing key (see section 6) and submission is a
+direct submit-and-wait.
+
+No `actAs` grant is required on this validator. Its ledger API auth is disabled
+(`auth-services = []`), so an unauthenticated request already runs with participant
+authority and can act for any local party. On a participant with auth enabled you would
+instead grant the gateway's ledger user `actAs`/`readAs` for the three parties, and only
+then does the gateway need a real token. The gateway acts for all three demo parties,
+which is why the DvP createTrade endpoint is documented as demo orchestration.
 
 ## 5. Fund alice and bob
 
@@ -53,15 +59,18 @@ Tap the DevNet faucet for alice and bob so they hold Amulet:
 use the validator wallet faucet tap for each party until they have a working balance.
 The venue needs no balance; it is the settlement executor.
 
-## 6. Obtain the ledger JWT
+## 6. Ledger auth token
 
-Obtain a JWT for the gateway's ledger user per the validator's auth setup:
+There is no external signing key. The demo parties are local to the participant, so the
+participant signs and every write is a direct submit-and-wait; the gateway never runs a
+prepare/sign/execute round trip.
 
-- Static token: if the validator issues a long lived token, use it directly as
-  `LEDGER_AUTH_TOKEN`.
-- Self signed or client credentials: mint a token per the validator's issuer, then set
-  `LEDGER_AUTH_TOKEN` to the result. The gateway keeps the token server side and never
-  logs it.
+Because this validator's ledger auth is disabled, `LEDGER_AUTH_TOKEN` only needs to carry
+a `sub` for the user id the wallet sdk labels submissions with; its signature is not
+checked. Any minimal token works, and `LEDGER_USER_ID` sets that user id independently
+for the direct ledger client. On a participant with auth enabled, set `LEDGER_AUTH_TOKEN`
+to a real token for the granted ledger user (section 4) instead. The gateway keeps the
+token server side and never logs it.
 
 ## 7. Configure and run the gateway
 
@@ -70,7 +79,8 @@ Set the environment (all required in live mode unless noted):
 ```
 GATEWAY_MODE=live
 LEDGER_JSON_API_URL=<validator JSON ledger API base url>
-LEDGER_AUTH_TOKEN=<the ledger JWT>
+LEDGER_AUTH_TOKEN=<ledger token; see section 6>
+LEDGER_USER_ID=<user id submissions are labeled with; defaults to devnet-gateway>
 SCAN_URL=<public DevNet Scan url>
 PARTY_ALICE=<alice party id>
 PARTY_BOB=<bob party id>
@@ -106,12 +116,43 @@ GATEWAY_URL=https://gateway.partylayer.xyz node apps/devnet-proxy/scripts/devnet
 
 It checks `/health` and reads alice's holdings. A passing run prints `smoke: OK`.
 
+## Interface references must be package-name form
+
+The token-standard interface reads (incoming instructions, allocations, allocation
+requests, and the holding view behind the utxos read) filter the ledger active-contract
+set by an interface reference. That reference must be the package-name form
+(`#splice-api-token-holding-v1:Splice.Api.Token.HoldingV1:Holding`), never a pinned
+package id. Against this DevNet participant a pinned id matches nothing, because the
+participant serves whichever version it vets; the package-name form resolves to that
+version. All four references live in one module, `src/live/refs.ts`, so no call site can
+pin an id and drift. If a read starts returning empty when you expect data, check this
+first.
+
+## DevNet resets
+
+DevNet is periodically reset. When it does, the uploaded DAR, the allocated parties, and
+their Amulet balances are all gone. After a reset, re-run sections 2 through 5 (rebuild
+and re-upload the DAR, re-allocate alice, bob, and the venue, re-fund alice and bob),
+update `PARTY_ALICE`/`PARTY_BOB`/`PARTY_VENUE` to the new party ids, and restart the
+gateway. A deployed demo will read empty and its writes will fail until this is done.
+
 ## Live wiring notes
 
 The gateway is built on the official wallet sdk (`@canton-network/wallet-sdk` 1.4.0).
-Reads use the token standard interface filters over the ledger ACS mapped by the tested
-mapping layer; transfer and allocation flows use the sdk transfer and allocation
-namespaces; the DvP trade lifecycle exercises the trading app DAR choices above. Issuer
-mint and freeze are not available on Canton Coin, since the registry controls Amulet
-issuance; the tokenization Issuer panel is visible in live mode with actions disabled
-and a short explanation.
+
+- Holdings come from the sdk utxos namespace (`sdk.token.utxos.list`, the current holding
+  set, not transaction history), mapped through the tested mapping layer.
+- Incoming instructions, allocations, and allocation requests read the ledger
+  active-contract set filtered by the package-name interface references above. The sdk
+  also exposes an allocation fetch, but the ACS path is used for all three so the read
+  mechanism is uniform and reuses the tested mapping helpers.
+- Instrument metadata and circulating supply come from the Scan registry.
+- Transfers use the sdk transfer namespace; allocation create uses
+  `sdk.token.allocation.instruction.create` and allocation actions the allocation
+  namespace. Each returns a prepared `[command, disclosed]` pair which the gateway
+  submits as the acting local party with a direct submit-and-wait (no external key).
+- The DvP trade lifecycle exercises the trading app DAR choices above directly.
+
+Issuer mint and freeze are not available on Canton Coin, since the registry controls
+Amulet issuance; the tokenization Issuer panel is visible in live mode with actions
+disabled and a short explanation.

@@ -154,6 +154,9 @@ importers:
       '@canton-network/wallet-sdk':
         specifier: 1.4.0
         version: 1.4.0
+      '@partylayer/react':
+        specifier: workspace:^
+        version: link:../../packages/react
       cors:
         specifier: ^2.8.5
         version: 2.8.6
