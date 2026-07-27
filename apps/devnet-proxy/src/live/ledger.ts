@@ -13,7 +13,7 @@
  */
 import type { AcsEntry } from '../mapping.js';
 
-/** A ledger-API command wrapper, e.g. `{ ExerciseCommand: {...} }` — as the sdk emits. */
+/** A ledger-API command wrapper, e.g. `{ ExerciseCommand: {...} }`, as the sdk emits. */
 export type WrappedCommand = Record<string, unknown>;
 /** A disclosed contract as the sdk / registry emits it for submission. */
 export type DisclosedContract = Record<string, unknown>;
