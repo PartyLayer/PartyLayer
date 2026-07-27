@@ -20,6 +20,9 @@ export interface GatewayConfig {
   live?: {
     ledgerJsonApiUrl: string;
     ledgerAuthToken: string;
+    /** The user id submissions act under. Auth is disabled on this participant, so any
+     * value is accepted; it only labels commands. Never a secret. */
+    ledgerUserId: string;
     scanUrl: string;
     partyAlice: string;
     partyBob: string;
@@ -63,6 +66,7 @@ export function loadConfig(): GatewayConfig {
     base.live = {
       ledgerJsonApiUrl: req('LEDGER_JSON_API_URL'),
       ledgerAuthToken: req('LEDGER_AUTH_TOKEN'),
+      ledgerUserId: process.env.LEDGER_USER_ID?.trim() || 'devnet-gateway',
       scanUrl: req('SCAN_URL'),
       partyAlice: req('PARTY_ALICE'),
       partyBob: req('PARTY_BOB'),

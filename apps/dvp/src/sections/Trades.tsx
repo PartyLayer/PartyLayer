@@ -35,7 +35,22 @@ import type { SettleTrade, CreateTrade } from '../lib/types';
 
 export function Trades() {
   const { party } = useDemo();
-  return party === 'venue' ? <VenueTrades /> : <CounterpartyTrades />;
+  const isLive = import.meta.env.VITE_BACKEND === 'live';
+  return (
+    <>
+      {isLive && (
+        <Card title="About this live trade">
+          <p>
+            DevNet exposes a single token standard instrument, Canton Coin, so both legs of
+            this trade are Canton Coin. The atomic settlement shown here is the same
+            mechanism a production deployment would use with two distinct instruments, such
+            as cash against a bond.
+          </p>
+        </Card>
+      )}
+      {party === 'venue' ? <VenueTrades /> : <CounterpartyTrades />}
+    </>
+  );
 }
 
 function CounterpartyTrades() {
