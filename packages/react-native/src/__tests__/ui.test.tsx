@@ -44,6 +44,7 @@ const mockRnSvg = vi.hoisted(() => ({
   Path: () => null,
   Rect: () => null,
   SvgUri: () => null,
+  SvgXml: () => null,
 }));
 vi.mock('react-native-svg', () => mockRnSvg);
 vi.mock('../use-connect', () => ({ useConnect: vi.fn() }));
@@ -62,14 +63,33 @@ const mockUseConnect = useConnect as unknown as Mock;
 const mockUseWallets = useWallets as unknown as Mock;
 
 const MockSvgUri = (props: Record<string, unknown>) => hostEl('SvgUri', props);
+const MockSvgXml = (props: Record<string, unknown>) => hostEl('SvgXml', props);
+
+const VALID_SVG = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1 1"><rect width="1" height="1" /></svg>';
+const HTML_BODY = '<!doctype html><html><head><title>PartyLayer</title></head><body>registry</body></html>';
+
+/** Queue the next fetch response body (WalletIcon fetches an svg url to validate it). */
+function mockFetchOnce(body: string, ok = true): void {
+  (global.fetch as unknown as Mock).mockResolvedValueOnce({ ok, text: async () => body });
+}
+
+/** Flush the WalletIcon fetch and its effect so the svg or fallback has resolved. */
+async function flush(): Promise<void> {
+  await act(async () => {
+    await new Promise((r) => setTimeout(r, 0));
+  });
+}
 
 beforeEach(() => {
   vi.clearAllMocks();
+  // Default: any svg fetch returns valid SVG. Tests that need HTML/failure override it.
+  global.fetch = vi.fn().mockResolvedValue({ ok: true, text: async () => VALID_SVG }) as never;
   __setSvgComponentsForTest({
     Svg: (p: Record<string, unknown>) => hostEl('Svg', p),
     Path: (p: Record<string, unknown>) => hostEl('Path', p),
     Rect: (p: Record<string, unknown>) => hostEl('Rect', p),
     SvgUri: MockSvgUri,
+    SvgXml: MockSvgXml,
   } as never);
   mockUseConnect.mockReturnValue({ session: null, status: 'idle', connect: vi.fn(), disconnect: vi.fn(), isConnecting: false, isConnected: false, error: null });
   mockUseWallets.mockReturnValue({ wallets: [], walletIcons: [], isLoading: false, isSuccess: true, isError: false, error: null, refetch: vi.fn() });
@@ -92,6 +112,7 @@ describe('svg-loader real import path (regression guard)', () => {
     __setSvgComponentsForTest(null);
     const svg = getSvgComponents();
     expect(svg.SvgUri).toBe(mockRnSvg.SvgUri);
+    expect(svg.SvgXml).toBe(mockRnSvg.SvgXml);
     expect(svg.Svg).toBe(mockRnSvg.default);
   });
 });
@@ -105,9 +126,29 @@ describe('WalletIcon renderer matrix', () => {
     }
   });
 
-  it('renders the svg renderer for svg', () => {
+  it('renders the svg after validating the fetched body is real SVG', async () => {
+    mockFetchOnce(VALID_SVG);
     const r = render(<WalletIcon url="https://x/i.svg" format="svg" size={36} theme={theme} testID="ic" />);
-    expect(r.root.findAllByType(MockSvgUri as never).length).toBe(1);
+    await flush();
+    expect(r.root.findAllByType(MockSvgXml as never).length).toBe(1);
+    expect(has(r, 'ic-fallback')).toBe(false);
+  });
+
+  it('falls back to the neutral glyph when the svg url returns non SVG (HTML), never nothing', async () => {
+    // The walletconnect case: the CDN returns an HTML landing page, not an SVG. SvgUri
+    // would render nothing with no onError; validating the body first makes it fall back.
+    mockFetchOnce(HTML_BODY);
+    const r = render(<WalletIcon url="https://x/walletconnect.svg" format="svg" size={36} theme={theme} testID="ic" />);
+    await flush();
+    expect(has(r, 'ic-fallback')).toBe(true);
+    expect(r.root.findAllByType(MockSvgXml as never).length).toBe(0);
+  });
+
+  it('falls back when the svg fetch fails outright', async () => {
+    (global.fetch as unknown as Mock).mockRejectedValueOnce(new Error('network'));
+    const r = render(<WalletIcon url="https://x/down.svg" format="svg" size={36} theme={theme} testID="ic" />);
+    await flush();
+    expect(has(r, 'ic-fallback')).toBe(true);
   });
 
   it('renders the neutral fallback for unknown (never a letter)', () => {
@@ -137,12 +178,13 @@ describe('ConnectButton reflects connect state', () => {
     expect(has(r, 'spinner')).toBe(true);
   });
 
-  it('shows the party identity and wallet icon when connected', () => {
+  it('shows the party identity and wallet icon when connected', async () => {
     mockUseConnect.mockReturnValue({ session: { walletId: 'console', partyId: 'party::abcdefghijklmnop' }, status: 'connected', connect: vi.fn(), disconnect: vi.fn(), isConnecting: false, isConnected: true, error: null });
     mockUseWallets.mockReturnValue({ wallets: [], walletIcons: [{ walletId: 'console', url: 'https://x/console.svg', format: 'svg' }], isLoading: false, isSuccess: true, isError: false, error: null, refetch: vi.fn() });
     const r = render(<ConnectButton client={{} as never} theme={theme} />);
+    await flush();
     // The connected wallet's svg logo renders (not a letter), and the party id is shown truncated.
-    expect(r.root.findAllByType(MockSvgUri as never).length).toBe(1);
+    expect(r.root.findAllByType(MockSvgXml as never).length).toBe(1);
     const texts = r.root.findAllByType('Text' as never).map((n) => String(n.props.children));
     expect(texts.some((t) => t.includes('...'))).toBe(true);
   });
@@ -162,13 +204,14 @@ describe('WalletList', () => {
     { walletId: 'walley', name: 'Walley', website: 'https://w', icons: { md: 'https://x/walley-logo.png' } },
   ];
 
-  it('renders a row per wallet with its real logo', () => {
+  it('renders a row per wallet with its real logo', async () => {
     mockUseWallets.mockReturnValue({ wallets, walletIcons: [], isLoading: false, isSuccess: true, isError: false, error: null, refetch: vi.fn() });
     const r = render(<WalletList client={{} as never} theme={theme} visible onClose={vi.fn()} />);
+    await flush();
     expect(has(r, 'wallet-row-console')).toBe(true);
     expect(has(r, 'wallet-row-walley')).toBe(true);
     // console has an svg logo, walley a png: both render as real logos, no letters.
-    expect(r.root.findAllByType(MockSvgUri as never).length).toBe(1);
+    expect(r.root.findAllByType(MockSvgXml as never).length).toBe(1);
     expect(r.root.findAllByType('Image' as never).length).toBe(1);
   });
 

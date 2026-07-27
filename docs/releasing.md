@@ -91,6 +91,16 @@ This builds all packages and publishes to npm (requires authentication).
 > at publish time. Using npm or yarn will publish unresolved `workspace:*` references,
 > which causes `EUNSUPPORTEDPROTOCOL` errors for consumers.
 
+> **Verified (@changesets/cli 2.29.8):** `pnpm release` runs `changeset publish`, which
+> detects the package manager and, when pnpm is detected, spawns `pnpm publish` per package
+> rather than `npm publish`. `pnpm publish` expands `workspace:^` and similar ranges to real
+> semver in the published manifest, so this flow does not reproduce the 2.2.0 unresolved
+> range defect. This holds as long as pnpm is the package manager changesets detects; if it
+> ever ran somewhere pnpm was not on PATH, changesets would fall back to `npm publish`, which
+> does not expand workspace ranges. Evidence: `internalPublish` in
+> `node_modules/@changesets/cli/dist/changesets-cli.cjs.js` spawns `pnpm publish` when the
+> detected tool is pnpm, with the package directory as the cwd.
+
 ## Registry Updates
 
 Registry updates are separate from package releases. See [Registry Operations](./registry-ops.md).

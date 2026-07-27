@@ -112,15 +112,20 @@ server.listen(PORT, async () => {
     if (!renderers.includes('svg')) fail('no wallet rendered an SVG logo (react-native-svg did not load)');
     if (!renderers.includes('img')) fail('no wallet rendered an Image logo');
 
-    // A wallet whose CDN icon is missing (returns HTML, e.g. walletconnect today) renders
-    // nothing on web because SvgUri does not fire onError for non-SVG content. That is a
-    // separate WalletIcon/CDN issue, not a module-loading regression, so it is logged, not
-    // failed. See the demo README.
+    // WalletIcon now validates that a fetched svg url is really SVG before rendering, so a
+    // wallet whose CDN icon returns HTML (walletconnect today) falls back to the neutral
+    // glyph instead of rendering nothing. Every wallet must render something.
     const none = Object.entries(perWallet).filter(([, r]) => r === 'none').map(([id]) => id);
-    if (none.length) console.log('NOTE (separate issue): rendered no logo (missing CDN icon): ' + none.join(', '));
-    if (iconNoise.length) console.log(`NOTE (separate issue): ${iconNoise.length} broken-icon parser error(s) tolerated`);
+    if (none.length) fail('wallet(s) rendered no logo, the neutral fallback should have triggered: ' + none.join(', '));
 
-    console.log('SMOKE OK: wallet list opened, react-native-svg and Image renderers both work, no uncaught page errors.');
+    // Specifically confirm the fixed case: if walletconnect is in the list, it shows the
+    // neutral fallback (its CDN icon is a missing HTML page), never nothing and never a letter.
+    if (perWallet.walletconnect && perWallet.walletconnect !== 'fallback' && perWallet.walletconnect !== 'img' && perWallet.walletconnect !== 'svg') {
+      fail(`walletconnect rendered "${perWallet.walletconnect}", expected the neutral fallback`);
+    }
+    if (perWallet.walletconnect === 'fallback') console.log('walletconnect: neutral fallback rendered (the fixed case).');
+
+    console.log('SMOKE OK: wallet list opened, every wallet rendered a logo or the neutral fallback, no uncaught page errors.');
     await browser.close();
     server.close();
     process.exit(0);
