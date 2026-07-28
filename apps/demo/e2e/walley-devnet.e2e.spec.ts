@@ -33,18 +33,13 @@ test.describe('Walley devnet — real popup, recovery-phrase', () => {
     'Set WALLEY_DEVNET_RECOVERY_PHRASE + WALLEY_DEVNET_PARTY_HINT (throwaway devnet seed) to run.',
   );
 
-  // KNOWN OPEN BUG, documented not worked around. The harness uses the FACTORY form
-  // (create(host), host from the registry). On reload the SDK's restoreSession runs
-  // before the registry-driven networkHosts are injected (setNetworkHosts happens in
-  // the warm/connect flow, not before restore), so GenericDiscoveryAdapter.restore
-  // cannot resolveOfficial, falls through to as-is, and the first request throws
-  // "provider requested before host resolution". Proven live against dev.walley.cc:
-  // connect + persist + reload-connected all pass; only the post-reload request fails,
-  // and NOT with the 0.17.0 "Not connected" symptom. The INSTANCE form (what
-  // apps/tokenization and apps/dvp ship) sets `official` at construction, has no
-  // networkHosts dependency, and passes this same test. Remove this test.fail once the
-  // SDK resolves the factory adapter's host before restore on reload.
-  test.fail();
+  // The FACTORY form (create(host), host from the registry) now survives reload. The
+  // SDK's restoreSession injects the registry networkHosts and resolves the factory
+  // adapter's host, from the PERSISTED session's own network, BEFORE restore, so the
+  // restored provider is live and the first request reaches the wallet. This test
+  // previously carried test.fail() documenting the pre-fix "provider requested before
+  // host resolution" failure; that SDK fix is now in place, so the test passes for the
+  // right reason. Proven live against dev.walley.cc.
   test('connect → both encrypted DBs persist → reload-restore → first request', async ({ page, context }) => {
     const words = (PHRASE as string).trim().split(/\s+/);
     // The Party Hint field expects the LABEL (placeholder "walley-alice"), i.e.
