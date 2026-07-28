@@ -38,6 +38,7 @@ CI runs this exact command on every PR to `main` (see
 | `pnpm gate:api` | Diffs each published package's **type surface** (`<pkg>.api.d.ts`, Prettier-normalized) **and packaging surface** (`<pkg>.pkg.json`) against committed snapshots. Fails on any change to a public export, a `peerDependencies` range, an `exports` subpath, `bin`, etc. |
 | `pnpm gate:api:update` | **Intentionally** accepts API/packaging changes by rewriting both snapshot kinds. Run this (and commit) when a change is deliberate. |
 | `pnpm gate:registry` | Validates `registry/v1/{stable,beta}/registry.json` against `tooling/registry-schema/registry.schema.json` and asserts CIP-0103-native wallets keep their `cip0103.native` flag. |
+| `pnpm gate:docs-drift` | Guards the docs that exist as both `docs/<slug>.md` and a hand-authored site page (`apps/demo/src/app/docs/<slug>/content.tsx`) from silently diverging, by comparing their section-heading sets. Fails naming the pair and which side is missing which heading. The pair list is derived (a new doc added in both places must be classified). `quick-start` is a documented exception: the markdown and the page are different documents. |
 
 ## How to intentionally update the API snapshot
 

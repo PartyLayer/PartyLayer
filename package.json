@@ -24,7 +24,7 @@
     "registry:sign": "tsx scripts/registry/sign.ts",
     "registry:verify": "tsx scripts/registry/verify.ts",
     "verify:e2e": "tsx scripts/verify/e2e.ts",
-    "gate": "pnpm gate:lockfile && pnpm gate:build && pnpm gate:size && pnpm typecheck && pnpm lint && pnpm gate:test && pnpm gate:conformance && pnpm gate:api && pnpm gate:consistency && pnpm gate:registry && pnpm gate:readme && pnpm gate:templates",
+    "gate": "pnpm gate:lockfile && pnpm gate:build && pnpm gate:size && pnpm typecheck && pnpm lint && pnpm gate:test && pnpm gate:conformance && pnpm gate:api && pnpm gate:consistency && pnpm gate:docs-drift && pnpm gate:registry && pnpm gate:readme && pnpm gate:templates",
     "//gate:lockfile": "Fails when a package.json and pnpm-lock.yaml disagree, exactly as Vercel does with --frozen-lockfile (the CI default). A plain local pnpm install regenerates the lockfile silently, so drift never surfaced locally; this stage reproduces the CI install so the same failure is caught before it ships. It runs first because a stale lockfile invalidates every stage after it, and it is a sub-second no-op resolve once deps are already installed.",
     "gate:lockfile": "pnpm install --frozen-lockfile",
     "//gate:build": "Serial (--workspace-concurrency=1): the parallel -r build can start a dependent package (e.g. testing) before a workspace dep (session) has flushed its .d.ts, an intermittent DTS-resolution race; serial enforces topological order deterministically. Reinstall after dependency edits keeps the graph correct — this is belt-and-suspenders (cf. examples.yml serialization precedent).",
@@ -42,7 +42,8 @@
     "release": "pnpm build && changeset publish",
     "size": "size-limit",
     "gate:size": "size-limit",
-    "gate:consistency": "node --test scripts/gate/framework-consistency.test.mjs"
+    "gate:consistency": "node --test scripts/gate/framework-consistency.test.mjs",
+    "gate:docs-drift": "node --test scripts/gate/docs-drift.test.mjs"
   },
   "keywords": [
     "canton",

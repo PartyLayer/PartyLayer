@@ -394,6 +394,23 @@ describe('createSession', () => {
 - Update JSDoc comments for API changes
 - Update README if needed
 
+### Docs that live in two places
+
+A few topics are documented twice: a markdown file under `docs/<slug>.md` (read on
+GitHub) and a hand-authored page under `apps/demo/src/app/docs/<slug>/content.tsx`
+(served at `partylayer.xyz/docs/<slug>`). The site page is written by hand, not
+generated from the markdown, so the two can drift apart if you edit only one.
+
+If you change one of these, change the other in the same PR. The markdown is the
+source of truth. `pnpm gate:docs-drift` (part of `pnpm gate`) enforces this: for every
+slug that exists in both places it compares the two sets of section headings and fails
+naming the pair and which side is missing which heading. The current pairs are
+`generic-bridge`, `partylayer-and-canton-topology`, and `dev-and-staging`.
+`quick-start` is a documented exception, because `docs/quick-start.md` (a full
+reference) and its site page (a short getting-started tutorial) are intentionally
+different documents rather than two copies of one; see the header of
+`scripts/gate/docs-drift.test.mjs`.
+
 ### JSDoc Comments
 
 ```typescript

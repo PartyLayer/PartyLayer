@@ -44,7 +44,7 @@ export default function DevAndStagingContent() {
         wallet or a network.
       </P>
 
-      <H2 id="step-2-mock">Step 2: Local development against a mock</H2>
+      <H2 id="step-2-mock">Step 2: Local development against a mock (@partylayer/testing)</H2>
       <P>
         When you start writing your integration, build and test it offline against a mock wallet
         first. The <Code>{'@partylayer/testing'}</Code> package provides a mock CIP-0103 provider with:
