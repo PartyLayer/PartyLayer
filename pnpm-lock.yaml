@@ -73,8 +73,8 @@ importers:
         specifier: ^0.24.0
         version: 0.24.0
       '@k2flabs/walley-dapp-sdk':
-        specifier: ^1.1.0
-        version: 1.1.0(@canton-network/dapp-sdk@0.24.0)
+        specifier: 1.2.0
+        version: 1.2.0(@canton-network/dapp-sdk@0.24.0)
       '@partylayer/adapter-bron':
         specifier: workspace:^
         version: link:../../packages/adapters/bron
@@ -1990,11 +1990,6 @@ packages:
 
   '@jridgewell/trace-mapping@0.3.31':
     resolution: {integrity: sha512-zzNR+SdQSDJzc8joaeP8QQoCQr8NuYx2dIIytl1QeBEZHJ9uW6hebsrYgbz8hJwUQao3TWCMtmfV8Nu1twOLAw==}
-
-  '@k2flabs/walley-dapp-sdk@1.1.0':
-    resolution: {integrity: sha512-RqiC/VQLg+2YMqmYq3+ZFtKnqNxOwDLiC4X0qmH/vVmvlpPsWrrxWZ4PEvPA4FHK+odA0EQT+7QqbOKgvlgjhg==}
-    peerDependencies:
-      '@canton-network/dapp-sdk': ^0.24.0
 
   '@k2flabs/walley-dapp-sdk@1.2.0':
     resolution: {integrity: sha512-qPNjjvxbVwrG6+DZuV6sxnJyaik99lfvdWzQdB4rX3g1JzaGhf9fYx+TvJAxqdeAW/i2Mc0soRJsCSBroHgnFQ==}
@@ -7507,7 +7502,7 @@ snapshots:
       '@jridgewell/resolve-uri': 3.1.2
       '@jridgewell/sourcemap-codec': 1.5.5
 
-  '@k2flabs/walley-dapp-sdk@1.1.0(@canton-network/dapp-sdk@0.24.0)':
+  '@k2flabs/walley-dapp-sdk@1.2.0(@canton-network/dapp-sdk@0.24.0)':
     dependencies:
       '@canton-network/core-rpc-errors': 0.19.2
       '@canton-network/core-splice-provider': 0.29.0

@@ -30,7 +30,7 @@ import { dirname, join } from 'node:path';
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 
 /** Demos that must carry every discovery-adapter wallet (the live Path B proof). */
-const SHOWCASE_APPS = ['apps/tokenization', 'apps/dvp'];
+const SHOWCASE_APPS = ['apps/demo', 'apps/tokenization', 'apps/dvp'];
 
 /**
  * Deliberate, documented omissions: `${app}:${walletId}` -> reason. A demo that
