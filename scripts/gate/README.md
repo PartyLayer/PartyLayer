@@ -39,6 +39,7 @@ CI runs this exact command on every PR to `main` (see
 | `pnpm gate:api:update` | **Intentionally** accepts API/packaging changes by rewriting both snapshot kinds. Run this (and commit) when a change is deliberate. |
 | `pnpm gate:registry` | Validates `registry/v1/{stable,beta}/registry.json` against `tooling/registry-schema/registry.schema.json` and asserts CIP-0103-native wallets keep their `cip0103.native` flag. |
 | `pnpm gate:docs-drift` | Guards the docs that exist as both `docs/<slug>.md` and a hand-authored site page (`apps/demo/src/app/docs/<slug>/content.tsx`) from silently diverging, by comparing their section-heading sets. Fails naming the pair and which side is missing which heading. The pair list is derived (a new doc added in both places must be classified). `quick-start` is a documented exception: the markdown and the page are different documents. |
+| `pnpm gate:release-changeset` | Fails when a publishable package's shipping content changed since its `<name>@<version>` release tag but no changeset covers it, so a release would ship nothing for it. Compares `src/` (minus tests), committed `files`-allowlist directories other than `dist` (e.g. `create-partylayer-app/templates`), and consumer-facing `package.json` fields. See "Release changeset guard" below for the escape hatch and the tag requirement. |
 
 ## How to intentionally update the API snapshot
 
@@ -81,6 +82,52 @@ When a wallet is confirmed CIP-0103 native, in the **same PR**:
    `scripts/gate/registry-check.mjs`.
 
 This keeps the footgun guard in lock-step with the registry.
+
+## Release changeset guard
+
+`gate:release-changeset` (in `scripts/gate/release-changeset.test.mjs`) catches the
+recurring slip where a change reaches `main` that alters what a publishable package
+ships but carries no changeset, so `changeset version` bumps nothing and the change
+never reaches npm. It has happened with an sdk fix, a react-native fix, a `sideEffects`
+flag added to seventeen manifests, and stale scaffold-template pins.
+
+**What it compares**, per publishable package, between its `<name>@<version>` git tag and
+`HEAD` (`dist` is built output and is not committed, so the compare is against the source
+that produces it):
+
+- `src/`, excluding tests, snapshots, and stories;
+- any committed directory the `files` allowlist ships that is not `dist` (today,
+  `create-partylayer-app`'s `templates`);
+- consumer-facing `package.json` fields (`dependencies`, `peerDependencies`, `exports`,
+  `main`, `module`, `types`, `bin`, `files`, `sideEffects`, `type`, and the related
+  install fields), ignoring `version`, `scripts`, and `devDependencies`.
+
+If anything in that scope changed and no changeset names the package, it fails with the
+package, the changed paths or fields, and what to do.
+
+**The escape hatch (do this instead of inventing an empty patch bump).** If a change to a
+publishable package genuinely needs no release, a revert, a moved comment, a tweak the
+exclusions did not catch, add an empty changeset:
+
+```bash
+pnpm changeset --empty
+```
+
+An empty changeset is changesets' own sanctioned way to say the current unreleased changes
+need no version bump. While one is present the guard stays quiet, and it is consumed at the
+next `changeset version` like any other. It is a deliberate, reviewable statement, so a
+reviewer sees it in the diff.
+
+**Not crying wolf.** Tests, snapshots, stories, `dist`, package-root docs and config, and
+non-consumer `package.json` fields are all excluded, and the exclusion list is printed in
+every failure so a developer can see why a file did or did not count. A firing that a
+developer disagrees with is either a real slip or a case for the empty changeset, never a
+reason to weaken the check.
+
+**Tags are required.** The guard reads the `<name>@<version>` tags the release process
+creates. A missing tag is a loud, named failure, because a missing tag itself signals a
+skipped release. CI must therefore fetch tags: the gate workflows check out with
+`fetch-depth: 0`.
 
 ## Design choices
 

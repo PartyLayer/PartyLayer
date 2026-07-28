@@ -41,6 +41,14 @@ This will:
 - Ask for change type (patch/minor/major)
 - Create a changeset file in `.changeset/`
 
+> **Enforced by the gate.** `pnpm gate:release-changeset` fails when a publishable
+> package's shipping content (its `src/`, a shipped `files` directory such as
+> `create-partylayer-app/templates`, or a consumer-facing `package.json` field) changed
+> since its last release tag but no changeset covers it. This is what stops a fix from
+> merging and then never shipping. If a change genuinely needs no release (a revert, a
+> moved comment), record that with an empty changeset, `pnpm changeset --empty`, rather
+> than inventing a version bump. See [scripts/gate/README.md](../scripts/gate/README.md).
+
 ### 2. Update Changeset Files
 
 Edit the generated changeset file to add a clear description:

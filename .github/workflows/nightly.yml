@@ -39,6 +39,9 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: main
+          # Full history + tags: gate:release-changeset compares each package
+          # against its `<name>@<version>` release tag.
+          fetch-depth: 0
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
       - name: Setup Node.js
