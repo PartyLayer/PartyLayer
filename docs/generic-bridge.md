@@ -47,7 +47,9 @@ simply how its adapter brings the wallet to the foreground.
 
 1. Decide your shape from the table above. That fixes your path.
 2. Implement the CIP-0103 request methods you support. The baseline is `connect`,
-   `signMessage`, and `prepareExecute`; the rest are additive.
+   `signMessage`, and `prepareExecute`; the rest are additive. The exact request and
+   result shape of every method is on the
+   [CIP-0103 provider reference](https://partylayer.xyz/docs/cip-0103#methods).
 3. Path A: announce over `canton:announceProvider`. Path B: ship a small package that
    exports an object satisfying the official `ProviderAdapter` shape.
 4. Path B only: handle the remote concerns in
@@ -446,7 +448,9 @@ discovery adapter does not change the method set.
 - Events: `statusChanged`, `accountsChanged`, `txChanged`, `connected`.
 
 A wallet does not need all of these. The baseline three, `connect`, `signMessage`, and
-`prepareExecute`, are enough to be usable; the rest are additive.
+`prepareExecute`, are enough to be usable; the rest are additive. The
+[CIP-0103 provider reference](https://partylayer.xyz/docs/cip-0103) gives the exact
+request and result shape of every method and event.
 
 ---
 

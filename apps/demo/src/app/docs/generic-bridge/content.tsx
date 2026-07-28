@@ -86,7 +86,9 @@ export default function GenericBridgeContent() {
         <LI>Decide your shape from the list above. That fixes your path.</LI>
         <LI>
           Implement the CIP-0103 request methods you support. The baseline is <Code>{'connect'}</Code>,{' '}
-          <Code>{'signMessage'}</Code>, and <Code>{'prepareExecute'}</Code>; the rest are additive.
+          <Code>{'signMessage'}</Code>, and <Code>{'prepareExecute'}</Code>; the rest are additive. The
+          exact request and result shape of every method is on the{' '}
+          <A href="/docs/cip-0103#methods">CIP-0103 provider reference</A>.
         </LI>
         <LI>
           Path A: announce over <Code>{'canton:announceProvider'}</Code>. Path B: ship a small package
@@ -587,7 +589,8 @@ partylayer-conformance --help`}</CodeBlock>
       <P>
         A wallet does not need all of these. The baseline three, <Code>{'connect'}</Code>,{' '}
         <Code>{'signMessage'}</Code>, and <Code>{'prepareExecute'}</Code>, are enough to be usable; the
-        rest are additive.
+        rest are additive. The <A href="/docs/cip-0103">CIP-0103 provider reference</A> gives the exact
+        request and result shape of every method and event.
       </P>
 
       <H2 id="a-note-on-the-five-wallets-with-a-partylayer-specific-adapter">
