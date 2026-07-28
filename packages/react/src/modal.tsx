@@ -511,9 +511,9 @@ function ModalWalletIcon({
 
   // Neutral, letter-free fallback (never initials) for a missing or non-image
   // CDN asset. `<img onError>` fires whenever the response will not decode as an
-  // image -- including an HTTP 200 that is actually HTML, which is what the
-  // registry serves today for send and walley -- so this path replaces a blank
-  // tile, never renders a letter, and mirrors the React Native NeutralWalletGlyph.
+  // image -- a network failure, a 404, or an HTTP 200 whose body is not an image
+  // (e.g. an HTML soft-404) -- so this path replaces a blank tile, never renders
+  // a letter, and mirrors the React Native NeutralWalletGlyph.
   return (
     <div
       aria-label={wallet.name}
