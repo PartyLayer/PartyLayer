@@ -1382,6 +1382,34 @@ export class PartyLayerClient {
       const adapter = this.adapters.get(session.walletId);
       if (adapter?.restore) {
         const ctx = this.createAdapterContext();
+
+        // Factory-form discovery adapters need their host resolved BEFORE restore.
+        // restoreSession is kicked off from the constructor, before the connect/warm
+        // path (resolveConnectPlan) injects networkHosts, so on reload a factory
+        // adapter has no host: its restore() cannot resolveOfficial, falls through to
+        // as-is, and the first request throws "provider requested before host
+        // resolution". Inject the registry entry's networkHosts and resolve using the
+        // PERSISTED session's OWN network. The network gate above has already run and
+        // validated session.network against the configured network (refused under
+        // enforcement, flagged under 'off'); it stays first, so this cannot restore a
+        // devnet identity into a mainnet app.
+        if (adapter instanceof GenericDiscoveryAdapter && adapter.usesFactory()) {
+          let networkHosts = {};
+          try {
+            const entry = await this.registryClient.getWalletEntry(String(session.walletId));
+            networkHosts = entry.adapter?.networkHosts ?? {};
+          } catch {
+            // Not in the registry — leave empty; resolveOfficial throws a clear,
+            // network-named error and restore falls through to as-is as before.
+          }
+          adapter.setNetworkHosts(networkHosts);
+          try {
+            adapter.resolveOfficial(session.network);
+          } catch {
+            // Host still not resolvable — restore falls through to as-is, unchanged.
+          }
+        }
+
         const restored = await adapter.restore(ctx, {
           ...session,
           encrypted,
