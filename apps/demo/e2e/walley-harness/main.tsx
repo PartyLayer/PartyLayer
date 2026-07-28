@@ -8,7 +8,7 @@
  */
 import React from 'react';
 import { createRoot } from 'react-dom/client';
-import { PartyLayerKit, ConnectButton, useAccount } from '@partylayer/react';
+import { PartyLayerKit, ConnectButton, useAccount, usePartyLayer } from '@partylayer/react';
 import { WalleyAdapter } from '@k2flabs/walley-dapp-sdk';
 
 /**
@@ -21,6 +21,41 @@ function SessionStatus() {
   return (
     <div data-testid="session-status" data-party={party ?? ''}>
       {status}
+    </div>
+  );
+}
+
+/**
+ * Issues a REAL CIP-0103 request through the client's provider on click. This is the
+ * step the reload assertion was missing. It uses `signMessage`, NOT a read: the bridge
+ * answers reads (listAccounts, status, ...) from the session snapshot, which survives
+ * reload regardless of the fix, so a read cannot distinguish the bug. `signMessage`
+ * routes to the (restored) provider, exactly as the shipped discovery-restore unit test
+ * does. The bug threw "Not connected" here before any popup; the fix reaches Walley's
+ * approval popup instead. We do not complete the approval, because reaching the wallet
+ * (rather than throwing) is the proof. Result is written to a testid as
+ * "ok:signed" / "pending" / "error:<message>" (never a credential).
+ */
+function PostReloadRequest() {
+  const client = usePartyLayer();
+  const [result, setResult] = React.useState('idle');
+  const run = async () => {
+    setResult('pending');
+    try {
+      const sig = await client
+        .asProvider()
+        .request<{ signature?: string }>({ method: 'signMessage', params: { message: 'reload-proof' } });
+      setResult(`ok:${sig && sig.signature ? 'signed' : 'y'}`);
+    } catch (e) {
+      setResult(`error:${e instanceof Error ? e.message : String(e)}`);
+    }
+  };
+  return (
+    <div>
+      <button data-testid="do-request" onClick={run}>
+        request
+      </button>
+      <div data-testid="request-result">{result}</div>
     </div>
   );
 }
@@ -40,6 +75,7 @@ function App() {
     >
       <ConnectButton />
       <SessionStatus />
+      <PostReloadRequest />
     </PartyLayerKit>
   );
 }
