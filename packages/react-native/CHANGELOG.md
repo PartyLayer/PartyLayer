@@ -1,5 +1,17 @@
 # @partylayer/react-native
 
+## 0.2.1
+
+### Patch Changes
+
+- Mark the package as free of import-time side effects (`"sideEffects": false`) so bundlers can tree-shake unused exports. The flag was in the repository but had never been published, so no installed version carried it and the measured tree-shaking never reached consumers; this is the change that delivers it. Verified per package that nothing runs at import beyond pure construction: no side-effect or asset imports, no writes to `window`, `globalThis`, or `global`, no prototype patching, and no import-time storage, DOM, or network access.
+- Wallet icons whose SVG URL returns non-SVG content now fall back to the neutral wallet glyph instead of rendering nothing. The renderer fetches the SVG, checks the body is real SVG markup, and draws it with react-native-svg's `SvgXml`. Previously it used `SvgUri`, which fetches internally but does not report an error when the response is not SVG (for example a registry or CDN URL that returns an HTML landing page), so a bad URL rendered blank with no fallback. A failed fetch also falls back to the glyph.
+- Updated dependencies
+- Updated dependencies
+  - @partylayer/sdk@0.17.0
+  - @partylayer/core@0.12.1
+  - @partylayer/session@1.1.6
+
 ## 0.2.0
 
 ### Minor Changes
