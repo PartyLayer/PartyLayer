@@ -1,7 +1,7 @@
 {
   "name": "partylayer-dvp",
   "private": true,
-  "version": "0.0.1",
+  "version": "0.0.2",
   "type": "module",
   "description": "PartyLayer M3 DvP vertical example: an atomic delivery-versus-payment settlement over the CIP-0056 allocation surface, against a typed demo backend.",
   "scripts": {

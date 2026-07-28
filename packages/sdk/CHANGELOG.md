@@ -1,5 +1,27 @@
 # @partylayer/sdk
 
+## 0.17.0
+
+### Minor Changes
+
+- Remote and popup wallets now survive a page reload. When a discovery-adapter wallet's official `ProviderAdapter` implements `restore`, the generic discovery bridge now calls it on reload: it revives the persisted session, validates it against the configured network, asks the official adapter to restore, and adopts the returned live provider. Before this, the bridge rebuilt a fresh session-less provider, so the user appeared connected but the first request after the reload failed with a "Not connected" error. Wallets whose adapter does not implement `restore` are unchanged and still fall back to a fresh connect.
+
+  This adds a public `restore` method to the exported `GenericDiscoveryAdapter`, so it is a minor rather than a patch. It also corrects the `registryUrl` default in the `PartyLayerConfig` JSDoc, which named a stale `/v1/wallets.json` path instead of the base host.
+
+### Patch Changes
+
+- Mark the package as free of import-time side effects (`"sideEffects": false`) so bundlers can tree-shake unused exports. The flag was in the repository but had never been published, so no installed version carried it and the measured tree-shaking never reached consumers; this is the change that delivers it. Verified per package that nothing runs at import beyond pure construction: no side-effect or asset imports, no writes to `window`, `globalThis`, or `global`, no prototype patching, and no import-time storage, DOM, or network access.
+- Updated dependencies
+  - @partylayer/core@0.12.1
+  - @partylayer/provider@0.5.1
+  - @partylayer/registry-client@0.6.2
+  - @partylayer/adapter-console@0.3.17
+  - @partylayer/adapter-loop@0.4.2
+  - @partylayer/adapter-cantor8@0.2.20
+  - @partylayer/adapter-bron@0.2.21
+  - @partylayer/adapter-nightly@0.2.20
+  - @partylayer/adapter-send@1.2.5
+
 ## 0.16.0
 
 ### Minor Changes

@@ -1,5 +1,17 @@
 # @partylayer/react
 
+## 2.3.1
+
+### Patch Changes
+
+- Mark the package as free of import-time side effects (`"sideEffects": false`) so bundlers can tree-shake unused exports. The flag was in the repository but had never been published, so no installed version carried it and the measured tree-shaking never reached consumers; this is the change that delivers it. Verified per package that nothing runs at import beyond pure construction: no side-effect or asset imports, no writes to `window`, `globalThis`, or `global`, no prototype patching, and no import-time storage, DOM, or network access.
+- Updated dependencies
+- Updated dependencies
+  - @partylayer/sdk@0.17.0
+  - @partylayer/core@0.12.1
+  - @partylayer/session@1.1.6
+  - @partylayer/registry-client@0.6.2
+
 ## 2.3.0
 
 ### Minor Changes

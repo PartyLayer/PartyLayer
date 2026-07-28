@@ -1,5 +1,14 @@
 # @partylayer/adapter-send
 
+## 1.2.5
+
+### Patch Changes
+
+- Mark the package as free of import-time side effects (`"sideEffects": false`) so bundlers can tree-shake unused exports. The flag was in the repository but had never been published, so no installed version carried it and the measured tree-shaking never reached consumers; this is the change that delivers it. Verified per package that nothing runs at import beyond pure construction: no side-effect or asset imports, no writes to `window`, `globalThis`, or `global`, no prototype patching, and no import-time storage, DOM, or network access.
+- Updated dependencies
+  - @partylayer/core@0.12.1
+  - @partylayer/provider@0.5.1
+
 ## 1.2.4
 
 ### Patch Changes
