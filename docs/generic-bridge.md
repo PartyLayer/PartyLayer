@@ -47,15 +47,20 @@ simply how its adapter brings the wallet to the foreground.
 
 1. Decide your shape from the table above. That fixes your path.
 2. Implement the CIP-0103 request methods you support. The baseline is `connect`,
-   `signMessage`, and `prepareExecute`; the rest are additive.
+   `signMessage`, and `prepareExecute`; the rest are additive. The exact request and
+   result shape of every method is on the
+   [CIP-0103 provider reference](https://partylayer.xyz/docs/cip-0103#methods).
 3. Path A: announce over `canton:announceProvider`. Path B: ship a small package that
    exports an object satisfying the official `ProviderAdapter` shape.
 4. Path B only: handle the remote concerns in
    [their own section](#remote-and-gateway-wallets-the-recurring-questions), namely
    popup policy, session survival, event streams, and origin validation.
-5. Add a registry entry. It is optional on Path A and expected on Path B, and it is
-   metadata only, no code.
-6. Test against any dApp built on `@partylayer/sdk` (or the prebuilt `ConnectButton`).
+5. Add a registry entry, then open it as described in
+   [Submitting your registry entry](#submitting-your-registry-entry). It is optional on
+   Path A and expected on Path B, and it is metadata only, no code.
+6. Verify your adapter with the conformance runner, as described in
+   [Verifying your wallet](#verifying-your-wallet). Connecting through a live dApp built
+   on `@partylayer/sdk` is the manual second path.
 7. There is no step seven. Nothing is required from PartyLayer.
 
 ---
@@ -200,14 +205,18 @@ therefore short:
 ```ts
 import { AbstractProvider } from '@canton-network/core-splice-provider';
 import type { ProviderAdapter } from '@canton-network/core-wallet-discovery';
+import type { RpcTypes as DappRpcTypes } from '@canton-network/core-wallet-dapp-rpc-client';
+import type { RequestArgs } from '@canton-network/core-types';
 
 // Only request() is yours. on/emit/removeListener come from AbstractProvider.
 class WalletXProvider extends AbstractProvider<DappRpcTypes> {
-  async request({ method, params }) {
-    // Dispatch to the wallet's own RPC. Reaching the gateway, opening and
-    // validating the popup, and persisting the session are the wallet's business,
-    // not PartyLayer's.
-    return this.callWalletX(method, params);
+  async request<M extends keyof DappRpcTypes>(
+    args: RequestArgs<DappRpcTypes, M>,
+  ): Promise<DappRpcTypes[M]['result']> {
+    // Dispatch args to the wallet's own RPC (gateway call, popup postMessage, ...)
+    // and return the CIP-0103 result. Reaching the gateway, opening and validating the
+    // popup, and persisting the session are the wallet's business, not PartyLayer's.
+    throw new Error('send args to your wallet transport and return its result');
   }
 }
 
@@ -218,7 +227,7 @@ export const walletXAdapter: ProviderAdapter = {
   type: 'remote',
   icon: 'https://walletx.example/icon.svg',
   getInfo() {
-    return { /* WalletInfo: name, capabilities, reuseGlobalWalletPopup, ... */ };
+    return { providerId: 'walletx', name: 'Wallet X', type: 'remote' };
   },
   detect() {
     return Promise.resolve(true); // a gateway is always reachable
@@ -235,9 +244,14 @@ export const walletXAdapter: ProviderAdapter = {
 };
 ```
 
+The four imports resolve against the published `@canton-network` packages
+(`core-splice-provider`, `core-wallet-discovery`, `core-wallet-dapp-rpc-client`, and
+`core-types`); `DappRpcTypes` is the `RpcTypes` request-and-result map re-exported under
+that name. Copy the block into a `.ts` file and it typechecks as is.
+
 Everything inside `request`, and how the adapter reaches its gateway, opens and validates
 its popup, and persists a session, is the wallet's own business. PartyLayer only ever
-calls `request({ method, params })`.
+calls `request(args)`.
 
 ### How the dApp wires it
 
@@ -358,6 +372,71 @@ the wallet's answer.
 
 ---
 
+## Verifying your wallet
+
+Before you ship, check your work against the published conformance runner,
+[`@partylayer/conformance-runner`](https://www.npmjs.com/package/@partylayer/conformance-runner),
+a CLI that validates an adapter against the CIP-0103 surface: it loads your adapter, runs
+the suite, writes a JSON report, prints a summary, and exits non-zero on any failure, so
+it drops straight into CI.
+
+```bash
+npm install -g @partylayer/conformance-runner
+
+# Validate an adapter package or a built path against the CIP-0103 surface.
+partylayer-conformance run --adapter <package-name-or-path>
+
+# Run the CIP-0103 provider suite.
+partylayer-conformance run-cip0103
+
+# Full flag list.
+partylayer-conformance --help
+```
+
+`run` takes `--adapter` (an npm package name or a path to your built adapter) and an
+optional `--network` (default `devnet`), and writes `conformance-report.json`. Point it
+at your Path B discovery adapter, or at any adapter package you build.
+
+The manual second path, and the only one for an adapterless Path A wallet, is to connect
+through a live dApp built on `@partylayer/sdk` (or the prebuilt `ConnectButton`) and
+exercise connect, sign, and submit by hand. The runner is faster and repeatable; the
+manual path is the real-world confirmation.
+
+---
+
+## Submitting your registry entry
+
+You add a registry entry five times over in this guide; here is how you actually get it
+in. The registry is a signed JSON file the SDK fetches from
+`https://registry.partylayer.xyz`, one file per channel:
+`registry/v1/beta/registry.json` and `registry/v1/stable/registry.json` in this
+repository. Your wallet is one entry in the `wallets` array.
+
+New wallets land in **beta** first and are promoted to **stable** after a soak. Beta is
+what a dApp opts into for early testing; stable is the default channel every dApp sees.
+
+To get listed:
+
+1. Build your entry against the schema in the
+   [registry onboarding guide](./registry-onboarding.md), which is the authoritative
+   field list. The snippets in this guide show only the transport and `cip0103` fields;
+   the full entry also requires `supportedNetworks` and the `capabilities` booleans.
+2. Open a pull request adding it to `registry/v1/beta/registry.json`. The gate
+   (`pnpm gate:registry`) validates your entry against the schema on the pull request, so
+   you get immediate feedback. You do not need our signing keys: a maintainer signs the
+   channel after review.
+3. A maintainer reviews the entry (schema, truthful capabilities, and the `cip0103`
+   evidence), signs the beta registry, and it publishes to the CDN at
+   `https://registry.partylayer.xyz`, where the SDK picks it up by channel. After the beta
+   soak we promote it to stable.
+
+If you would rather not open a pull request, open a
+[GitHub issue](https://github.com/PartyLayer/PartyLayer/issues) with your entry and a
+maintainer will add it. The [registry operations guide](./registry-ops.md) documents the
+signing, promotion, and CDN mechanics on our side; you do not run those steps.
+
+---
+
 ## CIP-0103 method coverage
 
 The bridge speaks the standard CIP-0103 surface, and it is **identical on both paths**.
@@ -369,7 +448,9 @@ discovery adapter does not change the method set.
 - Events: `statusChanged`, `accountsChanged`, `txChanged`, `connected`.
 
 A wallet does not need all of these. The baseline three, `connect`, `signMessage`, and
-`prepareExecute`, are enough to be usable; the rest are additive.
+`prepareExecute`, are enough to be usable; the rest are additive. The
+[CIP-0103 provider reference](https://partylayer.xyz/docs/cip-0103) gives the exact
+request and result shape of every method and event.
 
 ---
 
