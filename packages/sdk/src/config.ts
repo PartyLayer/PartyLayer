@@ -112,22 +112,24 @@ export interface PartyLayerConfig {
   /** 
    * Wallet adapters to register (OPTIONAL)
    * 
-   * By default, ALL built-in adapters are automatically registered:
-   * - ConsoleAdapter (Console Wallet - browser extension)
+   * By default, the built-in adapters that need no configuration are registered:
    * - LoopAdapter (5N Loop - QR code / popup)
    * - Cantor8Adapter (Cantor8 - deep link transport)
-   * 
-   * Note: BronAdapter requires OAuth config and is NOT included by default.
-   * 
+   * - NightlyAdapter (Nightly - injected extension)
+   *
+   * Console and Send are NOT in the defaults; they are CIP-0103 native and appear
+   * through the announce path. BronAdapter (hosted OAuth) and the WalletConnect
+   * adapter require configuration and are opt-in.
+   *
    * Only provide this if you want to customize which adapters to use.
-   * 
+   *
    * @example
    * ```typescript
-   * // Default: all adapters (recommended)
+   * // Default: the no-config built-in adapters (recommended)
    * const client = createPartyLayer({
    *   network: 'devnet',
    *   app: { name: 'My dApp' },
-   *   // adapters not specified = all built-in adapters (Console, Loop, Cantor8)
+   *   // adapters not specified = getBuiltinAdapters() = Loop, Cantor8, Nightly
    * });
    * 
    * // Custom: only specific adapters

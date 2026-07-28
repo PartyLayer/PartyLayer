@@ -90,9 +90,11 @@ function App() {
 
 That's it! `PartyLayerKit` automatically:
 - Creates and manages the SDK client
-- Registers all built-in wallet adapters (Console, Loop, Cantor8, Nightly)
-- Discovers native CIP-0103 wallets (`window.canton.*`)
+- Registers the built-in adapters that need no configuration: 5N Loop, Cantor8, and Nightly
+- Discovers native CIP-0103 wallets through the announce path (`window.canton.*`), which is how Console and Send appear
 - Provides light/dark/auto theme support
+
+Bron (hosted OAuth) and WalletConnect are opt-in because they need configuration; the stable registry lists eight wallets in total.
 
 ### 3. Connect & Sign (Vanilla JS)
 
@@ -310,7 +312,7 @@ const client = createPartyLayer({
   network: 'devnet',
   app: { name: 'My dApp' },
   adapters: [
-    ...getBuiltinAdapters(), // Console, Loop, Cantor8, Nightly
+    ...getBuiltinAdapters(), // 5N Loop, Cantor8, Nightly (Console + Send arrive via the announce path)
     new BronAdapter({
       auth: {
         clientId: 'your-client-id',
@@ -789,7 +791,7 @@ Want to add support for a new wallet? See the [Wallet Provider Guide](./docs/wal
 <details>
 <summary><strong>Which wallets are supported?</strong></summary>
 
-5 wallets built-in: Console Wallet, 5N Loop, Cantor8, Nightly, and Bron. Console, Loop, Cantor8, and Nightly are auto-registered. Bron requires OAuth configuration. Additionally, any CIP-0103 compliant wallet injected at `window.canton.*` is auto-discovered at runtime.
+The stable registry lists eight wallets: Console, Send, 5N Loop, Cantor8, Bron, Nightly, Walley, and WalletConnect. `getBuiltinAdapters()` auto-registers the three that need no configuration: 5N Loop, Cantor8, and Nightly. Console and Send are CIP-0103 native and appear through the announce path (any CIP-0103 wallet injected at `window.canton.*` is auto-discovered at runtime). Bron (hosted OAuth) and WalletConnect are opt-in because they require configuration; Walley is a discovery-adapter wallet whose adapter the dApp supplies.
 </details>
 
 <details>

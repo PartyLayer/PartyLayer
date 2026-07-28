@@ -18,7 +18,7 @@
 
 ### Features
 
-- **Multi-Wallet Support**: Console, 5N Loop, Cantor8, and Bron wallets
+- **Multi-Wallet Support**: one integration for every wallet in the Canton registry (eight today, including Console, Send, 5N Loop, Cantor8, Nightly, Bron, Walley, and WalletConnect)
 - **Zero Configuration**: Works out of the box with sensible defaults
 - **Type-Safe**: Full TypeScript support with strict mode
 - **Secure**: Encrypted session storage with origin binding
