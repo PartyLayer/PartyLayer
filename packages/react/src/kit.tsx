@@ -92,8 +92,9 @@ export interface PartyLayerKitProps {
   /** Registry channel (default: 'stable') */
   channel?: 'stable' | 'beta';
   /**
-   * Custom wallet adapters. If not provided, uses built-in adapters:
-   * Console Wallet, 5N Loop, Cantor8.
+   * Custom wallet adapters. If not provided, uses the no-config built-in
+   * adapters: 5N Loop, Cantor8, and Nightly. Console and Send are CIP-0103
+   * native and appear through the announce path.
    *
    * For Bron (enterprise OAuth), pass explicitly:
    *   adapters={[...getBuiltinAdapters(), new BronAdapter(config)]}

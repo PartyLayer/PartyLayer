@@ -1,0 +1,5 @@
+---
+"@partylayer/react": patch
+---
+
+The wallet picker no longer tells a user to install a browser extension for a wallet that is never a browser extension. When a wallet is absent, the picker now routes by what the registry declares the wallet to be, not by a single dual-transport predicate: a browser-extension wallet (Send, Nightly) still shows the install prompt; a dual-transport wallet (Console) falls back to its remote transport; a mobile deep-link wallet (Cantor8) is pointed at its phone app; a remote wallet (WalletConnect) is offered a pairing surface; and an SDK, hosted-OAuth, or discovery-adapter wallet (5N Loop, Bron, Walley) shows an "app configuration" message with no install button, because its absence is not something the end user can install. A new registry entry with an unrecognized installation shape defaults to the same non-install path rather than silently falling into the install prompt. Mirrors the RainbowKit convention, where an install affordance exists only when the wallet declares a browser-extension download.

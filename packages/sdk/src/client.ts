@@ -211,7 +211,8 @@ export class PartyLayerClient {
     this.telemetry = telemetryAdapter || new DefaultTelemetry();
 
     // Register wallet adapters
-    // If no adapters provided, use all built-in adapters (Console, Loop, etc.)
+    // If no adapters provided, use the no-config built-in adapters
+    // (getBuiltinAdapters() = Loop, Cantor8, Nightly; Console/Send arrive via announce)
     const adaptersToRegister = config.adapters ?? getBuiltinAdapters();
     
     for (const adapterOrClass of adaptersToRegister) {

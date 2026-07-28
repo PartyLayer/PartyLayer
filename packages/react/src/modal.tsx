@@ -60,7 +60,7 @@ export interface WalletModalProps {
   showWalletGuide?: boolean;
 }
 
-type ModalView = 'list' | 'connecting' | 'success' | 'error' | 'not-installed' | 'network-mismatch' | 'wallet-guide';
+type ModalView = 'list' | 'connecting' | 'success' | 'error' | 'not-installed' | 'unavailable' | 'network-mismatch' | 'wallet-guide';
 
 /**
  * Sub-view for the connecting state when a wallet supports dual transport
@@ -154,6 +154,57 @@ function isPureRemoteWallet(wallet: WalletInfo): boolean {
   );
 }
 
+/**
+ * What the picker should do when a wallet is clicked but the wallet is not present,
+ * driven by what the registry DECLARES (the registry-derived `metadata.transport`
+ * plus the transport capability tokens) rather than a hardcoded predicate.
+ *
+ * The ecosystem convention (RainbowKit) is that an install affordance exists ONLY
+ * for a wallet that actually has a browser extension (its connector declares
+ * `downloadUrls.browserExtension`); a wallet that is never an extension gets the
+ * path it actually supports and can never surface an "install extension" prompt.
+ * We follow that: only `install` and `extensionThenFallback` ever mention installing
+ * an extension, and both require a real extension signal.
+ *
+ *  - `install`               a browser extension that is simply not installed
+ *                            (nightly, send). Telling the user to install it is correct.
+ *  - `extensionThenFallback` a wallet that is EITHER an extension OR mobile/remote
+ *                            (console). The extension being absent falls back to its
+ *                            other transport (the existing QR-fallback phase).
+ *  - `deeplink`              never an extension; reached by a mobile deep link
+ *                            (cantor8). Its absence needs the link, not an install.
+ *  - `pairing`              never an extension; reached remotely by a pairing URI
+ *                            (walletconnect). Its absence needs the pairing surface.
+ *  - `unavailable`          never an extension; loaded by a script-tag SDK (loop),
+ *                            supplied by the dApp as a discovery adapter (walley), or
+ *                            reached by a hosted OAuth sign-in the dApp configures
+ *                            (bron). Its absence is an app-configuration problem the
+ *                            end user cannot fix, so the message says so.
+ */
+type WalletAbsentAction = 'install' | 'extensionThenFallback' | 'deeplink' | 'pairing' | 'unavailable';
+
+function getWalletAbsentAction(wallet: WalletInfo): WalletAbsentAction {
+  const t = wallet.metadata?.transport;
+  const caps = wallet.capabilities;
+  const hasExtension = t === 'extension' || t === 'extensionMobile' || caps.includes('injected');
+  const isRemote = caps.includes('remoteSigner');
+  const hasDeeplink = caps.includes('deeplink');
+
+  // Has a browser extension: install prompts are legitimate here (only here).
+  if (t === 'extensionMobile' || (hasExtension && (hasDeeplink || isRemote))) {
+    return 'extensionThenFallback';
+  }
+  if (t === 'extension' || hasExtension) {
+    return 'install';
+  }
+  // No browser extension below: an install-extension prompt is NEVER correct.
+  if (isRemote) return 'pairing'; // remote pairing (walletconnect: remote + mobileConnect)
+  if (hasDeeplink) return 'deeplink'; // mobile deep link (cantor8)
+  // script-tag SDK (loop, transport 'scan'), discovery adapter (walley, 'popup'),
+  // hosted OAuth (bron, 'enterprise'): the app loads or configures these.
+  return 'unavailable';
+}
+
 function getErrorMessage(error: Error): string {
   const code = 'code' in error ? (error as { code: string }).code : '';
   switch (code) {
@@ -175,17 +226,6 @@ function getErrorMessage(error: Error): string {
     default:
       return error.message;
   }
-}
-
-/** Generate a stable gradient from wallet name for avatar fallback */
-function nameToGradient(name: string): string {
-  let hash = 0;
-  for (let i = 0; i < name.length; i++) {
-    hash = name.charCodeAt(i) + ((hash << 5) - hash);
-  }
-  const h1 = Math.abs(hash % 360);
-  const h2 = (h1 + 40) % 360;
-  return `linear-gradient(135deg, hsl(${h1}, 65%, 55%), hsl(${h2}, 65%, 45%))`;
 }
 
 /** Known wallet install/website URLs as fallback */
@@ -443,6 +483,7 @@ function ModalWalletIcon({
   size?: number;
   iconUrl: string | null;
 }) {
+  const { colors } = useTheme();
   const [imgError, setImgError] = useState(false);
   const radius = size >= 44 ? '12px' : '10px';
 
@@ -459,31 +500,43 @@ function ModalWalletIcon({
           height: `${size}px`,
           borderRadius: radius,
           flexShrink: 0,
-          objectFit: 'cover',
+          // contain, not cover: show the whole mark rather than cropping a
+          // non-square logo (e.g. WalletConnect's 480x332 landscape asset).
+          // Matches the React Native renderer, where SvgXml preserves the viewBox.
+          objectFit: 'contain',
         }}
       />
     );
   }
 
-  // Gradient avatar fallback
+  // Neutral, letter-free fallback (never initials) for a missing or non-image
+  // CDN asset. `<img onError>` fires whenever the response will not decode as an
+  // image -- including an HTTP 200 that is actually HTML, which is what the
+  // registry serves today for send and walley -- so this path replaces a blank
+  // tile, never renders a letter, and mirrors the React Native NeutralWalletGlyph.
   return (
     <div
+      aria-label={wallet.name}
       style={{
         width: `${size}px`,
         height: `${size}px`,
         borderRadius: radius,
-        background: nameToGradient(wallet.name),
+        background: colors.surface,
+        border: `1px solid ${colors.border}`,
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        color: '#FFFFFF',
-        fontSize: `${Math.round(size * 0.38)}px`,
-        fontWeight: 700,
         flexShrink: 0,
-        textShadow: '0 1px 2px rgba(0,0,0,0.2)',
       }}
     >
-      {wallet.name.charAt(0).toUpperCase()}
+      <div
+        style={{
+          width: `${Math.round(size * 0.5)}px`,
+          height: `${Math.round(size * 0.34)}px`,
+          borderRadius: `${Math.max(2, Math.round(size * 0.08))}px`,
+          background: colors.textSecondary,
+        }}
+      />
     </div>
   );
 }
@@ -624,13 +677,22 @@ export function WalletModal({
       setConnectError(error);
       cleanupConnectResources();
       const code = 'code' in error ? (error as { code: string }).code : '';
-      if (code === 'WALLET_NOT_INSTALLED' && !isDualTransportWallet(selectedWallet!)) {
-        // For dual-transport wallets, don't show "not installed", show QR fallback instead
-        setView('not-installed');
-      } else if (code === 'WALLET_NOT_INSTALLED' && isDualTransportWallet(selectedWallet!)) {
-        // Extension not found for dual-transport → switch to QR phase
-        setConnectPhase('qr');
-        setConnectError(null);
+      if (code === 'WALLET_NOT_INSTALLED') {
+        // Registry-driven: only a wallet that actually HAS a browser extension may
+        // ever be told to install one. Everything else gets the path it supports.
+        const action = getWalletAbsentAction(selectedWallet!);
+        if (action === 'extensionThenFallback') {
+          // Extension absent for a dual wallet → fall back to its QR phase.
+          setConnectPhase('qr');
+          setConnectError(null);
+        } else if (action === 'install') {
+          setView('not-installed'); // a real browser extension, just not installed
+        } else {
+          // deeplink / pairing / unavailable: never an extension, so an install
+          // prompt is wrong. The unavailable view reads getWalletAbsentAction and
+          // renders the deep link, the pairing surface, or a configuration message.
+          setView('unavailable');
+        }
       } else {
         setView('error');
       }
@@ -2157,6 +2219,114 @@ export function WalletModal({
 
   // ─── Not Installed View ────────────────────────────────────────────
 
+  /**
+   * Shape-aware view for a wallet that is NOT a browser extension and is absent.
+   * It never offers an install-extension link. It reads getWalletAbsentAction and
+   * shows the path the wallet actually supports: a mobile deep link, a remote pairing
+   * surface, or, for an SDK/discovery/OAuth wallet, a message saying the absence is an
+   * app configuration matter the end user cannot fix.
+   */
+  const renderUnavailableView = () => {
+    if (!selectedWallet) return null;
+    const iconUrl = resolveWalletIcon(selectedWallet.walletId, walletIcons, selectedWallet.icons?.sm);
+    const action = getWalletAbsentAction(selectedWallet);
+    const site = getWalletUrl(selectedWallet);
+    const name = selectedWallet.name;
+    const t = selectedWallet.metadata?.transport;
+
+    let title: string;
+    let body: string;
+    if (action === 'deeplink') {
+      title = `${name} is a mobile wallet`;
+      body = `${name} has no browser extension. Open ${name} on your phone to connect.`;
+    } else if (action === 'pairing') {
+      title = `Pair with ${name}`;
+      body = `${name} connects remotely by pairing. A pairing code appears when ${name} is set up for this app; if none appeared, this app has not configured ${name}.`;
+    } else {
+      const how =
+        t === 'scan'
+          ? 'loads through its own SDK'
+          : t === 'enterprise'
+            ? 'connects through a hosted sign-in this app configures'
+            : t === 'popup'
+              ? "is supplied by this app's configuration"
+              : 'is configured by this app';
+      title = `${name} is not available here`;
+      body = `${name} ${how}. Its absence is an app configuration issue, not something you can install.`;
+    }
+
+    return (
+      <>
+        {renderSubHeader(handleBackToList)}
+        <div style={{ padding: '16px 32px 36px', textAlign: 'center' }}>
+          <div
+            style={{
+              width: '80px',
+              height: '80px',
+              borderRadius: '16px',
+              overflow: 'hidden',
+              opacity: 0.85,
+              margin: '0 auto 24px',
+            }}
+          >
+            <ModalWalletIcon wallet={selectedWallet} size={80} iconUrl={iconUrl} />
+          </div>
+          <div style={{ fontSize: '17px', fontWeight: 600, color: theme.colors.text, marginBottom: '8px' }}>
+            {title}
+          </div>
+          <div
+            style={{
+              fontSize: '13px',
+              color: theme.colors.textSecondary,
+              lineHeight: 1.6,
+              maxWidth: '320px',
+              margin: '0 auto 28px',
+            }}
+          >
+            {body}
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', alignItems: 'center' }}>
+            {site && (
+              <a
+                href={site}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  padding: '12px 28px',
+                  borderRadius: '10px',
+                  border: `1px solid ${theme.colors.border}`,
+                  color: theme.colors.text,
+                  textDecoration: 'none',
+                  fontSize: '14px',
+                  fontWeight: 600,
+                  fontFamily: theme.fontFamily,
+                }}
+              >
+                About {name}
+                <ExternalLinkIcon size={11} color={theme.colors.textSecondary} />
+              </a>
+            )}
+            <button
+              onClick={handleBackToList}
+              style={{ ...ghostBtnStyle, fontSize: '13px' }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = theme.colors.surface;
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = 'transparent';
+              }}
+            >
+              Choose another wallet
+            </button>
+          </div>
+        </div>
+      </>
+    );
+  };
+
   const renderNotInstalledView = () => {
     if (!selectedWallet) return null;
     const iconUrl = resolveWalletIcon(selectedWallet.walletId, walletIcons, selectedWallet.icons?.sm);
@@ -2216,7 +2386,7 @@ export function WalletModal({
             maxWidth: '300px',
             margin: '0 auto 28px',
           }}>
-            {selectedWallet.name} doesn&apos;t appear to be installed. Install it and refresh this page to connect.
+            The {selectedWallet.name} browser extension isn&apos;t installed. Install it, then refresh this page to connect.
           </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', alignItems: 'center' }}>
@@ -2310,6 +2480,7 @@ export function WalletModal({
           {displayedView === 'error' && renderErrorView()}
           {displayedView === 'network-mismatch' && renderNetworkMismatchView()}
           {displayedView === 'not-installed' && renderNotInstalledView()}
+          {displayedView === 'unavailable' && renderUnavailableView()}
         </div>
       </div>
 
