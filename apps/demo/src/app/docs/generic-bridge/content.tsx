@@ -98,12 +98,14 @@ export default function GenericBridgeContent() {
           popup policy, session survival, event streams, and origin validation.
         </LI>
         <LI>
-          Add a registry entry. It is optional on Path A and expected on Path B, and it is metadata
-          only, no code.
+          Add a registry entry, then open it as described in{' '}
+          <A href="#submitting-your-registry-entry">Submitting your registry entry</A>. It is optional
+          on Path A and expected on Path B, and it is metadata only, no code.
         </LI>
         <LI>
-          Test against any dApp built on <Code>{'@partylayer/sdk'}</Code> (or the prebuilt{' '}
-          <Code>{'ConnectButton'}</Code>).
+          Verify your adapter with the conformance runner, as described in{' '}
+          <A href="#verifying-your-wallet">Verifying your wallet</A>. Connecting through a live dApp
+          built on <Code>{'@partylayer/sdk'}</Code> is the manual second path.
         </LI>
         <LI>There is no step seven. Nothing is required from PartyLayer.</LI>
       </OL>
@@ -309,14 +311,18 @@ export default function GenericBridgeContent() {
       </P>
       <CodeBlock language="typescript">{`import { AbstractProvider } from '@canton-network/core-splice-provider';
 import type { ProviderAdapter } from '@canton-network/core-wallet-discovery';
+import type { RpcTypes as DappRpcTypes } from '@canton-network/core-wallet-dapp-rpc-client';
+import type { RequestArgs } from '@canton-network/core-types';
 
 // Only request() is yours. on/emit/removeListener come from AbstractProvider.
 class WalletXProvider extends AbstractProvider<DappRpcTypes> {
-  async request({ method, params }) {
-    // Dispatch to the wallet's own RPC. Reaching the gateway, opening and
-    // validating the popup, and persisting the session are the wallet's business,
-    // not PartyLayer's.
-    return this.callWalletX(method, params);
+  async request<M extends keyof DappRpcTypes>(
+    args: RequestArgs<DappRpcTypes, M>,
+  ): Promise<DappRpcTypes[M]['result']> {
+    // Dispatch args to the wallet's own RPC (gateway call, popup postMessage, ...)
+    // and return the CIP-0103 result. Reaching the gateway, opening and validating the
+    // popup, and persisting the session are the wallet's business, not PartyLayer's.
+    throw new Error('send args to your wallet transport and return its result');
   }
 }
 
@@ -327,7 +333,7 @@ export const walletXAdapter: ProviderAdapter = {
   type: 'remote',
   icon: 'https://walletx.example/icon.svg',
   getInfo() {
-    return { /* WalletInfo: name, capabilities, reuseGlobalWalletPopup, ... */ };
+    return { providerId: 'walletx', name: 'Wallet X', type: 'remote' };
   },
   detect() {
     return Promise.resolve(true); // a gateway is always reachable
@@ -343,9 +349,16 @@ export const walletXAdapter: ProviderAdapter = {
   },
 };`}</CodeBlock>
       <P>
+        The four imports resolve against the published <Code>{'@canton-network'}</Code> packages
+        (<Code>{'core-splice-provider'}</Code>, <Code>{'core-wallet-discovery'}</Code>,{' '}
+        <Code>{'core-wallet-dapp-rpc-client'}</Code>, and <Code>{'core-types'}</Code>);{' '}
+        <Code>{'DappRpcTypes'}</Code> is the <Code>{'RpcTypes'}</Code> request-and-result map re-exported
+        under that name. Copy the block into a <Code>{'.ts'}</Code> file and it typechecks as is.
+      </P>
+      <P>
         Everything inside <Code>{'request'}</Code>, and how the adapter reaches its gateway, opens and
         validates its popup, and persists a session, is the wallet&apos;s own business. PartyLayer only
-        ever calls <Code>{'request({ method, params })'}</Code>.
+        ever calls <Code>{'request(args)'}</Code>.
       </P>
 
       <H3 id="how-the-dapp-wires-it">How the dApp wires it</H3>
@@ -475,6 +488,82 @@ const pl = createPartyLayer({
         reference are known. Getting it wrong is not cosmetic: any window that can post to the opener,
         including an unrelated page or a malicious frame, could otherwise supply a forged result and the
         opener would accept it as the wallet&apos;s answer.
+      </P>
+
+      <H2 id="verifying-your-wallet">Verifying your wallet</H2>
+      <P>
+        Before you ship, check your work against the published conformance runner,{' '}
+        <A href="https://www.npmjs.com/package/@partylayer/conformance-runner">
+          <Code>{'@partylayer/conformance-runner'}</Code>
+        </A>
+        , a CLI that validates an adapter against the CIP-0103 surface: it loads your adapter, runs the
+        suite, writes a JSON report, prints a summary, and exits non-zero on any failure, so it drops
+        straight into CI.
+      </P>
+      <CodeBlock language="bash">{`npm install -g @partylayer/conformance-runner
+
+# Validate an adapter package or a built path against the CIP-0103 surface.
+partylayer-conformance run --adapter <package-name-or-path>
+
+# Run the CIP-0103 provider suite.
+partylayer-conformance run-cip0103
+
+# Full flag list.
+partylayer-conformance --help`}</CodeBlock>
+      <P>
+        <Code>{'run'}</Code> takes <Code>{'--adapter'}</Code> (an npm package name or a path to your
+        built adapter) and an optional <Code>{'--network'}</Code> (default <Code>{'devnet'}</Code>), and
+        writes <Code>{'conformance-report.json'}</Code>. Point it at your Path B discovery adapter, or at
+        any adapter package you build.
+      </P>
+      <P>
+        The manual second path, and the only one for an adapterless Path A wallet, is to connect through
+        a live dApp built on <Code>{'@partylayer/sdk'}</Code> (or the prebuilt{' '}
+        <Code>{'ConnectButton'}</Code>) and exercise connect, sign, and submit by hand. The runner is
+        faster and repeatable; the manual path is the real-world confirmation.
+      </P>
+
+      <H2 id="submitting-your-registry-entry">Submitting your registry entry</H2>
+      <P>
+        You add a registry entry five times over in this guide; here is how you actually get it in. The
+        registry is a signed JSON file the SDK fetches from{' '}
+        <Code>{'https://registry.partylayer.xyz'}</Code>, one file per channel:{' '}
+        <Code>{'registry/v1/beta/registry.json'}</Code> and{' '}
+        <Code>{'registry/v1/stable/registry.json'}</Code> in this repository. Your wallet is one entry in
+        the <Code>{'wallets'}</Code> array.
+      </P>
+      <P>
+        New wallets land in <Strong>beta</Strong> first and are promoted to <Strong>stable</Strong> after
+        a soak. Beta is what a dApp opts into for early testing; stable is the default channel every dApp
+        sees.
+      </P>
+      <P>To get listed:</P>
+      <OL>
+        <LI>
+          Build your entry against the schema in the{' '}
+          <A href={`${GH}/docs/registry-onboarding.md`}>registry onboarding guide</A>, which is the
+          authoritative field list. The snippets in this guide show only the transport and{' '}
+          <Code>{'cip0103'}</Code> fields; the full entry also requires <Code>{'supportedNetworks'}</Code>{' '}
+          and the <Code>{'capabilities'}</Code> booleans.
+        </LI>
+        <LI>
+          Open a pull request adding it to <Code>{'registry/v1/beta/registry.json'}</Code>. The gate
+          (<Code>{'pnpm gate:registry'}</Code>) validates your entry against the schema on the pull
+          request, so you get immediate feedback. You do not need our signing keys: a maintainer signs the
+          channel after review.
+        </LI>
+        <LI>
+          A maintainer reviews the entry (schema, truthful capabilities, and the <Code>{'cip0103'}</Code>{' '}
+          evidence), signs the beta registry, and it publishes to the CDN at{' '}
+          <Code>{'https://registry.partylayer.xyz'}</Code>, where the SDK picks it up by channel. After
+          the beta soak we promote it to stable.
+        </LI>
+      </OL>
+      <P>
+        If you would rather not open a pull request, open a{' '}
+        <A href="https://github.com/PartyLayer/PartyLayer/issues">GitHub issue</A> with your entry and a
+        maintainer will add it. The <A href={`${GH}/docs/registry-ops.md`}>registry operations guide</A>{' '}
+        documents the signing, promotion, and CDN mechanics on our side; you do not run those steps.
       </P>
 
       <H2 id="cip-0103-method-coverage">CIP-0103 method coverage</H2>
