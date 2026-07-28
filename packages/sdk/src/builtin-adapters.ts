@@ -14,6 +14,9 @@ import { SendAdapter } from '@partylayer/adapter-send';
 
 // Note: BronAdapter requires OAuth config and is not included by default.
 // Import it separately: import { BronAdapter } from '@partylayer/adapter-bron';
+// Note: CauriRemoteAdapter requires apiBase + walletUiBase config and is not
+// included by default. Import it separately:
+// import { CauriRemoteAdapter } from '@partylayer/adapter-cauri';
 
 /**
  * Get all built-in adapters
@@ -80,3 +83,9 @@ export type { ConsoleAdapterConfig, ConsoleConnectionTarget } from '@partylayer/
  */
 export { BronAdapter } from '@partylayer/adapter-bron';
 export type { BronAdapterConfig, BronAuthConfig, BronApiConfig } from '@partylayer/adapter-bron';
+
+/**
+ * Re-export CauriRemoteAdapter for convenience (requires config).
+ */
+export { CauriRemoteAdapter } from '@partylayer/adapter-cauri';
+export type { CauriRemoteAdapterConfig } from '@partylayer/adapter-cauri';

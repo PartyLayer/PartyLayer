@@ -117,7 +117,8 @@ export interface PartyLayerConfig {
    * - LoopAdapter (5N Loop - QR code / popup)
    * - Cantor8Adapter (Cantor8 - deep link transport)
    * 
-   * Note: BronAdapter requires OAuth config and is NOT included by default.
+   * Note: BronAdapter and CauriRemoteAdapter require runtime config and are NOT
+   * included by default.
    * 
    * Only provide this if you want to customize which adapters to use.
    * 
@@ -146,6 +147,7 @@ export interface PartyLayerConfig {
    *   ],
    *   // ...
    * });
+   *
    * ```
    */
   adapters?: (
