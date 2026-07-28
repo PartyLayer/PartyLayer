@@ -1,5 +1,11 @@
 # create-partylayer-app
 
+## 0.5.2
+
+### Patch Changes
+
+- The scaffold templates now pin `@partylayer/sdk` at a range that includes 0.17.0. A caret range on a 0.x version allows only patch updates, so the previous `^0.16.0` pin could not resolve to the new 0.17.0, and a freshly scaffolded app would have installed a stale sdk without the discovery restore fix. All six templates are updated: next-ssr, react-dvp, react-tokenization, react-vite, vanilla, and vue-nuxt-pinia. The templates ship in this package (`files` includes `templates`), so the fix reaches consumers only with a release.
+
 ## 0.5.1
 
 ### Patch Changes
