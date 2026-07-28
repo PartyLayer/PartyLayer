@@ -182,6 +182,9 @@ importers:
 
   apps/dvp:
     dependencies:
+      '@k2flabs/walley-dapp-sdk':
+        specifier: 1.2.0
+        version: 1.2.0(@canton-network/dapp-sdk@1.2.0(@walletconnect/sign-client@2.23.9(typescript@5.9.3)(zod@4.4.3))(@walletconnect/types@2.23.9))
       '@partylayer/adapter-console':
         specifier: workspace:^
         version: link:../../packages/adapters/console
@@ -290,6 +293,9 @@ importers:
 
   apps/tokenization:
     dependencies:
+      '@k2flabs/walley-dapp-sdk':
+        specifier: 1.2.0
+        version: 1.2.0(@canton-network/dapp-sdk@1.2.0(@walletconnect/sign-client@2.23.9(typescript@5.9.3)(zod@4.4.3))(@walletconnect/types@2.23.9))
       '@partylayer/adapter-console':
         specifier: workspace:^
         version: link:../../packages/adapters/console
@@ -1987,6 +1993,11 @@ packages:
 
   '@k2flabs/walley-dapp-sdk@1.1.0':
     resolution: {integrity: sha512-RqiC/VQLg+2YMqmYq3+ZFtKnqNxOwDLiC4X0qmH/vVmvlpPsWrrxWZ4PEvPA4FHK+odA0EQT+7QqbOKgvlgjhg==}
+    peerDependencies:
+      '@canton-network/dapp-sdk': ^0.24.0
+
+  '@k2flabs/walley-dapp-sdk@1.2.0':
+    resolution: {integrity: sha512-qPNjjvxbVwrG6+DZuV6sxnJyaik99lfvdWzQdB4rX3g1JzaGhf9fYx+TvJAxqdeAW/i2Mc0soRJsCSBroHgnFQ==}
     peerDependencies:
       '@canton-network/dapp-sdk': ^0.24.0
 
@@ -7504,6 +7515,18 @@ snapshots:
       '@canton-network/core-wallet-dapp-rpc-client': 0.28.0
       '@canton-network/core-wallet-discovery': 0.5.0
       '@canton-network/dapp-sdk': 0.24.0
+      json-rpc-2.0: 1.7.1
+    transitivePeerDependencies:
+      - supports-color
+
+  '@k2flabs/walley-dapp-sdk@1.2.0(@canton-network/dapp-sdk@1.2.0(@walletconnect/sign-client@2.23.9(typescript@5.9.3)(zod@4.4.3))(@walletconnect/types@2.23.9))':
+    dependencies:
+      '@canton-network/core-rpc-errors': 0.19.2
+      '@canton-network/core-splice-provider': 0.29.0
+      '@canton-network/core-types': 0.23.2
+      '@canton-network/core-wallet-dapp-rpc-client': 0.28.0
+      '@canton-network/core-wallet-discovery': 0.5.0
+      '@canton-network/dapp-sdk': 1.2.0(@walletconnect/sign-client@2.23.9(typescript@5.9.3)(zod@4.4.3))(@walletconnect/types@2.23.9)
       json-rpc-2.0: 1.7.1
     transitivePeerDependencies:
       - supports-color

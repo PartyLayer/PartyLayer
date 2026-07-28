@@ -16,6 +16,9 @@ import {
   type SynchronizerOption,
 } from '@partylayer/react';
 import { ConsoleAdapter } from '@partylayer/adapter-console';
+// Walley is the stable registry's discovery-adapter (Path B) wallet. Pinned exactly
+// because this is a third-party runtime dependency shipped on a public demo page.
+import { WalleyAdapter } from '@k2flabs/walley-dapp-sdk';
 import { DemoProvider } from './context/DemoContext';
 import { demoBackend } from './lib/backend';
 import { createLiveBackend, fetchGatewayParties } from './lib/liveBackend';
@@ -30,7 +33,10 @@ import './App.css';
 
 // The dev wallet adapter apps/demo uses, so the connect surface works in a demo
 // context. The demo-party switcher, not this connection, drives the section data.
-const ADAPTERS = [new ConsoleAdapter()];
+// The SDK bridges Walley's official ProviderAdapter through its generic discovery
+// adapter. The devnet host matches the registry entry's networkHosts.devnet; the app
+// is fixed to devnet (see network="devnet" below).
+const ADAPTERS = [new ConsoleAdapter(), new WalleyAdapter({ host: 'https://dev.walley.cc' })];
 
 const SYNCHRONIZERS: SynchronizerOption[] = [
   { networkId: 'canton:da-devnet', label: 'DevNet' },
