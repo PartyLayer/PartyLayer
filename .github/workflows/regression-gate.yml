@@ -30,6 +30,11 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+        # fetch-depth: 0 fetches full history AND all tags. gate:release-changeset
+        # compares each publishable package against its `<name>@<version>` release
+        # tag, so the tags must be present; the default shallow checkout has none.
+        with:
+          fetch-depth: 0
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
