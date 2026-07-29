@@ -153,6 +153,14 @@ pnpm lint
 pnpm build
 ```
 
+**A change is not ready until `pnpm gate` passes**, not just the individual commands above.
+The gate builds every package and then diffs its type surface and packaging against the
+committed snapshots in `tooling/api-snapshots/` (`gate:api`). A package's own tests and
+`pnpm typecheck` do not do that, so they can be green while a renamed method or a changed
+public type leaves a snapshot stale. When `gate:api` flags a change, regenerate with
+`pnpm gate:api:update`, review the diff to confirm only your change moved, and commit the
+snapshot.
+
 ### 4. Commit Your Changes
 
 Use conventional commit messages (see [Commit Messages](#commit-messages)).
@@ -190,6 +198,7 @@ git push origin feature/my-feature
 
 ### 4. PR Requirements
 
+- [ ] Full gate passes (`pnpm gate`), which runs the api and packaging snapshot checks the commands below do not
 - [ ] Tests pass (`pnpm test`)
 - [ ] Type check passes (`pnpm typecheck`)
 - [ ] Lint passes (`pnpm lint`)
