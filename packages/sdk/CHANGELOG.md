@@ -1,5 +1,20 @@
 # @partylayer/sdk
 
+## 0.17.1
+
+### Patch Changes
+
+- 698418e: Discovery-adapter wallets wired with the factory form now survive a page reload. On reload the SDK revives the session before the connect path injects the registry `networkHosts`, so a factory-form adapter (`create(host)`, the pattern the generic-bridge guide recommends because one registry entry then serves all three networks) had no host: its `restore` could not resolve the official adapter, fell through to as-is, and the first request after reload threw `provider requested before host resolution`. `restoreSession` now injects the registry entry's `networkHosts` and resolves the factory adapter's host, taking the network from the persisted session's own `network` field, before calling `restore`. The network gate still runs first, so a session whose network does not match the configured network is refused under enforcement or flagged under the off mode exactly as before. Instance-form adapters, which already set their official adapter at construction, are unaffected.
+- 1435eb1: Correct the `adapters` JSDoc on `PartyLayerConfig` (and the matching inline comment in the client) so the documented defaults match `getBuiltinAdapters()`. The prose said the defaults were Console, Loop, and Cantor8; the actual no-config defaults are 5N Loop, Cantor8, and Nightly. Console and Send are CIP-0103 native and arrive through the announce path, and Bron and WalletConnect require configuration and are opt-in. Documentation only; no runtime or type-signature change.
+- Updated dependencies [17466dc]
+- Updated dependencies [703a645]
+- Updated dependencies [17466dc]
+- Updated dependencies [17466dc]
+  - @partylayer/adapter-bron@0.3.0
+  - @partylayer/adapter-cantor8@0.3.0
+  - @partylayer/adapter-console@0.3.18
+  - @partylayer/adapter-send@1.2.6
+
 ## 0.17.0
 
 ### Minor Changes
