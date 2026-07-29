@@ -1,5 +1,0 @@
----
-"@partylayer/sdk": patch
----
-
-Discovery-adapter wallets wired with the factory form now survive a page reload. On reload the SDK revives the session before the connect path injects the registry `networkHosts`, so a factory-form adapter (`create(host)`, the pattern the generic-bridge guide recommends because one registry entry then serves all three networks) had no host: its `restore` could not resolve the official adapter, fell through to as-is, and the first request after reload threw `provider requested before host resolution`. `restoreSession` now injects the registry entry's `networkHosts` and resolves the factory adapter's host, taking the network from the persisted session's own `network` field, before calling `restore`. The network gate still runs first, so a session whose network does not match the configured network is refused under enforcement or flagged under the off mode exactly as before. Instance-form adapters, which already set their official adapter at construction, are unaffected.
