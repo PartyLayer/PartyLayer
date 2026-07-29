@@ -161,7 +161,7 @@ function walleyWalletInfo(): WalletInfo {
   } as unknown as WalletInfo;
 }
 
-/** Raw registry entries (the shape gateDiscoveryAdapterEntries + the bridge read). */
+/** Raw registry entries (the shape gateUnconnectableEntries + the bridge read). */
 const SEND_REGISTRY_ENTRY = {
   id: 'send',
   adapter: {
@@ -486,8 +486,9 @@ describe('cross-claim: Walley discovery-adapter is gated + never collides with c
   const base = { wallets: [consoleWalletInfo(), sendWalletInfo(), walleyWalletInfo()], registry: { wallets: [CONSOLE_REGISTRY_ENTRY, SEND_REGISTRY_ENTRY, WALLEY_REGISTRY_ENTRY] }, entryFor: multiEntryFor };
 
   it('WITHOUT the Walley adapter: walley is hidden (gated), console/send unaffected', async () => {
-    // gateDiscoveryAdapterEntries (client.ts:390-407): a discovery-adapter entry
-    // whose adapter is NOT registered is hidden so its click can't break.
+    // gateUnconnectableEntries (client.ts): a non-announce entry (here the
+    // discovery-adapter Walley) whose adapter is NOT registered is hidden so its
+    // click can't break; announce wallets (console/send) are exempt.
     const client = makeClientWithRegistry([new ConsoleAdapter()], base);
     const ids = (await client.listWallets({ includeExperimental: true })).map((w) => String(w.walletId));
 

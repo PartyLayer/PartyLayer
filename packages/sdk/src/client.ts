@@ -355,14 +355,16 @@ export class PartyLayerClient {
       } as WalletInfo);
     }
 
-    // Registry-visibility gating for `discovery-adapter` (popup/remote) entries.
-    // Such a wallet's provider is supplied by the APP (an official
-    // ProviderAdapter the SDK auto-bridges) — it CANNOT work unless that adapter
-    // is registered. So a `discovery-adapter` registry entry must surface ONLY
-    // when the matching adapter is registered; otherwise consumers who didn't
-    // wire it would see the wallet and get a broken click (no adapter → connect
-    // throws WalletNotFoundError). Hide unregistered discovery entries.
-    registryWallets = await this.gateDiscoveryAdapterEntries(registryWallets);
+    // Registry-visibility gating (the library default, RainbowKit-style): never
+    // show a wallet the app cannot actually connect. A wallet whose transport
+    // needs an app-registered adapter is hidden unless that adapter is
+    // registered, because clicking it could only fail (connect throws). The sole
+    // exception is announce-transport wallets (Console, Send): the SDK drives
+    // them through the generic announce adapter it builds from the registry
+    // entry, so installing the extension is enough and they stay visible with no
+    // app adapter. The classification is read from each entry's DECLARED
+    // transport, never a hardcoded wallet list.
+    registryWallets = await this.gateUnconnectableEntries(registryWallets);
 
     // A2: aggregate canton:announceProvider wallets (announce ∪ namespace scan),
     // bridging known ids to existing entries and surfacing unknown ids as
@@ -393,19 +395,33 @@ export class PartyLayerClient {
   }
 
   /**
-   * Hide `transport: 'discovery-adapter'` registry entries whose matching
-   * adapter is NOT registered. A discovery-adapter wallet's provider is supplied
-   * by the app (an official ProviderAdapter the SDK bridges under
-   * `toWalletId(providerId)`); without it, clicking the entry can only fail. So
-   * the entry surfaces only when its adapter is present. No-op when the registry
-   * is unavailable (list is already adapters-only) or has no such entries.
+   * Hide registry entries whose wallet needs an app-registered adapter that is
+   * NOT registered. This is the library default (RainbowKit-style): never show a
+   * wallet the app cannot actually connect.
+   *
+   * A wallet is connectable with NO app adapter only when it is driven by the
+   * generic announce path (`adapter.transport: 'announce'`, e.g. Console, Send):
+   * there the SDK builds a generic announce adapter from the registry entry on
+   * demand, so installing the extension is enough and the entry stays visible.
+   * Every other transport can only connect through an adapter the app registered:
+   * a `discovery-adapter` popup/remote wallet whose official ProviderAdapter
+   * the app supplies (bridged under `toWalletId(providerId)`), or a wallet that
+   * ships a PartyLayer adapter package (Loop, Cantor8, Nightly, Bron,
+   * WalletConnect). Without that adapter, clicking the entry can only fail
+   * (connect throws), so it surfaces only when the adapter is present.
+   *
+   * The decision reads each entry's DECLARED transport, never a hardcoded wallet
+   * list. No-op when the registry is unavailable (the list is already
+   * adapters-only) or every non-announce entry is registered.
    */
-  private async gateDiscoveryAdapterEntries(wallets: WalletInfo[]): Promise<WalletInfo[]> {
+  private async gateUnconnectableEntries(wallets: WalletInfo[]): Promise<WalletInfo[]> {
     let hidden: Set<string> | null = null;
     try {
       const registry = await this.registryClient.getRegistry();
       for (const entry of registry.wallets) {
-        if (entry.adapter?.transport !== 'discovery-adapter') continue;
+        // Announce wallets stay visible with no app adapter: the SDK drives them
+        // from the registry entry, so installing the extension is enough.
+        if (entry.adapter?.transport === 'announce') continue;
         const walletId = toWalletId(entry.id);
         if (!this.adapters.has(walletId)) {
           (hidden ??= new Set<string>()).add(String(walletId));
