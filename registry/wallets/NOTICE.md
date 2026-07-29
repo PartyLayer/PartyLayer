@@ -12,11 +12,11 @@ obtain your own permission from each mark's owner before redistributing these fi
 
 | File | Identifies |
 |---|---|
-| bron.svg | Bron |
-| cantor8.svg | Cantor8 |
-| console.svg | Console Wallet |
+| bron.png | Bron |
+| cantor8.png | Cantor8 |
+| console.png | Console Wallet |
 | loop.svg | 5N Loop |
-| nightly.svg | Nightly |
+| nightly.png | Nightly |
 | send-logo.jpg | Send |
 | walletconnect.svg | WalletConnect |
 | walley-logo.png | Walley |

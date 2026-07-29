@@ -86,28 +86,10 @@ function useTokens(): Tokens { return useContext(TokensContext); }
 const font = 'ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Roboto, "Helvetica Neue", Arial, sans-serif';
 const textOnBrand = '#0B0F1A'; // always dark text on yellow brand buttons
 
-// ─── Wallet Logo Map (matching marketing tokens exactly) ────────────────────
-
-const WALLET_LOGOS: Record<string, string> = {
-  console: '/wallets/console.png',
-  loop: '/wallets/loop.svg',
-  cantor8: '/wallets/cantor8.png',
-  bron: '/wallets/bron.png',
-  nightly: '/wallets/nightly.svg',
-  send: '/wallets/send-logo.jpg',
-  walley: '/wallets/walley-logo.png',
-  walletconnect: '/wallets/walletconnect.svg',
-};
-
-function getWalletLogo(walletId: string, registryIconUrl?: string): string | null {
-  const id = walletId.replace(/^cip0103:/, '');
-  if (WALLET_LOGOS[id]) return WALLET_LOGOS[id];
-  for (const [key, url] of Object.entries(WALLET_LOGOS)) {
-    if (id.toLowerCase().includes(key)) return url;
-  }
-  if (registryIconUrl) return registryIconUrl;
-  return null;
-}
+// Wallet marks come from the registry (single source): each card receives the
+// registry entry's `iconUrl`, which the demo serves locally at
+// `/registry/wallets/<file>` (copied from the branch's registry/ by
+// scripts/copy-registry.mjs). No hand-maintained logo map here.
 
 // ─── Inner Content ──────────────────────────────────────────────────────────
 
@@ -227,7 +209,6 @@ function DemoContent() {
                       <WalletCard
                         key={w.walletId}
                         name={w.name}
-                        walletId={w.walletId}
                         capabilities={w.capabilities}
                         iconUrl={w.icons?.sm}
                         isNative
@@ -246,7 +227,6 @@ function DemoContent() {
                       <WalletCard
                         key={w.walletId}
                         name={w.name}
-                        walletId={w.walletId}
                         capabilities={w.capabilities}
                         iconUrl={w.icons?.sm}
                         website={w.website}
@@ -494,14 +474,12 @@ function SectionLabel({ label, count }: { label: string; count: number }) {
 
 function WalletCard({
   name,
-  walletId,
   capabilities,
   isNative,
   website,
   iconUrl,
 }: {
   name: string;
-  walletId: string;
   capabilities: string[];
   isNative?: boolean;
   website?: string;
@@ -509,7 +487,8 @@ function WalletCard({
 }) {
   const c = useTokens();
   const shadow = c.shadow;
-  const logo = getWalletLogo(walletId, iconUrl);
+  // The registry icon (served locally) is the single source for the mark.
+  const logo = iconUrl ?? null;
 
   return (
     <div style={{
@@ -822,7 +801,7 @@ export default function KitDemoPage() {
         fontFamily: font,
         transition: 'background-color 200ms, color 200ms',
       }}>
-        <PartyLayerKit network="devnet" appName="PartyLayer Kit Demo" theme={kitTheme} showAttribution={showAttr} walletIcons={WALLET_LOGOS} walletOrder={CANONICAL_WALLET_ORDER} adapters={buildDemoAdapters()} registryUrl="/registry">
+        <PartyLayerKit network="devnet" appName="PartyLayer Kit Demo" theme={kitTheme} showAttribution={showAttr} walletOrder={CANONICAL_WALLET_ORDER} adapters={buildDemoAdapters()} registryUrl="/registry">
           <div style={{ maxWidth: '880px', margin: '0 auto', padding: '0 24px' }}>
 
             {/* Navbar */}

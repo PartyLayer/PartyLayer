@@ -46,16 +46,19 @@ const NPM_URL = 'https://www.npmjs.com/package/@partylayer/sdk';
 
 /* ─── Wallet Data ──────────────────────────────────────────────────────── */
 
-// Sorted by the single canonical order (no per-list hardcoded order).
+// Editorial hero-preview list: id + name + copy only. Logos are NOT listed here;
+// the hero reads each mark from the registry (by id) so there is no second
+// hand-maintained logo map to drift from the registry. Sorted by the single
+// canonical order (no per-list hardcoded order).
 const wallets = sortByCanonicalOrder(
   [
-    { id: 'console', name: 'Console Wallet', desc: 'Official Console Wallet for Canton Network', transport: 'Extension + Mobile', logo: '/wallets/console.png' },
-    { id: 'send', name: 'Send', desc: 'Passkey-based Canton wallet (mainnet)', transport: 'Injected (window.canton)', logo: '/wallets/send-logo.jpg' },
-    { id: 'loop', name: '5N Loop', desc: '5N Loop Wallet for Canton Network', transport: 'QR Code / Popup', logo: '/wallets/loop.svg' },
-    { id: 'walley', name: 'Walley', desc: 'Popup/remote CIP-0103 wallet for Canton Network', transport: 'Popup / Remote', logo: '/wallets/walley-logo.png' },
-    { id: 'cantor8', name: 'Cantor8 (C8)', desc: 'Cantor8 Wallet for Canton Network', transport: 'Deep Link', logo: '/wallets/cantor8.png' },
-    { id: 'nightly', name: 'Nightly', desc: 'Multichain wallet with native Canton support', transport: 'Injected', logo: '/wallets/nightly.svg' },
-    { id: 'bron', name: 'Bron', desc: 'Enterprise wallet for Canton Network', transport: 'OAuth2 / API', logo: '/wallets/bron.png' },
+    { id: 'console', name: 'Console Wallet', desc: 'Official Console Wallet for Canton Network', transport: 'Extension + Mobile' },
+    { id: 'send', name: 'Send', desc: 'Passkey-based Canton wallet (mainnet)', transport: 'Injected (window.canton)' },
+    { id: 'loop', name: '5N Loop', desc: '5N Loop Wallet for Canton Network', transport: 'QR Code / Popup' },
+    { id: 'walley', name: 'Walley', desc: 'Popup/remote CIP-0103 wallet for Canton Network', transport: 'Popup / Remote' },
+    { id: 'cantor8', name: 'Cantor8 (C8)', desc: 'Cantor8 Wallet for Canton Network', transport: 'Deep Link' },
+    { id: 'nightly', name: 'Nightly', desc: 'Multichain wallet with native Canton support', transport: 'Injected' },
+    { id: 'bron', name: 'Bron', desc: 'Enterprise wallet for Canton Network', transport: 'OAuth2 / API' },
   ],
   (w) => w.id
 );
@@ -126,7 +129,7 @@ function SupportedWalletsStrip() {
     <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
       {registryWallets.map(w => (
         <div key={w.id} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <img src={WALLET_LOGOS[w.id] ?? w.icon} alt={w.name} width={24} height={24} style={{ borderRadius: 6 }} />
+          <img src={w.icon} alt={w.name} width={24} height={24} style={{ borderRadius: 6 }} />
           <span style={{ fontSize: 13, fontWeight: 500, color: t.fg }}>{w.name}</span>
         </div>
       ))}
@@ -474,18 +477,13 @@ const badge = {
   notInstalled: { background: '#F1F5F9', color: t.slate600 } as React.CSSProperties,
 };
 
-/* ─── Wallet Icon Map (for real SDK modal) ─────────────────────────────── */
-
-const WALLET_LOGOS: Record<string, string> = {
-  console: '/wallets/console.png',
-  loop: '/wallets/loop.svg',
-  cantor8: '/wallets/cantor8.png',
-  bron: '/wallets/bron.png',
-  nightly: '/wallets/nightly.svg',
-  send: '/wallets/send-logo.jpg',
-  walley: '/wallets/walley-logo.png',
-  walletconnect: '/wallets/walletconnect.svg',
-};
+/* ─── Wallet icons ─────────────────────────────────────────────────────────
+ * There is intentionally NO hand-maintained logo map here. Every wallet icon
+ * comes from the registry entry (`w.icon`), which the demo serves from its own
+ * static assets at `/registry/wallets/<file>` (copied from the branch's
+ * `registry/` by scripts/copy-registry.mjs at predev/prebuild). The registry is
+ * the single source of truth for marks; the real SDK modal falls back to that
+ * same registry icon when no `walletIcons` prop is given. */
 
 /* ─── Nav (from apps/marketing/src/components/Nav.tsx) ─────────────────── */
 
@@ -651,6 +649,11 @@ function Nav({ onConnect }: { onConnect: () => void }) {
 
 function Hero({ onConnect }: { onConnect: () => void }) {
   const bp = useBreakpoint();
+  // Icons come from the registry (single source), keyed by wallet id, with no
+  // hero logo map. Empty until the (local, fast) registry loads, so a row renders
+  // its name immediately and the mark fills in a tick later.
+  const registryWallets = useRegistryWallets();
+  const iconById = new Map(registryWallets.map((w) => [w.id, w.icon]));
   return (
     <section style={{ position: 'relative', padding: responsive(bp, '48px 0 56px', '64px 0 72px', '80px 0 96px'), fontFamily: t.font }}>
       <div style={{ maxWidth: 1152, margin: '0 auto', padding: '0 24px' }}>
@@ -787,12 +790,16 @@ function Hero({ onConnect }: { onConnect: () => void }) {
                           onMouseOut={e => { e.currentTarget.style.background = i === 0 ? t.brand50 : t.bg; e.currentTarget.style.borderColor = t.border; }}
                         >
                           <div style={{ width: 40, height: 40, borderRadius: t.radius.sm, overflow: 'hidden', flexShrink: 0 }}>
-                            {/* Walley's brand mark has heavy dark padding; a small
-                                zoom-crop enlarges the W so it reads as vividly as the
-                                other logos at this size. Others render 1:1 (cover on a
-                                square asset is a no-op). */}
-                            <img src={wallet.logo} alt={`${wallet.name} logo`} width={40} height={40}
-                              style={{ width: '100%', height: '100%', objectFit: 'cover', transform: wallet.id === 'walley' ? 'scale(1.16)' : undefined }} />
+                            {/* Mark from the registry (by id). Walley's brand mark
+                                has heavy dark padding; a small zoom-crop enlarges the
+                                W so it reads as vividly as the other logos at this
+                                size. Others render 1:1 (cover on a square asset is a
+                                no-op). Rendered only once the registry icon resolves,
+                                so there is no broken-image flash on first paint. */}
+                            {iconById.get(wallet.id) && (
+                              <img src={iconById.get(wallet.id)} alt={`${wallet.name} logo`} width={40} height={40}
+                                style={{ width: '100%', height: '100%', objectFit: 'cover', transform: wallet.id === 'walley' ? 'scale(1.16)' : undefined }} />
+                            )}
                           </div>
                           <div style={{ flex: 1, minWidth: 0 }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -1309,7 +1316,7 @@ function WalletGrid() {
             <CardHover key={wallet.id} style={{ padding: 20, cursor: 'pointer', height: '100%', minWidth: 0, display: 'flex', flexDirection: 'column' }}>
               {/* Logo */}
               <div style={{ width: 56, height: 56, borderRadius: t.radius.lg, marginBottom: 16, overflow: 'hidden' }}>
-                <img src={WALLET_LOGOS[wallet.id] ?? wallet.icon} alt={`${wallet.name} logo`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                <img src={wallet.icon} alt={`${wallet.name} logo`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
               </div>
 
               {/* Name & Badge — flexWrap so a long single-word name (e.g.
@@ -1844,7 +1851,6 @@ function LandingContent() {
         isOpen={modalOpen}
         onClose={() => setModalOpen(false)}
         onConnect={() => setModalOpen(false)}
-        walletIcons={WALLET_LOGOS}
       />
     </>
   );
@@ -1875,7 +1881,6 @@ export default function Home() {
     <PartyLayerKit
       network="devnet"
       appName="PartyLayer"
-      walletIcons={WALLET_LOGOS}
       walletOrder={CANONICAL_WALLET_ORDER}
       adapters={buildDemoAdapters()}
       registryUrl="/registry"
