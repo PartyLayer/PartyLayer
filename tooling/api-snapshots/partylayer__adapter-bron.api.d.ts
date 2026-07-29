@@ -8,9 +8,10 @@
 // To intentionally accept a public-API change, run: pnpm gate:api:update
 // ----------------------------------------------------------------------------
 declare class BronAdapter implements WalletAdapter { readonly walletId: _partylayer_core.WalletId; readonly name = "Bron"; private authClient; private apiClient; constructor(config: BronAdapterConfig); getCapabilities(): CapabilityKey[]; detectInstalled(): Promise<AdapterDetectResult>; connect(ctx: AdapterContext, _opts?: { timeoutMs?: number; requiredCapabilities?: CapabilityKey[]; }): Promise<AdapterConnectResult>; disconnect(_ctx: AdapterContext, _session: _partylayer_core.Session): Promise<void>; restore(_ctx: AdapterContext, persisted: _partylayer_core.PersistedSession): Promise<_partylayer_core.Session | null>; signMessage(_ctx: AdapterContext, session: _partylayer_core.Session, params: SignMessageParams): Promise<_partylayer_core.SignedMessage>; signTransaction(_ctx: AdapterContext, session: _partylayer_core.Session, params: SignTransactionParams): Promise<_partylayer_core.SignedTransaction>; ledgerApi(ctx: AdapterContext, session: _partylayer_core.Session, params: LedgerApiParams): Promise<LedgerApiResult>; }
-export { BronAdapter, type BronAdapterConfig, type BronApiConfig, type BronAuthConfig };
+export { BronAdapter, type BronAdapterApiConfig, type BronAdapterConfig, type BronApiConfig, type BronAuthConfig };
 import * as _partylayer_core from '@partylayer/core';
 import { WalletAdapter, CapabilityKey, AdapterDetectResult, AdapterContext, AdapterConnectResult, SignMessageParams, SignTransactionParams, LedgerApiParams, LedgerApiResult } from '@partylayer/core';
-interface BronAdapterConfig { auth: BronAuthConfig; api: BronApiConfig; }
+interface BronAdapterApiConfig { baseUrl: string; }
+interface BronAdapterConfig { auth: BronAuthConfig; api: BronAdapterApiConfig; }
 interface BronApiConfig { baseUrl: string; getAccessToken: () => Promise<string | null>; }
 interface BronAuthConfig { authorizationUrl: string; tokenUrl: string; clientId: string; clientSecret?: string; redirectUri: string; scopes?: string[]; usePKCE?: boolean; }
