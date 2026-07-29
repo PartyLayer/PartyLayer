@@ -42,7 +42,14 @@ export interface SendNetwork {
 
 export interface SendStatusResponse {
   kernel: SendKernelInfo;
-  isConnected: boolean;
+  /**
+   * Current Send builds (Sigilry >= 2.0.0) nest the connection flag under
+   * `connection`; older builds returned it flat as `isConnected`. Both shapes
+   * are modelled so a reader can accept either; prefer `connection?.isConnected`
+   * with the flat field as a fallback.
+   */
+  connection?: { isConnected: boolean };
+  isConnected?: boolean;
   isNetworkConnected: boolean;
   networkReason?: string;
   network?: SendNetwork;

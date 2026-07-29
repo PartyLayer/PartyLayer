@@ -505,8 +505,8 @@ importers:
   packages/adapters/console:
     dependencies:
       '@console-wallet/dapp-sdk':
-        specifier: ^2.1.5
-        version: 2.1.5
+        specifier: ^2.2.8
+        version: 2.2.8
       '@partylayer/core':
         specifier: workspace:^
         version: link:../../core
@@ -1404,8 +1404,8 @@ packages:
       react: ^16.8.0 || ^17 || ^18 || ^19
       react-dom: ^16.8.0 || ^17 || ^18 || ^19
 
-  '@console-wallet/dapp-sdk@2.1.5':
-    resolution: {integrity: sha512-MLlybUOjAQE2LM9oP0c9hzzvQxAgWPE6N95ADscowx+B06IZ0RJ8A1lAs4MDPET0EtVDtzLszXvcPxALl2ITtw==}
+  '@console-wallet/dapp-sdk@2.2.8':
+    resolution: {integrity: sha512-wZfiNhD2ugggISROcgb2KzXq9Tg/5qLjXMPcumw09qt8K+gO33hR8b5BqJNzzTVZH3ATn9MuMdszpU2zlp/ovg==}
 
   '@csstools/color-helpers@5.1.0':
     resolution: {integrity: sha512-S11EXWJyy0Mz5SYvRmY8nJYTFFd1LCNV+7cXyAgQtOOuzb4EsgfqDufL+9esx72/eLhsRdGZwaldu/h+E4t4BA==}
@@ -3313,9 +3313,6 @@ packages:
   define-properties@1.2.1:
     resolution: {integrity: sha512-8QmQKqEASLd5nx0U1B1okLElbUuuttJ/AnYmRXbbbGDWh6uS208EjD4Xqq/I9wK7u0v6O08XhTWnt5XtEbR6Dg==}
     engines: {node: '>= 0.4'}
-
-  defu@6.1.4:
-    resolution: {integrity: sha512-mEQCMmwJu317oSz8CwdIOdwf3xMif1ttiM8LTufzc3g6kR+9Pe236twL8j3IYT1F7GfRgGcW6MWxzZjLIkuHIg==}
 
   defu@6.1.7:
     resolution: {integrity: sha512-7z22QmUWiQ/2d0KkdYmANbRUVABpZ9SNYyH5vx6PZ+nE5bcC0l7uFvEfHlyld/HcGBFTL536ClDt3DEcSlEJAQ==}
@@ -7116,7 +7113,7 @@ snapshots:
       react-dom: 18.3.1(react@18.3.1)
       react-is: 17.0.2
 
-  '@console-wallet/dapp-sdk@2.1.5':
+  '@console-wallet/dapp-sdk@2.2.8':
     dependencies:
       axios: 1.14.0
       json-schema-to-openapi-schema: 0.4.0
@@ -8784,7 +8781,7 @@ snapshots:
     dependencies:
       chokidar: 5.0.0
       confbox: 0.2.4
-      defu: 6.1.4
+      defu: 6.1.7
       dotenv: 17.2.4
       exsolve: 1.0.8
       giget: 2.0.0
@@ -9110,8 +9107,6 @@ snapshots:
       define-data-property: 1.1.4
       has-property-descriptors: 1.0.2
       object-keys: 1.1.1
-
-  defu@6.1.4: {}
 
   defu@6.1.7: {}
 
@@ -9806,7 +9801,7 @@ snapshots:
     dependencies:
       citty: 0.1.6
       consola: 3.4.2
-      defu: 6.1.4
+      defu: 6.1.7
       node-fetch-native: 1.6.7
       nypm: 0.6.5
       pathe: 2.0.3
@@ -11200,7 +11195,7 @@ snapshots:
 
   rc9@2.1.2:
     dependencies:
-      defu: 6.1.4
+      defu: 6.1.7
       destr: 2.0.5
 
   react-devtools-core@6.1.5:

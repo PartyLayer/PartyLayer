@@ -91,15 +91,6 @@ export class BronApiClient {
    * Create session / get party mapping
    */
   async createSession(): Promise<BronSession> {
-    // In mock mode, return mock data
-    if (this.config.baseUrl.includes('mock') || this.config.baseUrl.includes('dev')) {
-      return {
-        sessionId: 'mock-session-' + Date.now(),
-        partyId: toPartyId('mock-party-' + Date.now()),
-        expiresAt: Date.now() + 3600000,
-      };
-    }
-
     const headers = await this.getHeaders();
     const response = await fetch(`${this.config.baseUrl}/sessions`, {
       method: 'POST',
@@ -128,14 +119,6 @@ export class BronApiClient {
    * Request signature
    */
   async requestSignature(request: BronSignRequest): Promise<BronSignResponse> {
-    // In mock mode, return mock response
-    if (this.config.baseUrl.includes('mock') || this.config.baseUrl.includes('dev')) {
-      return {
-        requestId: 'mock-request-' + Date.now(),
-        status: 'pending',
-      };
-    }
-
     const headers = await this.getHeaders();
     const response = await fetch(`${this.config.baseUrl}/signatures`, {
       method: 'POST',
@@ -167,16 +150,6 @@ export class BronApiClient {
    * Get request status
    */
   async getRequestStatus(requestId: string): Promise<BronRequestStatus> {
-    // In mock mode, return approved status
-    if (this.config.baseUrl.includes('mock') || this.config.baseUrl.includes('dev')) {
-      return {
-        requestId,
-        status: 'approved',
-        signature: 'mock-signature-' + requestId,
-        transactionHash: 'mock-tx-hash',
-      };
-    }
-
     const headers = await this.getHeaders();
     const response = await fetch(`${this.config.baseUrl}/signatures/${requestId}`, {
       method: 'GET',
@@ -221,10 +194,6 @@ export class BronApiClient {
     body?: string;
     sessionId: string;
   }): Promise<{ response: string }> {
-    if (this.config.baseUrl.includes('mock') || this.config.baseUrl.includes('dev')) {
-      return { response: JSON.stringify({ activeContracts: [], nextPageToken: null }) };
-    }
-
     const headers = await this.getHeaders();
     const response = await fetch(`${this.config.baseUrl}/ledger-proxy`, {
       method: 'POST',
