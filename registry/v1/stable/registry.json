@@ -4,7 +4,7 @@
     "schemaVersion": "1.0.0",
     "publishedAt": "2026-06-24T00:00:00Z",
     "channel": "stable",
-    "sequence": 16,
+    "sequence": 17,
     "publisher": "PartyLayer"
   },
   "wallets": [
@@ -57,7 +57,7 @@
       "description": "5N Loop Wallet for Canton Network",
       "homepage": "https://cantonloop.com",
       "icon": "https://registry.partylayer.xyz/wallets/loop.svg",
-      "supportedNetworks": ["devnet", "testnet", "mainnet"],
+      "supportedNetworks": ["devnet", "mainnet"],
       "capabilities": {
         "signMessage": true,
         "signTransaction": false,
@@ -77,15 +77,15 @@
     {
       "id": "cantor8",
       "name": "Cantor8",
-      "description": "Cantor8 Mobile Wallet for Canton Network",
+      "description": "Cantor8 Wallet for Canton Network",
       "homepage": "https://cantor8.tech",
       "icon": "https://registry.partylayer.xyz/wallets/cantor8.svg",
-      "supportedNetworks": ["devnet", "testnet", "mainnet"],
+      "supportedNetworks": ["devnet", "mainnet"],
       "capabilities": {
-        "signMessage": true,
-        "signTransaction": true,
-        "submitTransaction": false,
-        "transactionStatus": false,
+        "signMessage": false,
+        "signTransaction": false,
+        "submitTransaction": true,
+        "transactionStatus": true,
         "switchNetwork": false,
         "multiParty": false
       },
@@ -93,7 +93,7 @@
         "type": "@partylayer/adapter-cantor8"
       },
       "installation": {
-        "deeplink": "cantor8://"
+        "scriptTag": "@cantor8/wallet-connect-sdk"
       },
       "sdkVersion": ">=0.1.0"
     },

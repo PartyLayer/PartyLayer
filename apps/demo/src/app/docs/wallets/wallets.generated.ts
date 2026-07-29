@@ -30,7 +30,7 @@ export const GENERATED_WALLETS: GeneratedWallet[] = [
   {
     id: 'loop',
     name: "5N Loop",
-    networks: ['devnet', 'testnet', 'mainnet'],
+    networks: ['devnet', 'mainnet'],
     capabilities: { signMessage: true, signTransaction: false, submitTransaction: true, transactionStatus: true, switchNetwork: false, multiParty: false },
     optIn: false,
     adapter: "@partylayer/adapter-loop",
@@ -38,8 +38,8 @@ export const GENERATED_WALLETS: GeneratedWallet[] = [
   {
     id: 'cantor8',
     name: "Cantor8",
-    networks: ['devnet', 'testnet', 'mainnet'],
-    capabilities: { signMessage: true, signTransaction: true, submitTransaction: false, transactionStatus: false, switchNetwork: false, multiParty: false },
+    networks: ['devnet', 'mainnet'],
+    capabilities: { signMessage: false, signTransaction: false, submitTransaction: true, transactionStatus: true, switchNetwork: false, multiParty: false },
     optIn: false,
     adapter: "@partylayer/adapter-cantor8",
   },
