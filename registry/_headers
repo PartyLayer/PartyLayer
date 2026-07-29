@@ -11,16 +11,12 @@
   Content-Type: application/json; charset=utf-8
   X-Robots-Tag: noindex
 
-# registry.json — short freshness window. Listed AFTER /*.json so this
-# Cache-Control overrides the 300s default for this file (later rule wins).
-/registry.json
-  Access-Control-Allow-Origin: *
-  Access-Control-Allow-Methods: GET, HEAD, OPTIONS
-  Access-Control-Allow-Headers: Accept, If-None-Match, Content-Type
-  Access-Control-Expose-Headers: ETag, Last-Modified, Cache-Control
-  Cache-Control: public, max-age=60
-  Content-Type: application/json; charset=utf-8
-  X-Robots-Tag: noindex
+# The manifest freshness window (short, so a new entry, a promotion, or an icon
+# correction reaches users in about a minute) is set in _worker.js, NOT here. A
+# _headers rule cannot cleanly shorten it: Pages COMBINES Cache-Control from every
+# matching rule into one header, so a manifest rule's max-age=60 concatenates with
+# the /*.json max-age=300 above into an ambiguous "max-age=300, max-age=60". The
+# worker sets one authoritative value for /v1/<channel>/registry.json instead.
 
 # Signature files
 /*.sig
@@ -35,9 +31,12 @@
 /health.json
   Cache-Control: no-cache
 
-# Wallet icons — served from the registry's own deploy (self-hosted, so the
-# registry is the canonical source for its icons, not coupled to any app). The
-# _worker.js already adds CORS; this just sets a long cache (icons are stable).
+# Wallet icons, self-hosted from the registry's own deploy (the registry is the
+# canonical source for its icons, not coupled to any app). One hour, not a day:
+# icons keep plain filenames because contributors add their icon URL by hand in
+# their registry PR, so a corrected mark must propagate without a purge or a
+# content hash. ETags are present, so the hourly revalidation is a 304 (headers
+# only, no image body), which makes the bandwidth cost negligible.
 /wallets/*
-  Cache-Control: public, max-age=86400
+  Cache-Control: public, max-age=3600
   X-Robots-Tag: noindex
