@@ -35,8 +35,8 @@
 | Wallet | Networks | Capabilities | Opt-in | Adapter |
 |--------|----------|--------------|--------|---------|
 | Console Wallet | devnet, testnet, mainnet | signMessage, signTransaction, submitTransaction, transactionStatus | No | `@partylayer/adapter-console` |
-| 5N Loop | devnet, testnet, mainnet | signMessage, submitTransaction, transactionStatus | No | `@partylayer/adapter-loop` |
-| Cantor8 | devnet, testnet, mainnet | signMessage, signTransaction | No | `@partylayer/adapter-cantor8` |
+| 5N Loop | devnet, mainnet | signMessage, submitTransaction, transactionStatus | No | `@partylayer/adapter-loop` |
+| Cantor8 | devnet, mainnet | submitTransaction, transactionStatus | No | `@partylayer/adapter-cantor8` |
 | Bron | devnet, testnet, mainnet | signMessage, signTransaction | Yes | `@partylayer/adapter-bron` |
 | Nightly | devnet, testnet, mainnet | signMessage, submitTransaction | No | `@partylayer/adapter-nightly` |
 | Send | mainnet | signMessage, submitTransaction, transactionStatus | No | `@partylayer/adapter-send` |

@@ -488,6 +488,9 @@ importers:
 
   packages/adapters/cantor8:
     dependencies:
+      '@cantor8/wallet-connect-sdk':
+        specifier: ^0.4.0
+        version: 0.4.0
       '@partylayer/core':
         specifier: workspace:^
         version: link:../../core
@@ -1298,6 +1301,9 @@ packages:
 
   '@canton-network/wallet-sdk@1.4.0':
     resolution: {integrity: sha512-uskdurYd9HgNSXisFUHFkpEFnZTusd0XJ4oBIDnyI2DrM+9TfJk1Z/s2qF1+J2f6B6OswE3oHwyjY39tyXLURg==}
+
+  '@cantor8/wallet-connect-sdk@0.4.0':
+    resolution: {integrity: sha512-BeSXu4U0S2KfPPjfe0Q/QLpjdOCzLaWOEQK/OBy6qz/g3K32NpSSjNFjgS5GImCc9TQN8k9QjvNYKBWB+RfPRQ==}
 
   '@changesets/apply-release-plan@7.0.14':
     resolution: {integrity: sha512-ddBvf9PHdy2YY0OUiEl3TV78mH9sckndJR14QAt87KLEbIov81XO0q0QAmvooBxXlqRRP8I9B7XOzZwQG7JkWA==}
@@ -6846,6 +6852,8 @@ snapshots:
       uuid: 14.0.0
     transitivePeerDependencies:
       - supports-color
+
+  '@cantor8/wallet-connect-sdk@0.4.0': {}
 
   '@changesets/apply-release-plan@7.0.14':
     dependencies:

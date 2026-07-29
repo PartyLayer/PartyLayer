@@ -19,6 +19,14 @@ function assetsAsEmpty(config) {
 const REACT_PEERS = ['react', 'react-dom', '@tanstack/react-query'];
 const RN_PEERS = ['react', 'react-native', 'react-native-svg', '@react-native-async-storage/async-storage'];
 
+// Wallet SDKs that PartyLayer only ever loads through a dynamic import() (code-split):
+// a web bundler emits these as a separate chunk that is NOT downloaded on the initial
+// createPartyLayer path, so they are excluded here to keep each number the marginal
+// INITIAL-bundle contribution (the same reason assets and peers are excluded above).
+// @cantor8/wallet-connect-sdk is lazily imported by the Cantor8 adapter, loaded only
+// when a user selects Cantor8.
+const LAZY_WALLET_SDKS = ['@cantor8/wallet-connect-sdk'];
+
 // Numbers are minified plus gzipped, the size a dApp downloads over the wire.
 module.exports = [
   {
@@ -52,7 +60,7 @@ module.exports = [
     name: 'react-native: headless client',
     path: 'packages/react-native/dist/index.mjs',
     import: '{ createReactNativeClient }',
-    ignore: RN_PEERS,
+    ignore: [...RN_PEERS, ...LAZY_WALLET_SDKS],
     modifyEsbuildConfig: assetsAsEmpty,
     gzip: true,
     limit: '43 kB',
@@ -70,6 +78,7 @@ module.exports = [
     name: 'sdk: createPartyLayer client',
     path: 'packages/sdk/dist/index.mjs',
     import: '{ createPartyLayer }',
+    ignore: LAZY_WALLET_SDKS,
     modifyEsbuildConfig: assetsAsEmpty,
     gzip: true,
     limit: '43 kB',
