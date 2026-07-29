@@ -43,8 +43,6 @@ export interface BronAdapterConfig {
   auth: BronAuthConfig;
   /** API configuration */
   api: BronApiConfig;
-  /** Use mock API in development */
-  useMockApi?: boolean;
 }
 
 /**
@@ -63,31 +61,13 @@ export class BronAdapter implements WalletAdapter {
     // Can optionally use encrypted storage if provided
     this.authClient = new BronAuthClient(config.auth);
 
-    // Initialize API client
-    if (config.useMockApi || process.env.NODE_ENV === 'development') {
-      // Use mock API client in development
-      this.apiClient = this.createMockApiClient();
-    } else {
-      this.apiClient = new BronApiClient({
-        baseUrl: config.api.baseUrl,
-        getAccessToken: async () => {
-          return await this.authClient.getAccessToken();
-        },
-      });
-    }
-  }
-
-  /**
-   * Create mock API client for development
-   */
-  private createMockApiClient(): BronApiClient {
-    // Create a mock implementation that simulates API behavior
-    const mockBaseUrl = 'https://api.bron.dev';
-    return new BronApiClient({
-      baseUrl: mockBaseUrl,
-      getAccessToken: () => {
-        // In mock mode, return a mock token
-        return Promise.resolve('mock-bron-token');
+    // Initialize the real API client. There is no URL- or environment-inferred
+    // mock: a mock, if wanted for a test, must be constructed explicitly by the
+    // test, never triggered by a substring in a URL or by NODE_ENV.
+    this.apiClient = new BronApiClient({
+      baseUrl: config.api.baseUrl,
+      getAccessToken: async () => {
+        return await this.authClient.getAccessToken();
       },
     });
   }
@@ -122,7 +102,7 @@ export class BronAdapter implements WalletAdapter {
   ): Promise<AdapterConnectResult> {
     try {
       // Check if we have an access token
-      let accessToken = await this.authClient.getAccessToken();
+      const accessToken = await this.authClient.getAccessToken();
 
       // If no token, start OAuth flow
       if (!accessToken) {
@@ -143,18 +123,10 @@ export class BronAdapter implements WalletAdapter {
           throw new Error('Failed to open auth popup');
         }
 
-        // Wait for callback (would be handled by finishAuth in real flow)
-        // For now, simulate
-        await new Promise((resolve) => setTimeout(resolve, 1000));
-        
-        // In production, finishAuth would be called with callback URL
-        // For mock, we'll create a mock token
-        if (process.env.NODE_ENV === 'development') {
-          // Mock token for development
-          accessToken = 'mock-token';
-        } else {
-          throw new Error('OAuth callback not implemented in adapter - handle in app');
-        }
+        // The OAuth callback (finishAuth with the returned code) must be handled
+        // by the app; the adapter has no redirect handler of its own. Fail loudly
+        // rather than fabricating a token — there is no dev/mock shortcut.
+        throw new Error('OAuth callback not implemented in adapter - handle in app');
       }
 
       // Create session with Bron API

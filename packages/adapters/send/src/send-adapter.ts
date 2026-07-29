@@ -189,7 +189,11 @@ export class SendAdapter implements WalletAdapter {
       // reload. If status() shows the wallet is not connected (or the call
       // fails), restore returns null below.
       const status = await this.provider.status();
-      if (!status.isConnected) return null;
+      // Current Send builds nest this under `connection` (its own constants.ts
+      // notes the real response is `{ connection, provider }`); older builds
+      // returned it flat. Accept either, else restore silently returns null on
+      // every reload against a current build.
+      if (!(status.connection?.isConnected ?? status.isConnected)) return null;
 
       const account = await this.provider.getPrimaryAccount();
       if (account.partyId !== persisted.partyId) {
