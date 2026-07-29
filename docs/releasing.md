@@ -117,6 +117,15 @@ another. A stacked pull request can be closed or silently absorbed when its base
 lands, so the change never reaches `main` even though the pull request badge shows as
 merged. Keeping the base as `main` also ensures CI runs on the pull request.
 
+For the same reason, before merging a pull request when `main` has moved since the branch
+was cut, confirm the branch is current with `main`. A branch cut before another change
+landed still carries the pre-change tree, so merging it silently reverts whatever landed in
+between; because the reverted files can keep the same names, nobody notices until the old
+behaviour reappears (a wallet mark reverting to the wrong icon is one way this shows up).
+Rebase the branch onto `main`, then confirm the diff touches only the files the pull request
+is meant to change. This is the same failure shape as a stacked pull request, arriving
+through a different door.
+
 ## Registry Updates
 
 Registry updates are separate from package releases. See [Registry Operations](./registry-ops.md).
