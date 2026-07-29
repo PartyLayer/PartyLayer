@@ -29,11 +29,22 @@ import {
   type CapabilityKey,
 } from '@partylayer/core';
 import { BronAuthClient, type BronAuthConfig } from './auth';
-import { BronApiClient, type BronApiConfig } from './api';
+import { BronApiClient } from './api';
 
 // Re-export types for convenience
 export type { BronAuthConfig } from './auth';
 export type { BronApiConfig } from './api';
+
+/**
+ * API configuration for the Bron adapter. Only `baseUrl` is needed: the adapter
+ * supplies its own access-token getter, wired to its OAuth client, so a caller
+ * neither provides nor overrides one. This is deliberately narrower than the
+ * internal BronApiConfig (which the API client uses and does carry a token getter).
+ */
+export interface BronAdapterApiConfig {
+  /** Base URL of the Bron signer API. */
+  baseUrl: string;
+}
 
 /**
  * Bron adapter configuration
@@ -42,7 +53,7 @@ export interface BronAdapterConfig {
   /** OAuth2 configuration */
   auth: BronAuthConfig;
   /** API configuration */
-  api: BronApiConfig;
+  api: BronAdapterApiConfig;
 }
 
 /**
