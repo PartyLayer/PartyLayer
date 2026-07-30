@@ -7,7 +7,9 @@
   --text: #0f1e1c;
   --muted: #5f6b6a;
   --border: rgba(19, 78, 74, 0.14);
-  --accent: #0d9488;
+  /* teal-700, not teal-600: white on this reaches WCAG AA (5.47:1 on white, 5.25:1 on the
+     surface tint), where teal-600 #0d9488 was 3.74:1 and failed on the button and active pill. */
+  --accent: #0f766e;
   --accent-contrast: #ffffff;
   --error-bg: #fef2f2;
   --error-text: #b00020;
