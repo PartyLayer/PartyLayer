@@ -143,6 +143,8 @@
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
   gap: 20px;
+  /* Cards size to their own content instead of stretching to the tallest card in the row. */
+  align-items: start;
 }
 
 .card {
