@@ -68,6 +68,12 @@ apps/metrics-backend/
 .claude/
 .vercel/
 
+# Per-package LICENSE files copied from the root LICENSE at publish time by
+# scripts/copy-license.mjs (wired into the release script). Build-time artifacts that
+# make each tarball ship the license; not tracked sources.
+/packages/*/LICENSE
+/packages/adapters/*/LICENSE
+
 # Test-only Walley E2E harness build artifact
 apps/demo/e2e/walley-harness/bundle.js
 # Test-only: branch registry copied into the harness servedir by serve.mjs

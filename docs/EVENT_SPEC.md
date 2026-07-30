@@ -1,5 +1,7 @@
 # Event Specification
 
+> Published on the docs site: [partylayer.xyz/docs/events](https://partylayer.xyz/docs/events).
+
 This document defines the event payloads emitted by PartyLayer SDK.
 
 ## Event System Overview

@@ -1,5 +1,7 @@
 # Production Migration Checklist
 
+> Published on the docs site: [partylayer.xyz/docs/production-checklist](https://partylayer.xyz/docs/production-checklist).
+
 **Checks to run before taking a PartyLayer dApp to production.**
 
 This checklist links to the docs that already cover each topic and writes only what is
@@ -177,9 +179,11 @@ What the dApp owns:
   before submitting.
 
 Routing failures surface in the dApp's own ledger and registry calls, not in the kit's
-error taxonomy. Synchronizer level conditions get no PartyLayer code, and
-`assertSingleSynchronizer` throws a plain `Error`, not a `PartyLayerError`. See the
-synchronizer note in [errors.md](./errors.md).
+error taxonomy. The kit adds one kit level code, `SYNCHRONIZER_ERROR`, for the
+synchronizer conditions it raises itself, with no CIP-0103 wire mapping. Routing failures
+the dApp observes through its own calls still get no code, and `assertSingleSynchronizer`
+throws a plain `Error`, not a `PartyLayerError`. See the synchronizer note in
+[errors.md](./errors.md).
 
 Checks:
 

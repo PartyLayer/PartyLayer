@@ -56,6 +56,11 @@ const CLASSIFICATION = {
   'generic-bridge': { mode: 'enforce' },
   'partylayer-and-canton-topology': { mode: 'enforce' },
   'dev-and-staging': { mode: 'enforce' },
+  'production-checklist': { mode: 'enforce' },
+  'performance': { mode: 'enforce' },
+  'observability': { mode: 'enforce' },
+  'multi-party-patterns': { mode: 'enforce' },
+  'privacy-and-reads': { mode: 'enforce' },
   'quick-start': {
     mode: 'known-divergence',
     reason:

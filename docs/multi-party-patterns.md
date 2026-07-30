@@ -1,5 +1,7 @@
 # Multi-party transaction patterns
 
+> Published on the docs site: [partylayer.xyz/docs/multi-party-patterns](https://partylayer.xyz/docs/multi-party-patterns).
+
 Multi-party flows on Canton are expressed as on-ledger workflows between parties. A
 transfer is a contract the receiver acts on; a settlement is a contract whose choice
 moves several parties' assets at once. The atomicity of these flows lives in Daml, in
@@ -125,19 +127,25 @@ supply it. That is Model 2.
 `TokenDisclosedContract` and `TokenChoiceContext` are the typed shapes the registry
 returns. When a submission combines more than one context, `mergeDisclosedContracts`
 folds their disclosures into one set, and `assertSingleSynchronizer` checks that set is
-consistent on a single synchronizer before you build the command. A sketch of where they
-sit in a submit fetcher:
+consistent on a single synchronizer before you build the command. `attachDisclosedContracts`
+then writes that set onto the command payload, merging through `mergeDisclosedContracts` and
+never mutating the input, so you do not hand write the `disclosedContracts` field. Model 2
+still holds: the helper only builds the command, the dApp submits it through its own fetcher.
+A sketch of where they sit in a submit fetcher:
 
 ```ts
 import {
   mergeDisclosedContracts,
   assertSingleSynchronizer,
+  attachDisclosedContracts,
 } from '@partylayer/react/query';
 
 // ctxA, ctxB: TokenChoiceContext values fetched from the registry
 const disclosed = mergeDisclosedContracts(ctxA.disclosedContracts, ctxB.disclosedContracts);
 assertSingleSynchronizer(disclosed); // throws if the contexts span synchronizers
-// ...exercise the choice with extraArgs.context filled and `disclosed` attached.
+// Attach onto the command, then submit it with your own fetcher (Model 2).
+const command = attachDisclosedContracts(baseCommand, disclosed);
+// ...exercise the choice with extraArgs.context filled and `command` submitted.
 ```
 
 **Example.** Both verticals write this way; the disclosed-contract and choice-context

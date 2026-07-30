@@ -1,5 +1,7 @@
 # Performance
 
+> Published on the docs site: [partylayer.xyz/docs/performance](https://partylayer.xyz/docs/performance).
+
 This document is anchored to measurements, not advice. Every number here is reproducible
 with `pnpm gate:size` (the bundle scenarios) or the commands noted in each section.
 

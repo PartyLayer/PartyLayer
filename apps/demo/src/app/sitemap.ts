@@ -26,5 +26,11 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: `${base}/docs/advanced`, lastModified: new Date(), changeFrequency: 'monthly', priority: 0.8 },
     { url: `${base}/docs/dev-and-staging`, lastModified: new Date(), changeFrequency: 'monthly', priority: 0.8 },
     { url: `${base}/docs/partylayer-and-canton-topology`, lastModified: new Date(), changeFrequency: 'monthly', priority: 0.8 },
+    { url: `${base}/docs/multi-party-patterns`, lastModified: new Date(), changeFrequency: 'monthly', priority: 0.7 },
+    { url: `${base}/docs/privacy-and-reads`, lastModified: new Date(), changeFrequency: 'monthly', priority: 0.7 },
+    { url: `${base}/docs/events`, lastModified: new Date(), changeFrequency: 'monthly', priority: 0.7 },
+    { url: `${base}/docs/observability`, lastModified: new Date(), changeFrequency: 'monthly', priority: 0.7 },
+    { url: `${base}/docs/performance`, lastModified: new Date(), changeFrequency: 'monthly', priority: 0.7 },
+    { url: `${base}/docs/production-checklist`, lastModified: new Date(), changeFrequency: 'monthly', priority: 0.7 },
   ];
 }

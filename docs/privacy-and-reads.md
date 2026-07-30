@@ -1,5 +1,7 @@
 # Privacy-aware reads on Canton
 
+> Published on the docs site: [partylayer.xyz/docs/privacy-and-reads](https://partylayer.xyz/docs/privacy-and-reads).
+
 On Canton the ledger itself enforces what a party can see. A contract is only visible
 to the parties that are stakeholders on it, so a wallet kit does not filter privacy on
 the client. The job is not to hide data that arrived; it is to read the right slice and

@@ -8,6 +8,7 @@
 import { describe, it, expect } from 'vitest';
 import {
   mergeDisclosedContracts,
+  attachDisclosedContracts,
   groupDisclosedContractsBySynchronizer,
   assertSingleSynchronizer,
   type TokenDisclosedContract,
@@ -113,5 +114,40 @@ describe('assertSingleSynchronizer', () => {
 
     const mixed = mergeDisclosedContracts(factoryCtx, [dc('c', { synchronizerId: SYNC_B })]);
     expect(() => assertSingleSynchronizer(mixed)).toThrow(/multiple synchronizers/);
+  });
+});
+
+describe('attachDisclosedContracts', () => {
+  it('populates disclosedContracts on a command that had none', () => {
+    const command = { updateId: 'u1' };
+    const out = attachDisclosedContracts(command, [dc('a'), dc('b')]);
+    expect(out.updateId).toBe('u1');
+    expect(out.disclosedContracts.map((e) => e.contractId)).toEqual(['a', 'b']);
+  });
+
+  it('with an empty array leaves any existing disclosures as they were', () => {
+    const command = { disclosedContracts: [dc('a')] };
+    const out = attachDisclosedContracts(command, []);
+    expect(out.disclosedContracts.map((e) => e.contractId)).toEqual(['a']);
+  });
+
+  it('merges and deduplicates by contractId, first occurrence winning', () => {
+    const command = { disclosedContracts: [dc('a', { createdEventBlob: 'FIRST' })] };
+    const out = attachDisclosedContracts(command, [
+      dc('a', { createdEventBlob: 'LATER' }),
+      dc('b'),
+    ]);
+    expect(out.disclosedContracts.map((e) => e.contractId)).toEqual(['a', 'b']);
+    expect(out.disclosedContracts.find((e) => e.contractId === 'a')?.createdEventBlob).toBe('FIRST');
+  });
+
+  it('never mutates the input command or its disclosedContracts array', () => {
+    const original = [dc('a')];
+    const command = { disclosedContracts: original };
+    const out = attachDisclosedContracts(command, [dc('b')]);
+    expect(out).not.toBe(command);
+    expect(command.disclosedContracts).toBe(original);
+    expect(original.map((e) => e.contractId)).toEqual(['a']);
+    expect(out.disclosedContracts.map((e) => e.contractId)).toEqual(['a', 'b']);
   });
 });

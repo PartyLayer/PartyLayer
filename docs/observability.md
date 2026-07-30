@@ -1,5 +1,7 @@
 # Observability on PartyLayer
 
+> Published on the docs site: [partylayer.xyz/docs/observability](https://partylayer.xyz/docs/observability).
+
 PartyLayer is vendor neutral about telemetry. It defines a small adapter interface,
 ships one reference implementation, and forwards every event it emits to whatever
 adapter you plug in. It never talks to a specific backend, so you choose the vendor
