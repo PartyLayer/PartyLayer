@@ -26,7 +26,8 @@ export type ErrorCode =
   | 'INTERNAL_ERROR'
   | 'NETWORK_MISMATCH'
   | 'TIMEOUT'
-  | 'INSUFFICIENT_TRAFFIC';
+  | 'INSUFFICIENT_TRAFFIC'
+  | 'SYNCHRONIZER_ERROR';
 
 /**
  * Error mapping context
@@ -325,6 +326,27 @@ export class InsufficientTrafficError extends PartyLayerError {
       details,
     });
     this.name = 'InsufficientTrafficError';
+  }
+}
+
+/**
+ * Synchronizer error: a synchronizer level condition the kit surfaces directly,
+ * for example a submission blocked because its disclosed contracts do not all
+ * share one synchronizer, or a synchronizer the app routes to being unavailable.
+ *
+ * This code is additive and kit level: CIP-0103 defines no dedicated synchronizer
+ * code, so it has no wire mapping on the Provider surface and never modifies
+ * CIP-0103 semantics. Canton routing failures observed through a dApp's own Model 2
+ * ledger and registry calls (for example NO_COMMON_DOMAIN) stay the dApp's to
+ * classify and are not raised here. See docs/errors.md.
+ */
+export class SynchronizerError extends PartyLayerError {
+  constructor(message: string, cause?: unknown, details?: Record<string, unknown>) {
+    super(message, 'SYNCHRONIZER_ERROR', {
+      cause,
+      details,
+    });
+    this.name = 'SynchronizerError';
   }
 }
 

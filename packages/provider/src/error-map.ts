@@ -10,7 +10,11 @@ import { ProviderRpcError, RPC_ERRORS, JSON_RPC_ERRORS } from './errors';
 
 // ─── PartyLayer ErrorCode → CIP-0103 numeric code ──────────────────────────
 
-const ERROR_CODE_TO_RPC: Record<ErrorCode, number> = {
+// SYNCHRONIZER_ERROR is intentionally absent from this map. CIP-0103 defines no
+// dedicated synchronizer code, so per the kit level, no wire mapping policy it is not
+// mapped here and falls through to the INTERNAL_ERROR default in toProviderRpcError
+// below. The map is Partial for that reason alone; no existing entry changes.
+const ERROR_CODE_TO_RPC: Partial<Record<ErrorCode, number>> = {
   USER_REJECTED: RPC_ERRORS.USER_REJECTED,
   WALLET_NOT_FOUND: JSON_RPC_ERRORS.RESOURCE_NOT_FOUND,
   // Client-side config gap (the walletId refers to an unwired discovery adapter),

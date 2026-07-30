@@ -4,6 +4,7 @@ import {
   UserRejectedError,
   TimeoutError,
   InsufficientTrafficError,
+  SynchronizerError,
   type ErrorCode,
 } from '@partylayer/core';
 import { toProviderRpcError, toPartyLayerError } from '../error-map';
@@ -84,7 +85,7 @@ describe('INSUFFICIENT_TRAFFIC mapping', () => {
 describe('regression: every previously mapped code is unchanged', () => {
   // The exact forward map as it stood before INSUFFICIENT_TRAFFIC was added, asserted
   // so a future edit cannot silently repoint one of them.
-  const FORWARD: Record<Exclude<ErrorCode, 'INSUFFICIENT_TRAFFIC'>, number> = {
+  const FORWARD: Record<Exclude<ErrorCode, 'INSUFFICIENT_TRAFFIC' | 'SYNCHRONIZER_ERROR'>, number> = {
     USER_REJECTED: RPC_ERRORS.USER_REJECTED,
     WALLET_NOT_FOUND: JSON_RPC_ERRORS.RESOURCE_NOT_FOUND,
     ADAPTER_NOT_REGISTERED: JSON_RPC_ERRORS.INVALID_PARAMS,
@@ -128,5 +129,25 @@ describe('regression: every previously mapped code is unchanged', () => {
       const result = toPartyLayerError(new ProviderRpcError('x', rpcCode));
       expect(result.code, `reverse ${rpcCode}`).toBe(expected);
     }
+  });
+});
+
+describe('SYNCHRONIZER_ERROR mapping (kit-level, no wire code)', () => {
+  it('is a PartyLayerError carrying the SYNCHRONIZER_ERROR code', () => {
+    const err = new SynchronizerError('disclosed contracts span synchronizers');
+    expect(err).toBeInstanceOf(PartyLayerError);
+    expect(err.code).toBe('SYNCHRONIZER_ERROR');
+  });
+
+  it('forward maps to the generic INTERNAL_ERROR since CIP-0103 has no synchronizer code', () => {
+    const err = new SynchronizerError('synchronizer unavailable');
+    const result = toProviderRpcError(err);
+    expect(result).toBeInstanceOf(ProviderRpcError);
+    expect(result.code).toBe(JSON_RPC_ERRORS.INTERNAL_ERROR);
+  });
+
+  it('has no dedicated reverse wire code, the generic internal code still resolves to INTERNAL_ERROR', () => {
+    const rpc = new ProviderRpcError('internal', JSON_RPC_ERRORS.INTERNAL_ERROR);
+    expect(toPartyLayerError(rpc).code).toBe('INTERNAL_ERROR');
   });
 });
