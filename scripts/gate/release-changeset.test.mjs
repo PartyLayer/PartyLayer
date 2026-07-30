@@ -31,7 +31,11 @@
  *     is present the guard stays quiet (it is consumed at the next version run);
  *   - a MISSING tag is a loud, named failure rather than a silent pass, because a
  *     missing tag itself signals that a version skipped the release process (or,
- *     in CI, that the checkout did not fetch tags).
+ *     in CI, that the checkout did not fetch tags) - EXCEPT on a version PR, where
+ *     a package legitimately has a bumped version with no tag yet (the tag follows
+ *     at `changeset publish`). That expected state is recognized by its CHANGELOG
+ *     heading for the new version, the deterministic output of `changeset version`,
+ *     so it is exempted while a version set by hand (no such heading) still fails.
  */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
@@ -147,6 +151,27 @@ function tagExists(tag) {
   }
 }
 
+/**
+ * True when the package's CHANGELOG has a heading for its CURRENT version.
+ *
+ * This is the deterministic fingerprint of a version PR. `changeset version` does
+ * three things together: it bumps the version field, consumes (deletes) the
+ * changesets that covered the bump, and writes a `## <version>` heading with their
+ * contents to the package's CHANGELOG. The matching git tag is created LATER, by
+ * `changeset publish` at publish time. So between the version PR and publish, a
+ * bumped package legitimately has a version with no tag yet, and the CHANGELOG
+ * heading is what tells that expected state apart from a version set by hand
+ * outside the release process (which leaves no such heading). changeset renders
+ * the heading as `## x.y.z`; be tolerant of surrounding whitespace but anchor to a
+ * heading line so a version merely mentioned in prose does not count.
+ */
+function changelogHasCurrentVersion(pkg) {
+  const changelog = join(ROOT, pkg.dir, 'CHANGELOG.md');
+  if (!existsSync(changelog)) return false;
+  const escaped = pkg.version.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  return new RegExp(`^#{1,6}\\s+${escaped}\\s*$`, 'm').test(readFileSync(changelog, 'utf8'));
+}
+
 /** Shipping-relevant path changes between tag and HEAD under the package dir. */
 function shippingPathChanges(pkg, tag) {
   const raw = git('diff', '--name-only', tag, 'HEAD', '--', pkg.dir);
@@ -185,17 +210,23 @@ function manifestFieldChanges(pkg, tag) {
 const PACKAGES = publishablePackages();
 const { named: COVERED, hasEmpty: EMPTY_CHANGESET } = pendingChangesets();
 
-test('every publishable package has a release tag', () => {
-  const missing = PACKAGES.filter((p) => !tagExists(`${p.name}@${p.version}`)).map(
-    (p) => `${p.name}@${p.version}`,
-  );
+test('every publishable package is released or is a pending version bump', () => {
+  // A missing `<name>@<version>` tag is a finding UNLESS the package is mid-release:
+  // `changeset version` has bumped it and written its CHANGELOG heading, and the tag
+  // is created later by `changeset publish`. That version PR state is expected, so it
+  // is exempted here. A version with neither a tag nor a CHANGELOG heading was set
+  // outside the release process, which is exactly the slip this test must still catch.
+  const unreleased = PACKAGES.filter(
+    (p) => !tagExists(`${p.name}@${p.version}`) && !changelogHasCurrentVersion(p),
+  ).map((p) => `${p.name}@${p.version}`);
   assert.deepEqual(
-    missing,
+    unreleased,
     [],
-    `No git tag for: ${missing.join(', ')}. The repo tags every release, so a missing tag means ` +
-      `this version never went through the release process, or (in CI) the checkout did not fetch ` +
-      `tags. In CI, set actions/checkout with fetch-depth: 0. Otherwise cut the release for this ` +
-      `version or correct the version field.`,
+    `No git tag AND no CHANGELOG entry for: ${unreleased.join(', ')}. A version PR is exempt ` +
+      `(changeset version writes a "## <version>" CHANGELOG heading, and the tag follows at ` +
+      `changeset publish); these have neither, so the version was set outside the release process. ` +
+      `Cut the release for this version, or correct the version field. In CI, set actions/checkout ` +
+      `with fetch-depth: 0 so release tags are present to compare against.`,
   );
 });
 
@@ -203,7 +234,10 @@ for (const pkg of PACKAGES) {
   test(`${pkg.name}: shipping changes since ${pkg.name}@${pkg.version} are covered by a changeset`, (t) => {
     const tag = `${pkg.name}@${pkg.version}`;
     if (!tagExists(tag)) {
-      t.skip(`no tag ${tag} (reported by the release-tag test)`);
+      // No released tag to diff against: either a pending version bump (the release
+      // test exempts it) or a missing-tag finding (the release test reports it).
+      // Coverage is moot for a bump anyway, since the consumed changeset is its cover.
+      t.skip(`no ${tag} tag to diff against (pending version bump or a release-tag finding)`);
       return;
     }
     const pathHits = shippingPathChanges(pkg, tag);
