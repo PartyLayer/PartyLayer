@@ -3,10 +3,75 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>PartyLayer Tokenization</title>
+    <title>Canton Tokenization Demo: CIP-0056 Token Standard in React | PartyLayer</title>
+    <meta
+      name="description"
+      content="Live Canton Network tokenization demo built with PartyLayer React hooks: CIP-0056 token holdings, transfer instructions, and allocations against a DevNet backend. Open source, MIT licensed."
+    />
+    <link rel="canonical" href="https://tokenization.partylayer.xyz/" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="icon" href="/favicon.ico" sizes="any" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <meta name="theme-color" content="#ffffff" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="PartyLayer" />
+    <meta property="og:title" content="Canton Tokenization Demo: CIP-0056 Token Standard in React" />
+    <meta
+      property="og:description"
+      content="Live Canton Network tokenization demo built with PartyLayer React hooks: CIP-0056 token holdings, transfer instructions, and allocations against a DevNet backend. Open source, MIT licensed."
+    />
+    <meta property="og:url" content="https://tokenization.partylayer.xyz/" />
+    <meta property="og:image" content="https://tokenization.partylayer.xyz/og.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:site" content="@partylayerkit" />
+    <meta name="twitter:title" content="Canton Tokenization Demo: CIP-0056 Token Standard in React" />
+    <meta
+      name="twitter:description"
+      content="Live Canton Network tokenization demo built with PartyLayer React hooks: CIP-0056 token holdings, transfer instructions, and allocations against a DevNet backend. Open source, MIT licensed."
+    />
+    <meta name="twitter:image" content="https://tokenization.partylayer.xyz/og.png" />
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "WebApplication",
+        "name": "PartyLayer Tokenization Demo",
+        "url": "https://tokenization.partylayer.xyz/",
+        "description": "Live Canton Network tokenization demo built with PartyLayer React hooks: CIP-0056 token holdings, transfer instructions, and allocations against a DevNet backend. Open source, MIT licensed.",
+        "applicationCategory": "DeveloperApplication",
+        "operatingSystem": "Web",
+        "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+        "publisher": {
+          "@type": "Organization",
+          "name": "PartyLayer",
+          "url": "https://partylayer.xyz",
+          "logo": "https://partylayer.xyz/logo.png"
+        }
+      }
+    </script>
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <!-- Minimal static fallback for crawlers and the pre mount paint. React
+           replaces the contents of #root when it mounts, which is expected. The
+           inline styles match the app light background so there is no flash. -->
+      <main
+        style="min-height: 100vh; margin: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; padding: 24px; background: #ffffff; color: #0f1e1c; font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; text-align: center;"
+      >
+        <h1 style="margin: 0; font-size: 1.9rem; font-weight: 700; letter-spacing: -0.01em;">
+          Canton Tokenization Demo
+        </h1>
+        <p style="margin: 0; max-width: 640px; line-height: 1.6; color: #5f6b6a; font-size: 1rem;">
+          Live Canton Network tokenization demo built with PartyLayer React hooks: CIP-0056 token
+          holdings, transfer instructions, and allocations against a DevNet backend. Open source, MIT
+          licensed.
+        </p>
+        <a href="https://partylayer.xyz" style="color: #0d9488; text-decoration: none; font-weight: 600;">
+          partylayer.xyz
+        </a>
+      </main>
+    </div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

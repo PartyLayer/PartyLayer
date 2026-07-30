@@ -117,7 +117,9 @@ export default function App() {
         <div className={'app app-' + mode}>
           <header className="topbar">
             <div className="brand">
-              <span className="brand-mark" aria-hidden="true" />
+              <a className="brand-logo" href="https://partylayer.xyz" target="_blank" rel="noopener">
+                <img src="/logo.svg" alt="PartyLayer" height={28} />
+              </a>
               <div>
                 <div className="brand-title">Tokenization</div>
                 <div className="brand-sub">CIP-0056 vertical example</div>
@@ -169,8 +171,22 @@ export default function App() {
           </main>
 
           <footer className="footer">
-            Demo backend, in-memory fixtures. Model 2: the dApp supplies every read and submit.
-            See the README for real-mode wiring against a live validator and registry.
+            <p className="footer-note">
+              Demo backend, in-memory fixtures. Model 2: the dApp supplies every read and submit.
+              See the README for real-mode wiring against a live validator and registry.
+            </p>
+            <div className="footer-links">
+              <a href="https://partylayer.xyz" target="_blank" rel="noopener">Built with PartyLayer</a>
+              <a
+                href="https://github.com/PartyLayer/react-tokenization-template"
+                target="_blank"
+                rel="noopener"
+              >
+                GitHub template
+              </a>
+              <a href="https://partylayer.xyz/docs" target="_blank" rel="noopener">Docs</a>
+              <span>Scaffold your own: npm create partylayer-app</span>
+            </div>
           </footer>
         </div>
       </DemoProvider>

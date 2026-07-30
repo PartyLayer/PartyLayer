@@ -49,12 +49,14 @@
   align-items: center;
   gap: 10px;
 }
-.brand-mark {
-  width: 28px;
+.brand-logo {
+  display: inline-flex;
+  align-items: center;
+}
+.brand-logo img {
+  display: block;
   height: 28px;
-  border-radius: 8px;
-  background: var(--accent);
-  display: inline-block;
+  width: auto;
 }
 .brand-title {
   font-weight: 700;
@@ -358,4 +360,24 @@
   color: var(--muted);
   font-size: 13px;
   border-top: 1px solid var(--border);
+}
+.footer-note {
+  margin: 0 0 12px;
+}
+.footer-links {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 20px;
+}
+.footer-links a {
+  color: var(--accent);
+  text-decoration: none;
+  font-weight: 600;
+}
+.footer-links a:hover {
+  text-decoration: underline;
+}
+.footer-links span {
+  color: var(--muted);
 }

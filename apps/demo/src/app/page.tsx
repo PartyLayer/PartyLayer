@@ -1725,6 +1725,8 @@ function FAQ() {
 /* ─── Footer (from apps/marketing/src/components/sections/Footer.tsx) ──── */
 
 const footerLinks = [
+  { label: 'Tokenization demo', href: 'https://tokenization.partylayer.xyz' },
+  { label: 'DvP demo', href: 'https://dvp.partylayer.xyz' },
   { label: 'GitHub', href: GITHUB_URL },
   { label: 'npm', href: NPM_URL },
   { label: 'X', href: 'https://x.com/partylayerkit' },
