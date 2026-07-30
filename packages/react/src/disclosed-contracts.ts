@@ -125,6 +125,32 @@ export function mergeDisclosedContracts(
 }
 
 /**
+ * Attach disclosed contracts to a Ledger API command payload.
+ *
+ * Returns a NEW command whose `disclosedContracts` field is the merge of any
+ * disclosures already present on the command with `contracts`, deduplicated by
+ * `contractId` with the first occurrence winning via {@link mergeDisclosedContracts}.
+ * The input command is never mutated: a shallow copy is returned with the field
+ * replaced, and the input arrays are left untouched.
+ *
+ * Model 2: this only builds the command payload. The dApp still submits it through its
+ * own fetcher, exactly as the registry-mediated write pattern describes. The helper
+ * removes the one manual step of writing the merged disclosure set back onto the
+ * command by hand.
+ */
+export function attachDisclosedContracts<
+  T extends { disclosedContracts?: TokenDisclosedContract[] },
+>(
+  command: T,
+  contracts: TokenDisclosedContract[],
+): T & { disclosedContracts: TokenDisclosedContract[] } {
+  return {
+    ...command,
+    disclosedContracts: mergeDisclosedContracts(command.disclosedContracts, contracts),
+  };
+}
+
+/**
  * Group disclosed contracts by their `synchronizerId`, preserving input order within
  * each group. Useful for inspecting a combined disclosure set before deciding how to
  * submit; a set spanning more than one synchronizer cannot go into a single command.

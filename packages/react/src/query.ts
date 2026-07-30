@@ -134,6 +134,7 @@ export {
 // multiple registry contexts into one submission.
 export {
   mergeDisclosedContracts,
+  attachDisclosedContracts,
   groupDisclosedContractsBySynchronizer,
   assertSingleSynchronizer,
 } from './disclosed-contracts';

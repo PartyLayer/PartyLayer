@@ -161,17 +161,24 @@ type TokenTransferInstructionStatus =
         shapes the registry returns. When a submission combines more than one context,{' '}
         <Code>{'mergeDisclosedContracts'}</Code> folds their disclosures into one set, and{' '}
         <Code>{'assertSingleSynchronizer'}</Code> checks that set is consistent on a single
-        synchronizer before you build the command. A sketch of where they sit in a submit fetcher:
+        synchronizer before you build the command. <Code>{'attachDisclosedContracts'}</Code> then
+        writes that set onto the command payload, merging through <Code>{'mergeDisclosedContracts'}</Code>{' '}
+        and never mutating the input, so you do not hand write the <Code>{'disclosedContracts'}</Code>{' '}
+        field. Model 2 still holds: the helper only builds the command, the dApp submits it through
+        its own fetcher. A sketch of where they sit in a submit fetcher:
       </P>
       <CodeBlock language="ts">{`import {
   mergeDisclosedContracts,
   assertSingleSynchronizer,
+  attachDisclosedContracts,
 } from '@partylayer/react/query';
 
 // ctxA, ctxB: TokenChoiceContext values fetched from the registry
 const disclosed = mergeDisclosedContracts(ctxA.disclosedContracts, ctxB.disclosedContracts);
 assertSingleSynchronizer(disclosed); // throws if the contexts span synchronizers
-// ...exercise the choice with extraArgs.context filled and \`disclosed\` attached.`}</CodeBlock>
+// Attach onto the command, then submit it with your own fetcher (Model 2).
+const command = attachDisclosedContracts(baseCommand, disclosed);
+// ...exercise the choice with extraArgs.context filled and \`command\` submitted.`}</CodeBlock>
       <P>
         <Strong>Example.</Strong> Both verticals write this way; the disclosed-contract and
         choice-context shapes are shared across tokenization and dvp. See the{' '}
