@@ -1,0 +1,17 @@
+<svg width="1200" height="630" viewBox="0 0 1200 630" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#FFFBEB" />
+      <stop offset="0.3" stop-color="#FFF5CC" />
+      <stop offset="0.7" stop-color="#FFCC00" />
+      <stop offset="1" stop-color="#E6B800" />
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="630" fill="url(#bg)" />
+  <circle cx="600" cy="158" r="46" fill="#0F0F0F" stroke="#ffffff" stroke-opacity="0.3" stroke-width="4" />
+  <circle cx="600" cy="158" r="18" fill="#FFCC00" />
+  <text x="600" y="262" text-anchor="middle" font-family="-apple-system, system-ui, Helvetica, Arial, sans-serif" font-size="30" font-weight="700" fill="#0F0F0F">PartyLayer</text>
+  <text x="600" y="366" text-anchor="middle" font-family="-apple-system, system-ui, Helvetica, Arial, sans-serif" font-size="56" font-weight="800" fill="#0B0F1A">Canton DvP Settlement Demo</text>
+  <text x="600" y="424" text-anchor="middle" font-family="-apple-system, system-ui, Helvetica, Arial, sans-serif" font-size="30" font-weight="500" fill="#334155">CIP-0056 Allocations in React</text>
+  <text x="600" y="586" text-anchor="middle" font-family="-apple-system, system-ui, Helvetica, Arial, sans-serif" font-size="22" font-weight="500" fill="#475569">partylayer.xyz</text>
+</svg>
