@@ -388,6 +388,59 @@ client.on('session:connected', async (event) => {
   await longRunningOperation(); // Don't do this
 });`}</CodeBlock>
 
+      <HR />
+
+      <H2 id="event-phase-mapping">Event to lifecycle phase mapping</H2>
+      <P>
+        The observability deliverable names six lifecycle phases: connect, authorize, prepare,
+        submit, confirm, and error. The shipped SDK does not emit six phase named events. It emits
+        the nine domain events above on the <Code>{'PartyLayerEvent'}</Code> union, and the phases
+        are a reading of those events, not a separate event set. This table is the mapping, so an
+        operator instrumenting by phase knows which event to watch.
+      </P>
+      <div style={{ overflowX: 'auto', marginBottom: 24 }}>
+        <table style={{
+          width: '100%', borderCollapse: 'collapse', fontSize: 13.5,
+          fontFamily: 'ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Roboto, sans-serif',
+          border: '1px solid rgba(15,23,42,0.10)', borderRadius: 10, overflow: 'hidden',
+        }}>
+          <thead>
+            <tr style={{ background: '#F5F6F8' }}>
+              {['Shipped event', 'Lifecycle phase', 'Mapping'].map(h => (
+                <th key={h} style={{ textAlign: 'left', padding: '10px 14px', fontWeight: 600, color: '#0B0F1A', borderBottom: '1px solid rgba(15,23,42,0.10)', fontSize: 13 }}>{h}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {[
+              { event: 'session:connected', phase: 'connect', mapping: 'The terminal event of a connect: a wallet session is established.' },
+              { event: 'session:disconnected', phase: 'connect', mapping: 'The connect teardown, the inverse of a connect.' },
+              { event: 'wallets:changed', phase: 'connect', mapping: 'A pre connect discovery signal: the listable wallet set changed, so the picker re reads before a connect.' },
+              { event: 'registry:updated', phase: 'connect', mapping: 'Setup within connect: a new registry channel or version loaded before wallets are listed.' },
+              { event: 'registry:status', phase: 'connect', mapping: 'Setup and health within connect: fetch source, verification, and staleness. Its error field feeds the error phase when set.' },
+              { event: 'tx:status', phase: 'prepare, submit, confirm', mapping: 'The single transaction lifecycle event. Its status field is the phase: pending or prepared is prepare, submitted is submit, committed is confirm.' },
+              { event: 'session:expired', phase: 'error', mapping: 'An error class condition: the session is no longer valid and the dApp must reconnect.' },
+              { event: 'session:networkMismatch', phase: 'error', mapping: 'An error class condition: the wallet is on the wrong network, enforced under the guard or strict policy.' },
+              { event: 'error', phase: 'error', mapping: 'The dedicated error phase event.' },
+            ].map(r => (
+              <tr key={r.event + r.phase} style={{ borderBottom: '1px solid rgba(15,23,42,0.10)' }}>
+                <td style={{ padding: '10px 14px', fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace', fontSize: 12.5, color: '#E6B800', fontWeight: 500 }}>{r.event}</td>
+                <td style={{ padding: '10px 14px', color: '#475569', fontSize: 13 }}>{r.phase}</td>
+                <td style={{ padding: '10px 14px', color: '#475569', fontSize: 13 }}>{r.mapping}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <P>
+        <Strong>Phases with no dedicated event.</Strong> Three of the six phases have no event of
+        their own. They are covered by an existing event, by design.
+      </P>
+      <UL>
+        <LI><Strong>authorize</Strong> is covered by <Code>{'session:connected'}</Code>. CIP-0103 folds authorization into the connect grant: the wallet{"'"}s approval to connect is the authorization, so there is no separate authorize step or event.</LI>
+        <LI><Strong>prepare</Strong>, <Strong>submit</Strong>, and <Strong>confirm</Strong> are covered by <Code>{'tx:status'}</Code>. The kit models the transaction lifecycle as one event whose <Code>{'status'}</Code> field moves through prepared, submitted, and committed, rather than three separately named events.</LI>
+      </UL>
+
       <PrevNext />
     </>
   );
