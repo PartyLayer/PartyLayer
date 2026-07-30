@@ -102,8 +102,11 @@ Then point each app at the gateway with `VITE_BACKEND=live` and
 ## 8. DNS suggestions
 
 - gateway.partylayer.xyz for the gateway host (behind the validator's network).
-- tokenization.partylayer.xyz and dvp.partylayer.xyz for the two apps on Vercel, each
-  built with `VITE_BACKEND=live` and `VITE_GATEWAY_URL=https://gateway.partylayer.xyz`.
+- tokenization.partylayer.xyz and dvp.partylayer.xyz for the two apps. Both are static
+  builds served by Caddy on the validator host from `/opt/partylayer-apps`, with `/api`
+  reverse proxied to the gateway. Each app is built with `VITE_BACKEND=live` and
+  `VITE_GATEWAY_URL=/api`, so the browser calls its own origin and Caddy forwards `/api`
+  to the gateway. See DEPLOY.md at the repo root for the full procedure.
 - Set `ALLOWED_ORIGINS` to those two app origins so CORS admits them and nothing else.
 
 ## 9. Smoke test
