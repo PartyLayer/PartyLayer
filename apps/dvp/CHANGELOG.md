@@ -1,5 +1,13 @@
 # partylayer-dvp
 
+## 0.0.4
+
+### Patch Changes
+
+- Updated dependencies [2646186]
+  - @partylayer/adapter-cantor8@0.4.0
+  - @partylayer/sdk@0.18.1
+
 ## 0.0.3
 
 ### Patch Changes
