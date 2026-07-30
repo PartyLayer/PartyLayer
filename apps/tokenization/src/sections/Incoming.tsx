@@ -19,7 +19,10 @@ import { formatAmount } from '../lib/format';
 export function Incoming() {
   const { party, backend } = useDemo();
   const queryClient = useQueryClient();
+  // Accept and Reject share one action mutation; track the cid and kind in flight so the
+  // Submitting label lands on the clicked button alone (A8).
   const [actingCid, setActingCid] = useState<string | null>(null);
+  const [actingKind, setActingKind] = useState<'accept' | 'reject' | null>(null);
 
   const q = useTransferInstructions({
     read: (signal) => backend.readIncoming(party, signal),
@@ -35,6 +38,7 @@ export function Incoming() {
 
   const act = (instructionCid: string, kind: 'accept' | 'reject') => {
     setActingCid(instructionCid);
+    setActingKind(kind);
     action.submitAction({ instructionCid, action: kind });
   };
 
@@ -79,14 +83,18 @@ export function Incoming() {
                         disabled={action.isPending}
                         onClick={() => act(cid, 'accept')}
                       >
-                        Accept
+                        {action.isPending && actingCid === cid && actingKind === 'accept'
+                          ? 'Submitting...'
+                          : 'Accept'}
                       </button>
                       <button
                         className="btn btn-ghost"
                         disabled={action.isPending}
                         onClick={() => act(cid, 'reject')}
                       >
-                        Reject
+                        {action.isPending && actingCid === cid && actingKind === 'reject'
+                          ? 'Submitting...'
+                          : 'Reject'}
                       </button>
                     </div>
                   ) : null}

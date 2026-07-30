@@ -59,7 +59,10 @@ function CounterpartyTrades() {
   // A3: compare in party KEYS. Reads (demo and live) return leg.sender as a key.
   const me = party;
   const isLive = import.meta.env.VITE_BACKEND === 'live';
+  // Track which leg is allocating and which trade is being rejected, so the Submitting label
+  // shows on the clicked button alone (A8): allocate keys on cid:legId, reject on the cid.
   const [allocating, setAllocating] = useState<string | null>(null);
+  const [rejecting, setRejecting] = useState<string | null>(null);
 
   const trades = useAllocationRequests({
     read: (signal) => backend.readTrades(signal),
@@ -141,14 +144,19 @@ function CounterpartyTrades() {
                               disabled={allocate.isPending}
                               onClick={() => doAllocate(trade.cid, legId)}
                             >
-                              Allocate my leg
+                              {allocate.isPending && allocating === trade.cid + ':' + legId
+                                ? 'Submitting...'
+                                : 'Allocate my leg'}
                             </button>
                             <button
                               className="btn btn-ghost btn-small"
                               disabled={reject.isPending}
-                              onClick={() => reject.submitAction({ requestCid: trade.cid, action: 'reject', actor: me })}
+                              onClick={() => {
+                                setRejecting(trade.cid);
+                                reject.submitAction({ requestCid: trade.cid, action: 'reject', actor: me });
+                              }}
                             >
-                              Reject
+                              {reject.isPending && rejecting === trade.cid ? 'Submitting...' : 'Reject'}
                             </button>
                           </div>
                         </div>
@@ -217,6 +225,11 @@ function VenueTrades() {
 
   const [usdAmount, setUsdAmount] = useState('100.00');
   const [bondAmount, setBondAmount] = useState('5.00');
+  // Settle, withdraw, and cancel each act on a specific trade or allocation; track the target
+  // so the Submitting label shows on the clicked button alone (A8). New trade needs no target.
+  const [settlingCid, setSettlingCid] = useState<string | null>(null);
+  const [withdrawingCid, setWithdrawingCid] = useState<string | null>(null);
+  const [cancellingCid, setCancellingCid] = useState<string | null>(null);
   const busy = createTrade.isPending || settle.isPending || requestAction.isPending || cancel.isPending;
 
   // Validate both leg amounts inline: numeric and greater than zero. A trade spec has no
@@ -265,7 +278,7 @@ function VenueTrades() {
             disabled={busy || usdReason !== null || bondReason !== null}
             onClick={() => createTrade.exerciseChoice({ usdAmount, bondAmount })}
           >
-            New trade
+            {createTrade.isPending ? 'Submitting...' : 'New trade'}
           </button>
         </div>
       </div>
@@ -305,9 +318,14 @@ function VenueTrades() {
                             <button
                               className="btn btn-ghost btn-small"
                               disabled={busy}
-                              onClick={() => cancel.submitAction({ allocationCid: alloc.cid, action: 'cancel' })}
+                              onClick={() => {
+                                setCancellingCid(alloc.cid);
+                                cancel.submitAction({ allocationCid: alloc.cid, action: 'cancel' });
+                              }}
                             >
-                              Cancel allocation
+                              {cancel.isPending && cancellingCid === alloc.cid
+                                ? 'Submitting...'
+                                : 'Cancel allocation'}
                             </button>
                           ) : null}
                         </div>
@@ -319,16 +337,24 @@ function VenueTrades() {
                       className="btn btn-primary btn-small"
                       disabled={busy || !allMatched}
                       title={allMatched ? 'Settle atomically' : 'All legs must be allocated first'}
-                      onClick={() => settle.exerciseChoice({ requestCid: trade.cid })}
+                      onClick={() => {
+                        setSettlingCid(trade.cid);
+                        settle.exerciseChoice({ requestCid: trade.cid });
+                      }}
                     >
-                      Settle
+                      {settle.isPending && settlingCid === trade.cid ? 'Submitting...' : 'Settle'}
                     </button>
                     <button
                       className="btn btn-ghost btn-small"
                       disabled={busy}
-                      onClick={() => requestAction.submitAction({ requestCid: trade.cid, action: 'withdraw' })}
+                      onClick={() => {
+                        setWithdrawingCid(trade.cid);
+                        requestAction.submitAction({ requestCid: trade.cid, action: 'withdraw' });
+                      }}
                     >
-                      Withdraw trade
+                      {requestAction.isPending && withdrawingCid === trade.cid
+                        ? 'Submitting...'
+                        : 'Withdraw trade'}
                     </button>
                   </div>
                 </li>

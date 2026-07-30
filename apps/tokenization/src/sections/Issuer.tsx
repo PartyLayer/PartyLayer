@@ -42,6 +42,9 @@ export function Issuer() {
   const [mintTarget, setMintTarget] = useState<DemoPartyKey>('alice');
   const [mintAmount, setMintAmount] = useState('');
   const [freezeTarget, setFreezeTarget] = useState<DemoPartyKey>('alice');
+  // Mint and freeze share one issuerChoice mutation, so track which action is in flight to
+  // show the Submitting label on the clicked button alone (A8). 'mint' or the toggled cid.
+  const [pendingKind, setPendingKind] = useState<string | null>(null);
 
   const refreshAll = () => invalidateHoldingsAndReads(queryClient);
 
@@ -60,11 +63,13 @@ export function Issuer() {
 
   const doMint = () => {
     if (mintReason !== null) return;
+    setPendingKind('mint');
     issuerChoice.exerciseChoice({ kind: 'mint', toParty: mintTarget, amount: mintAmount });
     setMintAmount('');
   };
 
   const toggleFreeze = (ref: TokenHoldingRef) => {
+    setPendingKind(ref.cid);
     issuerChoice.exerciseChoice({
       kind: 'setFrozen',
       party: freezeTarget,
@@ -155,7 +160,7 @@ export function Issuer() {
                 onClick={doMint}
                 disabled={controlsDisabled || mintReason !== null || issuerChoice.isPending}
               >
-                Mint
+                {issuerChoice.isPending && pendingKind === 'mint' ? 'Submitting...' : 'Mint'}
               </button>
             </div>
           </div>
@@ -199,7 +204,11 @@ export function Issuer() {
                         disabled={controlsDisabled || issuerChoice.isPending}
                         onClick={() => toggleFreeze(ref)}
                       >
-                        {ref.holding.lock ? 'Unfreeze' : 'Freeze'}
+                        {issuerChoice.isPending && pendingKind === ref.cid
+                          ? 'Submitting...'
+                          : ref.holding.lock
+                            ? 'Unfreeze'
+                            : 'Freeze'}
                       </button>
                     </li>
                   ))}
