@@ -29,7 +29,7 @@ import { toastStatus } from '../lib/mutation';
 import { invalidateAll } from '../lib/invalidate';
 import { allocationForLeg, matchedLegIds } from '../lib/match';
 import { formatAmount, isPositiveAmount } from '../lib/format';
-import { PARTIES, REGISTRY, FEE_ESTIMATE } from '../lib/fixtures';
+import { REGISTRY, FEE_ESTIMATE } from '../lib/fixtures';
 import { demoStore } from '../lib/store';
 import type { SettleTrade, CreateTrade } from '../lib/types';
 
@@ -56,7 +56,9 @@ export function Trades() {
 function CounterpartyTrades() {
   const { party, backend } = useDemo();
   const queryClient = useQueryClient();
-  const me = PARTIES[party].partyId;
+  // A3: compare in party KEYS. Reads (demo and live) return leg.sender as a key.
+  const me = party;
+  const isLive = import.meta.env.VITE_BACKEND === 'live';
   const [allocating, setAllocating] = useState<string | null>(null);
 
   const trades = useAllocationRequests({
@@ -88,7 +90,8 @@ function CounterpartyTrades() {
         transferLeg: leg,
       },
       requestedAt: new Date().toISOString(),
-      inputHoldingCids: demoStore.unlockedCids(party, leg.instrumentId.admin, leg.instrumentId.id),
+      // Live selects backing on the gateway/SDK; only demo needs local input cids (A3).
+      inputHoldingCids: isLive ? [] : demoStore.unlockedCids(party, leg.instrumentId.admin, leg.instrumentId.id),
       meta: {},
     };
     setAllocating(requestCid + ':' + legId);

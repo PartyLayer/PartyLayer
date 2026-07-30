@@ -42,6 +42,7 @@ import {
   mapAllocationRequest,
   type AcsEntry,
 } from '../mapping.js';
+import { makeToKey, makeToLedgerId, reverseLeg } from '../party-map.js';
 import { allocationMatchesRequestLeg } from '@partylayer/react/query';
 import { buildSdk, type LiveSdk } from './sdk.js';
 import { LedgerClient, exerciseCommand } from './ledger.js';
@@ -78,7 +79,12 @@ export async function createLiveBackends(cfg: GatewayConfig): Promise<Backends> 
     // Amulet has no separate issuer party; issuance belongs to the registry.
     issuer: live.partyVenue,
   };
-  const partyId = (key: string): string => (P as Record<string, string>)[key] ?? key;
+  // Symmetric party map: keys go to ledger ids inbound (every submitted party
+  // field), ledger ids go back to keys outbound (the fields the apps compare), so
+  // the app compares keys in demo and live alike. Raw ledger ids are kept on the
+  // read payload under senderLedgerId/receiverLedgerId (see reverseLeg).
+  const partyId = makeToLedgerId(P);
+  const toKey = makeToKey(P);
   const allParties = [P.alice, P.bob, P.venue];
 
   // The Amulet asset body and instrument id, resolved once from Scan.
@@ -269,11 +275,31 @@ export async function createLiveBackends(cfg: GatewayConfig): Promise<Backends> 
     },
     async readTrades() {
       const entries = await ledger.activeByInterface(allParties, ALLOCATION_REQUEST_INTERFACE);
-      return entries.map(mapAllocationRequest);
+      // Reverse-map each leg's sender/receiver to keys so the app's "my legs" test
+      // (leg.sender === party key) works; raw ledger ids stay under senderLedgerId.
+      return entries.map(mapAllocationRequest).map((ref) => ({
+        ...ref,
+        request: {
+          ...ref.request,
+          transferLegs: Object.fromEntries(
+            Object.entries(ref.request.transferLegs).map(([legId, leg]) => [legId, reverseLeg(leg, toKey)]),
+          ),
+        },
+      }));
     },
     async readAllocations(party) {
       const entries = await ledger.activeByInterface([partyId(party)], ALLOCATION_INTERFACE);
-      return entries.map(mapAllocation);
+      // Reverse-map the allocation owner (its leg sender/receiver) to keys.
+      return entries.map(mapAllocation).map((ref) => ({
+        ...ref,
+        allocation: {
+          ...ref.allocation,
+          allocation: {
+            ...ref.allocation.allocation,
+            transferLeg: reverseLeg(ref.allocation.allocation.transferLeg, toKey),
+          },
+        },
+      }));
     },
     async readMatchedLegs(requestCid) {
       const [allocEntries, requestEntries] = await Promise.all([

@@ -19,7 +19,6 @@ import { Card, AsyncView, Badge } from '../ui/primitives';
 import { toastStatus } from '../lib/mutation';
 import { invalidateAllocations } from '../lib/invalidate';
 import { formatAmount } from '../lib/format';
-import { PARTIES } from '../lib/fixtures';
 
 const ACTIONS: { kind: AllocationActionKind; label: string }[] = [
   { kind: 'executeTransfer', label: 'Execute' },
@@ -52,11 +51,13 @@ export function Allocations() {
 
   const createDemoAllocation = () => {
     // Build the standard AllocationFactory_Allocate request from the issuer as admin.
+    // Party fields are demo KEYS (A3): the gateway maps a key to its ledger id inbound,
+    // so the live sender is the real party with holdings, not a stale fixture id.
     create.submitAllocation({
-      expectedAdmin: PARTIES.issuer.partyId,
+      expectedAdmin: 'issuer',
       allocation: {
         settlement: {
-          executor: PARTIES.issuer.partyId,
+          executor: 'issuer',
           settlementRef: { id: 'settlement-demo-new' },
           requestedAt: new Date().toISOString(),
           allocateBefore: '2027-01-01T00:00:00Z',
@@ -64,10 +65,10 @@ export function Allocations() {
         },
         transferLegId: 'leg-new',
         transferLeg: {
-          sender: PARTIES[party].partyId,
-          receiver: PARTIES.bob.partyId,
+          sender: party,
+          receiver: 'bob',
           amount: '5.00',
-          instrumentId: { admin: PARTIES.issuer.partyId, id: 'DEMO' },
+          instrumentId: { admin: 'issuer', id: 'DEMO' },
         },
       },
       requestedAt: new Date().toISOString(),

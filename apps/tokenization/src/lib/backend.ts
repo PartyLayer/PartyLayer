@@ -59,11 +59,13 @@ function throwIfAborted(signal?: AbortSignal): void {
   if (signal?.aborted) throw new DOMException('Aborted', 'AbortError');
 }
 
-function partyIdToKey(partyId: string): DemoPartyKey {
+/** Accept either a demo key (the app's currency after A3) or a fixture party id. */
+function partyIdToKey(party: string): DemoPartyKey {
+  if (Object.prototype.hasOwnProperty.call(PARTIES, party)) return party as DemoPartyKey;
   for (const key of Object.keys(PARTIES) as DemoPartyKey[]) {
-    if (PARTIES[key].partyId === partyId) return key;
+    if (PARTIES[key].partyId === party) return key;
   }
-  throw new Error('Unknown party id: ' + partyId);
+  throw new Error('Unknown party: ' + party);
 }
 
 export const demoBackend: TokenizationBackend = {

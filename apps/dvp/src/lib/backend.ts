@@ -43,11 +43,28 @@ function throwIfAborted(signal?: AbortSignal): void {
   if (signal?.aborted) throw new DOMException('Aborted', 'AbortError');
 }
 
-function partyIdToKey(partyId: string): DemoPartyKey {
+/** Accept either a demo key (the app's currency after A3) or a fixture party id. */
+function partyIdToKey(party: string): DemoPartyKey {
+  if (Object.prototype.hasOwnProperty.call(PARTIES, party)) return party as DemoPartyKey;
   for (const key of Object.keys(PARTIES) as DemoPartyKey[]) {
-    if (PARTIES[key].partyId === partyId) return key;
+    if (PARTIES[key].partyId === party) return key;
   }
-  throw new Error('Unknown party id: ' + partyId);
+  throw new Error('Unknown party: ' + party);
+}
+
+/** Map a fixture party id to its key for read payloads; pass anything else through. */
+function toKey(party: string): string {
+  if (Object.prototype.hasOwnProperty.call(PARTIES, party)) return party;
+  for (const key of Object.keys(PARTIES) as DemoPartyKey[]) {
+    if (PARTIES[key].partyId === party) return key;
+  }
+  return party;
+}
+
+/** Reverse-map a leg's sender/receiver to keys, mirroring the gateway, so the app
+ *  compares keys in demo exactly as it does against a live read. */
+function reverseLeg<T extends { sender: string; receiver: string }>(leg: T): T {
+  return { ...leg, sender: toKey(leg.sender), receiver: toKey(leg.receiver) };
 }
 
 /** The allocation cid a party owns, matched by a request/leg an action targets. */
@@ -62,19 +79,40 @@ export const demoBackend: DvpBackend = {
   async readHoldings(party, signal) {
     await latency();
     throwIfAborted(signal);
-    return demoStore.holdingsOf(party);
+    return demoStore
+      .holdingsOf(party)
+      .map((ref) => ({ ...ref, holding: { ...ref.holding, owner: toKey(ref.holding.owner) } }));
   },
 
   async readTrades(signal) {
     await latency();
     throwIfAborted(signal);
-    return demoStore.requestsPending();
+    // Reverse-map leg sender/receiver to keys so leg.sender === party (a key) holds
+    // in demo, exactly as it does against a live read.
+    return demoStore.requestsPending().map((ref) => ({
+      ...ref,
+      request: {
+        ...ref.request,
+        transferLegs: Object.fromEntries(
+          Object.entries(ref.request.transferLegs).map(([legId, leg]) => [legId, reverseLeg(leg)]),
+        ),
+      },
+    }));
   },
 
   async readAllocations(party, signal) {
     await latency();
     throwIfAborted(signal);
-    return demoStore.allocationsOf(party);
+    return demoStore.allocationsOf(party).map((ref) => ({
+      ...ref,
+      allocation: {
+        ...ref.allocation,
+        allocation: {
+          ...ref.allocation.allocation,
+          transferLeg: reverseLeg(ref.allocation.allocation.transferLeg),
+        },
+      },
+    }));
   },
 
   async readMatchedLegs(requestCid, signal) {

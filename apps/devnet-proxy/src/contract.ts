@@ -64,6 +64,12 @@ export interface TokenTransferLeg {
   amount: string;
   instrumentId: TokenInstrumentId;
   meta?: Record<string, string>;
+  /**
+   * On a read from the live gateway, sender/receiver are party KEYS and these carry
+   * the raw ledger ids, so nothing is hidden. Absent on requests going the other way.
+   */
+  senderLedgerId?: string;
+  receiverLedgerId?: string;
 }
 export interface TokenSettlementReference {
   id: string;

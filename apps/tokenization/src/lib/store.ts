@@ -41,10 +41,15 @@ function nextCid(prefix: string): string {
   return prefix + '-gen' + cidCounter.toString();
 }
 
-/** Map a party id string back to its demo key (fixtures use fixed ids). */
-function keyOf(partyId: string): DemoPartyKey | null {
+/**
+ * Resolve a party to its demo key. Accepts either a demo key (the app's currency
+ * after A3) or a fixture party id, so demo submits work whether the caller sends a
+ * key or an id. Returns null for anything else.
+ */
+function keyOf(party: string): DemoPartyKey | null {
+  if (Object.prototype.hasOwnProperty.call(PARTIES, party)) return party as DemoPartyKey;
   for (const key of Object.keys(PARTIES) as DemoPartyKey[]) {
-    if (PARTIES[key].partyId === partyId) return key;
+    if (PARTIES[key].partyId === party) return key;
   }
   return null;
 }
