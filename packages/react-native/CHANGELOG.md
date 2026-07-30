@@ -1,5 +1,12 @@
 # @partylayer/react-native
 
+## 0.2.2
+
+### Patch Changes
+
+- Updated dependencies [4fb8c0f]
+  - @partylayer/sdk@0.18.0
+
 ## 0.2.1
 
 ### Patch Changes
