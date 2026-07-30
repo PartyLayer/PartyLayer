@@ -177,6 +177,11 @@ export default function App() {
             </div>
           </header>
 
+          <p className="page-intro">
+            A live demo of the Canton Network Token Standard (CIP-0056): holdings, transfers, and
+            allocations, built with PartyLayer React hooks.
+          </p>
+
           <RetryBanner />
 
           <p className="acting-line">

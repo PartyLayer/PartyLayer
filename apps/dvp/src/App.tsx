@@ -175,6 +175,11 @@ export default function App() {
             </div>
           </header>
 
+          <p className="page-intro">
+            A live demo of atomic delivery versus payment on Canton using CIP-0056 allocations,
+            built with PartyLayer React hooks.
+          </p>
+
           <RetryBanner />
 
           <p className="acting-line">
