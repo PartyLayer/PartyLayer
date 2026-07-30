@@ -133,3 +133,89 @@ Run these against each live origin after a deploy:
 Rebuild the previous commit and re-sync, or keep the prior `dist/` and re-`rsync` it. Because
 the apps are static, a rollback is a file swap plus a `version.txt` that points back at the
 older sha; no gateway change is needed unless the gateway itself regressed.
+
+<!-- BEGIN quality-pass: demo apps quality pass (feat/demo-apps-quality-pass) -->
+
+The two sections below are the deploy-time steps added by the demo apps quality pass. They
+complement the generic verification above with the seed and the quality-pass-specific checks.
+The curl examples hit the gateway origin directly; behind Caddy the same paths are under `/api`.
+
+## DvP seed (deploy-time step)
+
+The dvp demo (partylayer-dvp) lands on an empty Trades list until the venue creates a
+trade. On a fresh live deployment that reads as "nothing here". Seed a few small, real
+trades once, after the gateway is live, so the deployed demo shows settleable activity on
+first load.
+
+This is a manual deploy-time step. It is NOT run by CI or the build (no package.json
+references it), and it refuses to run unless the gateway reports live mode.
+
+```
+# from the repo root, against the live gateway
+GATEWAY_URL=https://<gateway-host> node scripts/seed-dvp.mjs
+
+# optional: choose how many trades (default 3, clamped to 1..10)
+GATEWAY_URL=https://<gateway-host> SEED_COUNT=5 node scripts/seed-dvp.mjs
+```
+
+Notes:
+- Run it from a host allowed to reach the gateway directly (for example the deploy box);
+  the live gateway is network gated, not token authenticated.
+- It calls GET /health first and aborts unless mode is "live", so it can never seed a mock
+  or misconfigured gateway.
+- Re-running adds more trades, it does not reset. Seed once per deployment.
+
+## Post-deploy live verification (quality pass)
+
+After deploying the gateway and the two demo apps, verify the live path with these checks.
+Replace <gateway-host> with the deployed gateway origin.
+
+1. Health reports live mode:
+
+```
+curl -s https://<gateway-host>/health
+# expect: {"ok":true,"mode":"live"}
+```
+
+2. Public config returns party display info (labels only, never secrets):
+
+```
+curl -s https://<gateway-host>/config
+# expect: a JSON object with the demo party display labels
+```
+
+3. Tokenization holdings read resolves the party KEY (A3): send the key "alice", not a
+   ledger id, and expect holdings back for the real party:
+
+```
+curl -s -X POST https://<gateway-host>/tokenization/holdings \
+  -H 'content-type: application/json' -d '{"party":"alice"}'
+# expect: a JSON array (alice's holdings), or [] if none yet
+```
+
+4. DvP trades read returns party KEYS on the legs (A3 reverse map), with the raw ledger
+   ids preserved under senderLedgerId / receiverLedgerId:
+
+```
+curl -s -X POST https://<gateway-host>/dvp/trades \
+  -H 'content-type: application/json' -d '{}'
+# expect: each leg's sender/receiver is a key (alice, bob, or venue), and
+#         senderLedgerId / receiverLedgerId hold the raw party ids.
+# after seeding (see above) this list is non-empty.
+```
+
+5. Live cost estimate (B11): a genuine live estimate needs LEDGER_SYNCHRONIZER_ID set on the
+   gateway. With it set, expect a cost estimation; without it the endpoint returns null and the
+   apps show the illustrative caption.
+
+```
+curl -s -X POST https://<gateway-host>/tokenization/transferEstimate \
+  -H 'content-type: application/json' \
+  -d '{"transfer":{"sender":"alice","receiver":"bob","amount":"1.00","instrumentId":{"admin":"issuer","id":"Amulet"},"requestedAt":"2026-01-01T00:00:00Z","executeBefore":"2026-01-02T00:00:00Z","inputHoldingCids":[],"meta":{}}}'
+# expect: {"costEstimation":{...}} when a synchronizer is configured, else {"costEstimation":null}
+```
+
+6. In each deployed app, confirm the browser console is clean on load, and that a submit
+   under gateway load shows the retry banner (A1 and A2) rather than a raw error.
+
+<!-- END quality-pass -->
