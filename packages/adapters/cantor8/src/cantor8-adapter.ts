@@ -82,11 +82,6 @@ export interface Cantor8SubmitPayload {
 export interface Cantor8AdapterConfig {
   /** dApp URL passed to the Cantor8 SDK popup handshake. Defaults to `ctx.origin`. */
   dappUrl?: string;
-  /**
-   * How long `detectInstalled()` waits for the wallet's `c8#provider_discovery`
-   * announcement before reporting not-detected. Default 300ms.
-   */
-  detectTimeoutMs?: number;
 }
 
 /**
@@ -118,39 +113,57 @@ export class Cantor8Adapter implements WalletAdapter {
     );
   }
 
+  /**
+   * Cantor8 is a HOSTED POPUP wallet: connect() opens the wallet at
+   * wallet.dev.digik.cantor8.tech (devnet) or wallet.cantor8.tech (mainnet)
+   * through the SDK's C8WalletProvider. Nothing of Cantor8 runs in THIS page, so
+   * there is nothing here to detect.
+   *
+   * The SDK's discovery protocol has two sides. `announceC8Provider(get)` is the
+   * DISPATCH side, called by a wallet that lives in the page to advertise a
+   * provider factory; `onC8ProviderDiscovered(cb)` is the SUBSCRIBE side, called
+   * by a dApp to hear such an announcement. A hosted popup on another origin never
+   * calls `announceC8Provider` in our page, so subscribing and waiting for the
+   * `c8#provider_discovery` event can only ever time out. That is precisely what
+   * the previous strategy did, and it reported Cantor8 permanently unavailable,
+   * which hid it from the picker.
+   *
+   * The right model is the gateway contract the official ProviderAdapter path uses
+   * (see GenericDiscoveryAdapter.detectInstalled): a gateway is reachable wherever
+   * it can be opened, so detect reports available and the REAL availability check
+   * happens at connect(), when the popup opens. Walley, a popup wallet on that
+   * generic path, works in our demos for exactly this reason.
+   *
+   * This is the SECOND detection strategy to be wrong here, both from the same
+   * root cause: inferring the wallet's shape without the wallet in hand. First a
+   * user-agent sniff mislabeled this desktop popup as a mobile wallet; then the
+   * announcement wait assumed an in-page announcer that a hosted popup never
+   * provides. Do not reintroduce a probe that depends on something being in the
+   * page. If a future in-page Cantor8 ever announces over `c8#provider_discovery`,
+   * it may be adopted as a fast path, but it must NEVER be the condition for
+   * availability.
+   *
+   * detect still LOADS the SDK (the pre-fix detect did too; only its announcement
+   * wait was wrong). This is deliberate warming, not detection: a bespoke adapter
+   * does not get the SDK's popup-safe fast-path (that is for GenericDiscoveryAdapter),
+   * so connect() reaches window.open only after awaits. detect runs at picker
+   * render, off the click gesture, so the dynamic import resolves before the user
+   * clicks; connect()'s `await loadC8()` is then a resolved microtask instead of a
+   * cold import that would defer window.open past the gesture and let the browser
+   * block the popup.
+   */
   async detectInstalled(): Promise<AdapterDetectResult> {
     if (typeof window === 'undefined') {
       return { installed: false, reason: 'Browser environment required' };
     }
-    // Use Cantor8's OWN discovery event, not a user-agent sniff. The old sniff
-    // mislabeled this desktop popup wallet as mobile; `onC8ProviderDiscovered`
-    // resolves when a C8 provider announces over `c8#provider_discovery`.
-    const { onC8ProviderDiscovered } = await loadC8();
-    const timeoutMs = this.config.detectTimeoutMs ?? 300;
-    return new Promise<AdapterDetectResult>((resolve) => {
-      let settled = false;
-      const state: { unsubscribe?: () => void } = {};
-      const finish = (result: AdapterDetectResult) => {
-        if (settled) return;
-        settled = true;
-        clearTimeout(timer);
-        try {
-          state.unsubscribe?.();
-        } catch {
-          /* ignore */
-        }
-        resolve(result);
-      };
-      const timer = setTimeout(
-        () =>
-          finish({
-            installed: false,
-            reason: 'Cantor8 wallet did not announce (no c8#provider_discovery event)',
-          }),
-        timeoutMs,
-      );
-      state.unsubscribe = onC8ProviderDiscovered(() => finish({ installed: true }));
-    });
+    // Warm the SDK module (see the warming note above). A load failure is not
+    // fatal to availability; it surfaces at connect() where the real work happens.
+    try {
+      await loadC8();
+    } catch {
+      /* ignore; connect() surfaces a genuine SDK load failure */
+    }
+    return { installed: true };
   }
 
   async connect(

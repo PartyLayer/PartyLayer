@@ -12,9 +12,10 @@
  * - submitTransaction() maps to the SDK's signAndExecute() with the right args.
  * - signMessage() FAILS cleanly (CapabilityNotSupportedError) and never routes
  *   through signAndExecute or resolves. The wallet has no message signing.
- * - detectInstalled() uses the wallet's own c8#provider_discovery event, not a
- *   user-agent sniff (it does not mislabel a desktop UA as unavailable, nor a
- *   mobile UA as available).
+ * - detectInstalled() follows the gateway contract for a hosted popup: it reports
+ *   available in a browser without a user-agent sniff and without waiting on the
+ *   in-page discovery event (which a hosted popup never fires); the real check is
+ *   at connect().
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { AdapterContext, Session } from '@partylayer/core';
@@ -185,21 +186,22 @@ describe('Cantor8Adapter: signMessage fails cleanly (no counterpart in the SDK)'
   });
 });
 
-describe('Cantor8Adapter: detectInstalled uses the wallet discovery event, not a UA sniff', () => {
-  it('reports installed when the wallet announces (even on a DESKTOP user agent)', async () => {
+describe('Cantor8Adapter: detectInstalled is the hosted-popup gateway contract', () => {
+  it('reports available in a browser regardless of user agent (no UA sniff)', async () => {
+    setUserAgent('Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X)');
+    expect((await new Cantor8Adapter().detectInstalled()).installed).toBe(true);
     setUserAgent('Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) Chrome/120');
-    h.discover = true;
-    const res = await new Cantor8Adapter().detectInstalled();
-    expect(res.installed).toBe(true);
-    expect(h.discoveredCount).toBeGreaterThan(0); // it consulted the discovery event
+    expect((await new Cantor8Adapter().detectInstalled()).installed).toBe(true);
   });
 
-  it('reports NOT installed when nothing announces (even on a MOBILE user agent)', async () => {
-    setUserAgent('Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X)');
+  it('reports available even though nothing announces in the page, and never waits on the event', async () => {
+    // A hosted popup never fires c8#provider_discovery in this page. Availability
+    // must NOT be gated on that event (the previous bug), and detect must not even
+    // consult it: it is unconditionally available, checked for real at connect().
     h.discover = false;
-    const res = await new Cantor8Adapter({ detectTimeoutMs: 20 }).detectInstalled();
-    expect(res.installed).toBe(false);
-    expect(res.reason).toMatch(/c8#provider_discovery/);
+    const res = await new Cantor8Adapter().detectInstalled();
+    expect(res.installed).toBe(true);
+    expect(h.discoveredCount).toBe(0); // detect does not subscribe to the discovery event
   });
 });
 
