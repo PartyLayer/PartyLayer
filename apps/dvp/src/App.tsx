@@ -33,6 +33,7 @@ import type { DemoPartyKey } from './lib/types';
 import { Trades } from './sections/Trades';
 import { MyAllocations } from './sections/MyAllocations';
 import { Holdings } from './sections/Holdings';
+import { RetryBanner } from './ui/RetryBanner';
 import './App.css';
 
 // Every stable wallet gets its adapter so the connect surface can genuinely
@@ -154,6 +155,8 @@ export default function App() {
               <ConnectButton />
             </div>
           </header>
+
+          <RetryBanner />
 
           <p className="acting-line">
             Acting as <strong>{PARTIES[party].label}</strong>{' '}

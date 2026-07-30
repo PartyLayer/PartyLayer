@@ -35,6 +35,7 @@ import { Transfer } from './sections/Transfer';
 import { Incoming } from './sections/Incoming';
 import { Issuer } from './sections/Issuer';
 import { Allocations } from './sections/Allocations';
+import { RetryBanner } from './ui/RetryBanner';
 import './App.css';
 
 // Every stable wallet gets its adapter so the connect surface can genuinely
@@ -156,6 +157,8 @@ export default function App() {
               <ConnectButton />
             </div>
           </header>
+
+          <RetryBanner />
 
           <p className="acting-line">
             Acting as <strong>{PARTIES[party].label}</strong>{' '}

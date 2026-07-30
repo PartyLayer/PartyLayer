@@ -15,6 +15,7 @@ import type {
 import type { TokenizationBackend, IssuerChoice } from './backend';
 import type { DemoPartyKey, InstrumentConfig } from './types';
 import { mapGatewayError } from './gateway-errors';
+import { withRetry } from './retry';
 
 async function call<T>(base: string, path: string, body: unknown, signal?: AbortSignal): Promise<T> {
   const res = await fetch(base.replace(/\/$/, '') + path, {
@@ -39,11 +40,11 @@ export function createLiveBackend(gatewayUrl: string): TokenizationBackend {
     readInstrument: (signal) => call<InstrumentConfig | null>(gatewayUrl, '/tokenization/instrument', {}, signal),
     readSupply: (signal) => call<string | null>(gatewayUrl, '/tokenization/supply', {}, signal),
     readAllocations: (signal) => call<TokenAllocationRef[] | null>(gatewayUrl, '/tokenization/allocations', {}, signal),
-    submitTransfer: (transfer: TokenTransfer, signal) => call(gatewayUrl, '/tokenization/transfer', { transfer }, signal).then(() => ok),
-    submitTransferAction: (request: TransferInstructionActionRequest, signal) => call(gatewayUrl, '/tokenization/transferAction', { request }, signal).then(() => ok),
-    submitIssuerChoice: (choice: IssuerChoice, signal) => call(gatewayUrl, '/tokenization/issuerChoice', { choice }, signal).then(() => ok),
-    submitAllocation: (request: AllocationInstructionRequest, signal) => call(gatewayUrl, '/tokenization/allocation', { request }, signal).then(() => ok),
-    submitAllocationAction: (request: AllocationActionRequest, signal) => call(gatewayUrl, '/tokenization/allocationAction', { request }, signal).then(() => ok),
+    submitTransfer: (transfer: TokenTransfer, signal) => withRetry((s) => call(gatewayUrl, '/tokenization/transfer', { transfer }, s), signal).then(() => ok),
+    submitTransferAction: (request: TransferInstructionActionRequest, signal) => withRetry((s) => call(gatewayUrl, '/tokenization/transferAction', { request }, s), signal).then(() => ok),
+    submitIssuerChoice: (choice: IssuerChoice, signal) => withRetry((s) => call(gatewayUrl, '/tokenization/issuerChoice', { choice }, s), signal).then(() => ok),
+    submitAllocation: (request: AllocationInstructionRequest, signal) => withRetry((s) => call(gatewayUrl, '/tokenization/allocation', { request }, s), signal).then(() => ok),
+    submitAllocationAction: (request: AllocationActionRequest, signal) => withRetry((s) => call(gatewayUrl, '/tokenization/allocationAction', { request }, s), signal).then(() => ok),
   };
 }
 

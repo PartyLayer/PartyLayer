@@ -14,6 +14,7 @@ import type {
 import type { DvpBackend } from './backend';
 import type { DemoPartyKey, SettleTrade, CreateTrade } from './types';
 import { mapGatewayError } from './gateway-errors';
+import { withRetry } from './retry';
 
 async function call<T>(base: string, path: string, body: unknown, signal?: AbortSignal): Promise<T> {
   const res = await fetch(base.replace(/\/$/, '') + path, {
@@ -36,11 +37,11 @@ export function createLiveBackend(gatewayUrl: string): DvpBackend {
     readTrades: (signal) => call<TokenAllocationRequestRef[] | null>(gatewayUrl, '/dvp/trades', {}, signal),
     readAllocations: (party, signal) => call<TokenAllocationRef[] | null>(gatewayUrl, '/dvp/allocations', { party }, signal),
     readMatchedLegs: (requestCid, signal) => call<string[]>(gatewayUrl, '/dvp/matchedLegs', { requestCid }, signal),
-    submitAllocation: (request: AllocationInstructionRequest, signal) => call(gatewayUrl, '/dvp/allocation', { request }, signal).then(() => ok),
-    submitAllocationAction: (request: AllocationActionRequest, signal) => call(gatewayUrl, '/dvp/allocationAction', { request }, signal).then(() => ok),
-    submitRequestAction: (request: AllocationRequestActionRequest, signal) => call(gatewayUrl, '/dvp/requestAction', { request }, signal).then(() => ok),
-    submitSettle: (vars: SettleTrade, signal) => call(gatewayUrl, '/dvp/settle', { vars }, signal).then(() => ok),
-    submitCreateTrade: (vars: CreateTrade, signal) => call(gatewayUrl, '/dvp/createTrade', { vars }, signal).then(() => ok),
+    submitAllocation: (request: AllocationInstructionRequest, signal) => withRetry((s) => call(gatewayUrl, '/dvp/allocation', { request }, s), signal).then(() => ok),
+    submitAllocationAction: (request: AllocationActionRequest, signal) => withRetry((s) => call(gatewayUrl, '/dvp/allocationAction', { request }, s), signal).then(() => ok),
+    submitRequestAction: (request: AllocationRequestActionRequest, signal) => withRetry((s) => call(gatewayUrl, '/dvp/requestAction', { request }, s), signal).then(() => ok),
+    submitSettle: (vars: SettleTrade, signal) => withRetry((s) => call(gatewayUrl, '/dvp/settle', { vars }, s), signal).then(() => ok),
+    submitCreateTrade: (vars: CreateTrade, signal) => withRetry((s) => call(gatewayUrl, '/dvp/createTrade', { vars }, s), signal).then(() => ok),
   };
 }
 
