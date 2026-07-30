@@ -11,5 +11,5 @@ declare class Cantor8Adapter implements WalletAdapter { readonly walletId: _part
 export { Cantor8Adapter, type Cantor8AdapterConfig, type Cantor8SubmitPayload };
 import * as _partylayer_core from '@partylayer/core';
 import { WalletAdapter, CapabilityKey, AdapterDetectResult, AdapterContext, AdapterConnectResult, Session, SignMessageParams, SignedMessage, SubmitTransactionParams, TxReceipt, AdapterEventName } from '@partylayer/core';
-interface Cantor8AdapterConfig { dappUrl?: string; detectTimeoutMs?: number; }
+interface Cantor8AdapterConfig { dappUrl?: string; }
 interface Cantor8SubmitPayload { note?: string; partyId: string; commandId: string; commandsJson: string; disclosedContracts?: string; }
