@@ -14,6 +14,7 @@ import type {
 } from '@partylayer/react/query';
 import type { TokenizationBackend, IssuerChoice } from './backend';
 import type { DemoPartyKey, InstrumentConfig } from './types';
+import { mapGatewayError } from './gateway-errors';
 
 async function call<T>(base: string, path: string, body: unknown, signal?: AbortSignal): Promise<T> {
   const res = await fetch(base.replace(/\/$/, '') + path, {
@@ -23,8 +24,8 @@ async function call<T>(base: string, path: string, body: unknown, signal?: Abort
     signal,
   });
   if (!res.ok) {
-    const err = (await res.json().catch(() => ({}))) as { error?: string };
-    throw new Error(err.error || 'Gateway error ' + res.status);
+    const raw = await res.json().catch(() => ({}));
+    throw mapGatewayError(res.status, raw);
   }
   return (await res.json()) as T;
 }
