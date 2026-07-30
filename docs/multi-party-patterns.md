@@ -1,5 +1,7 @@
 # Multi-party transaction patterns
 
+> Published on the docs site: [partylayer.xyz/docs/multi-party-patterns](https://partylayer.xyz/docs/multi-party-patterns).
+
 Multi-party flows on Canton are expressed as on-ledger workflows between parties. A
 transfer is a contract the receiver acts on; a settlement is a contract whose choice
 moves several parties' assets at once. The atomicity of these flows lives in Daml, in

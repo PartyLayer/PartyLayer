@@ -99,6 +99,17 @@ const SIDEBAR_NAV = [
       { label: 'Pattern Cookbook', href: '/docs/cookbook' },
     ],
   },
+  {
+    category: 'Production & Internals',
+    items: [
+      { label: 'Multi-Party Patterns', href: '/docs/multi-party-patterns' },
+      { label: 'Privacy & Reads', href: '/docs/privacy-and-reads' },
+      { label: 'Events', href: '/docs/events' },
+      { label: 'Observability', href: '/docs/observability' },
+      { label: 'Performance', href: '/docs/performance' },
+      { label: 'Production Checklist', href: '/docs/production-checklist' },
+    ],
+  },
 ];
 
 /* Flatten for prev/next navigation */
@@ -227,6 +238,14 @@ const SEARCH_INDEX: SearchEntry[] = [
   { title: 'Multi-framework (React / Vue / Vanilla)', section: 'Cookbook', href: '/docs/cookbook#multi-framework', keywords: ['vue', 'vanilla', 'react', 'framework', 'createPartyLayerSession', 'recipe', 'studio'] },
   { title: 'Error handling', section: 'Cookbook', href: '/docs/cookbook#error-handling', keywords: ['error', 'UserRejectedError', 'reset', 'PartyLayerError', 'recipe', 'studio'] },
   { title: 'Capability gating', section: 'Cookbook', href: '/docs/cookbook#capability-gating', keywords: ['capability', 'CapabilityNotSupportedError', 'gating', 'submit', 'recipe', 'studio'] },
+
+  // Production & Internals
+  { title: 'Multi-Party Patterns', section: 'Production & Internals', href: '/docs/multi-party-patterns', keywords: ['multi-party', 'transfer', 'allocation', 'dvp', 'settlement', 'atomic', 'offer', 'accept', 'confirmer'] },
+  { title: 'Privacy & Reads', section: 'Production & Internals', href: '/docs/privacy-and-reads', keywords: ['privacy', 'witness', 'acs', 'interface view', 'disclosure', 'reads', 'party-scoped'] },
+  { title: 'Event Spec', section: 'Production & Internals', href: '/docs/events', keywords: ['events', 'event spec', 'PartyLayerEvent', 'tx:status', 'session:connected', 'telemetry', 'correlation'] },
+  { title: 'Observability', section: 'Production & Internals', href: '/docs/observability', keywords: ['observability', 'telemetry', 'opentelemetry', 'sentry', 'datadog', 'metrics', 'logging', 'adapter'] },
+  { title: 'Performance', section: 'Production & Internals', href: '/docs/performance', keywords: ['performance', 'bundle size', 'tree shaking', 'size-limit', 'lazy loading', 'caching', 'sideEffects'] },
+  { title: 'Production Checklist', section: 'Production & Internals', href: '/docs/production-checklist', keywords: ['production', 'migration', 'checklist', 'devnet', 'testnet', 'mainnet', 'ssr', 'failover', 'deploy'] },
 ];
 
 function searchDocs(query: string): SearchEntry[] {
