@@ -8,7 +8,9 @@
   --text: #1c1917;
   --muted: #78716c;
   --border: rgba(28, 25, 23, 0.14);
-  --accent: #b45309;
+  /* One amber hue (~35) across light and dark, only lightness and saturation vary. Light is
+     a dark amber for white text: WCAG AA at 5.25:1 on white, 5.08:1 on the surface tint. */
+  --accent: #9b5e08;
   --accent-contrast: #ffffff;
   --error-bg: #fef2f2;
   --error-text: #b00020;
@@ -22,12 +24,15 @@
 
 .app-dark {
   --bg: #0c0a09;
-  --surface: #1c1917;
+  /* Surface sits between bg and card so empty-state panels read as a tint again; before,
+     surface equalled card (#1c1917) and empty states were invisible inside a card. */
+  --surface: #151210;
   --card: #1c1917;
   --text: #fafaf9;
   --muted: #a8a29e;
   --border: rgba(255, 255, 255, 0.1);
-  --accent: #fbbf24;
+  /* Same amber hue (~35) as light, brighter for dark text: AA at 9.13:1 on the dark text. */
+  --accent: #faab3d;
   --accent-contrast: #1c1917;
   --error-bg: #2a0f10;
   --error-text: #fca5a5;
