@@ -1,5 +1,14 @@
 # create-partylayer-app
 
+## 0.5.3
+
+### Patch Changes
+
+- Bump the scaffold templates' `@partylayer/sdk` pin from `^0.17.0` to `^0.18.0` so a
+  newly scaffolded app installs the current SDK (0.18.0). A caret range on a 0.x version
+  only allows updates within the same minor, so `^0.17.0` could not resolve the 0.18.0
+  minor and a scaffolded app would have installed a stale SDK.
+
 ## 0.5.2
 
 ### Patch Changes

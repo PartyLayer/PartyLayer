@@ -1,7 +1,7 @@
 {
   "name": "partylayer-tokenization",
   "private": true,
-  "version": "0.0.2",
+  "version": "0.0.3",
   "type": "module",
   "description": "PartyLayer M3 Tokenization vertical example: composes the full CIP-0056 helper surface against a typed demo backend.",
   "scripts": {
