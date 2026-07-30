@@ -1,5 +1,12 @@
 # @partylayer/sdk
 
+## 0.18.1
+
+### Patch Changes
+
+- Updated dependencies [2646186]
+  - @partylayer/adapter-cantor8@0.4.0
+
 ## 0.18.0
 
 ### Minor Changes
