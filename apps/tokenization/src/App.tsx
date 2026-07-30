@@ -88,10 +88,11 @@ const ADAPTERS = [
   ...(BRON_ADAPTER ? [BRON_ADAPTER] : []),
 ];
 
-const SYNCHRONIZERS: SynchronizerOption[] = [
-  { networkId: 'canton:da-devnet', label: 'DevNet' },
-  { networkId: 'canton:da-testnet', label: 'TestNet' },
-];
+// The demo only ever talks to Canton DevNet: live mode routes to the DevNet gateway and
+// demo mode simulates it. List DevNet alone so the switcher cannot offer a network the app
+// cannot actually reach. The switcher's visible label is derived from this networkId value,
+// and the control carries an accessible name (aria-label Synchronizer) from the primitive.
+const SYNCHRONIZERS: SynchronizerOption[] = [{ networkId: 'canton:da-devnet', label: 'DevNet' }];
 
 export default function App() {
   const [mode, setMode] = useState<'light' | 'dark'>('light');
