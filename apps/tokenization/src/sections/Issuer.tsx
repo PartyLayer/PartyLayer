@@ -21,11 +21,14 @@ import type { DemoPartyKey, InstrumentConfig } from '../lib/types';
 export function Issuer() {
   const { party, backend } = useDemo();
   const queryClient = useQueryClient();
-  // In live mode issuance is disabled: on Canton Coin the registry controls Amulet
-  // issuance, so mint and freeze are demo-only. The panel stays visible to showcase
-  // the issuance UI, with actions disabled and a short explanation.
+  // In live mode issuance is disabled: on Canton Coin the registry controls Amulet issuance,
+  // so mint and freeze are demo-only. Rather than hiding the controls, the panel keeps them
+  // VISIBLE but DISABLED with a truthful note (A7 per D5), so it never advertises a capability
+  // it does not show. In demo mode the issuer party drives the controls for real.
   const isLive = import.meta.env.VITE_BACKEND === 'live';
   const isIssuer = party === 'issuer' && !isLive;
+  const controlsDisabled = isLive;
+  const showControls = isLive || isIssuer;
 
   const instrument = useDamlContract<InstrumentConfig>({
     read: (signal) => backend.readInstrument(signal),
@@ -97,24 +100,33 @@ export function Issuer() {
         </div>
       </div>
 
-      {!isIssuer ? (
-        <div className="state state-empty">
-          {isLive ? (
-            <>
-              Issuance is not available on Canton Coin: the registry controls Amulet issuance. Mint and
-              freeze are shown here in demo mode to showcase the issuance UI.
-            </>
-          ) : (
-            <>
-              Switch the demo party to <strong>Issuer</strong> to mint and freeze.
-            </>
-          )}
+      {isLive ? (
+        <div className="state state-empty" role="note">
+          <span>
+            Mint and freeze are disabled in live mode. On Canton Coin, the registry controls
+            Amulet issuance, so a demo participant cannot mint or lock real balances. These
+            controls are fully functional in demo mode.
+          </span>
+          <span className="row-sub">
+            Enabling real live mint and freeze would require admin party rights on the
+            instrument plus the registry issuer role.
+          </span>
         </div>
-      ) : (
+      ) : !isIssuer ? (
+        <div className="state state-empty">
+          Switch the demo party to <strong>Issuer</strong> to mint and freeze.
+        </div>
+      ) : null}
+
+      {showControls ? (
         <>
           <div className="form-grid">
             <Field label="Mint to">
-              <select value={mintTarget} onChange={(e) => setMintTarget(e.target.value as DemoPartyKey)}>
+              <select
+                value={mintTarget}
+                onChange={(e) => setMintTarget(e.target.value as DemoPartyKey)}
+                disabled={controlsDisabled}
+              >
                 {PARTY_ORDER.map((p) => (
                   <option key={p} value={p}>
                     {PARTIES[p].label}
@@ -128,6 +140,7 @@ export function Issuer() {
                 placeholder="0.00"
                 value={mintAmount}
                 onChange={(e) => setMintAmount(e.target.value)}
+                disabled={controlsDisabled}
                 aria-invalid={mintAmount.trim() !== '' && mintReason != null}
               />
               {mintAmount.trim() !== '' && mintReason ? (
@@ -140,7 +153,7 @@ export function Issuer() {
               <button
                 className="btn btn-primary"
                 onClick={doMint}
-                disabled={mintReason !== null || issuerChoice.isPending}
+                disabled={controlsDisabled || mintReason !== null || issuerChoice.isPending}
               >
                 Mint
               </button>
@@ -149,7 +162,11 @@ export function Issuer() {
 
           <div className="freeze">
             <Field label="Freeze holdings of">
-              <select value={freezeTarget} onChange={(e) => setFreezeTarget(e.target.value as DemoPartyKey)}>
+              <select
+                value={freezeTarget}
+                onChange={(e) => setFreezeTarget(e.target.value as DemoPartyKey)}
+                disabled={controlsDisabled}
+              >
                 {PARTY_ORDER.map((p) => (
                   <option key={p} value={p}>
                     {PARTIES[p].label}
@@ -179,7 +196,7 @@ export function Issuer() {
                       {ref.holding.lock ? <Badge tone="lock">Frozen</Badge> : null}
                       <button
                         className="btn btn-ghost"
-                        disabled={issuerChoice.isPending}
+                        disabled={controlsDisabled || issuerChoice.isPending}
                         onClick={() => toggleFreeze(ref)}
                       >
                         {ref.holding.lock ? 'Unfreeze' : 'Freeze'}
@@ -197,7 +214,7 @@ export function Issuer() {
             message={issuerChoice.isSuccess ? 'Issuer action applied.' : undefined}
           />
         </>
-      )}
+      ) : null}
     </Card>
   );
 }
