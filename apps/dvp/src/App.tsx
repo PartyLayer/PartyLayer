@@ -115,13 +115,16 @@ export default function App() {
     <PartyLayerKit network="devnet" appName="PartyLayer DvP" theme={theme} adapters={ADAPTERS}>
       <DemoProvider value={{ party, setParty, backend, mode }}>
         <div className={'app app-' + mode}>
+          <a className="skip-link" href="#main">
+            Skip to content
+          </a>
           <header className="topbar">
             <div className="brand">
               <a className="brand-logo" href="https://partylayer.xyz" target="_blank" rel="noopener">
                 <img src="/logo.svg" alt="PartyLayer" height={28} />
               </a>
               <div>
-                <div className="brand-title">DvP</div>
+                <h1 className="brand-title">DvP</h1>
                 <div className="brand-sub">delivery versus payment, CIP-0056 allocations</div>
               </div>
             </div>
@@ -167,7 +170,7 @@ export default function App() {
               : 'Allocate your leg of a trade, or reject it.'}
           </p>
 
-          <main className="grid">
+          <main className="grid" id="main" tabIndex={-1}>
             <Trades />
             <MyAllocations />
             <Holdings />

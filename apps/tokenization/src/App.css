@@ -65,8 +65,31 @@
   width: auto;
 }
 .brand-title {
+  font-size: 16px;
   font-weight: 700;
   letter-spacing: -0.01em;
+  margin: 0;
+  line-height: 1.2;
+}
+
+/* Keyboard skip link: off screen until focused, then pinned to the top left. */
+.skip-link {
+  position: absolute;
+  left: -9999px;
+  top: 0;
+  z-index: 100;
+  padding: 8px 16px;
+  background: var(--accent);
+  color: var(--accent-contrast);
+  font-size: 14px;
+  font-weight: 600;
+  border-radius: 0 0 8px 0;
+}
+.skip-link:focus {
+  left: 0;
+}
+.grid:focus {
+  outline: none;
 }
 .brand-sub {
   font-size: 12px;
