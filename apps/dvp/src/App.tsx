@@ -92,8 +92,23 @@ const ADAPTERS = [
 // and the control carries an accessible name (aria-label Synchronizer) from the primitive.
 const SYNCHRONIZERS: SynchronizerOption[] = [{ networkId: 'canton:da-devnet', label: 'DevNet' }];
 
+const THEME_KEY = 'partylayer-dvp-theme';
+
+// Initial theme: a stored choice wins, otherwise follow the OS prefers-color-scheme. Guarded
+// for non-browser contexts so the module stays import safe.
+function initialThemeMode(): 'light' | 'dark' {
+  if (typeof window === 'undefined') return 'light';
+  const stored = window.localStorage.getItem(THEME_KEY);
+  if (stored === 'light' || stored === 'dark') return stored;
+  return window.matchMedia?.('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+}
+
 export default function App() {
-  const [mode, setMode] = useState<'light' | 'dark'>('light');
+  const [mode, setMode] = useState<'light' | 'dark'>(initialThemeMode);
+  // Persist the theme choice so a reload keeps it; the initial value already honored it.
+  useEffect(() => {
+    if (typeof window !== 'undefined') window.localStorage.setItem(THEME_KEY, mode);
+  }, [mode]);
   const [party, setParty] = useState<DemoPartyKey>('venue');
   const [synchronizer, setSynchronizer] = useState('canton:da-devnet');
 
