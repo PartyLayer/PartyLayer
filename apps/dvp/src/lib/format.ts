@@ -57,3 +57,20 @@ export function isPositiveAmount(amount: string): boolean {
   if (!/^\d+(\.\d{1,2})?$/.test(amount.trim())) return false;
   return toCents(amount) > 0n;
 }
+
+/**
+ * Validate an amount field for display. Returns a human reason to show inline, or
+ * null when valid: numeric (digits, up to two decimals), greater than zero, and
+ * within `max` when a spendable balance applies. Reasons are shown under the field
+ * and the submit is disabled while one is present (no silent disable).
+ */
+export function validateAmount(amount: string, max?: string): string | null {
+  const trimmed = amount.trim();
+  if (trimmed === '') return 'Enter an amount.';
+  if (!/^\d+(\.\d{1,2})?$/.test(trimmed)) return 'Enter a number with up to two decimals.';
+  if (toCents(trimmed) <= 0n) return 'Amount must be greater than zero.';
+  if (max !== undefined && cmpAmount(trimmed, max) > 0) {
+    return 'Amount exceeds the available balance of ' + formatAmount(max) + '.';
+  }
+  return null;
+}

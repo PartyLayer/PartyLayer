@@ -14,7 +14,7 @@ import { toastStatus } from '../lib/mutation';
 import { invalidateHoldingsAndReads } from '../lib/invalidate';
 import { PARTIES, PARTY_ORDER, INSTRUMENT, FEE_ESTIMATE } from '../lib/fixtures';
 import { demoStore } from '../lib/store';
-import { formatAmount, isPositiveAmount, addAmount } from '../lib/format';
+import { formatAmount, validateAmount, addAmount } from '../lib/format';
 import type { DemoPartyKey } from '../lib/types';
 
 export function Transfer() {
@@ -58,9 +58,13 @@ export function Transfer() {
   const available = isLive
     ? unlocked.reduce((sum, r) => addAmount(sum, r.holding.amount), '0.00')
     : demoStore.balanceOf(party);
+  // Validate the amount inline: numeric, greater than zero, within the available balance.
   // Live submissions send the party key (the gateway resolves it to the real party id, as
-  // the reads do); a live transfer needs the instrument loaded from holdings first.
-  const valid = isPositiveAmount(amount) && (!isLive || !!liveInstrument);
+  // the reads do); a live transfer also needs the instrument loaded from holdings first.
+  const liveNotReady = isLive && !liveInstrument;
+  const amountReason = validateAmount(amount, available);
+  const submitReason = liveNotReady ? 'Loading your holdings, one moment.' : amountReason;
+  const valid = !submitReason;
 
   const onConfirm = () => {
     const now = new Date();
@@ -99,27 +103,38 @@ export function Transfer() {
             placeholder="0.00"
             value={amount}
             onChange={(e) => setAmount(e.target.value)}
+            aria-invalid={amount.trim() !== '' && amountReason != null}
           />
+          {amount.trim() !== '' && amountReason ? (
+            <span className="field-error" role="alert">
+              {amountReason}
+            </span>
+          ) : null}
         </Field>
         <Field label="Memo (optional)">
           <input value={memo} placeholder="what is it for" onChange={(e) => setMemo(e.target.value)} />
         </Field>
       </div>
 
-      {valid ? (
-        <div className="review">
-          <div className="review-line">
-            Send <strong>{formatAmount(amount)}</strong> {instrument.id} to{' '}
-            <strong>{PARTIES[receiverKey].label}</strong>
-          </div>
-          <CostPreview estimate={FEE_ESTIMATE} />
-          <button className="btn btn-primary" onClick={onConfirm} disabled={mutation.isPending}>
-            {mutation.isPending ? 'Submitting...' : 'Confirm transfer'}
-          </button>
-        </div>
-      ) : (
-        <div className="muted hint-line">Enter a positive amount to preview the fee and confirm.</div>
-      )}
+      <div className="review">
+        {valid ? (
+          <>
+            <div className="review-line">
+              Send <strong>{formatAmount(amount)}</strong> {instrument.id} to{' '}
+              <strong>{PARTIES[receiverKey].label}</strong>
+            </div>
+            <CostPreview estimate={FEE_ESTIMATE} />
+          </>
+        ) : null}
+        <button
+          className="btn btn-primary"
+          onClick={onConfirm}
+          disabled={!valid || mutation.isPending}
+        >
+          {mutation.isPending ? 'Submitting...' : 'Confirm transfer'}
+        </button>
+        {!valid ? <span className="field-error">{submitReason}</span> : null}
+      </div>
 
       <TransactionToast
         status={toastStatus(mutation)}

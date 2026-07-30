@@ -28,7 +28,7 @@ import { Card, AsyncView, Badge, Field } from '../ui/primitives';
 import { toastStatus } from '../lib/mutation';
 import { invalidateAll } from '../lib/invalidate';
 import { allocationForLeg, matchedLegIds } from '../lib/match';
-import { formatAmount, isPositiveAmount } from '../lib/format';
+import { formatAmount, validateAmount } from '../lib/format';
 import { REGISTRY, FEE_ESTIMATE } from '../lib/fixtures';
 import { demoStore } from '../lib/store';
 import type { SettleTrade, CreateTrade } from '../lib/types';
@@ -219,6 +219,12 @@ function VenueTrades() {
   const [bondAmount, setBondAmount] = useState('5.00');
   const busy = createTrade.isPending || settle.isPending || requestAction.isPending || cancel.isPending;
 
+  // Validate both leg amounts inline: numeric and greater than zero. A trade spec has no
+  // spending balance to cap against, so no max. Reasons show under each field and disable
+  // the New trade submit while present (no silent disable).
+  const usdReason = validateAmount(usdAmount);
+  const bondReason = validateAmount(bondAmount);
+
   // On DevNet both legs are Canton Coin, so label the fields by direction and instrument
   // rather than cash against bond, which is only true of the demo fixtures. This keeps the
   // form consistent with the on-screen note and the leg cards, which read Amulet.
@@ -228,15 +234,35 @@ function VenueTrades() {
     <Card title="Trades" hint="useAllocationRequests + useTokenAllocations + useChoice + request/allocation actions">
       <div className="form-grid">
         <Field label={isLive ? 'Amount Alice sends (Canton Coin)' : 'USD amount (Alice pays)'}>
-          <input inputMode="decimal" value={usdAmount} onChange={(e) => setUsdAmount(e.target.value)} />
+          <input
+            inputMode="decimal"
+            value={usdAmount}
+            onChange={(e) => setUsdAmount(e.target.value)}
+            aria-invalid={usdAmount.trim() !== '' && usdReason != null}
+          />
+          {usdAmount.trim() !== '' && usdReason ? (
+            <span className="field-error" role="alert">
+              {usdReason}
+            </span>
+          ) : null}
         </Field>
         <Field label={isLive ? 'Amount Bob sends back (Canton Coin)' : 'BOND amount (Bob delivers)'}>
-          <input inputMode="decimal" value={bondAmount} onChange={(e) => setBondAmount(e.target.value)} />
+          <input
+            inputMode="decimal"
+            value={bondAmount}
+            onChange={(e) => setBondAmount(e.target.value)}
+            aria-invalid={bondAmount.trim() !== '' && bondReason != null}
+          />
+          {bondAmount.trim() !== '' && bondReason ? (
+            <span className="field-error" role="alert">
+              {bondReason}
+            </span>
+          ) : null}
         </Field>
         <div className="field field-action">
           <button
             className="btn btn-primary"
-            disabled={busy || !isPositiveAmount(usdAmount) || !isPositiveAmount(bondAmount)}
+            disabled={busy || usdReason !== null || bondReason !== null}
             onClick={() => createTrade.exerciseChoice({ usdAmount, bondAmount })}
           >
             New trade

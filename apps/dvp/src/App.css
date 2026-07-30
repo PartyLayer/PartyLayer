@@ -262,6 +262,13 @@
   color: var(--text);
   font-size: 14px;
 }
+.field input[aria-invalid='true'] {
+  border-color: var(--error-text);
+}
+.field-error {
+  font-size: 12px;
+  color: var(--error-text);
+}
 
 .btn {
   border: 1px solid transparent;

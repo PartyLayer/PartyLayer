@@ -13,7 +13,7 @@ import { useDemo, partyKey } from '../context/DemoContext';
 import { Card, AsyncView, Badge, Field, SkeletonText } from '../ui/primitives';
 import { toastStatus } from '../lib/mutation';
 import { invalidateHoldingsAndReads } from '../lib/invalidate';
-import { formatAmount, isPositiveAmount } from '../lib/format';
+import { formatAmount, validateAmount } from '../lib/format';
 import { PARTIES, PARTY_ORDER } from '../lib/fixtures';
 import type { IssuerChoice } from '../lib/backend';
 import type { DemoPartyKey, InstrumentConfig } from '../lib/types';
@@ -52,8 +52,11 @@ export function Issuer() {
     key: partyKey('holdingRefs', freezeTarget),
   });
 
+  // Minting creates new supply, so there is no balance cap: validate numeric and positive.
+  const mintReason = validateAmount(mintAmount);
+
   const doMint = () => {
-    if (!isPositiveAmount(mintAmount)) return;
+    if (mintReason !== null) return;
     issuerChoice.exerciseChoice({ kind: 'mint', toParty: mintTarget, amount: mintAmount });
     setMintAmount('');
   };
@@ -125,10 +128,20 @@ export function Issuer() {
                 placeholder="0.00"
                 value={mintAmount}
                 onChange={(e) => setMintAmount(e.target.value)}
+                aria-invalid={mintAmount.trim() !== '' && mintReason != null}
               />
+              {mintAmount.trim() !== '' && mintReason ? (
+                <span className="field-error" role="alert">
+                  {mintReason}
+                </span>
+              ) : null}
             </Field>
             <div className="field field-action">
-              <button className="btn btn-primary" onClick={doMint} disabled={issuerChoice.isPending}>
+              <button
+                className="btn btn-primary"
+                onClick={doMint}
+                disabled={mintReason !== null || issuerChoice.isPending}
+              >
                 Mint
               </button>
             </div>
