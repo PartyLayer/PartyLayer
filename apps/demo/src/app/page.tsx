@@ -67,7 +67,7 @@ const wallets = sortByCanonicalOrder(
  * The "supported wallets" cards + the hero's compact strip derive from the
  * canonical registry (NOT the static `wallets` above, which is only the hero
  * PREVIEW), so every new registry wallet (e.g. walley) appears automatically.
- * We use the UNFILTERED registryClient.getRegistry() — not useWallets(), which
+ * We use the UNFILTERED registryClient.getRegistry(), not useWallets(), which
  * network-filters + gates (it would drop Send/mainnet on this devnet demo). The
  * call is SWR-cached in the client, so the cards + strip share one fetch and
  * stay in sync. */
@@ -95,7 +95,7 @@ function useRegistryWallets(): RegWallet[] {
 }
 
 /** Friendly transport label, derived from the registry entry (adapter.transport
- *  when set — only walley today — else the installation hints). Dynamic: no
+ *  when set, only walley today, else the installation hints). Dynamic: no
  *  hardcoded per-wallet copy. */
 function transportLabel(w: RegWallet): string {
   switch (w.adapter?.transport) {
@@ -113,7 +113,7 @@ function transportLabel(w: RegWallet): string {
 }
 
 /** Description as shown on the ecosystem cards. Strips a trailing network-scope
- *  sentence ("… Mainnet only.") — the cards are a network-agnostic ecosystem
+ *  sentence ("… Mainnet only."), the cards are a network-agnostic ecosystem
  *  overview, so a per-network caveat (only Send carries one today) is confusing
  *  on the devnet demo. Registry data itself is untouched. */
 function cardDescription(w: RegWallet): string {
@@ -497,7 +497,7 @@ const navLinks: { label: string; href: string; badge?: string; external?: boolea
 ];
 
 /**
- * Live session indicator — small + unobtrusive. Reads the NEW reactive
+ * Live session indicator, small + unobtrusive. Reads the NEW reactive
  * session-store hook (`useAccount`) so every Vercel preview is a live integration
  * test of the session layer (status + primary party + networkId chip). Hidden
  * when fully disconnected.
@@ -1126,7 +1126,7 @@ function ArchitectureShowcase() {
                     </div>
                   </button>
 
-                  {/* Detail Panel — smooth expand/collapse */}
+                  {/* Detail Panel, smooth expand/collapse */}
                   <div style={{
                     overflow: 'hidden',
                     maxHeight: isActive ? 400 : 0,
@@ -1319,7 +1319,7 @@ function WalletGrid() {
                 <img src={wallet.icon} alt={`${wallet.name} logo`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
               </div>
 
-              {/* Name & Badge — flexWrap so a long single-word name (e.g.
+              {/* Name & Badge: flexWrap so a long single-word name (e.g.
                   "WalletConnect") drops the badge to the next line instead of
                   overflowing the card; badge never shrinks. Robust for any
                   registry name length. */}
@@ -1330,7 +1330,7 @@ function WalletGrid() {
                 </span>
               </div>
 
-              {/* Description — flex:1 so the transport row pins to the bottom and
+              {/* Description: flex:1 so the transport row pins to the bottom and
                   all cards equalize height regardless of description length. */}
               <p style={{ fontSize: 14, lineHeight: 1.5, color: t.slate500, marginBottom: 12, marginTop: 0, flex: 1 }}>
                 {cardDescription(wallet)}
@@ -1535,7 +1535,7 @@ function DeveloperQuickstart() {
   );
 }
 
-/* ─── Demo CTA (replaces interactive Demo — links to /kit-demo) ────────── */
+/* ─── Demo CTA (replaces interactive Demo, links to /kit-demo) ────────── */
 
 function DemoCTA({ onConnect }: { onConnect: () => void }) {
   const bp = useBreakpoint();
@@ -1594,7 +1594,7 @@ function DemoCTA({ onConnect }: { onConnect: () => void }) {
                 Connect Wallet
               </button>
 
-              {/* Live session indicator — shown here, in the interactive demo, only
+              {/* Live session indicator, shown here, in the interactive demo, only
                   while connected (where developers exercise the session features). */}
               <div style={{ marginTop: 16, display: 'flex', justifyContent: 'center' }}>
                 <SessionIndicator />
@@ -1859,12 +1859,12 @@ function LandingContent() {
 }
 
 // Apex session config. Only NON-DEFAULT options are set:
-//   • reconnect — exponential-backoff reconnect on transient drops (the store
+//   • reconnect: exponential-backoff reconnect on transient drops (the store
 //     default is DISABLED).
-//   • broadcast — multi-tab session sync (the store default is OFF).
+//   • broadcast: multi-tab session sync (the store default is OFF).
 // storage + persistSnapshot are intentionally OMITTED: the 1.0 capability-detected
 // default already yields encrypted IndexedDB in the browser and in-memory on the
-// server (Node/SSR), so the apex prerenders cleanly with no storage probing — and
+// server (Node/SSR), so the apex prerenders cleanly with no storage probing, and
 // the Kit's pre-1.0 localStorage-marker sweep only runs when no explicit storage is
 // pinned. Module-level constant → referentially stable (the Kit rebuilds the store
 // when sessionOptions changes identity), so no useMemo needed.
@@ -1875,7 +1875,7 @@ const APEX_SESSION_OPTIONS: Partial<SessionStoreOptions> = {
 
 export default function Home() {
   // No mount gate: PartyLayerKit renders server-side in its disconnected state
-  // (session restore runs in a mount effect, not during render — so the first
+  // (session restore runs in a mount effect, not during render, so the first
   // client render matches the server's disconnected paint, no hydration mismatch).
   // This lets the apex (H1, hero, all static copy) paint from the server for SEO,
   // and removes the prior loading-skeleton flash.
