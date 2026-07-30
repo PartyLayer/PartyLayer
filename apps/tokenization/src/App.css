@@ -13,6 +13,8 @@
   --accent-contrast: #ffffff;
   --error-bg: #fef2f2;
   --error-text: #b00020;
+  --success-bg: #ecfdf5;
+  --success-text: #15803d;
   --lock-bg: #fff7ed;
   --lock-text: #9a3412;
   min-height: 100vh;
@@ -32,6 +34,8 @@
   --accent-contrast: #0a1414;
   --error-bg: #2a0f10;
   --error-text: #fca5a5;
+  --success-bg: #052e1a;
+  --success-text: #4ade80;
   --lock-bg: #2a1c0f;
   --lock-text: #fbbf24;
 }
@@ -228,8 +232,8 @@
   color: var(--lock-text);
 }
 .badge-ok {
-  background: var(--surface);
-  color: var(--accent);
+  background: var(--success-bg);
+  color: var(--success-text);
 }
 
 .form-grid {
