@@ -329,6 +329,15 @@
   background-size: 200% 100%;
   animation: shimmer 1.2s ease-in-out infinite;
 }
+.skeleton-text {
+  display: inline-block;
+  height: 1em;
+  border-radius: 6px;
+  background: linear-gradient(90deg, var(--surface), var(--border), var(--surface));
+  background-size: 200% 100%;
+  animation: shimmer 1.2s ease-in-out infinite;
+  vertical-align: -0.15em;
+}
 @keyframes shimmer {
   0% {
     background-position: 200% 0;

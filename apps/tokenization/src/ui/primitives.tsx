@@ -28,6 +28,11 @@ export function Skeleton({ rows = 3 }: { rows?: number }) {
   );
 }
 
+/** A lightweight inline skeleton for a single loading value (a running total, say). */
+export function SkeletonText({ width = 72 }: { width?: number }) {
+  return <span className="skeleton-text" style={{ width }} aria-hidden="true" />;
+}
+
 export function ErrorState({ error }: { error: Error }) {
   return (
     <div className="state state-error" role="alert">

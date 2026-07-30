@@ -10,7 +10,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useDamlContract, useChoice, type TokenHoldingRef } from '@partylayer/react/query';
 import { TransactionToast } from '@partylayer/react';
 import { useDemo, partyKey } from '../context/DemoContext';
-import { Card, AsyncView, Badge, Field } from '../ui/primitives';
+import { Card, AsyncView, Badge, Field, SkeletonText } from '../ui/primitives';
 import { toastStatus } from '../lib/mutation';
 import { invalidateHoldingsAndReads } from '../lib/invalidate';
 import { formatAmount, isPositiveAmount } from '../lib/format';
@@ -90,7 +90,7 @@ export function Issuer() {
         </AsyncView>
         <div className="supply">
           <span className="muted">Total supply</span>
-          <strong>{supply.isPending ? '...' : formatAmount(supply.contract ?? '0.00')}</strong>
+          <strong>{supply.isPending ? <SkeletonText width={90} /> : formatAmount(supply.contract ?? '0.00')}</strong>
         </div>
       </div>
 
