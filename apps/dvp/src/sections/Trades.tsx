@@ -391,10 +391,13 @@ function VenueTrades() {
               const matched = matchedLegIds(trade.request, combined);
               const allMatched = matched.length === legIds.length;
               const settlement = trade.request.settlement;
-              // Lifecycle stage from real reads only: how many legs are allocated. Settled,
-              // withdrawn, and rejected trades archive their contract and leave this list, so
-              // they are never painted as an active stage here (B12).
-              const stage = matched.length === 0 ? 'Open' : allMatched ? 'Ready to settle' : 'Allocating';
+              // Lifecycle stage from real reads only, named with the canonical M3 words: how
+              // many legs are allocated gives Proposed (none), Counter-signed (some, with the
+              // N of M count shown beside it), or Executed (all, ready to settle). The fourth
+              // word, Settled, is the settle success toast below (Settled atomically, balances
+              // swapped): settled, withdrawn, and rejected trades archive their contract and
+              // leave this active-contract list, so they are never painted as a stage here (B12).
+              const stage = matched.length === 0 ? 'Proposed' : allMatched ? 'Executed' : 'Counter-signed';
               const times = [
                 settlement.requestedAt && 'opened ' + fmtWhen(settlement.requestedAt),
                 settlement.allocateBefore && 'allocate by ' + fmtWhen(settlement.allocateBefore),
@@ -473,7 +476,7 @@ function VenueTrades() {
       </AsyncView>
 
       <TransactionToast status={toastStatus(createTrade)} error={createTrade.error} message={createTrade.isSuccess ? 'Trade created.' : undefined} />
-      <TransactionToast status={toastStatus(settle)} error={settle.error} message={settle.isSuccess ? 'Settled atomically. Balances swapped.' : undefined} />
+      <TransactionToast status={toastStatus(settle)} error={settle.error} message={settle.isSuccess ? 'Settled atomically, balances swapped.' : undefined} />
       <TransactionToast status={toastStatus(requestAction)} error={requestAction.error} message={requestAction.isSuccess ? 'Trade withdrawn.' : undefined} />
       <TransactionToast status={toastStatus(cancel)} error={cancel.error} message={cancel.isSuccess ? 'Allocation cancelled.' : undefined} />
     </Card>
