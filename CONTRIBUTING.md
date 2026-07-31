@@ -11,6 +11,7 @@ Thank you for your interest in contributing to PartyLayer! This document provide
 - [Pull Request Process](#pull-request-process)
 - [Coding Standards](#coding-standards)
 - [Commit Messages](#commit-messages)
+- [Secrets and Infrastructure Hygiene](#secrets-and-infrastructure-hygiene)
 - [Testing](#testing)
 - [Documentation](#documentation)
 - [Reproducible Builds](#reproducible-builds)
@@ -333,6 +334,28 @@ git commit -m "feat(core)!: rename Session to WalletSession
 
 BREAKING CHANGE: Session type has been renamed to WalletSession"
 ```
+
+---
+
+## Secrets and Infrastructure Hygiene
+
+Public text must never leak infrastructure details. This rule covers every public surface of
+the project: commit messages, pull request titles and descriptions, and all issue, pull
+request, and review comments.
+
+Do not include, in any of those places:
+
+- host addresses (IP addresses or DNS names of servers we operate),
+- login usernames (for example a `user@host` style login), or
+- other infrastructure identifiers (server hostnames, internal service names, or ports tied
+  to a specific host).
+
+Refer to the production validator host by its SSH alias `partylayer-prod`. The alias keeps the
+real host, user, and key in the private ops notes, which are not committed to this repo. In
+documentation examples use a placeholder such as `<validator>` rather than a real address.
+
+Verification evidence that contains concrete host values (command output, logs, or scan
+results) belongs in the private session report, never in any public text.
 
 ---
 
