@@ -88,11 +88,12 @@ the intended commit, rather than a stale build.
 Copy each `dist/` to the validator host with `--delete` so removed files do not linger:
 
 ```
-rsync -av --delete apps/tokenization/dist/ <user>@<validator-host>:/opt/partylayer-apps/tokenization/
-rsync -av --delete apps/dvp/dist/          <user>@<validator-host>:/opt/partylayer-apps/dvp/
+rsync -av --delete apps/tokenization/dist/ partylayer-prod:/opt/partylayer-apps/tokenization/
+rsync -av --delete apps/dvp/dist/          partylayer-prod:/opt/partylayer-apps/dvp/
 ```
 
-`<user>` and `<validator-host>` are operator configuration.
+`partylayer-prod` is an SSH host alias. Its real host, user, and key live in the private ops
+notes and are deliberately not committed to this repo, so no host address or login appears here.
 
 ## Caddy
 
