@@ -5,15 +5,17 @@
  * reads poorly for a first visitor. This script asks the live gateway to create N small
  * trades so the deployed demo shows real, settleable activity on first load.
  *
- * SAFETY: it refuses to run unless GET /health reports mode "live", so it can never touch
- * a mock or misconfigured gateway. It is a deploy-time step only, never wired into CI or
- * the build (no package.json references it). See DEPLOY.md, "DvP seed (deploy-time step)".
+ * SAFETY: it refuses to run without the literal --yes flag, and it refuses to run unless GET
+ * /health reports mode "live", so it can never touch a mock or misconfigured gateway by
+ * accident. It is a deploy-time step only, never wired into CI or the build (no package.json
+ * references it). See DEPLOY.md, "DvP seed (deploy-time step)".
  *
  * Usage:
- *   GATEWAY_URL=https://gateway.example node scripts/seed-dvp.mjs [count]
- *   GATEWAY_URL=https://gateway.example SEED_COUNT=5 node scripts/seed-dvp.mjs
+ *   GATEWAY_URL=https://gateway.example node scripts/seed-dvp.mjs --yes [count]
+ *   GATEWAY_URL=https://gateway.example SEED_COUNT=5 node scripts/seed-dvp.mjs --yes
  *
- * Env:
+ * Flags and env:
+ *   --yes         required, explicit confirmation that this writes real trades to the ledger
  *   GATEWAY_URL   required, the live gateway base url (a trailing slash is trimmed)
  *   SEED_COUNT    optional, number of trades to create (default 3, clamped to 1..10)
  *
@@ -24,13 +26,26 @@
 const rawUrl = process.env.GATEWAY_URL;
 if (!rawUrl) {
   console.error(
-    'GATEWAY_URL is required, e.g. GATEWAY_URL=https://gateway.example node scripts/seed-dvp.mjs',
+    'GATEWAY_URL is required, e.g. GATEWAY_URL=https://gateway.example node scripts/seed-dvp.mjs --yes',
   );
   process.exit(1);
 }
 const baseUrl = rawUrl.replace(/\/+$/, '');
 
-const requested = Number.parseInt(process.argv[2] ?? process.env.SEED_COUNT ?? '3', 10);
+// Explicit confirmation gate: this writes real trades to a live ledger, so it refuses to run
+// unless the literal --yes flag is present. The health and mode-live checks below still apply.
+if (!process.argv.includes('--yes')) {
+  console.error(
+    'Refusing to seed without confirmation. This creates real trades on the live gateway. ' +
+      'Re-run with the --yes flag, e.g. GATEWAY_URL=https://gateway.example node scripts/seed-dvp.mjs --yes',
+  );
+  process.exit(1);
+}
+
+// Count comes from the first positional argument (a bare number), so flags like --yes are
+// ignored, or from SEED_COUNT, defaulting to 3 and clamped to 1..10.
+const positional = process.argv.slice(2).find((a) => !a.startsWith('--'));
+const requested = Number.parseInt(positional ?? process.env.SEED_COUNT ?? '3', 10);
 const count = Number.isFinite(requested) ? Math.max(1, Math.min(10, requested)) : 3;
 
 const headers = { 'content-type': 'application/json' };

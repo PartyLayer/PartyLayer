@@ -148,17 +148,20 @@ trades once, after the gateway is live, so the deployed demo shows settleable ac
 first load.
 
 This is a manual deploy-time step. It is NOT run by CI or the build (no package.json
-references it), and it refuses to run unless the gateway reports live mode.
+references it). It refuses to run without the explicit `--yes` flag, and it refuses to run
+unless the gateway reports live mode.
 
 ```
-# from the repo root, against the live gateway
-GATEWAY_URL=https://<gateway-host> node scripts/seed-dvp.mjs
+# from the repo root, against the live gateway (--yes is required)
+GATEWAY_URL=https://<gateway-host> node scripts/seed-dvp.mjs --yes
 
 # optional: choose how many trades (default 3, clamped to 1..10)
-GATEWAY_URL=https://<gateway-host> SEED_COUNT=5 node scripts/seed-dvp.mjs
+GATEWAY_URL=https://<gateway-host> SEED_COUNT=5 node scripts/seed-dvp.mjs --yes
 ```
 
 Notes:
+- The `--yes` flag is a required confirmation because the script writes real trades to the
+  ledger. Without it the script prints a refusal naming the flag and exits non-zero.
 - Run it from a host allowed to reach the gateway directly (for example the deploy box);
   the live gateway is network gated, not token authenticated.
 - It calls GET /health first and aborts unless mode is "live", so it can never seed a mock
