@@ -218,7 +218,21 @@ curl -s -X POST https://<gateway-host>/tokenization/transferEstimate \
 # expect: {"costEstimation":{...}} when a synchronizer is configured, else {"costEstimation":null}
 ```
 
-6. In each deployed app, confirm the browser console is clean on load, and that a submit
+6. Allocation success (F4): the tokenization Create demo allocation action must succeed now
+   that the gateway resolves a standalone allocation leg to the live registry instrument. It
+   is a write (it reserves a small holding, withdrawable from the row), so run it once:
+
+```
+curl -s -X POST https://<gateway-host>/tokenization/allocation \
+  -H 'content-type: application/json' \
+  -d '{"request":{"expectedAdmin":"issuer","allocation":{"settlement":{"executor":"issuer","settlementRef":{"id":"settlement-demo-new"},"requestedAt":"2026-01-01T00:00:00Z","allocateBefore":"2027-01-01T00:00:00Z","settleBefore":"2027-01-01T00:00:00Z"},"transferLegId":"leg-new","transferLeg":{"sender":"alice","receiver":"bob","amount":"1.00","instrumentId":{"admin":"issuer","id":"DEMO"}}},"requestedAt":"2026-01-01T00:00:00Z","inputHoldingCids":[],"meta":{"demo":"true"}}}'
+# expect: {"ok":true} (HTTP 200). Before the fix this returned HTTP 400 with the Daml
+#         assertion "Instrument-id must match the factory": the gateway now maps the leg
+#         instrument to the live one. The client key admin issuer and id DEMO are resolved
+#         by the gateway; a real allocation is created and can be withdrawn from the UI.
+```
+
+7. In each deployed app, confirm the browser console is clean on load, and that a submit
    under gateway load shows the retry banner (A1 and A2) rather than a raw error.
 
 <!-- END quality-pass -->
