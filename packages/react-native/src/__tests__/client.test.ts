@@ -51,6 +51,42 @@ describe('createReactNativeClient', () => {
     expect(client).toBeInstanceOf(PartyLayerClient);
   });
 
+  it('prefers an explicit storage over asyncStorage when BOTH are passed', async () => {
+    // Precedence is observable, not just documented: reading the active session goes
+    // through the wired StorageAdapter, so only one of these two records a read.
+    const seen: string[] = [];
+    const storage = {
+      get: async (key: string) => {
+        seen.push(`storage.get:${key}`);
+        return null;
+      },
+      set: async () => {},
+      remove: async () => {},
+      clear: async () => {},
+    };
+    const asyncStorage: RNAsyncStorage = {
+      getItem: async (key) => {
+        seen.push(`asyncStorage.getItem:${key}`);
+        return null;
+      },
+      setItem: async () => {},
+      removeItem: async () => {},
+      clear: async () => {},
+    };
+
+    const client = createReactNativeClient({
+      network: 'devnet',
+      app: { name: 'RN Test' },
+      adapters: [],
+      storage,
+      asyncStorage,
+    });
+    await client.getActiveSession();
+
+    expect(seen.some((call) => call.startsWith('storage.get:'))).toBe(true);
+    expect(seen.some((call) => call.startsWith('asyncStorage.getItem:'))).toBe(false);
+  });
+
   it('falls back to the sdk default storage when neither storage nor AsyncStorage is passed', () => {
     // The base client never forces the optional AsyncStorage peer: with nothing passed it
     // uses the sdk default rather than throwing.
