@@ -2,11 +2,13 @@
 /**
  * Pack LOCAL builds of the PartyLayer packages the demo consumes, into vendor/.
  *
- * The demo cannot use the npm registry copies: core 0.11.0 on npm does NOT contain
- * DeepLinkPlatform or createBrowserDeepLinkPlatform (added in phase A, unpublished), and
- * the same version number on npm would otherwise win resolution. So this packs the local
- * builds and the demo forces every @partylayer package to these tarballs through pnpm
- * overrides. Run this before installing the demo.
+ * The demo exists to exercise the packages BEFORE they are published, so it has to run
+ * the working tree rather than whatever the registry serves. A local build and a
+ * published release can carry the same version number, so a plain install would resolve
+ * the registry copy. This packs the local builds and the demo forces every @partylayer
+ * package to these tarballs through pnpm overrides, which makes the working tree the
+ * thing under test. `verify-core.mjs` confirms the vendored copies are what resolved.
+ * Run this before installing the demo.
  *
  *   node prepare-local.mjs   (or: pnpm run prepare-local)
  */

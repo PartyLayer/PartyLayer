@@ -6,6 +6,20 @@ with `/api` reverse proxied to the DevNet gateway. This document covers the apps
 The gateway itself is covered by [apps/devnet-proxy/RUNBOOK.md](./apps/devnet-proxy/RUNBOOK.md);
 bring the gateway up first, since the apps call it in live mode.
 
+## Access
+
+- **Host**: reach the production host through the SSH alias `partylayer-prod`, defined in
+  the operator's local ssh config. This is what the `<user>@<validator-host>` placeholder
+  under "Sync to the host" resolves to. Host details live in the private ops notes, never
+  in this repository.
+- **Apps**: served from `/opt/partylayer-apps/<app>`, one directory per app
+  (`tokenization`, `dvp`).
+- **Gateway**: runs as a plain `docker run` container named `partylayer-devnet-proxy`, not
+  under compose and not as a systemd unit. Manage it with `docker ps`,
+  `docker logs partylayer-devnet-proxy`, and `docker restart partylayer-devnet-proxy`. Its
+  build and run arguments are in
+  [apps/devnet-proxy/RUNBOOK.md](./apps/devnet-proxy/RUNBOOK.md).
+
 ## Topology
 
 - The apps are static files. Caddy serves each from `/opt/partylayer-apps/<app>` on the
@@ -74,11 +88,12 @@ the intended commit, rather than a stale build.
 Copy each `dist/` to the validator host with `--delete` so removed files do not linger:
 
 ```
-rsync -av --delete apps/tokenization/dist/ <user>@<validator-host>:/opt/partylayer-apps/tokenization/
-rsync -av --delete apps/dvp/dist/          <user>@<validator-host>:/opt/partylayer-apps/dvp/
+rsync -av --delete apps/tokenization/dist/ partylayer-prod:/opt/partylayer-apps/tokenization/
+rsync -av --delete apps/dvp/dist/          partylayer-prod:/opt/partylayer-apps/dvp/
 ```
 
-`<user>` and `<validator-host>` are operator configuration.
+`partylayer-prod` is an SSH host alias. Its real host, user, and key live in the private ops
+notes and are deliberately not committed to this repo, so no host address or login appears here.
 
 ## Caddy
 

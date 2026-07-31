@@ -1,32 +1,42 @@
 #!/usr/bin/env node
 /**
- * Standalone runtime check: prove the demo loaded the LOCAL core (with the phase A
- * deep link additions), not the npm 0.11.0 copy that lacks them. Run after install:
+ * Standalone runtime check: prove the demo resolved the LOCAL vendored builds of the
+ * PartyLayer packages, not registry copies. Run after install:
  *
  *   node verify-core.mjs
  *
- * The app shows the same result on screen; this is the headless equivalent.
+ * Provenance is read from the resolved module path, which names the source of the
+ * install: pnpm places a `file:` dependency under a directory carrying the tarball
+ * name, so a vendored install resolves through `vendor/<name>.tgz`. This checks the
+ * thing the demo actually depends on. Checking for an exported symbol would not, since
+ * the published packages export the same names.
  */
 import { createRequire } from 'node:module';
 const require = createRequire(import.meta.url);
 
-const core = require('@partylayer/core');
-const hasFactory = typeof core.createBrowserDeepLinkPlatform === 'function';
-// A working platform proves the phase A additions loaded, not just a matching symbol.
-const platformOk = hasFactory && (() => {
-  const p = core.createBrowserDeepLinkPlatform();
-  return p && typeof p.openUrl === 'function' && typeof p.subscribe === 'function';
-})();
+const PACKAGES = ['@partylayer/core', '@partylayer/react-native'];
 
-console.log('createBrowserDeepLinkPlatform present:', hasFactory);
-console.log('deep link platform usable:', platformOk);
+let ok = true;
+for (const name of PACKAGES) {
+  let resolved;
+  try {
+    resolved = require.resolve(name);
+  } catch (e) {
+    console.log(`${name}: NOT RESOLVED (${e instanceof Error ? e.message : String(e)})`);
+    ok = false;
+    continue;
+  }
+  const vendored = resolved.includes('file+vendor') || resolved.includes(`${'vendor'}/`);
+  console.log(`${name}: ${vendored ? 'local vendored build' : 'registry copy'}`);
+  console.log(`  ${resolved}`);
+  if (!vendored) ok = false;
+}
 
-if (!hasFactory) {
+if (!ok) {
   console.error(
-    '\nFAIL: the loaded core does not contain createBrowserDeepLinkPlatform. The demo is ' +
-      'resolving the npm registry copy instead of the local build. Run prepare-local.mjs ' +
-      'and reinstall so the vendor tarballs are used.',
+    '\nFAIL: at least one package did not resolve to a vendor tarball. Run ' +
+      '`pnpm run prepare-local` and reinstall so the vendored builds are used.',
   );
   process.exit(1);
 }
-console.log('\nOK: the demo is running the local core build.');
+console.log('\nOK: the demo is running the local vendored builds.');

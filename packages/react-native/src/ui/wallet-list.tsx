@@ -3,11 +3,10 @@
  * (a spinner plus the wallet being connected, cancellable), and the error state (a
  * message plus retry). On success the modal dismisses; the button reflects the session.
  *
- * Deep link instead of QR: the web modal has a QR view so a desktop user can scan with
- * a phone. On a phone there is nothing to scan, so the mobile equivalent is opening the
- * wallet app through the deep link transport shipped in phase A. `client.connect` uses
- * that transport, so selecting a wallet here opens the wallet app directly; there is no
- * QR screen to port. See the README.
+ * No QR view: the web modal has one so a desktop user can scan with a phone, and on a
+ * phone there is nothing to scan. Selecting a wallet here calls `client.connect` with
+ * that wallet id, and the registered adapter decides how it reaches its wallet. See the
+ * README.
  */
 import { useState } from 'react';
 import { FlatList, Modal, Pressable, Text, View } from 'react-native';

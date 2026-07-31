@@ -8,7 +8,7 @@
  * than read from a context), so this stays headless with no provider component.
  *
  * Also exposes, per wallet, the icon URL and a derived format hint (see
- * {@link walletIconInfo}) so the component phase can pick a renderer.
+ * {@link walletIconInfo}) so the UI components can pick a renderer.
  */
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { PartyLayerClient, WalletFilter, WalletInfo } from '@partylayer/sdk';
