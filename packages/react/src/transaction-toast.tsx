@@ -23,9 +23,9 @@
  * When `status` is `idle` (or absent), it renders nothing (mirrors CostPreview's
  * empty state).
  *
- * Theme-integrated via `useTheme()` (like CostPreview): the left border accent maps
- * to a theme token per status (success, error, neutral), and the surface, text, and
- * radius all come from the theme.
+ * Theme-integrated via `useTheme()` (like CostPreview): the left border accent and
+ * the background tint each map to a theme token per status (success, error,
+ * neutral), and the text and radius come from the theme.
  */
 
 import { useTheme } from './theme';
@@ -77,6 +77,16 @@ export function TransactionToast({
         ? theme.colors.error
         : theme.colors.textSecondary;
 
+  // Map the status to a background tint, mirroring the accent ternary: success and
+  // error use their tint tokens (green, red); pending (and any neutral state) keeps
+  // the neutral surface.
+  const background =
+    status === 'success'
+      ? theme.colors.successBg
+      : status === 'error'
+        ? theme.colors.errorBg
+        : theme.colors.surface;
+
   // The status line text: a custom message overrides the default.
   const defaultText =
     status === 'pending'
@@ -93,7 +103,7 @@ export function TransactionToast({
   return (
     <div
       className={className}
-      role="status"
+      role={status === 'error' ? 'alert' : 'status'}
       data-status={status}
       style={{
         borderLeft: `3px solid ${accent}`,
@@ -102,11 +112,11 @@ export function TransactionToast({
         fontSize: '13px',
         fontFamily: theme.fontFamily,
         color: theme.colors.text,
-        backgroundColor: theme.colors.surface,
+        backgroundColor: background,
         ...style,
       }}
     >
-      <div aria-live="polite" style={{ fontWeight: 600 }}>
+      <div aria-live={status === 'error' ? 'assertive' : 'polite'} style={{ fontWeight: 600 }}>
         {message ?? defaultText}
       </div>
 
