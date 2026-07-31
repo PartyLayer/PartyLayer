@@ -53,9 +53,15 @@ function nextCid(prefix: string): string {
   return prefix + '-gen' + cidCounter.toString();
 }
 
-function keyOf(partyId: string): DemoPartyKey | null {
+/**
+ * Resolve a party to its demo key. Accepts either a demo key (the app's currency
+ * after A3) or a fixture party id, so a caller sending a key and the store's own
+ * fixture ids compare on the same footing. Returns null for anything else.
+ */
+function keyOf(party: string): DemoPartyKey | null {
+  if (Object.prototype.hasOwnProperty.call(PARTIES, party)) return party as DemoPartyKey;
   for (const key of Object.keys(PARTIES) as DemoPartyKey[]) {
-    if (PARTIES[key].partyId === partyId) return key;
+    if (PARTIES[key].partyId === party) return key;
   }
   return null;
 }
@@ -304,8 +310,10 @@ export const demoStore = {
   /** A leg sender rejects the trade: release its allocations and drop the request. */
   rejectRequest(requestCid: string, actorId: string): void {
     const req = requestByCid(requestCid);
-    const senders = Object.values(req.request.transferLegs).map((leg) => leg.sender);
-    if (!senders.includes(actorId)) {
+    // Normalize both sides to keys so a key actor (A3) matches the store's fixture ids.
+    const actorKey = keyOf(actorId);
+    const senderKeys = Object.values(req.request.transferLegs).map((leg) => keyOf(leg.sender));
+    if (!actorKey || !senderKeys.includes(actorKey)) {
       throw new Error('Only a transfer-leg sender can reject this trade.');
     }
     releaseRequestAllocations(requestCid);

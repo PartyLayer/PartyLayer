@@ -43,12 +43,17 @@ export function cmpAmount(a: string, b: string): number {
   return d > 0n ? 1 : d < 0n ? -1 : 0;
 }
 
+// Group the integer part with Intl.NumberFormat rather than a hand-rolled regex. It formats
+// a BigInt, so grouping stays exact for arbitrarily large integer parts (no Number precision
+// loss), keeping the decimal-string-end-to-end guarantee this module documents.
+const AMOUNT_GROUP = new Intl.NumberFormat('en-US');
+
 /** Group the integer part with thousands separators; keep two decimals. */
 export function formatAmount(amount: string): string {
   const [whole, frac = '00'] = amount.split('.');
   const negative = whole.startsWith('-');
   const digits = negative ? whole.slice(1) : whole;
-  const grouped = digits.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+  const grouped = AMOUNT_GROUP.format(BigInt(digits || '0'));
   return (negative ? '-' : '') + grouped + '.' + frac.padEnd(2, '0').slice(0, 2);
 }
 
@@ -56,4 +61,21 @@ export function formatAmount(amount: string): string {
 export function isPositiveAmount(amount: string): boolean {
   if (!/^\d+(\.\d{1,2})?$/.test(amount.trim())) return false;
   return toCents(amount) > 0n;
+}
+
+/**
+ * Validate an amount field for display. Returns a human reason to show inline, or
+ * null when valid: numeric (digits, up to two decimals), greater than zero, and
+ * within `max` when a spendable balance applies. Reasons are shown under the field
+ * and the submit is disabled while one is present (no silent disable).
+ */
+export function validateAmount(amount: string, max?: string): string | null {
+  const trimmed = amount.trim();
+  if (trimmed === '') return 'Enter an amount.';
+  if (!/^\d+(\.\d{1,2})?$/.test(trimmed)) return 'Enter a number with up to two decimals.';
+  if (toCents(trimmed) <= 0n) return 'Amount must be greater than zero.';
+  if (max !== undefined && cmpAmount(trimmed, max) > 0) {
+    return 'Amount exceeds the available balance of ' + formatAmount(max) + '.';
+  }
+  return null;
 }

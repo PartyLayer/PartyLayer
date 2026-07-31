@@ -64,6 +64,12 @@ export interface TokenTransferLeg {
   amount: string;
   instrumentId: TokenInstrumentId;
   meta?: Record<string, string>;
+  /**
+   * On a read from the live gateway, sender/receiver are party KEYS and these carry
+   * the raw ledger ids, so nothing is hidden. Absent on requests going the other way.
+   */
+  senderLedgerId?: string;
+  receiverLedgerId?: string;
 }
 export interface TokenSettlementReference {
   id: string;
@@ -144,4 +150,16 @@ export type DvpPartyKey = 'venue' | 'alice' | 'bob';
 /** A uniform ok result for mutation endpoints. */
 export interface OkResult {
   ok: true;
+}
+
+/**
+ * A pre-submission traffic-cost estimate on the wire. The three cost fields are int64
+ * and can exceed Number.MAX_SAFE_INTEGER, so they are carried as strings end to end to
+ * preserve precision. Byte-matches the CostEstimation shape @partylayer/react maps to.
+ */
+export interface CostEstimationWire {
+  estimationTimestamp: string;
+  confirmationRequestTrafficCostEstimation: string;
+  confirmationResponseTrafficCostEstimation: string;
+  totalTrafficCostEstimation: string;
 }

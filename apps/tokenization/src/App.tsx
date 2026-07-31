@@ -35,6 +35,8 @@ import { Transfer } from './sections/Transfer';
 import { Incoming } from './sections/Incoming';
 import { Issuer } from './sections/Issuer';
 import { Allocations } from './sections/Allocations';
+import { RetryBanner } from './ui/RetryBanner';
+import { CopyId } from './ui/primitives';
 import './App.css';
 
 // Every stable wallet gets its adapter so the connect surface can genuinely
@@ -87,13 +89,29 @@ const ADAPTERS = [
   ...(BRON_ADAPTER ? [BRON_ADAPTER] : []),
 ];
 
-const SYNCHRONIZERS: SynchronizerOption[] = [
-  { networkId: 'canton:da-devnet', label: 'DevNet' },
-  { networkId: 'canton:da-testnet', label: 'TestNet' },
-];
+// The demo only ever talks to Canton DevNet: live mode routes to the DevNet gateway and
+// demo mode simulates it. List DevNet alone so the switcher cannot offer a network the app
+// cannot actually reach. The switcher's visible label is derived from this networkId value,
+// and the control carries an accessible name (aria-label Synchronizer) from the primitive.
+const SYNCHRONIZERS: SynchronizerOption[] = [{ networkId: 'canton:da-devnet', label: 'DevNet' }];
+
+const THEME_KEY = 'partylayer-tokenization-theme';
+
+// Initial theme: a stored choice wins, otherwise follow the OS prefers-color-scheme. Guarded
+// for non-browser contexts so the module stays import safe.
+function initialThemeMode(): 'light' | 'dark' {
+  if (typeof window === 'undefined') return 'light';
+  const stored = window.localStorage.getItem(THEME_KEY);
+  if (stored === 'light' || stored === 'dark') return stored;
+  return window.matchMedia?.('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+}
 
 export default function App() {
-  const [mode, setMode] = useState<'light' | 'dark'>('light');
+  const [mode, setMode] = useState<'light' | 'dark'>(initialThemeMode);
+  // Persist the theme choice so a reload keeps it; the initial value already honored it.
+  useEffect(() => {
+    if (typeof window !== 'undefined') window.localStorage.setItem(THEME_KEY, mode);
+  }, [mode]);
   const [party, setParty] = useState<DemoPartyKey>('alice');
   const [synchronizer, setSynchronizer] = useState('canton:da-devnet');
 
@@ -115,13 +133,16 @@ export default function App() {
     <PartyLayerKit network="devnet" appName="PartyLayer Tokenization" theme={theme} adapters={ADAPTERS}>
       <DemoProvider value={{ party, setParty, backend, mode }}>
         <div className={'app app-' + mode}>
+          <a className="skip-link" href="#main">
+            Skip to content
+          </a>
           <header className="topbar">
             <div className="brand">
               <a className="brand-logo" href="https://partylayer.xyz" target="_blank" rel="noopener">
                 <img src="/logo.svg" alt="PartyLayer" height={28} />
               </a>
               <div>
-                <div className="brand-title">Tokenization</div>
+                <h1 className="brand-title">Tokenization</h1>
                 <div className="brand-sub">CIP-0056 vertical example</div>
               </div>
             </div>
@@ -157,12 +178,19 @@ export default function App() {
             </div>
           </header>
 
-          <p className="acting-line">
-            Acting as <strong>{PARTIES[party].label}</strong>{' '}
-            <code>{PARTIES[party].partyId}</code>. Every section below reads and acts as this party.
+          <p className="page-intro">
+            A live demo of the Canton Network Token Standard (CIP-0056): holdings, transfers, and
+            allocations, built with PartyLayer React hooks.
           </p>
 
-          <main className="grid">
+          <RetryBanner />
+
+          <p className="acting-line">
+            Acting as <strong>{PARTIES[party].label}</strong>{' '}
+            <CopyId value={PARTIES[party].partyId} />. Every section below reads and acts as this party.
+          </p>
+
+          <main className="grid" id="main" tabIndex={-1}>
             <Holdings />
             <Transfer />
             <Incoming />
@@ -185,6 +213,13 @@ export default function App() {
                 GitHub template
               </a>
               <a href="https://partylayer.xyz/docs" target="_blank" rel="noopener">Docs</a>
+              <a
+                href="https://github.com/PartyLayer/PartyLayer/blob/main/LICENSE"
+                target="_blank"
+                rel="noopener"
+              >
+                MIT License
+              </a>
               <span>Scaffold your own: npm create partylayer-app</span>
             </div>
           </footer>

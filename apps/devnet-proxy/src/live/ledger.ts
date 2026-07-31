@@ -12,6 +12,7 @@
  * interface reference, so the only ledger surface the gateway can touch is these calls.
  */
 import type { AcsEntry } from '../mapping.js';
+import type { CostEstimationWire } from '../contract.js';
 
 /** A ledger-API command wrapper, e.g. `{ ExerciseCommand: {...} }`, as the sdk emits. */
 export type WrappedCommand = Record<string, unknown>;
@@ -40,6 +41,8 @@ export class LedgerClient {
     baseUrl: string,
     private readonly userId: string,
     private readonly token: string,
+    /** The synchronizer a prepare-for-cost call targets. Absent disables cost estimation. */
+    private readonly synchronizerId?: string,
   ) {
     this.base = baseUrl.replace(/\/$/, '');
   }
@@ -175,6 +178,84 @@ export class LedgerClient {
     }
     return { updateId: tree.updateId, created };
   }
+
+  /**
+   * Prepare (interpret) commands and return ONLY the pre-submission cost estimate.
+   * prepare interprets the transaction and reports its cost; it does NOT commit, so no
+   * state changes and no traffic is spent. Cost estimation needs a synchronizer id, so
+   * this returns null when none is configured. Any non-OK response or parse failure also
+   * returns null and never throws, so the caller degrades to an illustrative estimate.
+   *
+   * The three int64 cost fields are read from the RAW response text, so values past
+   * Number.MAX_SAFE_INTEGER never round-trip through a JS number.
+   */
+  async prepareForCost(
+    commands: readonly unknown[],
+    disclosedContracts: readonly unknown[],
+    actAs: string[],
+    commandId: string,
+  ): Promise<CostEstimationWire | null> {
+    if (!this.synchronizerId) return null;
+    let res: Response;
+    try {
+      res = await fetch(this.base + '/v2/interactive-submission/prepare', {
+        method: 'POST',
+        headers: this.headers(),
+        body: JSON.stringify({
+          commandId,
+          userId: this.userId,
+          actAs,
+          readAs: [],
+          commands,
+          disclosedContracts,
+          synchronizerId: this.synchronizerId,
+          // Three fields the OpenAPI marks optional but the decoder requires.
+          packageIdSelectionPreference: [],
+          estimateTrafficCost: { disabled: false, expectedSignatures: [] },
+        }),
+      });
+    } catch {
+      return null;
+    }
+    if (!res.ok) return null;
+    const raw = await res.text();
+    return extractCostEstimation(raw);
+  }
+}
+
+/**
+ * Pull the pre-submission cost estimate from a raw prepare response. Precision-safe: the
+ * int64 cost fields are read from the RAW text so values past Number.MAX_SAFE_INTEGER
+ * never round-trip through a JS number. costEstimation is optional on the response (null
+ * when estimation is disabled or absent), which is a successful result, not an error.
+ */
+function extractCostEstimation(raw: string): CostEstimationWire | null {
+  // costEstimation is a flat object (timestamp plus three integers), no nested braces.
+  const block = raw.match(/"costEstimation"\s*:\s*\{([^}]*)\}/);
+  if (!block) return null;
+  const body = block[1];
+  const int = (name: string) => body.match(new RegExp('"' + name + '"\\s*:\\s*(-?\\d+)'))?.[1] ?? null;
+  const str = (name: string) => body.match(new RegExp('"' + name + '"\\s*:\\s*"([^"]*)"'))?.[1] ?? null;
+
+  const estimationTimestamp = str('estimationTimestamp');
+  const confirmationRequestTrafficCostEstimation = int('confirmationRequestTrafficCostEstimation');
+  const confirmationResponseTrafficCostEstimation = int('confirmationResponseTrafficCostEstimation');
+  const totalTrafficCostEstimation = int('totalTrafficCostEstimation');
+
+  if (
+    estimationTimestamp == null ||
+    confirmationRequestTrafficCostEstimation == null ||
+    confirmationResponseTrafficCostEstimation == null ||
+    totalTrafficCostEstimation == null
+  ) {
+    return null;
+  }
+  return {
+    estimationTimestamp,
+    confirmationRequestTrafficCostEstimation,
+    confirmationResponseTrafficCostEstimation,
+    totalTrafficCostEstimation,
+  };
 }
 
 /** Build a CreateCommand wrapper for the JSON Ledger API. */

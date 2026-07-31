@@ -4,17 +4,22 @@
  * TransactionToast from the mutation state. On success it invalidates the holdings
  * and incoming query keys so both sides refresh.
  */
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import { useTransferInstruction, useTokenHoldings, type TokenTransfer } from '@partylayer/react/query';
+import {
+  useTransferInstruction,
+  useTokenHoldings,
+  useTransactionCostEstimate,
+  type TokenTransfer,
+} from '@partylayer/react/query';
 import { CostPreview, TransactionToast } from '@partylayer/react';
 import { useDemo, partyKey } from '../context/DemoContext';
 import { Card, Field } from '../ui/primitives';
 import { toastStatus } from '../lib/mutation';
 import { invalidateHoldingsAndReads } from '../lib/invalidate';
-import { PARTIES, PARTY_ORDER, INSTRUMENT, FEE_ESTIMATE } from '../lib/fixtures';
+import { PARTIES, PARTY_ORDER, INSTRUMENT } from '../lib/fixtures';
 import { demoStore } from '../lib/store';
-import { formatAmount, isPositiveAmount, addAmount } from '../lib/format';
+import { formatAmount, validateAmount, addAmount } from '../lib/format';
 import type { DemoPartyKey } from '../lib/types';
 
 export function Transfer() {
@@ -58,11 +63,18 @@ export function Transfer() {
   const available = isLive
     ? unlocked.reduce((sum, r) => addAmount(sum, r.holding.amount), '0.00')
     : demoStore.balanceOf(party);
+  // Validate the amount inline: numeric, greater than zero, within the available balance.
   // Live submissions send the party key (the gateway resolves it to the real party id, as
-  // the reads do); a live transfer needs the instrument loaded from holdings first.
-  const valid = isPositiveAmount(amount) && (!isLive || !!liveInstrument);
+  // the reads do); a live transfer also needs the instrument loaded from holdings first.
+  const liveNotReady = isLive && !liveInstrument;
+  const amountReason = validateAmount(amount, available);
+  const submitReason = liveNotReady ? 'Loading your holdings, one moment.' : amountReason;
+  const valid = !submitReason;
 
-  const onConfirm = () => {
+  // Build the transfer once, only when the form is valid, and use the SAME object for the
+  // cost estimate and the submit, so the cost shown is for exactly what gets sent.
+  const pendingTransfer = useMemo<TokenTransfer | null>(() => {
+    if (!valid) return null;
     const now = new Date();
     const transfer: TokenTransfer = {
       sender: isLive ? party : PARTIES[party].partyId,
@@ -74,7 +86,23 @@ export function Transfer() {
       inputHoldingCids: isLive ? [] : demoStore.unlockedCids(party),
       meta: memo ? { memo } : {},
     };
-    mutation.submitTransfer(transfer);
+    return transfer;
+  }, [valid, isLive, party, receiverKey, amount, memo, instrument.admin, instrument.id]);
+
+  // A live estimate is a genuine blocker (the gateway may have no synchronizer, and the
+  // prepare-for-cost path is untested), so it can resolve to null; the UI then shows an
+  // illustrative caption. Demo mode returns the fixture, so a CostPreview always renders.
+  const cost = useTransactionCostEstimate({
+    estimate: (signal) =>
+      pendingTransfer ? backend.estimateTransfer(pendingTransfer, signal) : Promise.resolve(null),
+    input: [receiverKey, amount, memo],
+    query: { enabled: valid },
+  });
+  const illustrative = !isLive || cost.costEstimate === null;
+
+  const onConfirm = () => {
+    if (!pendingTransfer) return;
+    mutation.submitTransfer(pendingTransfer);
   };
 
   return (
@@ -94,32 +122,59 @@ export function Transfer() {
           </select>
         </Field>
         <Field label={instrument.id ? 'Amount (' + instrument.id + ')' : 'Amount'}>
-          <input
-            inputMode="decimal"
-            placeholder="0.00"
-            value={amount}
-            onChange={(e) => setAmount(e.target.value)}
-          />
+          <div className="input-max">
+            <input
+              inputMode="decimal"
+              placeholder="0.00"
+              value={amount}
+              onChange={(e) => setAmount(e.target.value)}
+              aria-invalid={amount.trim() !== '' && amountReason != null}
+            />
+            <button
+              type="button"
+              className="btn btn-ghost btn-small"
+              onClick={() => setAmount(available)}
+              disabled={validateAmount(available) !== null}
+              title="Use the full available balance"
+            >
+              Max
+            </button>
+          </div>
+          {amount.trim() !== '' && amountReason ? (
+            <span className="field-error" role="alert">
+              {amountReason}
+            </span>
+          ) : null}
         </Field>
         <Field label="Memo (optional)">
           <input value={memo} placeholder="what is it for" onChange={(e) => setMemo(e.target.value)} />
         </Field>
       </div>
 
-      {valid ? (
-        <div className="review">
-          <div className="review-line">
-            Send <strong>{formatAmount(amount)}</strong> {instrument.id} to{' '}
-            <strong>{PARTIES[receiverKey].label}</strong>
-          </div>
-          <CostPreview estimate={FEE_ESTIMATE} />
-          <button className="btn btn-primary" onClick={onConfirm} disabled={mutation.isPending}>
-            {mutation.isPending ? 'Submitting...' : 'Confirm transfer'}
-          </button>
-        </div>
-      ) : (
-        <div className="muted hint-line">Enter a positive amount to preview the fee and confirm.</div>
-      )}
+      <div className="review">
+        {valid ? (
+          <>
+            <div className="review-line">
+              Send <strong>{formatAmount(amount)}</strong> {instrument.id} to{' '}
+              <strong>{PARTIES[receiverKey].label}</strong>
+            </div>
+            <CostPreview estimate={cost.costEstimate} loading={cost.isPending} error={cost.error} />
+            {illustrative ? (
+              <p className="muted" style={{ fontSize: 12, margin: '6px 0 0' }}>
+                Illustrative network cost, not a live estimate
+              </p>
+            ) : null}
+          </>
+        ) : null}
+        <button
+          className="btn btn-primary"
+          onClick={onConfirm}
+          disabled={!valid || mutation.isPending}
+        >
+          {mutation.isPending ? 'Submitting...' : 'Confirm transfer'}
+        </button>
+        {!valid ? <span className="field-error">{submitReason}</span> : null}
+      </div>
 
       <TransactionToast
         status={toastStatus(mutation)}

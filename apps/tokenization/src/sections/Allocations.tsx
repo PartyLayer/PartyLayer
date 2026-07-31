@@ -6,6 +6,7 @@
  * The demo backend returns fixture results for the writes; a real dApp performs the
  * registry-specific factory/context flow inside these fetchers (see the README).
  */
+import { useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import {
   useTokenAllocations,
@@ -19,7 +20,6 @@ import { Card, AsyncView, Badge } from '../ui/primitives';
 import { toastStatus } from '../lib/mutation';
 import { invalidateAllocations } from '../lib/invalidate';
 import { formatAmount } from '../lib/format';
-import { PARTIES } from '../lib/fixtures';
 
 const ACTIONS: { kind: AllocationActionKind; label: string }[] = [
   { kind: 'executeTransfer', label: 'Execute' },
@@ -50,13 +50,19 @@ export function Allocations() {
     },
   });
 
+  // The row actions share one act mutation across every row and kind; track the target
+  // (cid plus kind) so the Submitting label shows on the clicked button alone (A8).
+  const [pendingAct, setPendingAct] = useState<string | null>(null);
+
   const createDemoAllocation = () => {
     // Build the standard AllocationFactory_Allocate request from the issuer as admin.
+    // Party fields are demo KEYS (A3): the gateway maps a key to its ledger id inbound,
+    // so the live sender is the real party with holdings, not a stale fixture id.
     create.submitAllocation({
-      expectedAdmin: PARTIES.issuer.partyId,
+      expectedAdmin: 'issuer',
       allocation: {
         settlement: {
-          executor: PARTIES.issuer.partyId,
+          executor: 'issuer',
           settlementRef: { id: 'settlement-demo-new' },
           requestedAt: new Date().toISOString(),
           allocateBefore: '2027-01-01T00:00:00Z',
@@ -64,10 +70,10 @@ export function Allocations() {
         },
         transferLegId: 'leg-new',
         transferLeg: {
-          sender: PARTIES[party].partyId,
-          receiver: PARTIES.bob.partyId,
+          sender: party,
+          receiver: 'bob',
           amount: '5.00',
-          instrumentId: { admin: PARTIES.issuer.partyId, id: 'DEMO' },
+          instrumentId: { admin: 'issuer', id: 'DEMO' },
         },
       },
       requestedAt: new Date().toISOString(),
@@ -83,7 +89,7 @@ export function Allocations() {
       <div className="alloc-head">
         <span className="muted">Funded allocations for a settlement leg.</span>
         <button className="btn btn-ghost" onClick={createDemoAllocation} disabled={busy}>
-          Create demo allocation
+          {create.isPending ? 'Submitting...' : 'Create demo allocation'}
         </button>
       </div>
 
@@ -121,9 +127,14 @@ export function Allocations() {
                         className="btn btn-ghost btn-small"
                         disabled={busy}
                         // The ref carries the ACS contract id, which feeds allocationCid.
-                        onClick={() => act.submitAction({ allocationCid: cid, action: action.kind })}
+                        onClick={() => {
+                          setPendingAct(cid + ':' + action.kind);
+                          act.submitAction({ allocationCid: cid, action: action.kind });
+                        }}
                       >
-                        {action.label}
+                        {act.isPending && pendingAct === cid + ':' + action.kind
+                          ? 'Submitting...'
+                          : action.label}
                       </button>
                     ))}
                   </div>

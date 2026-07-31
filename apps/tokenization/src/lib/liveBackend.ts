@@ -14,6 +14,29 @@ import type {
 } from '@partylayer/react/query';
 import type { TokenizationBackend, IssuerChoice } from './backend';
 import type { DemoPartyKey, InstrumentConfig } from './types';
+import { toTrafficCost, type CostEstimation } from '@partylayer/react';
+import { mapGatewayError } from './gateway-errors';
+import { withRetry } from './retry';
+
+/** The gateway's int64-as-string cost estimate on the wire. */
+interface EstimationWire {
+  estimationTimestamp: string;
+  confirmationRequestTrafficCostEstimation: string;
+  confirmationResponseTrafficCostEstimation: string;
+  totalTrafficCostEstimation: string;
+}
+
+/** Map the gateway's wire estimate to a branded CostEstimation; null passes through. */
+function toCostEstimation(wire: EstimationWire | null): CostEstimation | null {
+  if (!wire) return null;
+  return {
+    estimationTimestamp: wire.estimationTimestamp,
+    // int64-as-string to validated, branded TrafficCost (precision preserved).
+    confirmationRequestTrafficCostEstimation: toTrafficCost(wire.confirmationRequestTrafficCostEstimation),
+    confirmationResponseTrafficCostEstimation: toTrafficCost(wire.confirmationResponseTrafficCostEstimation),
+    totalTrafficCostEstimation: toTrafficCost(wire.totalTrafficCostEstimation),
+  };
+}
 
 async function call<T>(base: string, path: string, body: unknown, signal?: AbortSignal): Promise<T> {
   const res = await fetch(base.replace(/\/$/, '') + path, {
@@ -23,8 +46,8 @@ async function call<T>(base: string, path: string, body: unknown, signal?: Abort
     signal,
   });
   if (!res.ok) {
-    const err = (await res.json().catch(() => ({}))) as { error?: string };
-    throw new Error(err.error || 'Gateway error ' + res.status);
+    const raw = await res.json().catch(() => ({}));
+    throw mapGatewayError(res.status, raw);
   }
   return (await res.json()) as T;
 }
@@ -38,11 +61,18 @@ export function createLiveBackend(gatewayUrl: string): TokenizationBackend {
     readInstrument: (signal) => call<InstrumentConfig | null>(gatewayUrl, '/tokenization/instrument', {}, signal),
     readSupply: (signal) => call<string | null>(gatewayUrl, '/tokenization/supply', {}, signal),
     readAllocations: (signal) => call<TokenAllocationRef[] | null>(gatewayUrl, '/tokenization/allocations', {}, signal),
-    submitTransfer: (transfer: TokenTransfer, signal) => call(gatewayUrl, '/tokenization/transfer', { transfer }, signal).then(() => ok),
-    submitTransferAction: (request: TransferInstructionActionRequest, signal) => call(gatewayUrl, '/tokenization/transferAction', { request }, signal).then(() => ok),
-    submitIssuerChoice: (choice: IssuerChoice, signal) => call(gatewayUrl, '/tokenization/issuerChoice', { choice }, signal).then(() => ok),
-    submitAllocation: (request: AllocationInstructionRequest, signal) => call(gatewayUrl, '/tokenization/allocation', { request }, signal).then(() => ok),
-    submitAllocationAction: (request: AllocationActionRequest, signal) => call(gatewayUrl, '/tokenization/allocationAction', { request }, signal).then(() => ok),
+    submitTransfer: (transfer: TokenTransfer, signal) => withRetry((s) => call(gatewayUrl, '/tokenization/transfer', { transfer }, s), signal).then(() => ok),
+    submitTransferAction: (request: TransferInstructionActionRequest, signal) => withRetry((s) => call(gatewayUrl, '/tokenization/transferAction', { request }, s), signal).then(() => ok),
+    submitIssuerChoice: (choice: IssuerChoice, signal) => withRetry((s) => call(gatewayUrl, '/tokenization/issuerChoice', { choice }, s), signal).then(() => ok),
+    submitAllocation: (request: AllocationInstructionRequest, signal) => withRetry((s) => call(gatewayUrl, '/tokenization/allocation', { request }, s), signal).then(() => ok),
+    submitAllocationAction: (request: AllocationActionRequest, signal) => withRetry((s) => call(gatewayUrl, '/tokenization/allocationAction', { request }, s), signal).then(() => ok),
+    // Cost estimate: deliberately NOT wrapped in withRetry, and any failure resolves to
+    // null, so the UI shows an illustrative caption rather than an error and submit is
+    // never blocked.
+    estimateTransfer: (transfer: TokenTransfer, signal) =>
+      call<{ costEstimation: EstimationWire | null }>(gatewayUrl, '/tokenization/transferEstimate', { transfer }, signal)
+        .then((data) => toCostEstimation(data.costEstimation))
+        .catch(() => null),
   };
 }
 

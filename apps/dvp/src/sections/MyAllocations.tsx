@@ -4,11 +4,12 @@
  * ref, leg summary, and backing holding cids, with a Withdraw button (allowed before
  * allocateBefore; the store enforces the guard).
  */
+import { useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useTokenAllocations, useAllocationAction } from '@partylayer/react/query';
 import { TransactionToast } from '@partylayer/react';
 import { useDemo, partyKey } from '../context/DemoContext';
-import { Card, AsyncView, Badge } from '../ui/primitives';
+import { Card, AsyncView, Badge, CopyId } from '../ui/primitives';
 import { toastStatus } from '../lib/mutation';
 import { invalidateAll } from '../lib/invalidate';
 import { formatAmount } from '../lib/format';
@@ -26,6 +27,10 @@ export function MyAllocations() {
     submit: (request, signal) => backend.submitAllocationAction(request, signal),
     mutation: { onSuccess: () => invalidateAll(queryClient) },
   });
+
+  // One action mutation serves every row; track the withdrawing cid so the Submitting label
+  // shows on the clicked button alone (A8).
+  const [withdrawingCid, setWithdrawingCid] = useState<string | null>(null);
 
   return (
     <Card title="My allocations" hint="useTokenAllocations + useAllocationAction">
@@ -51,15 +56,29 @@ export function MyAllocations() {
                     <div className="row-sub muted">
                       to {leg.receiver} · settlement {settle.settlementRef.id}
                     </div>
-                    <div className="row-sub muted">backing {a.holdingCids.join(', ')}</div>
+                    <div className="row-sub muted">
+                      backing{' '}
+                      {a.holdingCids.length ? (
+                        <span className="id-list">
+                          {a.holdingCids.map((c) => (
+                            <CopyId key={c} value={c} />
+                          ))}
+                        </span>
+                      ) : (
+                        'none'
+                      )}
+                    </div>
                   </div>
                   <div className="row-actions">
                     <button
                       className="btn btn-ghost btn-small"
                       disabled={action.isPending}
-                      onClick={() => action.submitAction({ allocationCid: cid, action: 'withdraw' })}
+                      onClick={() => {
+                        setWithdrawingCid(cid);
+                        action.submitAction({ allocationCid: cid, action: 'withdraw' });
+                      }}
                     >
-                      Withdraw
+                      {action.isPending && withdrawingCid === cid ? 'Submitting...' : 'Withdraw'}
                     </button>
                   </div>
                 </li>

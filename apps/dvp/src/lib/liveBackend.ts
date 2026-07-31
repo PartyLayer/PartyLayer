@@ -13,6 +13,29 @@ import type {
 } from '@partylayer/react/query';
 import type { DvpBackend } from './backend';
 import type { DemoPartyKey, SettleTrade, CreateTrade } from './types';
+import { toTrafficCost, type CostEstimation } from '@partylayer/react';
+import { mapGatewayError } from './gateway-errors';
+import { withRetry } from './retry';
+
+/** The gateway's int64-as-string cost estimate on the wire. */
+interface EstimationWire {
+  estimationTimestamp: string;
+  confirmationRequestTrafficCostEstimation: string;
+  confirmationResponseTrafficCostEstimation: string;
+  totalTrafficCostEstimation: string;
+}
+
+/** Map the gateway's wire estimate to a branded CostEstimation; null passes through. */
+function toCostEstimation(wire: EstimationWire | null): CostEstimation | null {
+  if (!wire) return null;
+  return {
+    estimationTimestamp: wire.estimationTimestamp,
+    // int64-as-string to validated, branded TrafficCost (precision preserved).
+    confirmationRequestTrafficCostEstimation: toTrafficCost(wire.confirmationRequestTrafficCostEstimation),
+    confirmationResponseTrafficCostEstimation: toTrafficCost(wire.confirmationResponseTrafficCostEstimation),
+    totalTrafficCostEstimation: toTrafficCost(wire.totalTrafficCostEstimation),
+  };
+}
 
 async function call<T>(base: string, path: string, body: unknown, signal?: AbortSignal): Promise<T> {
   const res = await fetch(base.replace(/\/$/, '') + path, {
@@ -22,8 +45,8 @@ async function call<T>(base: string, path: string, body: unknown, signal?: Abort
     signal,
   });
   if (!res.ok) {
-    const err = (await res.json().catch(() => ({}))) as { error?: string };
-    throw new Error(err.error || 'Gateway error ' + res.status);
+    const raw = await res.json().catch(() => ({}));
+    throw mapGatewayError(res.status, raw);
   }
   return (await res.json()) as T;
 }
@@ -35,11 +58,18 @@ export function createLiveBackend(gatewayUrl: string): DvpBackend {
     readTrades: (signal) => call<TokenAllocationRequestRef[] | null>(gatewayUrl, '/dvp/trades', {}, signal),
     readAllocations: (party, signal) => call<TokenAllocationRef[] | null>(gatewayUrl, '/dvp/allocations', { party }, signal),
     readMatchedLegs: (requestCid, signal) => call<string[]>(gatewayUrl, '/dvp/matchedLegs', { requestCid }, signal),
-    submitAllocation: (request: AllocationInstructionRequest, signal) => call(gatewayUrl, '/dvp/allocation', { request }, signal).then(() => ok),
-    submitAllocationAction: (request: AllocationActionRequest, signal) => call(gatewayUrl, '/dvp/allocationAction', { request }, signal).then(() => ok),
-    submitRequestAction: (request: AllocationRequestActionRequest, signal) => call(gatewayUrl, '/dvp/requestAction', { request }, signal).then(() => ok),
-    submitSettle: (vars: SettleTrade, signal) => call(gatewayUrl, '/dvp/settle', { vars }, signal).then(() => ok),
-    submitCreateTrade: (vars: CreateTrade, signal) => call(gatewayUrl, '/dvp/createTrade', { vars }, signal).then(() => ok),
+    submitAllocation: (request: AllocationInstructionRequest, signal) => withRetry((s) => call(gatewayUrl, '/dvp/allocation', { request }, s), signal).then(() => ok),
+    submitAllocationAction: (request: AllocationActionRequest, signal) => withRetry((s) => call(gatewayUrl, '/dvp/allocationAction', { request }, s), signal).then(() => ok),
+    submitRequestAction: (request: AllocationRequestActionRequest, signal) => withRetry((s) => call(gatewayUrl, '/dvp/requestAction', { request }, s), signal).then(() => ok),
+    submitSettle: (vars: SettleTrade, signal) => withRetry((s) => call(gatewayUrl, '/dvp/settle', { vars }, s), signal).then(() => ok),
+    submitCreateTrade: (vars: CreateTrade, signal) => withRetry((s) => call(gatewayUrl, '/dvp/createTrade', { vars }, s), signal).then(() => ok),
+    // Cost estimate: deliberately NOT wrapped in withRetry, and any failure resolves to
+    // null, so the UI shows an illustrative caption rather than an error and allocation is
+    // never blocked.
+    estimateAllocation: (request: AllocationInstructionRequest, signal) =>
+      call<{ costEstimation: EstimationWire | null }>(gatewayUrl, '/dvp/allocationEstimate', { request }, signal)
+        .then((data) => toCostEstimation(data.costEstimation))
+        .catch(() => null),
   };
 }
 

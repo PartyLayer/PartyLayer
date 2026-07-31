@@ -13,9 +13,10 @@ import type {
   AllocationInstructionRequest,
   AllocationActionRequest,
 } from '@partylayer/react/query';
+import type { CostEstimation } from '@partylayer/react';
 import type { DemoPartyKey, InstrumentConfig } from './types';
 import { demoStore, latency } from './store';
-import { INSTRUMENT, PARTIES } from './fixtures';
+import { INSTRUMENT, PARTIES, FEE_ESTIMATE } from './fixtures';
 
 /** Issuer-only admin operations, exercised through the generic `useChoice`. */
 export type IssuerChoice =
@@ -52,6 +53,11 @@ export interface TokenizationBackend {
   submitAllocation(request: AllocationInstructionRequest, signal?: AbortSignal): Promise<{ ok: true }>;
   /** Submit: act on a funded allocation (executeTransfer/cancel/withdraw; fixture result). */
   submitAllocationAction(request: AllocationActionRequest, signal?: AbortSignal): Promise<{ ok: true }>;
+  /**
+   * Estimate: a pre-submission traffic-cost estimate for a transfer. Returns `null` when
+   * no live estimate is available (the UI then shows an illustrative caption).
+   */
+  estimateTransfer(transfer: TokenTransfer, signal?: AbortSignal): Promise<CostEstimation | null>;
 }
 
 /** Reject if the caller aborted while we were "in flight". */
@@ -59,11 +65,13 @@ function throwIfAborted(signal?: AbortSignal): void {
   if (signal?.aborted) throw new DOMException('Aborted', 'AbortError');
 }
 
-function partyIdToKey(partyId: string): DemoPartyKey {
+/** Accept either a demo key (the app's currency after A3) or a fixture party id. */
+function partyIdToKey(party: string): DemoPartyKey {
+  if (Object.prototype.hasOwnProperty.call(PARTIES, party)) return party as DemoPartyKey;
   for (const key of Object.keys(PARTIES) as DemoPartyKey[]) {
-    if (PARTIES[key].partyId === partyId) return key;
+    if (PARTIES[key].partyId === party) return key;
   }
-  throw new Error('Unknown party id: ' + partyId);
+  throw new Error('Unknown party: ' + party);
 }
 
 export const demoBackend: TokenizationBackend = {
@@ -159,6 +167,13 @@ export const demoBackend: TokenizationBackend = {
       throw new Error('Unknown allocation action: ' + request.action);
     }
     return { ok: true };
+  },
+
+  async estimateTransfer(_transfer, signal) {
+    await latency();
+    throwIfAborted(signal);
+    // Demo mode returns the fixture estimate, so a CostPreview always renders.
+    return FEE_ESTIMATE;
   },
 };
 

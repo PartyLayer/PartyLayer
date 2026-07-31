@@ -8,12 +8,18 @@
   --text: #1c1917;
   --muted: #78716c;
   --border: rgba(28, 25, 23, 0.14);
-  --accent: #b45309;
+  /* One amber hue (~35) across light and dark, only lightness and saturation vary. Light is
+     a dark amber for white text: WCAG AA at 5.25:1 on white, 5.08:1 on the surface tint. */
+  --accent: #9b5e08;
   --accent-contrast: #ffffff;
   --error-bg: #fef2f2;
   --error-text: #b00020;
+  --success-bg: #ecfdf5;
+  --success-text: #15803d;
   --lock-bg: #fff7ed;
   --lock-text: #9a3412;
+  /* Interactive controls share one radius; cards use 14px, pills 999px. */
+  --radius: 8px;
   min-height: 100vh;
   background: var(--bg);
   color: var(--text);
@@ -22,15 +28,20 @@
 
 .app-dark {
   --bg: #0c0a09;
-  --surface: #1c1917;
+  /* Surface sits between bg and card so empty-state panels read as a tint again; before,
+     surface equalled card (#1c1917) and empty states were invisible inside a card. */
+  --surface: #151210;
   --card: #1c1917;
   --text: #fafaf9;
   --muted: #a8a29e;
   --border: rgba(255, 255, 255, 0.1);
-  --accent: #fbbf24;
+  /* Same amber hue (~35) as light, brighter for dark text: AA at 9.13:1 on the dark text. */
+  --accent: #faab3d;
   --accent-contrast: #1c1917;
   --error-bg: #2a0f10;
   --error-text: #fca5a5;
+  --success-bg: #052e1a;
+  --success-text: #4ade80;
   --lock-bg: #2a1c0f;
   --lock-text: #fbbf24;
 }
@@ -60,8 +71,31 @@
   width: auto;
 }
 .brand-title {
+  font-size: 16px;
   font-weight: 700;
   letter-spacing: -0.01em;
+  margin: 0;
+  line-height: 1.2;
+}
+
+/* Keyboard skip link: off screen until focused, then pinned to the top left. */
+.skip-link {
+  position: absolute;
+  left: -9999px;
+  top: 0;
+  z-index: 100;
+  padding: 8px 16px;
+  background: var(--accent);
+  color: var(--accent-contrast);
+  font-size: 14px;
+  font-weight: 600;
+  border-radius: 0 0 8px 0;
+}
+.skip-link:focus {
+  left: 0;
+}
+.grid:focus {
+  outline: none;
 }
 .brand-sub {
   font-size: 12px;
@@ -95,16 +129,36 @@
   background: transparent;
   color: var(--muted);
   padding: 4px 10px;
-  border-radius: 8px;
+  border-radius: var(--radius);
   cursor: pointer;
   font-size: 13px;
   font-weight: 600;
+  transition: background-color 150ms ease, color 150ms ease;
 }
 .party-chip-on {
   background: var(--accent);
   color: var(--accent-contrast);
 }
 
+.retry-banner {
+  max-width: 1100px;
+  margin: 12px auto 0;
+  padding: 10px 16px;
+  border-radius: 8px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--muted);
+  font-size: 14px;
+  text-align: center;
+}
+.page-intro {
+  max-width: 1100px;
+  margin: 16px auto 0;
+  padding: 0 24px;
+  color: var(--muted);
+  font-size: 15px;
+  line-height: 1.5;
+}
 .acting-line {
   max-width: 1100px;
   margin: 16px auto 0;
@@ -123,6 +177,8 @@
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
   gap: 20px;
+  /* Cards size to their own content instead of stretching to the tallest card in the row. */
+  align-items: start;
 }
 
 .card {
@@ -190,6 +246,45 @@
   font-size: 12px;
   word-break: break-all;
 }
+.copy-id {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 100%;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  vertical-align: bottom;
+}
+.copy-id code {
+  font-size: 12px;
+  word-break: break-all;
+}
+.copy-id-tag {
+  flex: none;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 1px 5px;
+  transition: color 150ms ease, border-color 150ms ease;
+}
+.copy-id:hover .copy-id-tag,
+.copy-id:focus-visible .copy-id-tag {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+.id-list {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 4px 10px;
+  vertical-align: bottom;
+}
 .row-actions {
   display: flex;
   gap: 8px;
@@ -216,8 +311,8 @@
   color: var(--lock-text);
 }
 .badge-ok {
-  background: var(--surface);
-  color: var(--accent);
+  background: var(--success-bg);
+  color: var(--success-text);
 }
 
 .form-grid {
@@ -246,19 +341,29 @@
 .topbar-controls select {
   padding: 8px 10px;
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: var(--radius);
   background: var(--bg);
   color: var(--text);
   font-size: 14px;
+  transition: border-color 150ms ease;
+}
+.field input[aria-invalid='true'] {
+  border-color: var(--error-text);
+}
+.field-error {
+  font-size: 12px;
+  color: var(--error-text);
 }
 
 .btn {
   border: 1px solid transparent;
-  border-radius: 8px;
+  border-radius: var(--radius);
   padding: 8px 14px;
   font-size: 14px;
   font-weight: 600;
   cursor: pointer;
+  transition: background-color 150ms ease, border-color 150ms ease, color 150ms ease,
+    opacity 150ms ease;
 }
 .btn:disabled {
   opacity: 0.55;
@@ -375,12 +480,20 @@
   color: var(--accent);
   text-decoration: none;
   font-weight: 600;
+  transition: color 150ms ease;
 }
 .footer-links a:hover {
   text-decoration: underline;
 }
 .footer-links span {
   color: var(--muted);
+}
+
+@media (max-width: 520px) {
+  /* Stack form fields so the primary action button spans the full width on phones. */
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 /* DvP leg layout */

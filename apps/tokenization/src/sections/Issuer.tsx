@@ -10,10 +10,10 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useDamlContract, useChoice, type TokenHoldingRef } from '@partylayer/react/query';
 import { TransactionToast } from '@partylayer/react';
 import { useDemo, partyKey } from '../context/DemoContext';
-import { Card, AsyncView, Badge, Field } from '../ui/primitives';
+import { Card, AsyncView, Badge, Field, SkeletonText, CopyId } from '../ui/primitives';
 import { toastStatus } from '../lib/mutation';
 import { invalidateHoldingsAndReads } from '../lib/invalidate';
-import { formatAmount, isPositiveAmount } from '../lib/format';
+import { formatAmount, validateAmount } from '../lib/format';
 import { PARTIES, PARTY_ORDER } from '../lib/fixtures';
 import type { IssuerChoice } from '../lib/backend';
 import type { DemoPartyKey, InstrumentConfig } from '../lib/types';
@@ -21,11 +21,14 @@ import type { DemoPartyKey, InstrumentConfig } from '../lib/types';
 export function Issuer() {
   const { party, backend } = useDemo();
   const queryClient = useQueryClient();
-  // In live mode issuance is disabled: on Canton Coin the registry controls Amulet
-  // issuance, so mint and freeze are demo-only. The panel stays visible to showcase
-  // the issuance UI, with actions disabled and a short explanation.
+  // In live mode issuance is disabled: on Canton Coin the registry controls Amulet issuance,
+  // so mint and freeze are demo-only. Rather than hiding the controls, the panel keeps them
+  // VISIBLE but DISABLED with a truthful note (A7 per D5), so it never advertises a capability
+  // it does not show. In demo mode the issuer party drives the controls for real.
   const isLive = import.meta.env.VITE_BACKEND === 'live';
   const isIssuer = party === 'issuer' && !isLive;
+  const controlsDisabled = isLive;
+  const showControls = isLive || isIssuer;
 
   const instrument = useDamlContract<InstrumentConfig>({
     read: (signal) => backend.readInstrument(signal),
@@ -39,6 +42,9 @@ export function Issuer() {
   const [mintTarget, setMintTarget] = useState<DemoPartyKey>('alice');
   const [mintAmount, setMintAmount] = useState('');
   const [freezeTarget, setFreezeTarget] = useState<DemoPartyKey>('alice');
+  // Mint and freeze share one issuerChoice mutation, so track which action is in flight to
+  // show the Submitting label on the clicked button alone (A8). 'mint' or the toggled cid.
+  const [pendingKind, setPendingKind] = useState<string | null>(null);
 
   const refreshAll = () => invalidateHoldingsAndReads(queryClient);
 
@@ -52,13 +58,18 @@ export function Issuer() {
     key: partyKey('holdingRefs', freezeTarget),
   });
 
+  // Minting creates new supply, so there is no balance cap: validate numeric and positive.
+  const mintReason = validateAmount(mintAmount);
+
   const doMint = () => {
-    if (!isPositiveAmount(mintAmount)) return;
+    if (mintReason !== null) return;
+    setPendingKind('mint');
     issuerChoice.exerciseChoice({ kind: 'mint', toParty: mintTarget, amount: mintAmount });
     setMintAmount('');
   };
 
   const toggleFreeze = (ref: TokenHoldingRef) => {
+    setPendingKind(ref.cid);
     issuerChoice.exerciseChoice({
       kind: 'setFrozen',
       party: freezeTarget,
@@ -90,28 +101,37 @@ export function Issuer() {
         </AsyncView>
         <div className="supply">
           <span className="muted">Total supply</span>
-          <strong>{supply.isPending ? '...' : formatAmount(supply.contract ?? '0.00')}</strong>
+          <strong>{supply.isPending ? <SkeletonText width={90} /> : formatAmount(supply.contract ?? '0.00')}</strong>
         </div>
       </div>
 
-      {!isIssuer ? (
-        <div className="state state-empty">
-          {isLive ? (
-            <>
-              Issuance is not available on Canton Coin: the registry controls Amulet issuance. Mint and
-              freeze are shown here in demo mode to showcase the issuance UI.
-            </>
-          ) : (
-            <>
-              Switch the demo party to <strong>Issuer</strong> to mint and freeze.
-            </>
-          )}
+      {isLive ? (
+        <div className="state state-empty" role="note">
+          <span>
+            Mint and freeze are disabled in live mode. On Canton Coin, the registry controls
+            Amulet issuance, so a demo participant cannot mint or lock real balances. These
+            controls are fully functional in demo mode.
+          </span>
+          <span className="row-sub">
+            Enabling real live mint and freeze would require admin party rights on the
+            instrument plus the registry issuer role.
+          </span>
         </div>
-      ) : (
+      ) : !isIssuer ? (
+        <div className="state state-empty">
+          Switch the demo party to <strong>Issuer</strong> to mint and freeze.
+        </div>
+      ) : null}
+
+      {showControls ? (
         <>
           <div className="form-grid">
             <Field label="Mint to">
-              <select value={mintTarget} onChange={(e) => setMintTarget(e.target.value as DemoPartyKey)}>
+              <select
+                value={mintTarget}
+                onChange={(e) => setMintTarget(e.target.value as DemoPartyKey)}
+                disabled={controlsDisabled}
+              >
                 {PARTY_ORDER.map((p) => (
                   <option key={p} value={p}>
                     {PARTIES[p].label}
@@ -125,18 +145,33 @@ export function Issuer() {
                 placeholder="0.00"
                 value={mintAmount}
                 onChange={(e) => setMintAmount(e.target.value)}
+                disabled={controlsDisabled}
+                aria-invalid={mintAmount.trim() !== '' && mintReason != null}
               />
+              {mintAmount.trim() !== '' && mintReason ? (
+                <span className="field-error" role="alert">
+                  {mintReason}
+                </span>
+              ) : null}
             </Field>
             <div className="field field-action">
-              <button className="btn btn-primary" onClick={doMint} disabled={issuerChoice.isPending}>
-                Mint
+              <button
+                className="btn btn-primary"
+                onClick={doMint}
+                disabled={controlsDisabled || mintReason !== null || issuerChoice.isPending}
+              >
+                {issuerChoice.isPending && pendingKind === 'mint' ? 'Submitting...' : 'Mint'}
               </button>
             </div>
           </div>
 
           <div className="freeze">
             <Field label="Freeze holdings of">
-              <select value={freezeTarget} onChange={(e) => setFreezeTarget(e.target.value as DemoPartyKey)}>
+              <select
+                value={freezeTarget}
+                onChange={(e) => setFreezeTarget(e.target.value as DemoPartyKey)}
+                disabled={controlsDisabled}
+              >
                 {PARTY_ORDER.map((p) => (
                   <option key={p} value={p}>
                     {PARTIES[p].label}
@@ -161,15 +196,21 @@ export function Issuer() {
                           {formatAmount(ref.holding.amount)}{' '}
                           <span className="muted">{ref.holding.instrumentId.id}</span>
                         </div>
-                        <div className="row-sub muted">{ref.cid}</div>
+                        <div className="row-sub muted">
+                          <CopyId value={ref.cid} />
+                        </div>
                       </div>
                       {ref.holding.lock ? <Badge tone="lock">Frozen</Badge> : null}
                       <button
                         className="btn btn-ghost"
-                        disabled={issuerChoice.isPending}
+                        disabled={controlsDisabled || issuerChoice.isPending}
                         onClick={() => toggleFreeze(ref)}
                       >
-                        {ref.holding.lock ? 'Unfreeze' : 'Freeze'}
+                        {issuerChoice.isPending && pendingKind === ref.cid
+                          ? 'Submitting...'
+                          : ref.holding.lock
+                            ? 'Unfreeze'
+                            : 'Freeze'}
                       </button>
                     </li>
                   ))}
@@ -184,7 +225,7 @@ export function Issuer() {
             message={issuerChoice.isSuccess ? 'Issuer action applied.' : undefined}
           />
         </>
-      )}
+      ) : null}
     </Card>
   );
 }
