@@ -38,8 +38,7 @@
     "wallet",
     "cip-0103",
     "react-native",
-    "mobile",
-    "deeplink"
+    "mobile"
   ],
   "author": "PartyLayer Contributors",
   "license": "MIT",
