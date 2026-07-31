@@ -5,7 +5,8 @@
  * React Native platform pieces, so a dApp gets a working connect and session flow with
  * no UI from us. It delegates to the sdk factory rather than inventing a parallel
  * architecture: it only wires session storage from AsyncStorage when the caller passes
- * it. Deep link wallets use {@link createReactNativeDeepLinkPlatform} for their transport.
+ * it. Everything else, including which adapters are registered and how each one reaches
+ * its wallet, follows the sdk client.
  */
 import { createPartyLayer, type PartyLayerConfig, type PartyLayerClient } from '@partylayer/sdk';
 import { createAsyncStorageAdapter } from './storage';
@@ -15,9 +16,9 @@ import type { RNAsyncStorage } from './types';
 export interface ReactNativeClientConfig extends PartyLayerConfig {
   /**
    * AsyncStorage module for session persistence. Pass
-   * `import AsyncStorage from '@react-native-async-storage/async-storage'`. When omitted
-   * (and no `storage` is set), the sdk's own default storage is used, so the client never
-   * forces the optional AsyncStorage peer.
+   * `import AsyncStorage from '@react-native-async-storage/async-storage'`. Used only
+   * when no explicit `storage` is set. With neither, the sdk's own default storage is
+   * used, so the client never forces the optional AsyncStorage peer.
    */
   asyncStorage?: RNAsyncStorage;
 }
@@ -25,8 +26,8 @@ export interface ReactNativeClientConfig extends PartyLayerConfig {
 /**
  * Create a headless PartyLayer client configured for React Native.
  *
- * Session storage is AsyncStorage when `asyncStorage` is passed, else the caller's
- * `storage`, else the sdk default. Everything else follows the sdk client.
+ * Session storage is the caller's `storage` when set, else an AsyncStorage adapter when
+ * `asyncStorage` is passed, else the sdk default. Everything else follows the sdk client.
  */
 export function createReactNativeClient(config: ReactNativeClientConfig): PartyLayerClient {
   const { asyncStorage, storage, ...rest } = config;

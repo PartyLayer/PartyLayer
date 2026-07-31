@@ -2,7 +2,7 @@
   "name": "@partylayer/react-native",
   "version": "0.2.2",
   "sideEffects": false,
-  "description": "Headless React Native compatibility layer for PartyLayer: deep link platform and AsyncStorage session store over the framework-agnostic core (phase A, no UI)",
+  "description": "React Native client for PartyLayer: shared core client factory, AsyncStorage session storage, hooks, and UI components including ConnectButton and WalletList",
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",
   "types": "./dist/index.d.ts",
@@ -38,8 +38,7 @@
     "wallet",
     "cip-0103",
     "react-native",
-    "mobile",
-    "deeplink"
+    "mobile"
   ],
   "author": "PartyLayer Contributors",
   "license": "MIT",
