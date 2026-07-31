@@ -111,8 +111,6 @@ a phone there is nothing to scan, so the list omits it. Selecting a wallet calls
 `client.connect` with that wallet id, and the registered adapter decides how it reaches
 its wallet.
 
-## Deferred (following this PR)
-
-The core connect flow ships here. These refinements follow after the Expo demo proves
-the flow on a device: the not-installed, network-mismatch, and detailed success screens;
-wallet search and filtering; and the remaining chrome icons.
+`WalletList` covers the wallet list, the connecting state (a spinner plus the wallet
+being connected, cancellable), and the error state (a message plus retry). On success the
+modal dismisses and `ConnectButton` reflects the session.
