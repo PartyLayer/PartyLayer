@@ -9,18 +9,24 @@ are separate so a dApp using only the hooks never has to install the SVG rendere
 - `createReactNativeDeepLinkPlatform(Linking?)`: a core `DeepLinkPlatform` built on
   React Native's `Linking` API (`openURL`, `addEventListener('url')`, `getInitialURL`).
   A building block for adapter authors, see "Deep link building block" below.
-- `createAsyncStorage(AsyncStorage?)`: a `SessionStorage` backed by
-  `@react-native-async-storage/async-storage`, with a clear error when it is missing.
-- `createAsyncStorageAdapter(AsyncStorage?)`: the core `StorageAdapter` variant used by
+- `createAsyncStorage(AsyncStorage)`: a `SessionStorage` backed by
+  `@react-native-async-storage/async-storage`, with a clear error when the module passed
+  to it is missing or invalid.
+- `createAsyncStorageAdapter(AsyncStorage)`: the core `StorageAdapter` variant used by
   the client factory.
 - `createReactNativeClient(config)`: a headless client that wires the sdk with
   AsyncStorage session persistence, so a dApp gets a working connect flow with no UI.
+
+On the `.` entrypoint both storage factories take the AsyncStorage module as a required
+argument, which keeps the optional peer out of the headless entry. The `./async-storage`
+subpath provides the same two factories with no argument, see below.
 
 ## Peer dependencies
 
 - `react` and `react-native` (broad ranges).
 - `@react-native-async-storage/async-storage` (optional; needed only for the storage
   pieces).
+- `react-native-svg` (optional; needed only for the `./ui` entrypoint).
 
 ## Usage
 
@@ -34,6 +40,30 @@ const client = createReactNativeClient({
   asyncStorage: AsyncStorage,
 });
 ```
+
+When both `storage` and `asyncStorage` are given, the explicit `storage` is used. With
+neither, the client uses the sdk default, so the optional AsyncStorage peer is never
+forced.
+
+## Storage without passing the module ("./async-storage")
+
+The `./async-storage` subpath statically imports
+`@react-native-async-storage/async-storage` and exposes the same two factories with no
+argument. Use it when you have the peer installed and would rather not thread the module
+through your own code:
+
+```ts
+import {
+  createAsyncStorage,
+  createAsyncStorageAdapter,
+} from '@partylayer/react-native/async-storage';
+
+const sessionStorage = createAsyncStorage();
+const storage = createAsyncStorageAdapter();
+```
+
+Importing this subpath makes the AsyncStorage peer required, which is why the `.`
+entrypoint keeps the argument form.
 
 ## Deep link building block
 
