@@ -14,12 +14,13 @@ import {
 } from '@partylayer/react/query';
 import { CostPreview, TransactionToast } from '@partylayer/react';
 import { useDemo, partyKey } from '../context/DemoContext';
-import { Card, Field } from '../ui/primitives';
+import { Card, Field, CostCaption } from '../ui/primitives';
 import { toastStatus } from '../lib/mutation';
 import { invalidateHoldingsAndReads } from '../lib/invalidate';
 import { PARTIES, PARTY_ORDER, INSTRUMENT } from '../lib/fixtures';
 import { demoStore } from '../lib/store';
-import { formatAmount, validateAmount, addAmount } from '../lib/format';
+import { formatAmount, validateAmount, estimateAllowed, addAmount } from '../lib/format';
+import { useDebounced } from '../lib/hooks';
 import type { DemoPartyKey } from '../lib/types';
 
 export function Transfer() {
@@ -89,16 +90,19 @@ export function Transfer() {
     return transfer;
   }, [valid, isLive, party, receiverKey, amount, memo, instrument.admin, instrument.id]);
 
-  // A live estimate is a genuine blocker (the gateway may have no synchronizer, and the
-  // prepare-for-cost path is untested), so it can resolve to null; the UI then shows an
-  // illustrative caption. Demo mode returns the fixture, so a CostPreview always renders.
+  // Fetch the estimate only once typing has settled (the debounced amount caught up) AND the
+  // amount is valid within balance, so no network call fires per keystroke or for over-balance,
+  // negative, or non-numeric input (F1). A live estimate can still resolve to null when the
+  // gateway has no synchronizer; the caption then reads illustrative. Demo returns the fixture.
+  const debouncedAmount = useDebounced(amount, 400);
+  const estimateEnabled =
+    !liveNotReady && estimateAllowed(amount, available) && debouncedAmount === amount;
   const cost = useTransactionCostEstimate({
     estimate: (signal) =>
       pendingTransfer ? backend.estimateTransfer(pendingTransfer, signal) : Promise.resolve(null),
     input: [receiverKey, amount, memo],
-    query: { enabled: valid },
+    query: { enabled: estimateEnabled },
   });
-  const illustrative = !isLive || cost.costEstimate === null;
 
   const onConfirm = () => {
     if (!pendingTransfer) return;
@@ -159,11 +163,7 @@ export function Transfer() {
               <strong>{PARTIES[receiverKey].label}</strong>
             </div>
             <CostPreview estimate={cost.costEstimate} loading={cost.isPending} error={cost.error} />
-            {illustrative ? (
-              <p className="muted" style={{ fontSize: 12, margin: '6px 0 0' }}>
-                Illustrative network cost, not a live estimate
-              </p>
-            ) : null}
+            <CostCaption live={isLive && cost.costEstimate != null} />
           </>
         ) : null}
         <button
