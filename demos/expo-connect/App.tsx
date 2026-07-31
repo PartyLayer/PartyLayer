@@ -1,23 +1,19 @@
 /**
- * PartyLayer Expo connect demo (phase C1).
+ * PartyLayer Expo connect demo.
  *
- * The first REAL runtime of the React Native package: phases A, B1, and B2 were all
- * tested with the RN modules mocked. This app runs the actual ConnectButton and
- * WalletList from the ./ui entrypoint on a device or simulator, against local builds of
- * our packages.
+ * Runs the real ConnectButton and WalletList from the ./ui entrypoint against local
+ * builds of our packages, on a device, a simulator, or the web target.
  *
- * Honest scope: this proves the UI, the live registry fetch, the theme, the icon
- * rendering, and the deep link launch. Completing an end to end connect additionally
- * requires a Canton wallet app installed on the device, which a demo cannot assume. A
- * connect that cannot complete renders the error path honestly; nothing here fakes a
- * successful connect.
+ * What it shows: the wallet list built from a live registry fetch, the connect flow UI
+ * (the connecting state, the error state, and retry), the theme from the bridge, the
+ * per-wallet icon rendering, and a client that persists its session with AsyncStorage
+ * against the configured network. A connect that cannot complete renders the error path;
+ * nothing here fakes a successful connect.
  */
 import { useMemo } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
-import { Linking } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import * as core from '@partylayer/core';
 import {
   createReactNativeClient,
   createReactNativeDeepLinkPlatform,
@@ -30,12 +26,8 @@ import { createAsyncStorage as createDefaultAsyncStorage } from '@partylayer/rea
 
 const theme = toReactNativeTheme(themes.default.dark);
 
-// Whether the loaded core is the local build (with the phase A deep link additions)
-// rather than the npm 0.11.0 copy that lacks them. Shown in the debug panel.
-const CORE_HAS_DEEPLINK = typeof (core as { createBrowserDeepLinkPlatform?: unknown }).createBrowserDeepLinkPlatform === 'function';
-
-// The two previously bundler-invisible paths, now exercised with NO argument: the deep
-// link platform defaults to a static react-native import, and the async-storage subpath
+// The two previously bundler-invisible paths, exercised with NO argument: the deep link
+// platform defaults to a static react-native import, and the async-storage subpath
 // statically imports the package. Both must resolve rather than throw.
 function checkNoArgDeepLink(): string {
   try {
@@ -58,16 +50,12 @@ const NO_ARG_ASYNC_STORAGE = checkNoArgAsyncStorage();
 
 function DebugPanel({ client }: { client: ReturnType<typeof createReactNativeClient> }) {
   const { wallets, walletIcons, isLoading, isError, error } = useWallets(client);
-  // The RN deep link platform from phase A, built on React Native's Linking.
-  const deepLinkPlatform = useMemo(() => createReactNativeDeepLinkPlatform(Linking), []);
 
   return (
     <View style={[styles.panel, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}>
       <Text style={[styles.h2, { color: theme.colors.text }]}>Debug</Text>
 
-      <Row label="core loaded" value={CORE_HAS_DEEPLINK ? 'local build (DeepLinkPlatform present)' : 'REGISTRY copy (missing DeepLinkPlatform)'} ok={CORE_HAS_DEEPLINK} />
-      <Row label="deep link platform" value={deepLinkPlatform ? 'built on RN Linking' : 'unavailable'} ok={!!deepLinkPlatform} />
-      <Row label="deep link (no arg)" value={NO_ARG_DEEPLINK} ok={NO_ARG_DEEPLINK.startsWith('resolved')} />
+      <Row label="deep link factory (no arg)" value={NO_ARG_DEEPLINK} ok={NO_ARG_DEEPLINK.startsWith('resolved')} />
       <Row label="async storage (no arg)" value={NO_ARG_ASYNC_STORAGE} ok={NO_ARG_ASYNC_STORAGE.startsWith('resolved')} />
       <Row label="registry" value={isLoading ? 'loading...' : isError ? `error: ${error?.message ?? ''}` : `${wallets?.length ?? 0} wallets`} ok={!isError} />
 
@@ -111,10 +99,10 @@ export default function App() {
       <ScrollView contentContainerStyle={styles.content}>
         <Text style={[styles.h1, { color: theme.colors.text }]}>PartyLayer connect</Text>
         <Text style={[styles.scope, { color: theme.colors.textSecondary }]}>
-          This demo runs the real React Native connect UI against local package builds. It proves the
-          UI, the registry fetch, the theme, the icon rendering, and the deep link launch. Completing a
-          connect also needs a Canton wallet app installed; without one, the deep link launch is the
-          observable outcome and any failure renders honestly.
+          This demo runs the real React Native connect UI against local package builds. It shows the
+          wallet list from a live registry fetch, the connect flow UI, the theme, the icon rendering,
+          and a client that persists its session with AsyncStorage against the configured network. A
+          connect that cannot complete renders the error path.
         </Text>
 
         <View style={styles.buttonWrap}>

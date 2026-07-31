@@ -1,28 +1,30 @@
-# PartyLayer Expo connect demo (phase C1)
+# PartyLayer Expo connect demo
 
-The first real runtime of `@partylayer/react-native`. Phases A, B1, and B2 were tested
-with the React Native modules mocked; this Expo app runs the actual `ConnectButton` and
-`WalletList` on a device or simulator, against local builds of our packages.
+Runs the actual `ConnectButton` and `WalletList` from `@partylayer/react-native` on a
+device, a simulator, or the web target, against local builds of our packages.
 
 It lives OUTSIDE the pnpm workspace (in `demos/`, which no workspace glob matches) with
 its own lockfile, because Expo 57 pins React 19 and react-native 0.86 while the workspace
 runs React 18. The two dependency universes must not mix.
 
-## Honest scope
+## Scope
 
-This demo proves the UI, the live registry fetch, the theme, the icon rendering, and the
-deep link launch. Completing an end to end connect additionally requires a Canton wallet
-app installed on the device, which a demo cannot assume. A connect that cannot complete
-renders the error path honestly; nothing here fakes a successful connect.
+This demo shows the wallet list built from a live registry fetch, the connect flow UI
+(the connecting state, the error state, and retry), the theme from the bridge, the
+per-wallet icon rendering, and a client that persists its session with AsyncStorage
+against the configured network. Completing an end to end connect additionally requires a
+Canton wallet app that the selected adapter can reach. A connect that cannot complete
+renders the error path; nothing here fakes a successful connect.
 
 ## Why local package builds (not npm)
 
-`@partylayer/core` 0.11.0 on npm does NOT contain `DeepLinkPlatform` or
-`createBrowserDeepLinkPlatform` (added in phase A, unpublished), yet it carries the same
-0.11.0 version number, so a plain install would silently resolve the wrong copy. And
-`@partylayer/react-native` is unpublished entirely. So the demo packs local builds into
-`vendor/` and forces every `@partylayer` package to those tarballs through pnpm
-`overrides`. The debug panel and `verify-core.mjs` both confirm the local core loaded.
+The demo exists to exercise the packages BEFORE they are published, so it has to run the
+working tree rather than whatever the registry serves. A local build and a published
+release can carry the same version number, so a plain install would resolve the registry
+copy. The demo packs local builds into `vendor/` and forces every `@partylayer` package
+to those tarballs through pnpm `overrides`, which makes the working tree the thing under
+test. `verify-core.mjs` confirms the vendored copies are what resolved, by reading the
+resolved module path.
 
 ## Run it
 
@@ -33,7 +35,7 @@ Requirements: Node, pnpm, and one of an iOS simulator (Xcode), an Android emulat
 cd demos/expo-connect
 pnpm run prepare-local     # build + pack the local PartyLayer tarballs into vendor/
 pnpm install               # own lockfile; resolves the tarballs via overrides
-pnpm run verify-core       # headless check that the local core loaded (optional)
+pnpm run verify-core       # headless check that the vendored builds resolved (optional)
 
 pnpm run web               # web target (react-native-web) in a browser
 pnpm run ios               # iOS simulator (needs full Xcode)
@@ -50,12 +52,11 @@ pnpm install --ignore-workspace
 ## Three verification paths, and what each proves
 
 - **Web (react-native-web), available now, no device.** Runs the SAME components in a
-  browser. Proves the components render, the theme from the bridge is applied, the live
-  registry fetch works, and the flow logic. It does NOT prove native module bindings:
-  `Linking.openURL` maps to a browser navigation rather than a native intent or universal
-  link, and AsyncStorage uses IndexedDB rather than the native store.
-- **Expo Go on a phone**, needs only the Expo Go app. Proves the native deep link handoff
-  and native storage, on a real OS, without a full toolchain.
+  browser. Covers component rendering, the theme from the bridge, the live registry
+  fetch, and the flow logic. Here `Linking.openURL` maps to a browser navigation and
+  AsyncStorage is backed by IndexedDB.
+- **Expo Go on a phone**, needs only the Expo Go app. Covers the same flow on a real OS
+  with the native module bindings and the native store, without a full toolchain.
 - **Simulator or emulator**, needs Xcode or Android Studio. Full native, including a
   release-shaped build.
 
@@ -67,15 +68,13 @@ supports the React 19 the demo pins.
 ## What to look for on screen
 
 - The app boots with no redbox.
-- The debug panel shows the local core loaded (DeepLinkPlatform present), the registry
-  wallet count, the icon format per wallet, and that the two no-argument factory paths
-  (deep link, async storage) resolve rather than throw.
+- The debug panel shows the registry wallet count, the icon format per wallet, and that
+  the two no-argument factory paths (deep link, async storage) resolve rather than throw.
 - The wallet list renders REAL logos: the svg logos through react-native-svg's web build,
   the raster logos through Image.
 - The theme colors come from the bridge, not React Native defaults.
-- Tapping a wallet starts the connect flow. On a phone with the wallet app installed, the
-  OS opens that app through the deep link; without it, the launch is the observable
-  outcome and the flow surfaces an honest error rather than a fake success.
+- Tapping a wallet starts the connect flow: the connecting state appears, and the flow
+  surfaces an honest error rather than a fake success when the connect cannot complete.
 
 ## Web smoke (required before publishing @partylayer/react-native)
 
@@ -97,8 +96,8 @@ catch that class of bug because they inject the modules through test seams.
 Verified on the web target (static export served locally, driven headlessly):
 
 - The app boots with no error overlay. The ConnectButton renders.
-- The debug panel shows the LOCAL core loaded (createBrowserDeepLinkPlatform present),
-  the live registry returning its wallet list, and the icon format per wallet.
+- The debug panel shows the live registry returning its wallet list, and the icon format
+  per wallet.
 - The theme is applied from the bridge, not React Native defaults.
 - The wallet list opens and its rows render their real logos: the svg logos
   (console, loop, cantor8, bron, nightly) through react-native-svg's web build, and the
