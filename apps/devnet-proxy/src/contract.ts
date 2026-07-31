@@ -151,3 +151,15 @@ export type DvpPartyKey = 'venue' | 'alice' | 'bob';
 export interface OkResult {
   ok: true;
 }
+
+/**
+ * A pre-submission traffic-cost estimate on the wire. The three cost fields are int64
+ * and can exceed Number.MAX_SAFE_INTEGER, so they are carried as strings end to end to
+ * preserve precision. Byte-matches the CostEstimation shape @partylayer/react maps to.
+ */
+export interface CostEstimationWire {
+  estimationTimestamp: string;
+  confirmationRequestTrafficCostEstimation: string;
+  confirmationResponseTrafficCostEstimation: string;
+  totalTrafficCostEstimation: string;
+}

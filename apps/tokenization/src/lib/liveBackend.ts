@@ -14,8 +14,29 @@ import type {
 } from '@partylayer/react/query';
 import type { TokenizationBackend, IssuerChoice } from './backend';
 import type { DemoPartyKey, InstrumentConfig } from './types';
+import { toTrafficCost, type CostEstimation } from '@partylayer/react';
 import { mapGatewayError } from './gateway-errors';
 import { withRetry } from './retry';
+
+/** The gateway's int64-as-string cost estimate on the wire. */
+interface EstimationWire {
+  estimationTimestamp: string;
+  confirmationRequestTrafficCostEstimation: string;
+  confirmationResponseTrafficCostEstimation: string;
+  totalTrafficCostEstimation: string;
+}
+
+/** Map the gateway's wire estimate to a branded CostEstimation; null passes through. */
+function toCostEstimation(wire: EstimationWire | null): CostEstimation | null {
+  if (!wire) return null;
+  return {
+    estimationTimestamp: wire.estimationTimestamp,
+    // int64-as-string to validated, branded TrafficCost (precision preserved).
+    confirmationRequestTrafficCostEstimation: toTrafficCost(wire.confirmationRequestTrafficCostEstimation),
+    confirmationResponseTrafficCostEstimation: toTrafficCost(wire.confirmationResponseTrafficCostEstimation),
+    totalTrafficCostEstimation: toTrafficCost(wire.totalTrafficCostEstimation),
+  };
+}
 
 async function call<T>(base: string, path: string, body: unknown, signal?: AbortSignal): Promise<T> {
   const res = await fetch(base.replace(/\/$/, '') + path, {
@@ -45,6 +66,13 @@ export function createLiveBackend(gatewayUrl: string): TokenizationBackend {
     submitIssuerChoice: (choice: IssuerChoice, signal) => withRetry((s) => call(gatewayUrl, '/tokenization/issuerChoice', { choice }, s), signal).then(() => ok),
     submitAllocation: (request: AllocationInstructionRequest, signal) => withRetry((s) => call(gatewayUrl, '/tokenization/allocation', { request }, s), signal).then(() => ok),
     submitAllocationAction: (request: AllocationActionRequest, signal) => withRetry((s) => call(gatewayUrl, '/tokenization/allocationAction', { request }, s), signal).then(() => ok),
+    // Cost estimate: deliberately NOT wrapped in withRetry, and any failure resolves to
+    // null, so the UI shows an illustrative caption rather than an error and submit is
+    // never blocked.
+    estimateTransfer: (transfer: TokenTransfer, signal) =>
+      call<{ costEstimation: EstimationWire | null }>(gatewayUrl, '/tokenization/transferEstimate', { transfer }, signal)
+        .then((data) => toCostEstimation(data.costEstimation))
+        .catch(() => null),
   };
 }
 

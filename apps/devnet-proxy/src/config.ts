@@ -27,6 +27,12 @@ export interface GatewayConfig {
     partyAlice: string;
     partyBob: string;
     partyVenue: string;
+    /**
+     * The synchronizer id a prepare-for-cost call must target. Optional: cost
+     * estimation needs it, and when it is absent the live estimate degrades to null
+     * rather than failing. Every other live surface works without it.
+     */
+    synchronizerId?: string;
   };
 }
 
@@ -71,6 +77,7 @@ export function loadConfig(): GatewayConfig {
       partyAlice: req('PARTY_ALICE'),
       partyBob: req('PARTY_BOB'),
       partyVenue: req('PARTY_VENUE'),
+      synchronizerId: process.env.LEDGER_SYNCHRONIZER_ID?.trim() || undefined,
     };
   }
 

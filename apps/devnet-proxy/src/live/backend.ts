@@ -31,9 +31,11 @@ import type { Backends, TokenizationBackend, DvpBackend } from '../backends.js';
 import type { GatewayConfig } from '../config.js';
 import type {
   TokenHoldingRef,
+  TokenTransfer,
   TokenTransferLeg,
   TokenSettlementInfo,
   TokenInstrumentId,
+  AllocationInstructionRequest,
 } from '../contract.js';
 import {
   mapHolding,
@@ -68,7 +70,7 @@ interface UtxoRow {
 export async function createLiveBackends(cfg: GatewayConfig): Promise<Backends> {
   const live = cfg.live!;
   const sdk: LiveSdk = await buildSdk(cfg);
-  const ledger = new LedgerClient(live.ledgerJsonApiUrl, live.ledgerUserId, live.ledgerAuthToken);
+  const ledger = new LedgerClient(live.ledgerJsonApiUrl, live.ledgerUserId, live.ledgerAuthToken, live.synchronizerId);
   const scan = new ScanClient(live.scanUrl);
   const registryUrl = scan.registryUrl();
 
@@ -117,6 +119,15 @@ export async function createLiveBackends(cfg: GatewayConfig): Promise<Backends> 
     await ledger.submitAndWait([command], disclosed ?? [], actAs, commandId(flow));
   }
 
+  // The estimate twin of submitPrepared: interpret the SAME prepared command to read its
+  // cost, rather than submitting it. prepare does not commit, so no traffic is spent. The
+  // cost degrades to null (missing synchronizer, non-OK response, parse failure).
+  async function estimatePrepared(prepared: unknown, actAs: string[], flow: string) {
+    const [command, disclosed] = prepared as [unknown, unknown[]];
+    const costEstimation = await ledger.prepareForCost([command], disclosed ?? [], actAs, commandId(flow));
+    return { costEstimation };
+  }
+
   const holdingViewOf = (row: UtxoRow): Record<string, unknown> =>
     row.interfaceViewValue ??
     row.activeContract?.createdEvent?.interfaceViews?.find((iv) => iv?.viewValue)?.viewValue ??
@@ -154,6 +165,59 @@ export async function createLiveBackends(cfg: GatewayConfig): Promise<Backends> 
     meta: damlMeta(s.meta),
   });
 
+  // Build the SAME prepared transfer command for both submit and estimate, so the cost
+  // shown before confirm is for the exact transaction submit sends.
+  async function buildTransferCommand(transfer: TokenTransfer): Promise<{ prepared: unknown; actAs: string[] }> {
+    const prepared = await sdk.token.transfer.create({
+      sender: partyId(transfer.sender),
+      recipient: partyId(transfer.receiver),
+      amount: transfer.amount,
+      instrumentId: transfer.instrumentId.id,
+      registryUrl,
+      inputUtxos: transfer.inputHoldingCids.length ? transfer.inputHoldingCids : undefined,
+    });
+    return { prepared, actAs: [partyId(transfer.sender)] };
+  }
+
+  // Build the SAME prepared allocation command for both submit and estimate.
+  async function buildAllocationCommand(request: AllocationInstructionRequest): Promise<{ prepared: unknown; actAs: string[] }> {
+    const { asset } = await amulet();
+    const legId = request.allocation.transferLegId;
+    // The settle choice checks each allocation for structural equality with the trade's
+    // expected spec, so the allocation must be built from the trade's own settlement and
+    // leg. Read the on-ledger allocation request this is for (matched by settlement ref)
+    // and take its raw view, which is already the exact Daml shape. Fall back to the
+    // request payload for a standalone allocation with no on-ledger request.
+    // The settlement ref's `id` is a shared constant across trades; only its `cid` is
+    // unique, so match on the cid when present and fall back to the id only without one.
+    const ref = request.allocation.settlement.settlementRef ?? { id: '', cid: undefined };
+    const rawReq = (await ledger.activeByInterface(allParties, ALLOCATION_REQUEST_INTERFACE))
+      .map((e) => e.view as { settlement?: { settlementRef?: { id?: string; cid?: string } }; transferLegs?: Record<string, unknown> })
+      .find((v) => {
+        const r = v.settlement?.settlementRef ?? {};
+        return ref.cid ? r.cid === ref.cid : !!ref.id && r.id === ref.id;
+      });
+    const rawLeg = rawReq?.transferLegs?.[legId];
+    const allocationSpecification = rawLeg
+      ? { settlement: rawReq!.settlement, transferLegId: legId, transferLeg: rawLeg }
+      : {
+          settlement: damlSettlement(request.allocation.settlement),
+          transferLegId: legId,
+          transferLeg: damlLeg(request.allocation.transferLeg),
+        };
+    // The sdk types the spec with branded Daml types; the gateway's structurally identical
+    // shapes are adapted through the param type here.
+    const params = {
+      allocationSpecification,
+      asset,
+      inputUtxos: request.inputHoldingCids.length ? request.inputHoldingCids : undefined,
+      requestedAt: request.requestedAt,
+    } as unknown as Parameters<typeof sdk.token.allocation.instruction.create>[0];
+    const prepared = await sdk.token.allocation.instruction.create(params);
+    const owner = partyId((allocationSpecification.transferLeg as { sender: string }).sender);
+    return { prepared, actAs: [owner] };
+  }
+
   const tokenization: TokenizationBackend = {
     async readHoldings(party) {
       return readHoldingsFor(party);
@@ -178,16 +242,19 @@ export async function createLiveBackends(cfg: GatewayConfig): Promise<Backends> 
       return entries.map(mapAllocation);
     },
     async submitTransfer(transfer) {
-      const prepared = await sdk.token.transfer.create({
-        sender: partyId(transfer.sender),
-        recipient: partyId(transfer.receiver),
-        amount: transfer.amount,
-        instrumentId: transfer.instrumentId.id,
-        registryUrl,
-        inputUtxos: transfer.inputHoldingCids.length ? transfer.inputHoldingCids : undefined,
-      });
-      await submitPrepared(prepared, [partyId(transfer.sender)], 'transfer');
+      const { prepared, actAs } = await buildTransferCommand(transfer);
+      await submitPrepared(prepared, actAs, 'transfer');
       return { ok: true };
+    },
+    async estimateTransfer(transfer) {
+      // Graceful: any failure to obtain a live estimate returns null, so the UI shows an
+      // illustrative caption rather than an error and submit is never blocked.
+      try {
+        const { prepared, actAs } = await buildTransferCommand(transfer);
+        return await estimatePrepared(prepared, actAs, 'transfer-estimate');
+      } catch {
+        return { costEstimation: null };
+      }
     },
     async submitTransferAction(request) {
       const params = { transferInstructionCid: request.instructionCid, registryUrl };
@@ -209,41 +276,8 @@ export async function createLiveBackends(cfg: GatewayConfig): Promise<Backends> 
       throw new Error(NOT_ON_CC);
     },
     async submitAllocation(request) {
-      const { asset } = await amulet();
-      const legId = request.allocation.transferLegId;
-      // The settle choice checks each allocation for structural equality with the trade's
-      // expected spec, so the allocation must be built from the trade's own settlement and
-      // leg. Read the on-ledger allocation request this is for (matched by settlement ref)
-      // and take its raw view, which is already the exact Daml shape. Fall back to the
-      // request payload for a standalone allocation with no on-ledger request.
-      // The settlement ref's `id` is a shared constant across trades; only its `cid` is
-      // unique, so match on the cid when present and fall back to the id only without one.
-      const ref = request.allocation.settlement.settlementRef ?? { id: '', cid: undefined };
-      const rawReq = (await ledger.activeByInterface(allParties, ALLOCATION_REQUEST_INTERFACE))
-        .map((e) => e.view as { settlement?: { settlementRef?: { id?: string; cid?: string } }; transferLegs?: Record<string, unknown> })
-        .find((v) => {
-          const r = v.settlement?.settlementRef ?? {};
-          return ref.cid ? r.cid === ref.cid : !!ref.id && r.id === ref.id;
-        });
-      const rawLeg = rawReq?.transferLegs?.[legId];
-      const allocationSpecification = rawLeg
-        ? { settlement: rawReq!.settlement, transferLegId: legId, transferLeg: rawLeg }
-        : {
-            settlement: damlSettlement(request.allocation.settlement),
-            transferLegId: legId,
-            transferLeg: damlLeg(request.allocation.transferLeg),
-          };
-      // The sdk types the spec with branded Daml types; the gateway's structurally identical
-      // shapes are adapted through the param type here.
-      const params = {
-        allocationSpecification,
-        asset,
-        inputUtxos: request.inputHoldingCids.length ? request.inputHoldingCids : undefined,
-        requestedAt: request.requestedAt,
-      } as unknown as Parameters<typeof sdk.token.allocation.instruction.create>[0];
-      const prepared = await sdk.token.allocation.instruction.create(params);
-      const owner = partyId((allocationSpecification.transferLeg as { sender: string }).sender);
-      await submitPrepared(prepared, [owner], 'allocation-create');
+      const { prepared, actAs } = await buildAllocationCommand(request);
+      await submitPrepared(prepared, actAs, 'allocation-create');
       return { ok: true };
     },
     async submitAllocationAction(request) {
@@ -318,6 +352,16 @@ export async function createLiveBackends(cfg: GatewayConfig): Promise<Backends> 
       return matched;
     },
     submitAllocation: tokenization.submitAllocation,
+    async estimateAllocation(request) {
+      // Graceful: any failure to obtain a live estimate returns null, so the UI shows an
+      // illustrative caption rather than an error and allocation is never blocked.
+      try {
+        const { prepared, actAs } = await buildAllocationCommand(request);
+        return await estimatePrepared(prepared, actAs, 'allocation-estimate');
+      } catch {
+        return { costEstimation: null };
+      }
+    },
     async submitAllocationAction(request) {
       // The DvP vertical only cancels or withdraws; both are the allocation owner's choice.
       return tokenization.submitAllocationAction(request);

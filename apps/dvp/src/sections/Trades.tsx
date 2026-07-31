@@ -19,8 +19,13 @@ import {
   useAllocationInstruction,
   useAllocationAction,
   useAllocationRequestAction,
+  useTransactionCostEstimate,
   useChoice,
   type AllocationInstructionRequest,
+  type TokenAllocationRequestRef,
+  type TokenTransferLeg,
+  type UseAllocationInstructionReturnType,
+  type UseAllocationRequestActionReturnType,
 } from '@partylayer/react/query';
 import { CostPreview, TransactionToast } from '@partylayer/react';
 import { useDemo, partyKey } from '../context/DemoContext';
@@ -29,14 +34,43 @@ import { toastStatus } from '../lib/mutation';
 import { invalidateAll } from '../lib/invalidate';
 import { allocationForLeg, matchedLegIds } from '../lib/match';
 import { formatAmount, validateAmount } from '../lib/format';
-import { REGISTRY, FEE_ESTIMATE } from '../lib/fixtures';
+import { REGISTRY } from '../lib/fixtures';
 import { demoStore } from '../lib/store';
-import type { SettleTrade, CreateTrade } from '../lib/types';
+import type { DvpBackend } from '../lib/backend';
+import type { DemoPartyKey, SettleTrade, CreateTrade } from '../lib/types';
 
 // Compact display of a real ISO settlement time: "2027-01-01 00:00". No parsing or locale
 // variance, so it stays a faithful view of the ledger value.
 function fmtWhen(iso: string): string {
   return (iso || '').slice(0, 16).replace('T', ' ');
+}
+
+/**
+ * Build the AllocationInstructionRequest for one trade leg. The SAME builder feeds both
+ * the per-leg cost estimate and the submit (doAllocate), so the cost shown is for exactly
+ * what gets allocated. Live selects backing on the gateway/SDK; only demo needs local
+ * input cids.
+ */
+function buildAllocationRequest(
+  trade: TokenAllocationRequestRef,
+  legId: string,
+  leg: TokenTransferLeg,
+  party: DemoPartyKey,
+  isLive: boolean,
+): AllocationInstructionRequest {
+  return {
+    // SECURITY: expectedAdmin comes from a trusted source (here the registry constant);
+    // the choice checks the factory's admin against it.
+    expectedAdmin: REGISTRY,
+    allocation: {
+      settlement: trade.request.settlement,
+      transferLegId: legId,
+      transferLeg: leg,
+    },
+    requestedAt: new Date().toISOString(),
+    inputHoldingCids: isLive ? [] : demoStore.unlockedCids(party, leg.instrumentId.admin, leg.instrumentId.id),
+    meta: {},
+  };
 }
 
 export function Trades() {
@@ -89,22 +123,8 @@ function CounterpartyTrades() {
     const trade = trades.requests?.find((t) => t.cid === requestCid);
     if (!trade) return;
     const leg = trade.request.transferLegs[legId];
-    const request: AllocationInstructionRequest = {
-      // SECURITY: expectedAdmin comes from a trusted source (here the registry
-      // constant); the choice checks the factory's admin against it.
-      expectedAdmin: REGISTRY,
-      allocation: {
-        settlement: trade.request.settlement,
-        transferLegId: legId,
-        transferLeg: leg,
-      },
-      requestedAt: new Date().toISOString(),
-      // Live selects backing on the gateway/SDK; only demo needs local input cids (A3).
-      inputHoldingCids: isLive ? [] : demoStore.unlockedCids(party, leg.instrumentId.admin, leg.instrumentId.id),
-      meta: {},
-    };
     setAllocating(requestCid + ':' + legId);
-    allocate.submitAllocation(request);
+    allocate.submitAllocation(buildAllocationRequest(trade, legId, leg, party, isLive));
   };
 
   return (
@@ -138,34 +158,21 @@ function CounterpartyTrades() {
                   {myLegs.length > 0 ? (
                     <div className="leg-actions">
                       {myLegs.map(([legId, leg]) => (
-                        <div key={legId} className="leg-action">
-                          <div className="row-sub">
-                            Your leg <Badge tone="neutral">{legId}</Badge>{' '}
-                            {formatAmount(leg.amount)} {leg.instrumentId.id}
-                          </div>
-                          <CostPreview estimate={FEE_ESTIMATE} />
-                          <div className="row-actions">
-                            <button
-                              className="btn btn-primary btn-small"
-                              disabled={allocate.isPending}
-                              onClick={() => doAllocate(trade.cid, legId)}
-                            >
-                              {allocate.isPending && allocating === trade.cid + ':' + legId
-                                ? 'Submitting...'
-                                : 'Allocate my leg'}
-                            </button>
-                            <button
-                              className="btn btn-ghost btn-small"
-                              disabled={reject.isPending}
-                              onClick={() => {
-                                setRejecting(trade.cid);
-                                reject.submitAction({ requestCid: trade.cid, action: 'reject', actor: me });
-                              }}
-                            >
-                              {reject.isPending && rejecting === trade.cid ? 'Submitting...' : 'Reject'}
-                            </button>
-                          </div>
-                        </div>
+                        <LegCard
+                          key={legId}
+                          trade={trade}
+                          legId={legId}
+                          leg={leg}
+                          me={me}
+                          isLive={isLive}
+                          backend={backend}
+                          allocate={allocate}
+                          reject={reject}
+                          allocating={allocating}
+                          rejecting={rejecting}
+                          setRejecting={setRejecting}
+                          doAllocate={doAllocate}
+                        />
                       ))}
                     </div>
                   ) : (
@@ -189,6 +196,87 @@ function CounterpartyTrades() {
         message={reject.isSuccess ? 'Trade rejected.' : undefined}
       />
     </Card>
+  );
+}
+
+interface LegCardProps {
+  trade: TokenAllocationRequestRef;
+  legId: string;
+  leg: TokenTransferLeg;
+  me: DemoPartyKey;
+  isLive: boolean;
+  backend: DvpBackend;
+  allocate: UseAllocationInstructionReturnType<{ ok: true }>;
+  reject: UseAllocationRequestActionReturnType<{ ok: true }>;
+  allocating: string | null;
+  rejecting: string | null;
+  setRejecting: (cid: string | null) => void;
+  doAllocate: (requestCid: string, legId: string) => void;
+}
+
+/**
+ * One "my leg" card: the leg summary, a per-leg cost estimate (hook driven), and the
+ * Allocate/Reject actions. Factored out so useTransactionCostEstimate is a top-level hook
+ * of a component, not a call inside a map. All action behavior is preserved.
+ */
+function LegCard({
+  trade,
+  legId,
+  leg,
+  me,
+  isLive,
+  backend,
+  allocate,
+  reject,
+  allocating,
+  rejecting,
+  setRejecting,
+  doAllocate,
+}: LegCardProps) {
+  // A live estimate is a genuine blocker (the gateway may have no synchronizer, and the
+  // prepare-for-cost path is untested), so it can resolve to null; the UI then shows an
+  // illustrative caption. Demo mode returns the fixture, so a CostPreview always renders.
+  const cost = useTransactionCostEstimate({
+    estimate: (signal) =>
+      backend.estimateAllocation(buildAllocationRequest(trade, legId, leg, me, isLive), signal),
+    input: trade.cid + ':' + legId,
+  });
+  const illustrative = !isLive || cost.costEstimate === null;
+
+  return (
+    <div className="leg-action">
+      <div className="row-sub">
+        Your leg <Badge tone="neutral">{legId}</Badge>{' '}
+        {formatAmount(leg.amount)} {leg.instrumentId.id}
+      </div>
+      <CostPreview estimate={cost.costEstimate} loading={cost.isPending} error={cost.error} />
+      {illustrative ? (
+        <p className="muted" style={{ fontSize: 12, margin: '6px 0 0' }}>
+          Illustrative network cost, not a live estimate
+        </p>
+      ) : null}
+      <div className="row-actions">
+        <button
+          className="btn btn-primary btn-small"
+          disabled={allocate.isPending}
+          onClick={() => doAllocate(trade.cid, legId)}
+        >
+          {allocate.isPending && allocating === trade.cid + ':' + legId
+            ? 'Submitting...'
+            : 'Allocate my leg'}
+        </button>
+        <button
+          className="btn btn-ghost btn-small"
+          disabled={reject.isPending}
+          onClick={() => {
+            setRejecting(trade.cid);
+            reject.submitAction({ requestCid: trade.cid, action: 'reject', actor: me });
+          }}
+        >
+          {reject.isPending && rejecting === trade.cid ? 'Submitting...' : 'Reject'}
+        </button>
+      </div>
+    </div>
   );
 }
 

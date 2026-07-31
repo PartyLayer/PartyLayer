@@ -13,8 +13,29 @@ import type {
 } from '@partylayer/react/query';
 import type { DvpBackend } from './backend';
 import type { DemoPartyKey, SettleTrade, CreateTrade } from './types';
+import { toTrafficCost, type CostEstimation } from '@partylayer/react';
 import { mapGatewayError } from './gateway-errors';
 import { withRetry } from './retry';
+
+/** The gateway's int64-as-string cost estimate on the wire. */
+interface EstimationWire {
+  estimationTimestamp: string;
+  confirmationRequestTrafficCostEstimation: string;
+  confirmationResponseTrafficCostEstimation: string;
+  totalTrafficCostEstimation: string;
+}
+
+/** Map the gateway's wire estimate to a branded CostEstimation; null passes through. */
+function toCostEstimation(wire: EstimationWire | null): CostEstimation | null {
+  if (!wire) return null;
+  return {
+    estimationTimestamp: wire.estimationTimestamp,
+    // int64-as-string to validated, branded TrafficCost (precision preserved).
+    confirmationRequestTrafficCostEstimation: toTrafficCost(wire.confirmationRequestTrafficCostEstimation),
+    confirmationResponseTrafficCostEstimation: toTrafficCost(wire.confirmationResponseTrafficCostEstimation),
+    totalTrafficCostEstimation: toTrafficCost(wire.totalTrafficCostEstimation),
+  };
+}
 
 async function call<T>(base: string, path: string, body: unknown, signal?: AbortSignal): Promise<T> {
   const res = await fetch(base.replace(/\/$/, '') + path, {
@@ -42,6 +63,13 @@ export function createLiveBackend(gatewayUrl: string): DvpBackend {
     submitRequestAction: (request: AllocationRequestActionRequest, signal) => withRetry((s) => call(gatewayUrl, '/dvp/requestAction', { request }, s), signal).then(() => ok),
     submitSettle: (vars: SettleTrade, signal) => withRetry((s) => call(gatewayUrl, '/dvp/settle', { vars }, s), signal).then(() => ok),
     submitCreateTrade: (vars: CreateTrade, signal) => withRetry((s) => call(gatewayUrl, '/dvp/createTrade', { vars }, s), signal).then(() => ok),
+    // Cost estimate: deliberately NOT wrapped in withRetry, and any failure resolves to
+    // null, so the UI shows an illustrative caption rather than an error and allocation is
+    // never blocked.
+    estimateAllocation: (request: AllocationInstructionRequest, signal) =>
+      call<{ costEstimation: EstimationWire | null }>(gatewayUrl, '/dvp/allocationEstimate', { request }, signal)
+        .then((data) => toCostEstimation(data.costEstimation))
+        .catch(() => null),
   };
 }
 

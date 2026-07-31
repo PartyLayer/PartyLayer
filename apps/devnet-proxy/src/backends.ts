@@ -19,6 +19,7 @@ import type {
   SettleTrade,
   CreateTrade,
   OkResult,
+  CostEstimationWire,
 } from './contract.js';
 import type { GatewayConfig } from './config.js';
 
@@ -34,6 +35,8 @@ export interface TokenizationBackend {
   submitIssuerChoice(choice: IssuerChoice): Promise<OkResult>;
   submitAllocation(request: AllocationInstructionRequest): Promise<OkResult>;
   submitAllocationAction(request: AllocationActionRequest): Promise<OkResult>;
+  /** Estimate a transfer's pre-submission cost. Degrades to null, never throws. */
+  estimateTransfer(transfer: TokenTransfer): Promise<{ costEstimation: CostEstimationWire | null }>;
 }
 
 export interface DvpBackend {
@@ -46,6 +49,8 @@ export interface DvpBackend {
   submitRequestAction(request: AllocationRequestActionRequest): Promise<OkResult>;
   submitSettle(vars: SettleTrade): Promise<OkResult>;
   submitCreateTrade(vars: CreateTrade): Promise<OkResult>;
+  /** Estimate a leg allocation's pre-submission cost. Degrades to null, never throws. */
+  estimateAllocation(request: AllocationInstructionRequest): Promise<{ costEstimation: CostEstimationWire | null }>;
 }
 
 export interface Backends {

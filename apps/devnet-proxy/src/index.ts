@@ -82,6 +82,8 @@ async function main(): Promise<void> {
   app.post('/tokenization/supply', read(() => t.readSupply()));
   app.post('/tokenization/allocations', read(() => t.readAllocations()));
   app.post('/tokenization/transfer', write((b) => t.submitTransfer(b.transfer as never)));
+  // Estimate is a read: prepare interprets the transaction for its cost without committing.
+  app.post('/tokenization/transferEstimate', read((b) => t.estimateTransfer(b.transfer as never)));
   app.post('/tokenization/transferAction', write((b) => t.submitTransferAction(b.request as never)));
   app.post('/tokenization/issuerChoice', write((b) => t.submitIssuerChoice(b.choice as never)));
   app.post('/tokenization/allocation', write((b) => t.submitAllocation(b.request as never)));
@@ -94,6 +96,8 @@ async function main(): Promise<void> {
   app.post('/dvp/allocations', read((b) => d.readAllocations(String(b.party))));
   app.post('/dvp/matchedLegs', read((b) => d.readMatchedLegs(String(b.requestCid))));
   app.post('/dvp/allocation', write((b) => d.submitAllocation(b.request as never)));
+  // Estimate is a read: prepare interprets the allocation for its cost without committing.
+  app.post('/dvp/allocationEstimate', read((b) => d.estimateAllocation(b.request as never)));
   app.post('/dvp/allocationAction', write((b) => d.submitAllocationAction(b.request as never)));
   app.post('/dvp/requestAction', write((b) => d.submitRequestAction(b.request as never)));
   app.post('/dvp/settle', write((b) => d.submitSettle(b.vars as never)));

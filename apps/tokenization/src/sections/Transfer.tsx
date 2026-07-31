@@ -4,15 +4,20 @@
  * TransactionToast from the mutation state. On success it invalidates the holdings
  * and incoming query keys so both sides refresh.
  */
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import { useTransferInstruction, useTokenHoldings, type TokenTransfer } from '@partylayer/react/query';
+import {
+  useTransferInstruction,
+  useTokenHoldings,
+  useTransactionCostEstimate,
+  type TokenTransfer,
+} from '@partylayer/react/query';
 import { CostPreview, TransactionToast } from '@partylayer/react';
 import { useDemo, partyKey } from '../context/DemoContext';
 import { Card, Field } from '../ui/primitives';
 import { toastStatus } from '../lib/mutation';
 import { invalidateHoldingsAndReads } from '../lib/invalidate';
-import { PARTIES, PARTY_ORDER, INSTRUMENT, FEE_ESTIMATE } from '../lib/fixtures';
+import { PARTIES, PARTY_ORDER, INSTRUMENT } from '../lib/fixtures';
 import { demoStore } from '../lib/store';
 import { formatAmount, validateAmount, addAmount } from '../lib/format';
 import type { DemoPartyKey } from '../lib/types';
@@ -66,7 +71,10 @@ export function Transfer() {
   const submitReason = liveNotReady ? 'Loading your holdings, one moment.' : amountReason;
   const valid = !submitReason;
 
-  const onConfirm = () => {
+  // Build the transfer once, only when the form is valid, and use the SAME object for the
+  // cost estimate and the submit, so the cost shown is for exactly what gets sent.
+  const pendingTransfer = useMemo<TokenTransfer | null>(() => {
+    if (!valid) return null;
     const now = new Date();
     const transfer: TokenTransfer = {
       sender: isLive ? party : PARTIES[party].partyId,
@@ -78,7 +86,23 @@ export function Transfer() {
       inputHoldingCids: isLive ? [] : demoStore.unlockedCids(party),
       meta: memo ? { memo } : {},
     };
-    mutation.submitTransfer(transfer);
+    return transfer;
+  }, [valid, isLive, party, receiverKey, amount, memo, instrument.admin, instrument.id]);
+
+  // A live estimate is a genuine blocker (the gateway may have no synchronizer, and the
+  // prepare-for-cost path is untested), so it can resolve to null; the UI then shows an
+  // illustrative caption. Demo mode returns the fixture, so a CostPreview always renders.
+  const cost = useTransactionCostEstimate({
+    estimate: (signal) =>
+      pendingTransfer ? backend.estimateTransfer(pendingTransfer, signal) : Promise.resolve(null),
+    input: [receiverKey, amount, memo],
+    query: { enabled: valid },
+  });
+  const illustrative = !isLive || cost.costEstimate === null;
+
+  const onConfirm = () => {
+    if (!pendingTransfer) return;
+    mutation.submitTransfer(pendingTransfer);
   };
 
   return (
@@ -134,7 +158,12 @@ export function Transfer() {
               Send <strong>{formatAmount(amount)}</strong> {instrument.id} to{' '}
               <strong>{PARTIES[receiverKey].label}</strong>
             </div>
-            <CostPreview estimate={FEE_ESTIMATE} />
+            <CostPreview estimate={cost.costEstimate} loading={cost.isPending} error={cost.error} />
+            {illustrative ? (
+              <p className="muted" style={{ fontSize: 12, margin: '6px 0 0' }}>
+                Illustrative network cost, not a live estimate
+              </p>
+            ) : null}
           </>
         ) : null}
         <button

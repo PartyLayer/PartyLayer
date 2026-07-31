@@ -12,9 +12,10 @@ import type {
   AllocationActionRequest,
   AllocationRequestActionRequest,
 } from '@partylayer/react/query';
+import type { CostEstimation } from '@partylayer/react';
 import type { DemoPartyKey, SettleTrade, CreateTrade } from './types';
 import { demoStore, latency } from './store';
-import { PARTIES } from './fixtures';
+import { PARTIES, FEE_ESTIMATE } from './fixtures';
 
 export interface DvpBackend {
   /** ACS read: a party's holdings as `{ cid, holding }` refs. `null` means none yet. */
@@ -36,6 +37,11 @@ export interface DvpBackend {
   submitSettle(vars: SettleTrade, signal?: AbortSignal): Promise<{ ok: true }>;
   /** Submit: the venue creates a new trade (its own settlement-app choice). */
   submitCreateTrade(vars: CreateTrade, signal?: AbortSignal): Promise<{ ok: true }>;
+  /**
+   * Estimate: a pre-submission traffic-cost estimate for a leg allocation. Returns `null`
+   * when no live estimate is available (the UI then shows an illustrative caption).
+   */
+  estimateAllocation(request: AllocationInstructionRequest, signal?: AbortSignal): Promise<CostEstimation | null>;
 }
 
 /** Reject if the caller aborted while we were "in flight". */
@@ -178,5 +184,12 @@ export const demoBackend: DvpBackend = {
     throwIfAborted(signal);
     demoStore.createTrade(vars.usdAmount, vars.bondAmount);
     return { ok: true };
+  },
+
+  async estimateAllocation(_request, signal) {
+    await latency();
+    throwIfAborted(signal);
+    // Demo mode returns the fixture estimate, so a CostPreview always renders.
+    return FEE_ESTIMATE;
   },
 };

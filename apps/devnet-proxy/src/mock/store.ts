@@ -20,6 +20,7 @@ import type {
   InstrumentConfig,
   SettleTrade,
   CreateTrade,
+  CostEstimationWire,
 } from '../contract.js';
 
 const SCALE = 100n;
@@ -98,6 +99,9 @@ function tokSeed(): TokState {
 }
 const TOK_KEY: Record<string, string> = { issuer: T.issuer, alice: T.alice, bob: T.bob };
 const TOK_INSTRUMENT: InstrumentConfig = { admin: T.issuer, id: 'DEMO', name: 'Demo Token', description: 'A demo instrument administered by the issuer party for this example.' };
+// A fixed pre-submission cost estimate, matching the tokenization app's FEE_ESTIMATE so
+// mock and demo mode show the same numbers. int64-as-string (precision preserved).
+const TOK_COST: CostEstimationWire = { estimationTimestamp: '2026-07-22T09:00:00Z', confirmationRequestTrafficCostEstimation: '1200', confirmationResponseTrafficCostEstimation: '800', totalTrafficCostEstimation: '2000' };
 
 // ==================== DvP vertical ====================
 const LEG_USD = 'leg-usd';
@@ -134,6 +138,8 @@ function dvpSeed(): DvpState {
   };
 }
 const DVP_KEY: Record<string, string> = { venue: D.venue, alice: D.alice, bob: D.bob };
+// A fixed pre-submission cost estimate, matching the dvp app's FEE_ESTIMATE fixture.
+const DVP_COST: CostEstimationWire = { estimationTimestamp: '2026-07-22T09:00:00Z', confirmationRequestTrafficCostEstimation: '1500', confirmationResponseTrafficCostEstimation: '900', totalTrafficCostEstimation: '2400' };
 
 // ==================== Store ====================
 let tok = tokSeed();
@@ -190,6 +196,7 @@ export const mockStore = {
   tokInstrument: (): InstrumentConfig => TOK_INSTRUMENT,
   tokSupply: (): string => Object.values(tok.holdings).flat().reduce((s, r) => add(s, r.holding.amount), '0.00'),
   tokAllocations: (): TokenAllocationRef[] => tok.allocations.map((a) => ({ cid: a.cid, allocation: a.allocation })),
+  tokCostEstimate: (): CostEstimationWire => ({ ...TOK_COST }),
 
   // ---- tokenization writes ----
   tokTransfer(transfer: TokenTransfer): void {
@@ -258,6 +265,7 @@ export const mockStore = {
       return !!found && legMatches(found.ref.allocation.allocation.transferLeg, req.request.transferLegs[legId]);
     });
   },
+  dvpCostEstimate: (): CostEstimationWire => ({ ...DVP_COST }),
 
   // ---- dvp writes ----
   dvpAllocation(req: AllocationInstructionRequest): void {

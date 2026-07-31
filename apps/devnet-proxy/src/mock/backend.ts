@@ -60,6 +60,10 @@ export function createMockBackends(): Backends {
       mockStore.tokAllocationAction(request);
       return ok;
     },
+    async estimateTransfer() {
+      await latency();
+      return { costEstimation: mockStore.tokCostEstimate() };
+    },
   };
 
   const dvp: DvpBackend = {
@@ -103,6 +107,10 @@ export function createMockBackends(): Backends {
       await latency();
       mockStore.dvpCreateTrade(vars);
       return ok;
+    },
+    async estimateAllocation() {
+      await latency();
+      return { costEstimation: mockStore.dvpCostEstimate() };
     },
   };
 
