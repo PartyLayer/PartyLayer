@@ -10,7 +10,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useDamlContract, useChoice, type TokenHoldingRef } from '@partylayer/react/query';
 import { TransactionToast } from '@partylayer/react';
 import { useDemo, partyKey } from '../context/DemoContext';
-import { Card, AsyncView, Badge, Field, SkeletonText } from '../ui/primitives';
+import { Card, AsyncView, Badge, Field, SkeletonText, CopyId } from '../ui/primitives';
 import { toastStatus } from '../lib/mutation';
 import { invalidateHoldingsAndReads } from '../lib/invalidate';
 import { formatAmount, validateAmount } from '../lib/format';
@@ -196,7 +196,9 @@ export function Issuer() {
                           {formatAmount(ref.holding.amount)}{' '}
                           <span className="muted">{ref.holding.instrumentId.id}</span>
                         </div>
-                        <div className="row-sub muted">{ref.cid}</div>
+                        <div className="row-sub muted">
+                          <CopyId value={ref.cid} />
+                        </div>
                       </div>
                       {ref.holding.lock ? <Badge tone="lock">Frozen</Badge> : null}
                       <button

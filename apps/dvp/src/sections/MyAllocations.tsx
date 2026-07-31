@@ -9,7 +9,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useTokenAllocations, useAllocationAction } from '@partylayer/react/query';
 import { TransactionToast } from '@partylayer/react';
 import { useDemo, partyKey } from '../context/DemoContext';
-import { Card, AsyncView, Badge } from '../ui/primitives';
+import { Card, AsyncView, Badge, CopyId } from '../ui/primitives';
 import { toastStatus } from '../lib/mutation';
 import { invalidateAll } from '../lib/invalidate';
 import { formatAmount } from '../lib/format';
@@ -56,7 +56,18 @@ export function MyAllocations() {
                     <div className="row-sub muted">
                       to {leg.receiver} · settlement {settle.settlementRef.id}
                     </div>
-                    <div className="row-sub muted">backing {a.holdingCids.join(', ')}</div>
+                    <div className="row-sub muted">
+                      backing{' '}
+                      {a.holdingCids.length ? (
+                        <span className="id-list">
+                          {a.holdingCids.map((c) => (
+                            <CopyId key={c} value={c} />
+                          ))}
+                        </span>
+                      ) : (
+                        'none'
+                      )}
+                    </div>
                   </div>
                   <div className="row-actions">
                     <button

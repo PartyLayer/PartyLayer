@@ -4,7 +4,7 @@
  * primitives (ConnectButton, PartyAvatar, CostPreview, TransactionToast) which the
  * sections import from `@partylayer/react`.
  */
-import type { ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 
 export function Card({ title, hint, children }: { title: string; hint?: string; children: ReactNode }) {
   return (
@@ -68,6 +68,36 @@ export function Field({ label, children }: { label: string; children: ReactNode 
       <span className="field-label">{label}</span>
       {children}
     </label>
+  );
+}
+
+/** Middle-truncate a long id so both ends stay readable; short ids show in full. */
+function middleTruncate(value: string, head = 8, tail = 8): string {
+  return value.length <= head + tail + 3 ? value : value.slice(0, head) + '...' + value.slice(-tail);
+}
+
+/**
+ * A monospace id that middle-truncates when long (live contract ids and party ids) and
+ * copies the full value on click. Demo fixtures use short readable ids, so they show whole.
+ */
+export function CopyId({ value }: { value: string }) {
+  const [copied, setCopied] = useState(false);
+  const copy = () => {
+    void navigator.clipboard?.writeText(value).then(
+      () => {
+        setCopied(true);
+        setTimeout(() => setCopied(false), 1200);
+      },
+      () => {},
+    );
+  };
+  return (
+    <button type="button" className="copy-id" onClick={copy} title={'Copy ' + value} aria-label={'Copy ' + value}>
+      <code>{middleTruncate(value)}</code>
+      <span className="copy-id-tag" aria-hidden="true">
+        {copied ? 'copied' : 'copy'}
+      </span>
+    </button>
   );
 }
 

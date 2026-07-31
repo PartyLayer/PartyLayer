@@ -36,6 +36,7 @@ import { Incoming } from './sections/Incoming';
 import { Issuer } from './sections/Issuer';
 import { Allocations } from './sections/Allocations';
 import { RetryBanner } from './ui/RetryBanner';
+import { CopyId } from './ui/primitives';
 import './App.css';
 
 // Every stable wallet gets its adapter so the connect surface can genuinely
@@ -186,7 +187,7 @@ export default function App() {
 
           <p className="acting-line">
             Acting as <strong>{PARTIES[party].label}</strong>{' '}
-            <code>{PARTIES[party].partyId}</code>. Every section below reads and acts as this party.
+            <CopyId value={PARTIES[party].partyId} />. Every section below reads and acts as this party.
           </p>
 
           <main className="grid" id="main" tabIndex={-1}>

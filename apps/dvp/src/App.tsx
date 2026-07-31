@@ -34,6 +34,7 @@ import { Trades } from './sections/Trades';
 import { MyAllocations } from './sections/MyAllocations';
 import { Holdings } from './sections/Holdings';
 import { RetryBanner } from './ui/RetryBanner';
+import { CopyId } from './ui/primitives';
 import './App.css';
 
 // Every stable wallet gets its adapter so the connect surface can genuinely
@@ -184,7 +185,7 @@ export default function App() {
 
           <p className="acting-line">
             Acting as <strong>{PARTIES[party].label}</strong>{' '}
-            <code>{PARTIES[party].partyId}</code>.{' '}
+            <CopyId value={PARTIES[party].partyId} />.{' '}
             {party === 'venue'
               ? 'The venue creates trades and settles atomically once both legs are allocated.'
               : 'Allocate your leg of a trade, or reject it.'}
