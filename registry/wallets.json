@@ -75,7 +75,7 @@
         "type": "@partylayer/adapter-cantor8"
       },
       "installation": {
-        "deeplink": "cantor8://"
+        "scriptTag": "@cantor8/wallet-connect-sdk"
       },
       "sdkVersion": ">=0.1.0"
     },
