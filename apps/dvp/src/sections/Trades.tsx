@@ -33,6 +33,12 @@ import { REGISTRY, FEE_ESTIMATE } from '../lib/fixtures';
 import { demoStore } from '../lib/store';
 import type { SettleTrade, CreateTrade } from '../lib/types';
 
+// Compact display of a real ISO settlement time: "2027-01-01 00:00". No parsing or locale
+// variance, so it stays a faithful view of the ledger value.
+function fmtWhen(iso: string): string {
+  return (iso || '').slice(0, 16).replace('T', ' ');
+}
+
 export function Trades() {
   const { party } = useDemo();
   const isLive = import.meta.env.VITE_BACKEND === 'live';
@@ -296,15 +302,29 @@ function VenueTrades() {
               const legIds = Object.keys(trade.request.transferLegs);
               const matched = matchedLegIds(trade.request, combined);
               const allMatched = matched.length === legIds.length;
+              const settlement = trade.request.settlement;
+              // Lifecycle stage from real reads only: how many legs are allocated. Settled,
+              // withdrawn, and rejected trades archive their contract and leave this list, so
+              // they are never painted as an active stage here (B12).
+              const stage = matched.length === 0 ? 'Open' : allMatched ? 'Ready to settle' : 'Allocating';
+              const times = [
+                settlement.requestedAt && 'opened ' + fmtWhen(settlement.requestedAt),
+                settlement.allocateBefore && 'allocate by ' + fmtWhen(settlement.allocateBefore),
+                settlement.settleBefore && 'settle by ' + fmtWhen(settlement.settleBefore),
+              ].filter(Boolean);
               return (
                 <li key={trade.cid} className="row row-block">
                   <div className="row-main">
                     <div className="row-title">
-                      Trade {trade.request.settlement.settlementRef.id}{' '}
-                      <Badge tone={allMatched ? 'ok' : 'neutral'}>
+                      Trade {settlement.settlementRef.id}{' '}
+                      <Badge tone={allMatched ? 'ok' : 'neutral'}>{stage}</Badge>{' '}
+                      <Badge tone="neutral">
                         {matched.length}/{legIds.length} allocated
                       </Badge>
                     </div>
+                    {times.length > 0 ? (
+                      <div className="row-sub muted">{times.join(' · ')}</div>
+                    ) : null}
                     {legIds.map((legId) => {
                       const leg = trade.request.transferLegs[legId];
                       const alloc = allocationForLeg(trade.request, legId, combined);
