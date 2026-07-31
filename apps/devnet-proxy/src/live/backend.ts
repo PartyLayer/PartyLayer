@@ -45,7 +45,11 @@ import {
   type AcsEntry,
 } from '../mapping.js';
 import { makeToKey, makeToLedgerId, reverseLeg } from '../party-map.js';
-import { allocationMatchesRequestLeg } from '@partylayer/react/query';
+import {
+  allocationMatchesRequestLeg,
+  mergeDisclosedContracts,
+  type TokenDisclosedContract,
+} from '@partylayer/react/query';
 import { buildSdk, type LiveSdk } from './sdk.js';
 import { LedgerClient, exerciseCommand } from './ledger.js';
 import { ScanClient, type ScanInstrument } from './scan.js';
@@ -399,7 +403,13 @@ export async function createLiveBackends(cfg: GatewayConfig): Promise<Backends> 
       const request = mapAllocationRequest(reqEntry);
       const allocEntries = await ledger.activeByInterface(allParties, ALLOCATION_INTERFACE);
       const allocationsWithContext: Record<string, unknown> = {};
-      const disclosed: unknown[] = [];
+      // Collect each allocation's disclosed contracts, then dedup by contractId with the
+      // published, unit-tested mergeDisclosedContracts (B13 per D9), instead of the by-hand
+      // push loop that could disclose a shared reference contract twice. The gateway threads
+      // disclosed contracts at the submission level (submitAndWait's own argument), so the
+      // array-dedup core mergeDisclosedContracts is the exact fit here; attachDisclosedContracts
+      // is the command-payload wrapper around the same merge and does not match this shape.
+      const perLegDisclosed: TokenDisclosedContract[][] = [];
       for (const legId of Object.keys(request.request.transferLegs)) {
         const match = allocEntries.find((e) =>
           allocationMatchesRequestLeg(mapAllocation(e).allocation, request.request, legId),
@@ -408,13 +418,14 @@ export async function createLiveBackends(cfg: GatewayConfig): Promise<Backends> 
         const ctx = (await sdk.token.allocation.context.execute({
           allocationCid: match.contractId,
           registryUrl,
-        })) as { choiceContextData?: unknown; disclosedContracts?: unknown[] };
+        })) as { choiceContextData?: unknown; disclosedContracts?: TokenDisclosedContract[] };
         allocationsWithContext[legId] = {
           _1: match.contractId,
           _2: { context: ctx.choiceContextData, meta: { values: {} } },
         };
-        for (const d of ctx.disclosedContracts ?? []) disclosed.push(d);
+        perLegDisclosed.push(ctx.disclosedContracts ?? []);
       }
+      const disclosed = mergeDisclosedContracts(...perLegDisclosed);
       const command = exerciseCommand(OTC_TRADE, vars.requestCid, 'OTCTrade_Settle', { allocationsWithContext });
       await ledger.submitAndWait([command], disclosed, [P.venue], commandId('settle'));
       return { ok: true };
