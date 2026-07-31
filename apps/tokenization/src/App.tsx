@@ -213,6 +213,13 @@ export default function App() {
                 GitHub template
               </a>
               <a href="https://partylayer.xyz/docs" target="_blank" rel="noopener">Docs</a>
+              <a
+                href="https://github.com/PartyLayer/PartyLayer/blob/main/LICENSE"
+                target="_blank"
+                rel="noopener"
+              >
+                MIT License
+              </a>
               <span>Scaffold your own: npm create partylayer-app</span>
             </div>
           </footer>

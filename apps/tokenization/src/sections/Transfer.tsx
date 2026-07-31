@@ -98,13 +98,24 @@ export function Transfer() {
           </select>
         </Field>
         <Field label={instrument.id ? 'Amount (' + instrument.id + ')' : 'Amount'}>
-          <input
-            inputMode="decimal"
-            placeholder="0.00"
-            value={amount}
-            onChange={(e) => setAmount(e.target.value)}
-            aria-invalid={amount.trim() !== '' && amountReason != null}
-          />
+          <div className="input-max">
+            <input
+              inputMode="decimal"
+              placeholder="0.00"
+              value={amount}
+              onChange={(e) => setAmount(e.target.value)}
+              aria-invalid={amount.trim() !== '' && amountReason != null}
+            />
+            <button
+              type="button"
+              className="btn btn-ghost btn-small"
+              onClick={() => setAmount(available)}
+              disabled={validateAmount(available) !== null}
+              title="Use the full available balance"
+            >
+              Max
+            </button>
+          </div>
           {amount.trim() !== '' && amountReason ? (
             <span className="field-error" role="alert">
               {amountReason}
