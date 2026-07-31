@@ -79,3 +79,12 @@ export function validateAmount(amount: string, max?: string): string | null {
   }
   return null;
 }
+
+/**
+ * Whether a live cost estimate may be fetched for this amount: true only when the amount is
+ * a valid, in-balance value (validateAmount passes). The estimate hook gates on this so no
+ * network call fires for empty, non-numeric, non-positive, or over-balance input (F1).
+ */
+export function estimateAllowed(amount: string, max: string): boolean {
+  return validateAmount(amount, max) === null;
+}

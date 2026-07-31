@@ -11,10 +11,19 @@ import { describe, it, expect } from 'vitest';
 import { render } from '@testing-library/react';
 import type { TxReceipt } from '@partylayer/core';
 import { TransactionToast } from './transaction-toast';
-import { ThemeProvider } from './theme';
+import { ThemeProvider, lightTheme } from './theme';
 
 function renderToast(ui: React.ReactElement) {
   return render(<ThemeProvider theme="light">{ui}</ThemeProvider>);
+}
+
+// jsdom normalizes an inline color to its rgb(...) form; push a theme token through
+// the same path so background assertions compare against the theme value (not a
+// hardcoded hex) and survive jsdom's normalization.
+function normalizeColor(value: string): string {
+  const el = document.createElement('div');
+  el.style.backgroundColor = value;
+  return el.style.backgroundColor;
 }
 
 describe('TransactionToast', () => {
@@ -64,7 +73,7 @@ describe('TransactionToast', () => {
 
   it('shows an error state with the error message', () => {
     const { container } = renderToast(<TransactionToast status="error" error={new Error('submit failed')} />);
-    const root = container.querySelector('[role="status"]') as HTMLElement;
+    const root = container.querySelector('[data-status="error"]') as HTMLElement;
     expect(root.getAttribute('data-status')).toBe('error');
     expect(root.textContent).toContain('Transaction failed');
     expect(root.textContent).toContain('submit failed');
@@ -88,7 +97,7 @@ describe('TransactionToast', () => {
           <TransactionToast status={status} />
         </ThemeProvider>,
       );
-      return (container.querySelector('[role="status"]') as HTMLElement).style.borderLeftColor;
+      return (container.querySelector(`[data-status="${status}"]`) as HTMLElement).style.borderLeftColor;
     };
     // success -> theme.colors.success, error -> theme.colors.error, pending -> neutral.
     // Assert on the parsed color so jsdom's hex-to-rgb normalization does not matter,
@@ -98,5 +107,30 @@ describe('TransactionToast', () => {
     const pending = accentFor('pending');
     expect(new Set([success, error, pending]).size).toBe(3);
     expect(success).not.toBe('');
+  });
+
+  it('renders role alert and the error background tint (not the neutral surface) for an error', () => {
+    const { container } = renderToast(<TransactionToast status="error" error={new Error('boom')} />);
+    const root = container.querySelector('[data-status="error"]') as HTMLElement;
+    expect(root.getAttribute('role')).toBe('alert');
+    expect(root.style.backgroundColor).toBe(normalizeColor(lightTheme.colors.errorBg));
+    expect(root.style.backgroundColor).not.toBe(normalizeColor(lightTheme.colors.surface));
+    // The failure is announced assertively rather than politely.
+    expect(container.querySelector('[aria-live="assertive"]')?.textContent).toContain('Transaction failed');
+  });
+
+  it('renders role status and the success background tint (not the neutral surface) for a success', () => {
+    const { container } = renderToast(<TransactionToast status="success" />);
+    const root = container.querySelector('[data-status="success"]') as HTMLElement;
+    expect(root.getAttribute('role')).toBe('status');
+    expect(root.style.backgroundColor).toBe(normalizeColor(lightTheme.colors.successBg));
+    expect(root.style.backgroundColor).not.toBe(normalizeColor(lightTheme.colors.surface));
+  });
+
+  it('renders role status and the neutral surface background for pending', () => {
+    const { container } = renderToast(<TransactionToast status="pending" />);
+    const root = container.querySelector('[data-status="pending"]') as HTMLElement;
+    expect(root.getAttribute('role')).toBe('status');
+    expect(root.style.backgroundColor).toBe(normalizeColor(lightTheme.colors.surface));
   });
 });

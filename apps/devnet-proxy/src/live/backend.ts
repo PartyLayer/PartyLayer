@@ -185,7 +185,7 @@ export async function createLiveBackends(cfg: GatewayConfig): Promise<Backends> 
 
   // Build the SAME prepared allocation command for both submit and estimate.
   async function buildAllocationCommand(request: AllocationInstructionRequest): Promise<{ prepared: unknown; actAs: string[] }> {
-    const { asset } = await amulet();
+    const { asset, instrumentId } = await amulet();
     const legId = request.allocation.transferLegId;
     // The settle choice checks each allocation for structural equality with the trade's
     // expected spec, so the allocation must be built from the trade's own settlement and
@@ -207,7 +207,13 @@ export async function createLiveBackends(cfg: GatewayConfig): Promise<Backends> 
       : {
           settlement: damlSettlement(request.allocation.settlement),
           transferLegId: legId,
-          transferLeg: damlLeg(request.allocation.transferLeg),
+          // A standalone allocation (no on-ledger request, e.g. the tokenization demo
+          // allocation) is built against the live registry factory resolved by amulet(), so
+          // its leg MUST carry that factory's instrument id, or the choice fails with
+          // "Instrument-id must match the factory". Resolve the leg instrument to the live one
+          // here, exactly as party keys are resolved to ledger ids inbound (A3), so a client
+          // fixture instrument like DEMO cannot reach the factory.
+          transferLeg: { ...damlLeg(request.allocation.transferLeg), instrumentId },
         };
     // The sdk types the spec with branded Daml types; the gateway's structurally identical
     // shapes are adapted through the param type here.

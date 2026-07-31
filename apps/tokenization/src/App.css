@@ -399,6 +399,11 @@
 .hint-line {
   font-size: 14px;
 }
+.cost-caption {
+  margin: 6px 0 0;
+  font-size: 12px;
+  color: var(--muted);
+}
 
 .state {
   padding: 16px;

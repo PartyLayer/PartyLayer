@@ -38,8 +38,17 @@ export class GatewayError extends Error {
 export function mapGatewayError(status: number, rawBody: unknown): GatewayError {
   console.error('[gateway] request failed', { status, body: rawBody });
   const retryable = isRetryableStatus(status);
-  const message = retryable
-    ? 'DevNet is under heavy load. Please try again in a minute.'
-    : 'Something went wrong talking to the network. Please try again.';
+  let message: string;
+  if (retryable) {
+    // 409 backpressure and 503 overload: the retry layer handles these; this is the final
+    // wording shown after retries are exhausted.
+    message = 'DevNet is under heavy load. Please try again in a minute.';
+  } else if (status >= 400 && status < 500) {
+    // Any other 4xx: the request itself was rejected (invalid or stale input), not a transient
+    // network condition, so retrying the same request will not help; ask the user to reload.
+    message = 'The request was rejected as invalid, please reload and try again.';
+  } else {
+    message = 'Something went wrong talking to the network. Please try again.';
+  }
   return new GatewayError(status, message, retryable);
 }

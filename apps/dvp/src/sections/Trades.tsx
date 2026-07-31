@@ -29,7 +29,7 @@ import {
 } from '@partylayer/react/query';
 import { CostPreview, TransactionToast } from '@partylayer/react';
 import { useDemo, partyKey } from '../context/DemoContext';
-import { Card, AsyncView, Badge, Field } from '../ui/primitives';
+import { Card, AsyncView, Badge, Field, CostCaption } from '../ui/primitives';
 import { toastStatus } from '../lib/mutation';
 import { invalidateAll } from '../lib/invalidate';
 import { allocationForLeg, matchedLegIds } from '../lib/match';
@@ -234,14 +234,15 @@ function LegCard({
   doAllocate,
 }: LegCardProps) {
   // A live estimate is a genuine blocker (the gateway may have no synchronizer, and the
-  // prepare-for-cost path is untested), so it can resolve to null; the UI then shows an
-  // illustrative caption. Demo mode returns the fixture, so a CostPreview always renders.
+  // prepare-for-cost path is untested), so it can resolve to null; the caption then reads
+  // illustrative. Demo mode returns the fixture, so a CostPreview always renders. The leg
+  // amount is fixed by the trade, so there is no typed-amount gating to do here (F1 is the
+  // tokenization transfer's concern); the estimate is per leg, keyed on the trade and leg.
   const cost = useTransactionCostEstimate({
     estimate: (signal) =>
       backend.estimateAllocation(buildAllocationRequest(trade, legId, leg, me, isLive), signal),
     input: trade.cid + ':' + legId,
   });
-  const illustrative = !isLive || cost.costEstimate === null;
 
   return (
     <div className="leg-action">
@@ -250,11 +251,7 @@ function LegCard({
         {formatAmount(leg.amount)} {leg.instrumentId.id}
       </div>
       <CostPreview estimate={cost.costEstimate} loading={cost.isPending} error={cost.error} />
-      {illustrative ? (
-        <p className="muted" style={{ fontSize: 12, margin: '6px 0 0' }}>
-          Illustrative network cost, not a live estimate
-        </p>
-      ) : null}
+      <CostCaption live={isLive && cost.costEstimate != null} />
       <div className="row-actions">
         <button
           className="btn btn-primary btn-small"

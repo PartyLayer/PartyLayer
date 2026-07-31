@@ -66,6 +66,23 @@ export function Field({ label, children }: { label: string; children: ReactNode 
   );
 }
 
+/**
+ * Caption shown under a CostPreview. It always renders one line, so the preview never shows
+ * numbers without a caption: a truthful live label when the estimate is a genuine live value,
+ * otherwise the illustrative fallback (F3). Unit note: the CostEstimation traffic-cost fields
+ * (see @partylayer/core cost.ts) mirror the Canton node CostEstimation schema, which does not
+ * name a unit, so they are labeled as traffic units rather than guessing bytes.
+ */
+export function CostCaption({ live }: { live: boolean }) {
+  return (
+    <p className="cost-caption" role="note">
+      {live
+        ? 'Live network cost estimate (values in traffic units)'
+        : 'Illustrative network cost, not a live estimate'}
+    </p>
+  );
+}
+
 /** Middle-truncate a long id so both ends stay readable; short ids show in full. */
 function middleTruncate(value: string, head = 8, tail = 8): string {
   return value.length <= head + tail + 3 ? value : value.slice(0, head) + '...' + value.slice(-tail);
