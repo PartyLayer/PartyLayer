@@ -254,4 +254,42 @@ describe('SDK session persistence — round-trip', () => {
     await client.destroy();
     vi.clearAllMocks();
   });
+
+  it('getActiveSession clears an expired in-memory session without throwing', async () => {
+    // Regression: disconnect() nulls activeSession, then session:expired used to
+    // read this.activeSession.sessionId and throw TypeError — breaking sign/submit.
+    class AlreadyExpiredAdapter extends RestorableMockAdapter {
+      async connect() {
+        const result = await super.connect();
+        return {
+          ...result,
+          session: {
+            ...result.session,
+            expiresAt: Date.now() - 1,
+          },
+        };
+      }
+    }
+
+    const { storage } = makeRecordingStorage();
+    const client = createPartyLayer({
+      network: 'devnet',
+      app: { name: 'expired-active', origin: 'https://expired.example' },
+      registryUrl: 'https://unused.invalid',
+      adapters: [new AlreadyExpiredAdapter()],
+      storage,
+    });
+
+    const session = await client.connect({ walletId: toWalletId('mock-restorable') });
+    const expiredEvents: Array<{ sessionId: unknown }> = [];
+    client.on('session:expired', (e) => {
+      expiredEvents.push(e as { sessionId: unknown });
+    });
+
+    await expect(client.getActiveSession()).resolves.toBeNull();
+    expect(expiredEvents).toHaveLength(1);
+    expect(expiredEvents[0]?.sessionId).toBe(session.sessionId);
+
+    await client.destroy();
+  });
 });
