@@ -32,6 +32,7 @@ Verdict legend:
 | loop | QR + WebSocket popup via `@fivenorth/loop-sdk` | None, `detectInstalled` always `true` in a browser (SDK bundled), [loop-adapter.ts:77-89](../packages/adapters/loop/src/loop-adapter.ts#L77-L89) | **WALLETCONNECT / SDK (not CIP-0103)** | absent | Cannot be removed by native+WC alone. Needs Loop to ship a CIP-0103 `window.canton` provider or a standard WC interface. **Keep.** |
 | cantor8 | Deep-link (`DeepLinkTransport`) + stub vendor module | Mobile user-agent only: `/iPhone\|iPad\|iPod\|Android/i.test(navigator.userAgent)`, [cantor8-adapter.ts:91-98](../packages/adapters/cantor8/src/cantor8-adapter.ts#L91-L98) | **STUBBED/UNCONFIRMED (deep-link)** | absent | Real C8 transport (extension? WC? deep-link?) unconfirmed from public docs. **Requires live browser check before any sunset decision. Keep.** |
 | bron | OAuth2 popup + remote HTTP API | None, `detectInstalled` always `true` ("remote signer service"), [bron-adapter.ts:106-113](../packages/adapters/bron/src/bron-adapter.ts#L106-L113) | **OAUTH / remote (not CIP-0103)** | absent | Server-side remote signer; fundamentally not injected/WC. Cannot be removed unless Bron exposes CIP-0103. **Keep.** |
+| cauri | JSON-RPC over HTTPS + passkey approval popup, discovery-adapter published as `@lithiumdigital/cauri-dapp-sdk` | None, `detect()` always returns `true` (Cauri is a remote service) | **REMOTE / popup (CIP-0103 native)** | `true` | Non-custodial passkey wallet exposed via a CIP-103 gateway. Ships through the generic-bridge discovery-adapter path; the adapter package lives outside this repo. **Keep.** |
 | nightly | Injected `window.nightly.canton` (custom callback API) | `window.nightly?.canton` presence, [nightly-adapter.ts:144-161](../packages/adapters/nightly/src/nightly-adapter.ts#L144-L161) | **CUSTOM injected (non-CIP-0103)** | absent | Keep until Nightly exposes a CIP-0103 `window.canton` provider (their template claims CIP-0103, verify live), or until a bridge is built. |
 
 ---
@@ -52,6 +53,7 @@ false positives, but limited protection), this is the
 | loop | no | SDK connect callback exposes no network → echoes `ctx.network` |
 | cantor8 | no | connect response carries no network → echoes `ctx.network` |
 | bron | no | API session carries no network → echoes `ctx.network` |
+| cauri | no | connect response carries no network → echoes `ctx.network` |
 | nightly | no | provider exposes no network → echoes `ctx.network` |
 
 ---
@@ -207,6 +209,35 @@ false positives, but limited protection), this is the
 - **Sunset implication:** A server-side remote signer is a different shape from
   an injected/WC wallet; native+WC does not subsume it. **Keep** unless Bron
   exposes a CIP-0103 surface.
+
+### cauri: `@lithiumdigital/cauri-dapp-sdk`
+
+- **Transport.** JSON-RPC over HTTPS at a CIP-103 gateway (`POST
+  {apiBase}/api/dapp`), plus a passkey approval popup at
+  `{walletUiBase}/dapp/connect/<sessionId>`,
+  `/dapp/message/<messageId>`, and `/dapp/transaction/<commandId>`.
+  Every wallet-changing action opens the popup; the user authenticates
+  with their passkey; the backend signs and submits atomically.
+- **Detection.** None. The adapter's `detect()` always returns `true`
+  (Cauri is a remote service; installation is implicit when the user picks
+  Cauri in the picker).
+- **CIP-0103.** Backend implements all ten mandatory methods
+  (`connect`, `disconnect`, `isConnected`, `status`, `getActiveNetwork`,
+  `listAccounts`, `getPrimaryAccount`, `signMessage`, `prepareExecute`,
+  `ledgerApi`) and the four events (`statusChanged`, `accountsChanged`,
+  `txChanged`, `connected`). `signMessage` uses a domain-separated preimage
+  (`SHA-256("CIP-103.cauri.signMessage.v1" || 0x00 || message_utf8)`) so
+  the wallet's Ed25519 key cannot be turned into a signing oracle for
+  Canton transactions.
+- **Integration path.** Discovery-adapter (Path B). The adapter package
+  `@lithiumdigital/cauri-dapp-sdk` lives outside this repo and is
+  loaded by the generic bridge based on the registry entry's
+  `adapter.type` / `adapter.transport` / `adapter.config` /
+  `adapter.networkHosts` fields.
+- **Verdict:** REMOTE / popup, CIP-0103 native.
+- **Sunset implication:** No in-page presence means the announce path
+  cannot subsume Cauri; the generic-bridge discovery-adapter path is
+  the correct home. **Keep.**
 
 ### nightly: `@partylayer/adapter-nightly`
 
