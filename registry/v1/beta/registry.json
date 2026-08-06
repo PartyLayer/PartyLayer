@@ -134,6 +134,44 @@
         "windowProperty": "nightly"
       },
       "sdkVersion": ">=0.1.0"
+    },
+    {
+      "id": "grofty",
+      "name": "Grofty Wallet",
+      "description": "Grofty - non-custodial multi-chain wallet for Canton Network, Bridge and Swap to multi-chain assets.",
+      "homepage": "https://grofty.cc",
+      "icon": "https://grofty.cc/favicon.png",
+      "supportedNetworks": ["mainnet"],
+      "capabilities": {
+        "signMessage": true,
+        "signTransaction": false,
+        "submitTransaction": true,
+        "transactionStatus": true,
+        "switchNetwork": false,
+        "multiParty": false,
+        "events": true
+      },
+      "adapter": {
+        "type": "grofty-announce",
+        "transport": "announce",
+        "config": {
+          "restore": true
+        }
+      },
+      "installation": {
+        "windowProperty": "cantonWallet"
+      },
+      "providerDetection": {
+        "transport": "window.canton",
+        "matchers": [
+          { "field": "provider.id", "match": "exact", "values": ["ojlgdkgfbpkjceancgnniegbgadgmhig", "wallet@grofty.cc"] }
+        ]
+      },
+      "cip0103": {
+        "native": true,
+        "evidence": "https://chromewebstore.google.com/detail/ojlgdkgfbpkjceancgnniegbgadgmhig",
+        "since": "2026-08-05"
+      }
     }
   ]
 }

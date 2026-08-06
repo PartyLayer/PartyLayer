@@ -41,7 +41,7 @@ const require = createRequire(import.meta.url);
 // here fails the gate, which is the intended behaviour.)
 const REQUIRED_CIP0103_NATIVE = {
   stable: ['console', 'send', 'walley'],
-  beta: ['console'],
+  beta: ['console', 'grofty'],
 };
 
 const channels = [
