@@ -113,17 +113,17 @@ server.listen(PORT, async () => {
     if (!renderers.includes('img')) fail('no wallet rendered an Image logo');
 
     // WalletIcon now validates that a fetched svg url is really SVG before rendering, so a
-    // wallet whose CDN icon returns HTML (walletconnect today) falls back to the neutral
+    // wallet whose CDN icon is missing or is not really an image falls back to the neutral
     // glyph instead of rendering nothing. Every wallet must render something.
     const none = Object.entries(perWallet).filter(([, r]) => r === 'none').map(([id]) => id);
     if (none.length) fail('wallet(s) rendered no logo, the neutral fallback should have triggered: ' + none.join(', '));
 
-    // Specifically confirm the fixed case: if walletconnect is in the list, it shows the
-    // neutral fallback (its CDN icon is a missing HTML page), never nothing and never a letter.
+    // walletconnect is the row that exercised the validation path, so keep it named: it
+    // must render its real logo or the neutral glyph, never nothing and never a letter.
     if (perWallet.walletconnect && perWallet.walletconnect !== 'fallback' && perWallet.walletconnect !== 'img' && perWallet.walletconnect !== 'svg') {
-      fail(`walletconnect rendered "${perWallet.walletconnect}", expected the neutral fallback`);
+      fail(`walletconnect rendered "${perWallet.walletconnect}", expected its real logo or the neutral glyph`);
     }
-    if (perWallet.walletconnect === 'fallback') console.log('walletconnect: neutral fallback rendered (the fixed case).');
+    if (perWallet.walletconnect) console.log(`walletconnect: rendered "${perWallet.walletconnect}".`);
 
     console.log('SMOKE OK: wallet list opened, every wallet rendered a logo or the neutral fallback, no uncaught page errors.');
     await browser.close();

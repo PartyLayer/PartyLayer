@@ -133,8 +133,7 @@ If it is missing, `./ui` throws a clear developer error rather than crashing.
 
 **Wallet logos, always real, never letters.** PNG and JPG render through React Native's
 `Image`; SVG renders through react-native-svg's `SvgUri`. An unknown format or a load
-failure falls back to a neutral wallet glyph, never a letter. (This fallback is live
-today: walletconnect's icon is currently missing on the CDN.)
+failure falls back to a neutral wallet glyph, never a letter.
 
 **No QR screen.** The web modal has a QR view so a desktop user can scan with a phone. On
 a phone there is nothing to scan, so the list omits it. Selecting a wallet calls
