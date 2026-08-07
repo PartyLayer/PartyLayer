@@ -33,7 +33,7 @@
     "gate:conformance": "node scripts/gate/conformance-native.mjs",
     "gate:api": "node --test scripts/gate/api-normalize.test.mjs && node scripts/gate/api-snapshot.mjs",
     "gate:api:update": "node scripts/gate/api-snapshot.mjs --update",
-    "gate:registry": "node scripts/gate/registry-check.mjs",
+    "gate:registry": "node scripts/gate/registry-check.mjs && node --test scripts/gate/registry-worker.test.mjs",
     "gate:wallet-marks": "node --test scripts/gate/wallet-marks-drift.test.mjs",
     "gate:templates": "node scripts/gate/templates-check.mjs",
     "gen:readme": "node scripts/gen-readme.mjs --write",
