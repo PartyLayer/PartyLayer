@@ -7,23 +7,23 @@
   Access-Control-Allow-Methods: GET, HEAD, OPTIONS
   Access-Control-Allow-Headers: Accept, If-None-Match, Content-Type
   Access-Control-Expose-Headers: ETag, Last-Modified, Cache-Control
-  Cache-Control: public, max-age=300
   Content-Type: application/json; charset=utf-8
   X-Robots-Tag: noindex
 
-# The manifest freshness window (short, so a new entry, a promotion, or an icon
-# correction reaches users in about a minute) is set in _worker.js, NOT here. A
-# _headers rule cannot cleanly shorten it: Pages COMBINES Cache-Control from every
-# matching rule into one header, so a manifest rule's max-age=60 concatenates with
-# the /*.json max-age=300 above into an ambiguous "max-age=300, max-age=60". The
-# worker sets one authoritative value for /v1/<channel>/registry.json instead.
+# Cache-Control for .json and .sig is set in _worker.js, NOT here. Two reasons.
+# Pages COMBINES Cache-Control from every matching rule into one header, so a
+# manifest rule's max-age=60 would concatenate with a /*.json max-age=300 into an
+# ambiguous "max-age=300, max-age=60". And a rule here also stamps the worker's
+# not-found response, which would make a 404 for a missing .json cacheable for five
+# minutes. The worker sets one authoritative value per path, and leaves its 404
+# uncacheable. The served values are unchanged: max-age=60 for the manifest,
+# no-cache for health.json, max-age=300 for every other .json and .sig.
 
 # Signature files
 /*.sig
   Access-Control-Allow-Origin: *
   Access-Control-Allow-Methods: GET, HEAD, OPTIONS
   Access-Control-Allow-Headers: Accept, If-None-Match, Content-Type
-  Cache-Control: public, max-age=300
   Content-Type: application/json; charset=utf-8
   X-Robots-Tag: noindex
 
