@@ -2,9 +2,9 @@
   "metadata": {
     "registryVersion": "1.0.0",
     "schemaVersion": "1.0.0",
-    "publishedAt": "2026-06-24T00:00:00Z",
+    "publishedAt": "2026-08-08T07:00:14Z",
     "channel": "stable",
-    "sequence": 19,
+    "sequence": 20,
     "publisher": "PartyLayer"
   },
   "wallets": [
@@ -14,7 +14,11 @@
       "description": "Official Console Wallet for Canton Network (browser extension + mobile)",
       "homepage": "https://consolewallet.io",
       "icon": "https://registry.partylayer.xyz/wallets/console.png",
-      "supportedNetworks": ["devnet", "testnet", "mainnet"],
+      "supportedNetworks": [
+        "devnet",
+        "testnet",
+        "mainnet"
+      ],
       "capabilities": {
         "signMessage": true,
         "signTransaction": true,
@@ -42,7 +46,13 @@
       "providerDetection": {
         "transport": "window.canton",
         "matchers": [
-          { "field": "provider.id", "match": "exact", "values": ["lpnfhpbpmlobjlgkdmnjieeihjmihhjd"] }
+          {
+            "field": "provider.id",
+            "match": "exact",
+            "values": [
+              "lpnfhpbpmlobjlgkdmnjieeihjmihhjd"
+            ]
+          }
         ]
       },
       "cip0103": {
@@ -57,7 +67,10 @@
       "description": "5N Loop Wallet for Canton Network",
       "homepage": "https://cantonloop.com",
       "icon": "https://registry.partylayer.xyz/wallets/loop.svg",
-      "supportedNetworks": ["devnet", "mainnet"],
+      "supportedNetworks": [
+        "devnet",
+        "mainnet"
+      ],
       "capabilities": {
         "signMessage": true,
         "signTransaction": false,
@@ -80,7 +93,10 @@
       "description": "Cantor8 Wallet for Canton Network",
       "homepage": "https://cantor8.tech",
       "icon": "https://registry.partylayer.xyz/wallets/cantor8.png",
-      "supportedNetworks": ["devnet", "mainnet"],
+      "supportedNetworks": [
+        "devnet",
+        "mainnet"
+      ],
       "capabilities": {
         "signMessage": false,
         "signTransaction": false,
@@ -103,7 +119,11 @@
       "description": "Bron Enterprise Remote Signer for Canton Network",
       "homepage": "https://developer.bron.org",
       "icon": "https://registry.partylayer.xyz/wallets/bron.png",
-      "supportedNetworks": ["devnet", "testnet", "mainnet"],
+      "supportedNetworks": [
+        "devnet",
+        "testnet",
+        "mainnet"
+      ],
       "capabilities": {
         "signMessage": true,
         "signTransaction": true,
@@ -127,7 +147,11 @@
       "description": "Nightly Multichain Wallet for Canton Network",
       "homepage": "https://nightly.app",
       "icon": "https://registry.partylayer.xyz/wallets/nightly.png",
-      "supportedNetworks": ["devnet", "testnet", "mainnet"],
+      "supportedNetworks": [
+        "devnet",
+        "testnet",
+        "mainnet"
+      ],
       "capabilities": {
         "signMessage": true,
         "signTransaction": false,
@@ -150,7 +174,9 @@
       "description": "Passkey-based Canton wallet. Mainnet only.",
       "homepage": "https://cantonwallet.com",
       "icon": "https://registry.partylayer.xyz/wallets/send-logo.jpg",
-      "supportedNetworks": ["mainnet"],
+      "supportedNetworks": [
+        "mainnet"
+      ],
       "capabilities": {
         "signMessage": true,
         "signTransaction": false,
@@ -167,7 +193,9 @@
           "metadata": true,
           "restore": true,
           "ledgerApi": true,
-          "staticMetadata": { "signingMethod": "webauthn-prf" }
+          "staticMetadata": {
+            "signingMethod": "webauthn-prf"
+          }
         }
       },
       "installation": {
@@ -177,10 +205,30 @@
       "providerDetection": {
         "transport": "window.canton",
         "matchers": [
-          { "field": "provider.id", "match": "exact", "values": ["ldmohiccoioolenadmogclhoklmanpgi"] },
-          { "field": "kernel.url", "match": "domain", "value": "cantonwallet.com" },
-          { "field": "kernel.userUrl", "match": "domain", "value": "cantonwallet.com" },
-          { "field": "kernel.id", "match": "exact", "values": ["ldmohiccoioolenadmogclhoklmanpgi"] }
+          {
+            "field": "provider.id",
+            "match": "exact",
+            "values": [
+              "ldmohiccoioolenadmogclhoklmanpgi"
+            ]
+          },
+          {
+            "field": "kernel.url",
+            "match": "domain",
+            "value": "cantonwallet.com"
+          },
+          {
+            "field": "kernel.userUrl",
+            "match": "domain",
+            "value": "cantonwallet.com"
+          },
+          {
+            "field": "kernel.id",
+            "match": "exact",
+            "values": [
+              "ldmohiccoioolenadmogclhoklmanpgi"
+            ]
+          }
         ]
       },
       "cip0103": {
@@ -195,7 +243,11 @@
       "description": "Popup/remote Canton wallet (CIP-0103), bridged via its official @k2flabs/walley-dapp-sdk ProviderAdapter — no PartyLayer-specific adapter package.",
       "homepage": "https://walley.cc",
       "icon": "https://registry.partylayer.xyz/wallets/walley-logo.png",
-      "supportedNetworks": ["mainnet", "testnet", "devnet"],
+      "supportedNetworks": [
+        "mainnet",
+        "testnet",
+        "devnet"
+      ],
       "capabilities": {
         "signMessage": true,
         "signTransaction": false,
@@ -208,7 +260,9 @@
       "adapter": {
         "type": "@k2flabs/walley-dapp-sdk",
         "transport": "discovery-adapter",
-        "config": { "providerId": "walley" },
+        "config": {
+          "providerId": "walley"
+        },
         "networkHosts": {
           "devnet": "https://dev.walley.cc",
           "testnet": "https://staging.walley.cc",
@@ -228,7 +282,11 @@
       "description": "Connect Canton wallets over WalletConnect (hosted/mobile, e.g. Nightly mobile). Opt-in adapter wrapping @canton-network/dapp-sdk's official WalletConnect adapter.",
       "homepage": "https://walletconnect.network",
       "icon": "https://registry.partylayer.xyz/wallets/walletconnect.svg",
-      "supportedNetworks": ["devnet", "testnet", "mainnet"],
+      "supportedNetworks": [
+        "devnet",
+        "testnet",
+        "mainnet"
+      ],
       "capabilities": {
         "signMessage": true,
         "signTransaction": false,
@@ -243,12 +301,63 @@
         "type": "@partylayer/adapter-walletconnect",
         "requiresConfig": true
       },
-      "installation": { "remote": true },
+      "installation": {
+        "remote": true
+      },
       "sdkVersion": ">=0.3.0",
       "cip0103": {
         "native": false,
         "evidence": "https://www.npmjs.com/package/@canton-network/dapp-sdk",
         "since": "2026-06-18"
+      }
+    },
+    {
+      "id": "wintip",
+      "name": "Wintip Wallet",
+      "description": "Web-hosted custodial Canton wallet for the Wintip tipping platform — no browser extension required",
+      "homepage": "https://wintip.cc",
+      "icon": "https://registry.partylayer.xyz/wallets/wintip.svg",
+      "supportedNetworks": [
+        "mainnet"
+      ],
+      "capabilities": {
+        "signMessage": false,
+        "signTransaction": false,
+        "submitTransaction": true,
+        "transactionStatus": true,
+        "switchNetwork": false,
+        "multiParty": false
+      },
+      "adapter": {
+        "type": "@partylayer/adapter-wintip",
+        "transport": "announce",
+        "config": {
+          "restore": true,
+          "ledgerApi": true,
+          "metadata": true
+        }
+      },
+      "installation": {
+        "windowProperty": "wintipCantonProvider",
+        "scriptTag": "https://wallet.wintip.cc/wintip-provider.js"
+      },
+      "sdkVersion": ">=0.18.0",
+      "providerDetection": {
+        "transport": "window.canton",
+        "matchers": [
+          {
+            "field": "provider.id",
+            "match": "exact",
+            "values": [
+              "wintip-wallet"
+            ]
+          }
+        ]
+      },
+      "cip0103": {
+        "native": true,
+        "evidence": "https://wallet.wintip.cc/docs",
+        "since": "2026-08-08"
       }
     }
   ]

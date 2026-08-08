@@ -44,6 +44,7 @@ PartyLayer is a production-grade SDK that enables decentralized applications (dA
 | Send | mainnet | signMessage, submitTransaction, transactionStatus | No | `@partylayer/adapter-send` |
 | Walley | mainnet, testnet, devnet | signMessage, submitTransaction, transactionStatus | No | `@k2flabs/walley-dapp-sdk` |
 | WalletConnect | devnet, testnet, mainnet | signMessage, submitTransaction | Yes | `@partylayer/adapter-walletconnect` |
+| Wintip Wallet | mainnet | submitTransaction, transactionStatus | No | `@partylayer/adapter-wintip` |
 <!-- WALLETS:END -->
 
 > **Note**: Bron is an enterprise wallet that requires OAuth configuration. See [Using Bron](#using-bron-enterprise-wallet) for setup instructions.

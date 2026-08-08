@@ -20,3 +20,4 @@ obtain your own permission from each mark's owner before redistributing these fi
 | send-logo.jpg | Send |
 | walletconnect.svg | WalletConnect |
 | walley-logo.png | Walley |
+| wintip.svg | Wintip Wallet — official mark, scaled and centered from wallet.wintip.cc's own `winscan.svg` asset into the standard picker icon frame |

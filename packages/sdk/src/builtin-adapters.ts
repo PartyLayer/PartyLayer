@@ -11,6 +11,7 @@ import { LoopAdapter } from '@partylayer/adapter-loop';
 import { Cantor8Adapter } from '@partylayer/adapter-cantor8';
 import { NightlyAdapter } from '@partylayer/adapter-nightly';
 import { SendAdapter } from '@partylayer/adapter-send';
+import { WintipAdapter } from '@partylayer/adapter-wintip';
 
 // Note: BronAdapter requires OAuth config and is not included by default.
 // Import it separately: import { BronAdapter } from '@partylayer/adapter-bron';
@@ -31,6 +32,8 @@ import { SendAdapter } from '@partylayer/adapter-send';
  * - ConsoleAdapter: Console Wallet (browser extension + mobile). Defaults to
  *     'combined' mode; pass { target: 'local' } to restrict to extension-only.
  * - SendAdapter: Send Canton Wallet (passkey / WebAuthn-PRF).
+ * - WintipAdapter: Wintip Wallet (web-hosted, custodial, injects window.canton
+ *     via a <script> tag — no extension, no per-user signing key).
  *
  * Note: BronAdapter is NOT included by default because it requires OAuth configuration.
  * To use Bron, install @partylayer/adapter-bron and register it manually.
@@ -46,13 +49,16 @@ export function getBuiltinAdapters(): WalletAdapter[] {
     // Send is served via the generic CIP-0103 announce path (registry
     // transport:'announce') — no longer in defaults; SendAdapter stays exported
     // below for opt-in manual/bespoke use.
+    // Wintip is served via the generic CIP-0103 announce path (registry
+    // transport:'announce'), same as Console/Send — WintipAdapter stays
+    // exported below for opt-in manual/bespoke use.
   ];
 }
 
 /**
  * Built-in adapter classes (for advanced usage)
  */
-export { ConsoleAdapter, LoopAdapter, Cantor8Adapter, NightlyAdapter, SendAdapter };
+export { ConsoleAdapter, LoopAdapter, Cantor8Adapter, NightlyAdapter, SendAdapter, WintipAdapter };
 
 /**
  * Re-export Console adapter types for convenience

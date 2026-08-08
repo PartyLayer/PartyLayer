@@ -2,9 +2,9 @@
   "metadata": {
     "registryVersion": "1.0.0",
     "schemaVersion": "1.0.0",
-    "publishedAt": "2026-06-10T00:00:00Z",
+    "publishedAt": "2026-08-08T07:00:14Z",
     "channel": "beta",
-    "sequence": 9,
+    "sequence": 10,
     "publisher": "PartyLayer"
   },
   "wallets": [
@@ -14,7 +14,11 @@
       "description": "Official Console Wallet for Canton Network",
       "homepage": "https://consolewallet.io",
       "icon": "https://registry.partylayer.xyz/wallets/console.png",
-      "supportedNetworks": ["devnet", "testnet", "mainnet"],
+      "supportedNetworks": [
+        "devnet",
+        "testnet",
+        "mainnet"
+      ],
       "capabilities": {
         "signMessage": true,
         "signTransaction": true,
@@ -33,7 +37,13 @@
       "providerDetection": {
         "transport": "window.canton",
         "matchers": [
-          { "field": "provider.id", "match": "exact", "values": ["lpnfhpbpmlobjlgkdmnjieeihjmihhjd"] }
+          {
+            "field": "provider.id",
+            "match": "exact",
+            "values": [
+              "lpnfhpbpmlobjlgkdmnjieeihjmihhjd"
+            ]
+          }
         ]
       },
       "cip0103": {
@@ -48,7 +58,10 @@
       "description": "5N Loop Wallet for Canton Network",
       "homepage": "https://cantonloop.com",
       "icon": "https://registry.partylayer.xyz/wallets/loop.svg",
-      "supportedNetworks": ["devnet", "mainnet"],
+      "supportedNetworks": [
+        "devnet",
+        "mainnet"
+      ],
       "capabilities": {
         "signMessage": true,
         "signTransaction": false,
@@ -71,7 +84,10 @@
       "description": "Cantor8 Wallet for Canton Network",
       "homepage": "https://cantor8.tech",
       "icon": "https://registry.partylayer.xyz/wallets/cantor8.png",
-      "supportedNetworks": ["devnet", "mainnet"],
+      "supportedNetworks": [
+        "devnet",
+        "mainnet"
+      ],
       "capabilities": {
         "signMessage": false,
         "signTransaction": false,
@@ -94,7 +110,11 @@
       "description": "Bron Enterprise Remote Signer for Canton Network",
       "homepage": "https://developer.bron.org",
       "icon": "https://registry.partylayer.xyz/wallets/bron.png",
-      "supportedNetworks": ["devnet", "testnet", "mainnet"],
+      "supportedNetworks": [
+        "devnet",
+        "testnet",
+        "mainnet"
+      ],
       "capabilities": {
         "signMessage": true,
         "signTransaction": true,
@@ -118,7 +138,11 @@
       "description": "Nightly Multichain Wallet for Canton Network",
       "homepage": "https://nightly.app",
       "icon": "https://registry.partylayer.xyz/wallets/nightly.png",
-      "supportedNetworks": ["devnet", "testnet", "mainnet"],
+      "supportedNetworks": [
+        "devnet",
+        "testnet",
+        "mainnet"
+      ],
       "capabilities": {
         "signMessage": true,
         "signTransaction": false,
@@ -134,6 +158,55 @@
         "windowProperty": "nightly"
       },
       "sdkVersion": ">=0.1.0"
+    },
+    {
+      "id": "wintip",
+      "name": "Wintip Wallet",
+      "description": "Web-hosted custodial Canton wallet for the Wintip tipping platform — no browser extension required",
+      "homepage": "https://wintip.cc",
+      "icon": "https://registry.partylayer.xyz/wallets/wintip.svg",
+      "supportedNetworks": [
+        "mainnet"
+      ],
+      "capabilities": {
+        "signMessage": false,
+        "signTransaction": false,
+        "submitTransaction": true,
+        "transactionStatus": true,
+        "switchNetwork": false,
+        "multiParty": false
+      },
+      "adapter": {
+        "type": "@partylayer/adapter-wintip",
+        "transport": "announce",
+        "config": {
+          "restore": true,
+          "ledgerApi": true,
+          "metadata": true
+        }
+      },
+      "installation": {
+        "windowProperty": "wintipCantonProvider",
+        "scriptTag": "https://wallet.wintip.cc/wintip-provider.js"
+      },
+      "sdkVersion": ">=0.18.0",
+      "providerDetection": {
+        "transport": "window.canton",
+        "matchers": [
+          {
+            "field": "provider.id",
+            "match": "exact",
+            "values": [
+              "wintip-wallet"
+            ]
+          }
+        ]
+      },
+      "cip0103": {
+        "native": true,
+        "evidence": "https://wallet.wintip.cc/docs",
+        "since": "2026-08-08"
+      }
     }
   ]
 }

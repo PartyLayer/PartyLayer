@@ -42,6 +42,7 @@
 | Send | mainnet | signMessage, submitTransaction, transactionStatus | No | `@partylayer/adapter-send` |
 | Walley | mainnet, testnet, devnet | signMessage, submitTransaction, transactionStatus | No | `@k2flabs/walley-dapp-sdk` |
 | WalletConnect | devnet, testnet, mainnet | signMessage, submitTransaction | Yes | `@partylayer/adapter-walletconnect` |
+| Wintip Wallet | mainnet | submitTransaction, transactionStatus | No | `@partylayer/adapter-wintip` |
 <!-- WALLETS:END -->
 
 > **Try it live:** [PartyLayer Studio](https://studio.partylayer.xyz): runnable, editable scenarios · [Pattern Cookbook](https://partylayer.xyz/docs/cookbook): copy-paste recipes.
