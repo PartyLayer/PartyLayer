@@ -127,6 +127,7 @@ export {
   NightlyAdapter,
   BronAdapter,
   SendAdapter,
+  WintipAdapter,
   getBuiltinAdapters,
 } from './builtin-adapters';
 

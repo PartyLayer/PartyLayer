@@ -83,4 +83,12 @@ export const GENERATED_WALLETS: GeneratedWallet[] = [
     optIn: true,
     adapter: "@partylayer/adapter-walletconnect",
   },
+  {
+    id: 'wintip',
+    name: "Wintip Wallet",
+    networks: ['mainnet'],
+    capabilities: { signMessage: false, signTransaction: false, submitTransaction: true, transactionStatus: true, switchNetwork: false, multiParty: false },
+    optIn: false,
+    adapter: "@partylayer/adapter-wintip",
+  },
 ];

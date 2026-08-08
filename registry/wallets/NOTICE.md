@@ -20,3 +20,4 @@ obtain your own permission from each mark's owner before redistributing these fi
 | send-logo.jpg | Send |
 | walletconnect.svg | WalletConnect |
 | walley-logo.png | Walley |
+| wintip.svg | Wintip Wallet — placeholder mark (Wintip's own asset is a full wordmark, not sized for a picker icon); pending a proper square icon from the Wintip team |

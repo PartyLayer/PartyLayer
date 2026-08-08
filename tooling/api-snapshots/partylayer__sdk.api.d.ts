@@ -28,6 +28,7 @@ export { ConsoleAdapter } from '@partylayer/adapter-console';
 export { LoopAdapter } from '@partylayer/adapter-loop';
 export { NightlyAdapter } from '@partylayer/adapter-nightly';
 export { SendAdapter } from '@partylayer/adapter-send';
+export { WintipAdapter } from '@partylayer/adapter-wintip';
 import * as _partylayer_core from '@partylayer/core';
 import { RegistryClient, RegistryStatus } from '@partylayer/registry-client';
 import { WalletAdapter, NetworkId, OfficialProviderAdapter, OfficialAdapterFactory, StorageAdapter, CryptoAdapter, TelemetryAdapter, LoggerAdapter, WalletId, Session, SessionId, TransactionHash, TransactionStatus, WalletInfo, SignMessageParams, SignedMessage, SignTransactionParams, SignedTransaction, SubmitTransactionParams, TxReceipt, LedgerApiParams, LedgerApiResult, CIP0103Provider, CapabilityKey, AdapterDetectResult, AdapterContext, AdapterConnectResult, NetworkHosts, PersistedSession } from '@partylayer/core';
