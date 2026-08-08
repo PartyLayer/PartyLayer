@@ -20,3 +20,4 @@ obtain your own permission from each mark's owner before redistributing these fi
 | send-logo.jpg | Send |
 | walletconnect.svg | WalletConnect |
 | walley-logo.png | Walley |
+| grofty-wallet.png | Grofty Wallet |
