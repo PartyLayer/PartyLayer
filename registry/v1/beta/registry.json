@@ -4,7 +4,7 @@
     "schemaVersion": "1.0.0",
     "publishedAt": "2026-08-08T00:00:00Z",
     "channel": "beta",
-    "sequence": 10,
+    "sequence": 11,
     "publisher": "PartyLayer"
   },
   "wallets": [
@@ -169,7 +169,7 @@
       },
       "cip0103": {
         "native": true,
-        "evidence": "https://chromewebstore.google.com/detail/ojlgdkgfbpkjceancgnniegbgadgmhig",
+        "evidence": "https://www.npmjs.com/package/@groftylabs/dapp-sdk",
         "since": "2026-08-05"
       }
     }
