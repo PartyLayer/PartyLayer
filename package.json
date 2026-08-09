@@ -24,7 +24,7 @@
     "registry:sign": "tsx scripts/registry/sign.ts",
     "registry:verify": "tsx scripts/registry/verify.ts",
     "verify:e2e": "tsx scripts/verify/e2e.ts",
-    "gate": "pnpm gate:lockfile && pnpm gate:build && pnpm gate:size && pnpm typecheck && pnpm lint && pnpm gate:test && pnpm gate:conformance && pnpm gate:api && pnpm gate:consistency && pnpm gate:docs-drift && pnpm gate:registry && pnpm gate:wallet-marks && pnpm gate:readme && pnpm gate:templates && pnpm gate:release-changeset && pnpm gate:discovery-demos",
+    "gate": "pnpm gate:lockfile && pnpm gate:build && pnpm gate:size && pnpm typecheck && pnpm lint && pnpm gate:test && pnpm gate:conformance && pnpm gate:api && pnpm gate:consistency && pnpm gate:docs-drift && pnpm gate:registry && pnpm gate:wallet-marks && pnpm gate:readme && pnpm gate:templates && pnpm gate:release-changeset && pnpm gate:discovery-demos && pnpm gate:adapters-closed",
     "//gate:lockfile": "Fails when a package.json and pnpm-lock.yaml disagree, exactly as Vercel does with --frozen-lockfile (the CI default). A plain local pnpm install regenerates the lockfile silently, so drift never surfaced locally; this stage reproduces the CI install so the same failure is caught before it ships. It runs first because a stale lockfile invalidates every stage after it, and it is a sub-second no-op resolve once deps are already installed.",
     "gate:lockfile": "pnpm install --frozen-lockfile",
     "//gate:build": "Delegates to `build`, so the gate runs the EXACT command a deploy runs and the two can never diverge. It previously filtered to @partylayer/*, which structurally could not see a break outside that scope: examples/telemetry-adapters typechecked a test file and broke the root build for every project after it, invisibly to this gate. Serial (--workspace-concurrency=1, set in `build`): the parallel -r build can start a dependent package (e.g. testing) before a workspace dep (session) has flushed its .d.ts, an intermittent DTS-resolution race; serial enforces topological order deterministically.",
@@ -47,7 +47,9 @@
     "gate:consistency": "node --test scripts/gate/framework-consistency.test.mjs",
     "gate:docs-drift": "node --test scripts/gate/docs-drift.test.mjs",
     "gate:release-changeset": "node --test scripts/gate/release-changeset.test.mjs",
-    "gate:discovery-demos": "node --test scripts/gate/discovery-demos.test.mjs"
+    "gate:discovery-demos": "node --test scripts/gate/discovery-demos.test.mjs",
+    "//gate:adapters-closed": "packages/adapters is closed to new wallets: a wallet integrates through the generic Path A (announce) or Path B (official ProviderAdapter) and ships no PartyLayer-specific code. The packages there predate those paths. A contributor reading the tree before the docs site could infer that adding another package is the expected route, which means building something the project does not need and finding out late, so the wrong path fails here in seconds with the right path printed. The allowlist in the check is frozen; editing it is the deliberate escape hatch and must be justified in the pull request.",
+    "gate:adapters-closed": "node scripts/gate/adapters-closed.mjs"
   },
   "keywords": [
     "canton",
