@@ -1,5 +1,10 @@
 # @partylayer/adapter-walletconnect
 
+> **Legacy integration.** This package predates the generic bridge and is kept for
+> compatibility; a new wallet should not copy this pattern. New wallets integrate
+> through Path A or Path B with no PartyLayer-specific code, see
+> <https://partylayer.xyz/docs/generic-bridge>.
+
 **Opt-in** WalletConnect adapter for PartyLayer. Wraps the official
 `@canton-network/dapp-sdk` `WalletConnectAdapter` so dApps can connect Canton
 wallets over WalletConnect (hosted/mobile wallets, e.g. Nightly mobile). SIWX,
