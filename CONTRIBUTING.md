@@ -8,6 +8,7 @@ Thank you for your interest in contributing to PartyLayer! This document provide
 - [Getting Started](#getting-started)
 - [Development Setup](#development-setup)
 - [Making Changes](#making-changes)
+- [Adding a wallet](#adding-a-wallet)
 - [Pull Request Process](#pull-request-process)
 - [Coding Standards](#coding-standards)
 - [Commit Messages](#commit-messages)
@@ -170,6 +171,48 @@ Use conventional commit messages (see [Commit Messages](#commit-messages)).
 git add .
 git commit -m "feat: add wallet connection retry logic"
 ```
+
+---
+
+## Adding a wallet
+
+A new wallet does **not** need a PartyLayer-specific adapter package. The packages under
+`packages/adapters` predate the generic bridge and are kept for compatibility; that
+directory is closed to new wallets, and a gate enforces it. See
+[packages/adapters/README.md](packages/adapters/README.md).
+
+Integrate through one of the two generic paths, shipping no PartyLayer-specific code:
+
+**If the wallet lives in the page, Path A. If it is a remote service or opens a popup,
+Path B.**
+
+- **Path A, announce.** The wallet announces itself over `canton:announceProvider` and
+  PartyLayer drives it with no adapter object. A browser extension is the usual case.
+- **Path B, discovery adapter.** The wallet ships its own package exporting an object
+  satisfying the official `ProviderAdapter` shape, and the dApp hands that object to
+  PartyLayer. A gateway, a hosted wallet, or a popup is the usual case.
+
+A deep link is how a wallet is opened, not a third path. Both paths carry equal weight.
+The full guide, including the CIP-0103 methods each path implements, is the
+[generic bridge guide](https://partylayer.xyz/docs/generic-bridge).
+
+### Registry entries: beta first, then promotion
+
+A Path A wallet works with no registry presence at all. An entry is additive: it puts the
+wallet's name and icon in the picker and can opt into optional capabilities
+declaratively, still with no code.
+
+New entries land in the `beta` channel first so they can be exercised without affecting
+dApps on `stable`, and are promoted to `stable` once verified. The process, the schema,
+and the signing steps are in
+[docs/registry-onboarding.md](docs/registry-onboarding.md).
+
+### Declare capabilities truthfully
+
+The registry is signed, and dApps rely on the capability snapshot to decide what to offer
+a user: a wallet that claims `signMessage` or `events` will be asked for it. Claim only
+what the wallet actually implements. An honest, smaller entry is always better than an
+aspirational one, and a capability can be added by a later entry once it ships.
 
 ---
 
