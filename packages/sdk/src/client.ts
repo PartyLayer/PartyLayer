@@ -526,8 +526,25 @@ export class PartyLayerClient {
 
     if (this.announceEntriesCache === null) {
       try {
+        // Widen the injected scan to the window globals that announce-transport
+        // registry entries declare, so a wallet at its own dedicated global (not
+        // the shared window.canton slot) is still found generically. Scoped to
+        // announce entries to stay behavior neutral for the rest; the identity
+        // guard below still drops any slot whose identity cannot be resolved.
+        let injectionPaths: string[] | undefined;
+        try {
+          const registry = await this.registryClient.getRegistry();
+          const props = registry.wallets
+            .filter((w) => w.adapter?.transport === 'announce')
+            .map((w) => w.installation?.windowProperty)
+            .filter((p): p is string => typeof p === 'string' && p.length > 0);
+          if (props.length > 0) injectionPaths = [...new Set(props)];
+        } catch {
+          // Registry unavailable: use the built-in scan paths unchanged.
+        }
         const snapshot = await discoverProviders({
           timeoutMs: this.config.discovery?.announceTimeoutMs,
+          injectionPaths,
           // Working provider over the announce target channel; G4 (provider.md):
           // target defaults to id when omitted — never a shared slot.
           createProvider: (a) =>

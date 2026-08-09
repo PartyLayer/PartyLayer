@@ -89,14 +89,23 @@ export function isCIP0103Provider(obj: unknown): obj is CIP0103Provider {
  * Scans well-known window paths and their sub-properties for objects
  * that implement the Provider interface.
  */
-export function discoverInjectedProviders(): DiscoveredProvider[] {
+export function discoverInjectedProviders(
+  extraPaths?: readonly string[],
+): DiscoveredProvider[] {
   if (typeof window === 'undefined') return [];
 
   const discovered: DiscoveredProvider[] = [];
   const seen = new Set<CIP0103Provider>();
   const win = window as unknown as Record<string, unknown>;
 
-  for (const path of KNOWN_INJECTION_PATHS) {
+  // Built-in paths plus any extra globals the caller supplies (deduped). With no
+  // extras this is byte-identical to the built-in scan.
+  const paths =
+    extraPaths && extraPaths.length > 0
+      ? [...new Set<string>([...KNOWN_INJECTION_PATHS, ...extraPaths])]
+      : KNOWN_INJECTION_PATHS;
+
+  for (const path of paths) {
     const candidate = win[path];
     if (candidate === undefined || candidate === null) continue;
 
@@ -227,6 +236,13 @@ export interface AnnounceDiscoveryOptions {
   createProvider?: (
     announced: AnnouncedWallet,
   ) => CIP0103Provider | Promise<CIP0103Provider>;
+  /**
+   * Extra window global paths to scan for an injected provider, on top of the
+   * built-in list. The SDK passes the window globals that announce-transport
+   * registry entries declare, so a wallet at its own dedicated global is found.
+   * Deduplicated against the built-in paths; an unknown path is simply absent.
+   */
+  injectionPaths?: readonly string[];
 }
 
 /**
@@ -488,7 +504,7 @@ async function resolveInjectedKey(
 export async function discoverProviders(
   options: AnnounceDiscoveryOptions = {},
 ): Promise<DiscoveredProvider[]> {
-  const injected = discoverInjectedProviders();
+  const injected = discoverInjectedProviders(options.injectionPaths);
   const announcedResults = await discoverAnnouncedProviders(options);
 
   // Resolve injected keys in parallel; each probe is independently capped.
