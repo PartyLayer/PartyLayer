@@ -1,5 +1,10 @@
 # @partylayer/adapter-loop
 
+> **Legacy integration.** This package predates the generic bridge and is kept for
+> compatibility; a new wallet should not copy this pattern. New wallets integrate
+> through Path A or Path B with no PartyLayer-specific code, see
+> <https://partylayer.xyz/docs/generic-bridge>.
+
 <div align="center">
 
 **5N Loop Wallet adapter for PartyLayer**
