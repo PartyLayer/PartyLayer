@@ -49,6 +49,7 @@
     "@partylayer/adapter-bron": "workspace:^",
     "@partylayer/adapter-nightly": "workspace:^",
     "@partylayer/adapter-send": "workspace:^",
+    "@partylayer/adapter-wintip": "workspace:^",
     "@partylayer/provider": "workspace:^"
   },
   "devDependencies": {
