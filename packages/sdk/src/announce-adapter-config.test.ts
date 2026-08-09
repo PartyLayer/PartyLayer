@@ -6,8 +6,10 @@
  * cap; (c) restore → silent probe + party-match (+ expiry/mismatch → null);
  * (d) ledgerApi → standard call + 'ledgerApi' cap; (e) metadata populated when the
  * provider returns it, minimal when not; (f) mapError translates a configured
- * error, falls through otherwise. The optional methods are instance-assigned only
- * when configured, so feature-detection (`'x' in adapter`) stays honest.
+ * error, falls through otherwise; (g) signMessage:false → the capability is omitted
+ * and the method is absent (default true keeps the baseline). The optional methods
+ * are instance-assigned only when configured, so feature-detection (`'x' in adapter`)
+ * stays honest.
  */
 import { describe, it, expect, vi } from 'vitest';
 import { toPartyId, toWalletId, type CIP0103Provider } from '@partylayer/core';
@@ -211,5 +213,24 @@ describe('GenericAnnounceAdapter — opt-in config', () => {
 
     const other = make({ mapError }, { connect: { __throw: new Error('different') } }).adapter;
     await expect(other.connect(ctx)).rejects.toThrow('different'); // fell through, original preserved
+  });
+
+  it('(g) signMessage:false → capability omitted and the method absent (honest, not permissive)', () => {
+    const { adapter } = make({ signMessage: false });
+    expect(adapter.getCapabilities()).not.toContain('signMessage');
+    expect(adapter.getCapabilities()).toEqual(['connect', 'submitTransaction']);
+    expect(adapter.signMessage).toBeUndefined();
+  });
+
+  it('(g) default (no signMessage flag) → capability and method present (baseline unchanged)', () => {
+    const { adapter } = make();
+    expect(adapter.getCapabilities()).toContain('signMessage');
+    expect(typeof adapter.signMessage).toBe('function');
+  });
+
+  it('(g) signMessage:true → explicit true keeps the capability and method', () => {
+    const { adapter } = make({ signMessage: true });
+    expect(adapter.getCapabilities()).toContain('signMessage');
+    expect(typeof adapter.signMessage).toBe('function');
   });
 });

@@ -20,6 +20,8 @@ The PartyLayer wallet registry is a signed, versioned JSON file that lists avail
 
 The `capabilities` object requires these booleans: `signMessage`, `signTransaction`, `submitTransaction`, `transactionStatus`, `switchNetwork`, `multiParty`. Optional booleans: `mobileConnect`, `remoteSigner`, and `events` (set `events: true` for wallets that emit CIP-0103 provider events).
 
+Set `signMessage: false` if your wallet cannot sign an arbitrary message, for example a custodial wallet that answers `signMessage` with the CIP-0103 unsupported code. On the announce path this is authoritative: the reported capability set then omits `signMessage`, so a dApp does not offer a sign action that would fail. Declaring it true when the wallet cannot sign is the setting to avoid.
+
 ### Optional fields
 
 | Field | Type | Notes |

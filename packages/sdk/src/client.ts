@@ -108,12 +108,16 @@ const WALLETS_CHANGED_DEBOUNCE_MS = 50;
  * hook is supplied at construction — JSON registry data can't carry a function.)
  */
 function deriveAnnounceConfig(entry: {
-  capabilities?: { events?: boolean };
+  capabilities?: { events?: boolean; signMessage?: boolean };
   adapter?: { config?: Record<string, unknown> };
 }): AnnounceAdapterConfig {
   const cfg = entry.adapter?.config ?? {};
   const config: AnnounceAdapterConfig = {
     events: entry.capabilities?.events === true,
+    // signMessage is ON unless the entry declares capabilities.signMessage:false,
+    // so a wallet that cannot sign is reported honestly. The default preserves the
+    // baseline for every entry that omits it or sets it true.
+    signMessage: entry.capabilities?.signMessage !== false,
     restore: cfg.restore === true,
     ledgerApi: cfg.ledgerApi === true,
     metadata: cfg.metadata === true,

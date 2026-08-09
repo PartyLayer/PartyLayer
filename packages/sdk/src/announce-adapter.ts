@@ -65,6 +65,15 @@ export function announcedWalletId(announceId: string): WalletId {
 export interface AnnounceAdapterConfig {
   /** Enable `on()` — bridge the provider's CIP-0103 `txChanged` → adapter `txStatus`. */
   events?: boolean;
+  /**
+   * Whether the wallet supports signMessage. Defaults to true, the CIP-0103
+   * baseline, so an entry that omits it is unchanged. Set false for a wallet that
+   * answers signMessage with the unsupported code (4200), so the reported
+   * capability set omits signMessage and a dApp never offers a sign action that
+   * would fail. This can only make the reported set more accurate, never more
+   * permissive.
+   */
+  signMessage?: boolean;
   /** Enable `restore()` — silent `status()`/`getPrimaryAccount()` probe + party-match. */
   restore?: boolean;
   /** Enable `ledgerApi()` — proxy the standard CIP-0103 `ledgerApi` call. */
@@ -173,6 +182,9 @@ export class GenericAnnounceAdapter implements WalletAdapter {
   restore?: WalletAdapter['restore'];
   on?: WalletAdapter['on'];
   ledgerApi?: WalletAdapter['ledgerApi'];
+  // signMessage is optional too: assigned in the ctor only when the wallet
+  // declares support, so a wallet that cannot sign is not advertised as able to.
+  signMessage?: WalletAdapter['signMessage'];
 
   constructor(args: GenericAnnounceAdapterArgs) {
     this.walletId = args.walletId ?? announcedWalletId(args.announceId);
@@ -191,14 +203,21 @@ export class GenericAnnounceAdapter implements WalletAdapter {
     if (config?.events) this.on = this.makeOn();
     if (config?.restore) this.restore = this.makeRestore();
     if (config?.ledgerApi) this.ledgerApi = this.makeLedgerApi();
+    // signMessage defaults ON (the CIP-0103 baseline); omitted only on an
+    // explicit false, so behavior is unchanged unless an entry declares it.
+    if (config?.signMessage !== false) this.signMessage = this.signMessageImpl.bind(this);
   }
 
   /**
-   * Capabilities: the baseline three plus whatever optional methods were
-   * configured (derived from actual presence, never advertised when absent).
+   * Capabilities derived from actual presence: connect and submitTransaction are
+   * always present; signMessage, restore, ledgerApi, and events are each included
+   * only when the matching method was assigned, so the set is never advertised
+   * beyond what the adapter can do.
    */
   getCapabilities(): CapabilityKey[] {
-    const caps: CapabilityKey[] = ['connect', 'signMessage', 'submitTransaction'];
+    const caps: CapabilityKey[] = ['connect'];
+    if (this.signMessage) caps.push('signMessage');
+    caps.push('submitTransaction');
     if (this.restore) caps.push('restore');
     if (this.ledgerApi) caps.push('ledgerApi');
     if (this.on) caps.push('events');
@@ -265,7 +284,10 @@ export class GenericAnnounceAdapter implements WalletAdapter {
     }
   }
 
-  async signMessage(
+  // Real signMessage implementation. Exposed as `this.signMessage` from the ctor
+  // only when the wallet declares support, so getCapabilities and feature
+  // detection stay honest for a wallet that cannot sign.
+  private async signMessageImpl(
     _ctx: AdapterContext,
     session: Session,
     params: SignMessageParams,

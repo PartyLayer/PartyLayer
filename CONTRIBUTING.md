@@ -214,6 +214,11 @@ a user: a wallet that claims `signMessage` or `events` will be asked for it. Cla
 what the wallet actually implements. An honest, smaller entry is always better than an
 aspirational one, and a capability can be added by a later entry once it ships.
 
+In particular, set `capabilities.signMessage: false` if the wallet cannot sign an arbitrary
+message, for example a custodial wallet. On the announce path that declaration is
+authoritative: the reported capability set then omits `signMessage`, so a dApp never offers
+a sign action the wallet would reject.
+
 ---
 
 ## Pull Request Process
