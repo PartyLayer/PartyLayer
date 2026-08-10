@@ -256,6 +256,70 @@ function defaultAnnounceProvider(announced: AnnouncedWallet): CIP0103Provider {
   return createExtensionChannelProvider({ target: announced.target ?? announced.id });
 }
 
+/** First non-empty string among the candidates, else undefined. */
+function firstNonEmptyString(...vals: unknown[]): string | undefined {
+  for (const v of vals) {
+    if (typeof v === 'string' && v.length > 0) return v;
+  }
+  return undefined;
+}
+
+// Dev-only dedup for the unusable-announce diagnostic: warn once per distinct
+// offending event shape, so a wallet that re-announces on a timer cannot flood a
+// developer console. Module-scoped so it spans every discovery cycle on the page.
+const warnedAnnounceShapes = new Set<string>();
+
+/** Stable fingerprint of an unreadable announce detail, for once-per-shape warns. */
+function announceShapeKey(
+  detail: Record<string, unknown>,
+  info: Record<string, unknown> | undefined,
+): string {
+  const top = Object.keys(detail).sort().join(',');
+  const inner = info ? Object.keys(info).sort().join(',') : '';
+  return `${top}|${inner}`;
+}
+
+/**
+ * Read the announced wallet from a `canton:announceProvider` detail. The id is
+ * the first non-empty string among providerId, id, info.uuid, info.rdns, in that
+ * order, used as BOTH the dedup key and the channel target, so an announce whose
+ * identity cannot be read as a non-empty string is never trusted. Name and icon
+ * may come from the top level or from an `info` object. Returns undefined for an
+ * unreadable announce and, in development only, warns once per distinct offending
+ * event shape. Never throws and never blocks discovery.
+ */
+function readAnnouncedWallet(
+  detail: Record<string, unknown> | undefined,
+): AnnouncedWallet | undefined {
+  if (!detail) return undefined;
+  const info =
+    typeof detail.info === 'object' && detail.info !== null
+      ? (detail.info as Record<string, unknown>)
+      : undefined;
+  const id = firstNonEmptyString(detail.providerId, detail.id, info?.uuid, info?.rdns);
+  if (id === undefined) {
+    if (typeof process !== 'undefined' && process.env.NODE_ENV !== 'production') {
+      const key = announceShapeKey(detail, info);
+      if (!warnedAnnounceShapes.has(key)) {
+        warnedAnnounceShapes.add(key);
+        // eslint-disable-next-line no-console
+        console.warn(
+          '[PartyLayer] Ignored a canton:announceProvider event: no readable provider id ' +
+            '(expected a non-empty string at detail.providerId, detail.id, or detail.info.uuid). ' +
+            'See https://partylayer.xyz/docs/generic-bridge',
+        );
+      }
+    }
+    return undefined;
+  }
+  return {
+    id,
+    name: firstNonEmptyString(detail.name, info?.name),
+    icon: firstNonEmptyString(detail.icon, info?.icon),
+    target: firstNonEmptyString(detail.target),
+  };
+}
+
 /**
  * Discover wallets that advertise via `canton:announceProvider` (EIP-6963-style).
  *
@@ -276,16 +340,10 @@ export async function discoverAnnouncedProviders(
     const detail = (event as CustomEvent).detail as
       | Record<string, unknown>
       | undefined;
-    if (!detail) return;
-    const rawId = detail.providerId ?? detail.id;
-    if (typeof rawId !== 'string' || rawId.length === 0) return;
-    if (announced.has(rawId)) return; // dedup announce replies by id
-    announced.set(rawId, {
-      id: rawId,
-      name: typeof detail.name === 'string' ? detail.name : undefined,
-      icon: typeof detail.icon === 'string' ? detail.icon : undefined,
-      target: typeof detail.target === 'string' ? detail.target : undefined,
-    });
+    const wallet = readAnnouncedWallet(detail);
+    if (!wallet) return;
+    if (announced.has(wallet.id)) return; // dedup announce replies by id
+    announced.set(wallet.id, wallet);
   };
 
   window.addEventListener(
@@ -357,17 +415,10 @@ export function subscribeAnnouncedProviders(
     const detail = (event as CustomEvent).detail as
       | Record<string, unknown>
       | undefined;
-    if (!detail) return;
-    const rawId = detail.providerId ?? detail.id;
-    if (typeof rawId !== 'string' || rawId.length === 0) return;
-    if (seen.has(rawId)) return; // dedup announce replies by id
-    seen.add(rawId);
-    const wallet: AnnouncedWallet = {
-      id: rawId,
-      name: typeof detail.name === 'string' ? detail.name : undefined,
-      icon: typeof detail.icon === 'string' ? detail.icon : undefined,
-      target: typeof detail.target === 'string' ? detail.target : undefined,
-    };
+    const wallet = readAnnouncedWallet(detail);
+    if (!wallet) return;
+    if (seen.has(wallet.id)) return; // dedup announce replies by id
+    seen.add(wallet.id);
     // Build the provider off the event tick; a wallet whose provider can't be
     // built (or isn't CIP-0103) is skipped, not fatal — mirrors discoverAnnouncedProviders.
     void Promise.resolve()
