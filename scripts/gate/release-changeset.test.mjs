@@ -151,6 +151,29 @@ function tagExists(tag) {
   }
 }
 
+/** True when any `<name>@<version>` tag exists, i.e. the package was ever published. */
+function anyTagForName(name) {
+  try {
+    return git('tag', '--list', `${name}@*`).length > 0;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Whether a package is an unreleased-version violation. Released (a version tag)
+ * or mid-release (a CHANGELOG heading for the current version) is fine. A package
+ * that has NEVER been published (no tag matches its name at any version) and is
+ * named by a pending changeset is its first release, covered by that changeset,
+ * so it is exempt too. Anything else with neither a tag nor a heading had its
+ * version set outside the release process, which is the slip this guard catches.
+ */
+function isReleaseViolation({ hasVersionTag, hasChangelogHeading, neverPublished, coveredByChangeset }) {
+  if (hasVersionTag || hasChangelogHeading) return false;
+  if (neverPublished && coveredByChangeset) return false;
+  return true;
+}
+
 /**
  * True when the package's CHANGELOG has a heading for its CURRENT version.
  *
@@ -216,8 +239,13 @@ test('every publishable package is released or is a pending version bump', () =>
   // is created later by `changeset publish`. That version PR state is expected, so it
   // is exempted here. A version with neither a tag nor a CHANGELOG heading was set
   // outside the release process, which is exactly the slip this test must still catch.
-  const unreleased = PACKAGES.filter(
-    (p) => !tagExists(`${p.name}@${p.version}`) && !changelogHasCurrentVersion(p),
+  const unreleased = PACKAGES.filter((p) =>
+    isReleaseViolation({
+      hasVersionTag: tagExists(`${p.name}@${p.version}`),
+      hasChangelogHeading: changelogHasCurrentVersion(p),
+      neverPublished: !anyTagForName(p.name),
+      coveredByChangeset: COVERED.has(p.name),
+    }),
   ).map((p) => `${p.name}@${p.version}`);
   assert.deepEqual(
     unreleased,
@@ -227,6 +255,56 @@ test('every publishable package is released or is a pending version bump', () =>
       `changeset publish); these have neither, so the version was set outside the release process. ` +
       `Cut the release for this version, or correct the version field. In CI, set actions/checkout ` +
       `with fetch-depth: 0 so release tags are present to compare against.`,
+  );
+});
+
+// Fixture coverage for the never-published exemption (G3): a brand-new package
+// with a changeset is its first release and passes; a published package that is
+// missing its tag or CHANGELOG heading still fails.
+test('release gate: a never-published package named by a changeset is not a violation', () => {
+  assert.equal(
+    isReleaseViolation({
+      hasVersionTag: false,
+      hasChangelogHeading: false,
+      neverPublished: true,
+      coveredByChangeset: true,
+    }),
+    false,
+  );
+});
+
+test('release gate: a never-published package with no changeset is still a violation', () => {
+  assert.equal(
+    isReleaseViolation({
+      hasVersionTag: false,
+      hasChangelogHeading: false,
+      neverPublished: true,
+      coveredByChangeset: false,
+    }),
+    true,
+  );
+});
+
+test('release gate: a published package missing its tag and CHANGELOG heading is still a violation', () => {
+  assert.equal(
+    isReleaseViolation({
+      hasVersionTag: false,
+      hasChangelogHeading: false,
+      neverPublished: false,
+      coveredByChangeset: true,
+    }),
+    true,
+  );
+});
+
+test('release gate: a version tag or a CHANGELOG heading is never a violation', () => {
+  assert.equal(
+    isReleaseViolation({ hasVersionTag: true, hasChangelogHeading: false, neverPublished: false, coveredByChangeset: false }),
+    false,
+  );
+  assert.equal(
+    isReleaseViolation({ hasVersionTag: false, hasChangelogHeading: true, neverPublished: false, coveredByChangeset: false }),
+    false,
   );
 });
 
