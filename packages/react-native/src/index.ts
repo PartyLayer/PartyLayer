@@ -48,6 +48,21 @@ export type {
   SessionChain,
 } from './session-hooks';
 export { useDisconnect } from './use-disconnect';
+
+// Transaction hooks. These add no capability logic: the sdk client guards each method and
+// throws CapabilityNotSupportedError, which passes through unchanged.
+export {
+  useSignMessage,
+  useSignTransaction,
+  useSubmitTransaction,
+  useLedgerApi,
+} from './transaction-hooks';
+export type {
+  UseSignMessageResult,
+  UseSignTransactionResult,
+  UseSubmitTransactionResult,
+  UseLedgerApiResult,
+} from './transaction-hooks';
 export type { UseDisconnectResult } from './use-disconnect';
 
 // Headless hooks: wallets and connect, built on the client factory above.
