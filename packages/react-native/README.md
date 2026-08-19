@@ -149,7 +149,7 @@ The registry wallet list, with per-wallet icon data.
 
 ```tsx
 const { wallets, walletIcons, isLoading, isSuccess, isError, error, refetch } = useWallets();
-const filtered = useWallets({ filter: { network: 'devnet' } });
+const withSigning = useWallets({ filter: { requiredCapabilities: ['signMessage'] } });
 ```
 
 ### useSignMessage, useSignTransaction, useSubmitTransaction, useLedgerApi
