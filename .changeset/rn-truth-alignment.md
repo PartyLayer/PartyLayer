@@ -1,5 +1,0 @@
----
-"@partylayer/react-native": patch
----
-
-Correct the package's description of itself. The npm description and the shipped entry headers said "phase A, no UI" while the `./ui` entrypoint ships ConnectButton, WalletList, WalletIcon and the chrome icons, and internal "this PR" language had leaked into the published README and the ui entry header. The `deeplink` keyword is gone: `createReactNativeDeepLinkPlatform` is a `DeepLinkPlatform` building block for authors writing their own `WalletAdapter` around core's `DeepLinkTransport`, and the README now documents it that way with an example, rather than the client factory implying it installs a deep link transport. The README also shows the required AsyncStorage argument on the `.` entrypoint, where it previously showed it as optional, and documents the `./async-storage` subpath that provides the no-argument forms. The storage precedence JSDoc now matches the code: an explicit `storage` wins over `asyncStorage`. Documentation and metadata only; no runtime behavior changes.

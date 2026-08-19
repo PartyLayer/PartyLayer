@@ -1,5 +1,32 @@
 # @partylayer/react-native
 
+## 1.0.0
+
+### Major Changes
+
+- 9015d18: Add the provider pattern, session and transaction hooks, a theme provider, and a complete connect modal.
+
+  New: `PartyLayerProvider` holds the client, the sdk session, the wallet list and the shared session store. `useAccount`, `useSession` and `useAccountEffect` read that store; they require the provider. `useDisconnect`, `useSignMessage`, `useSignTransaction`, `useSubmitTransaction` and `useLedgerApi` take the client from the provider or from an explicit argument. `ThemeProvider` and `useTheme` supply a theme to components; `useTheme` falls back to the default light theme rather than throwing when there is no provider. `ConnectModal` runs the whole connect flow and takes no props but its visibility when the providers are present.
+
+  The transaction hooks add no capability checking of their own: the sdk client guards each method and throws `CapabilityNotSupportedError`, which passes through unchanged, so a wallet that does not advertise a capability produces the same typed error the web path produces.
+
+  `ConnectModal` drops its slide animation when the OS reduce motion setting is on, marks the sheet as a modal for screen readers with a polite live region for state changes, and takes an optional `insets` prop for safe areas. `WalletList` delegates to it, so existing callers get the same behavior.
+
+  Documented and made fixable: on React Native the shared session store falls back to in-memory storage, because the default needs IndexedDB, so a session does not survive an app restart. Passing `asyncStorage` to `PartyLayerProvider` persists it.
+
+  No new runtime or peer dependency.
+
+  Not a breaking change for a 0.2.2 consumer despite the major: every 0.2.2 export is still exported with the same behavior, `useConnect(client)` and `useWallets(client, parameters)` still work with no provider, and the `client` and `theme` props on the components are now optional rather than removed. The major reflects the size of the new surface, not a removal. Two behavior notes: the connecting state now reads "Waiting for the wallet to respond..." instead of claiming the wallet app is being opened, and a hook given a new client identity resets its state, so a client constructed inside a component body should move to module scope or a `useMemo`.
+
+### Patch Changes
+
+- 63dcd1e: Correct the package's description of itself. The npm description and the shipped entry headers said "phase A, no UI" while the `./ui` entrypoint ships ConnectButton, WalletList, WalletIcon and the chrome icons, and internal "this PR" language had leaked into the published README and the ui entry header. The `deeplink` keyword is gone: `createReactNativeDeepLinkPlatform` is a `DeepLinkPlatform` building block for authors writing their own `WalletAdapter` around core's `DeepLinkTransport`, and the README now documents it that way with an example, rather than the client factory implying it installs a deep link transport. The README also shows the required AsyncStorage argument on the `.` entrypoint, where it previously showed it as optional, and documents the `./async-storage` subpath that provides the no-argument forms. The storage precedence JSDoc now matches the code: an explicit `storage` wins over `asyncStorage`. Documentation and metadata only; no runtime behavior changes.
+- Updated dependencies [d25d850]
+- Updated dependencies [4309023]
+  - @partylayer/sdk@0.18.2
+  - @partylayer/core@0.13.0
+  - @partylayer/session@1.1.7
+
 ## 0.2.2
 
 ### Patch Changes

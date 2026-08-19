@@ -1,5 +1,11 @@
 # @partylayer/core
 
+## 0.13.0
+
+### Minor Changes
+
+- 4309023: Add the SynchronizerError class and the SYNCHRONIZER_ERROR error code to the error taxonomy.
+
 ## 0.12.1
 
 ### Patch Changes
