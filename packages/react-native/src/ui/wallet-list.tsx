@@ -13,6 +13,8 @@ import { FlatList, Modal, Pressable, Text, View } from 'react-native';
 import type { PartyLayerClient } from '@partylayer/sdk';
 import type { WalletInfo } from '@partylayer/sdk';
 import type { ReactNativeTheme } from '../theme';
+import { useResolvedTheme } from '../theme-context';
+import { useResolvedClient } from '../context';
 import { useConnect } from '../use-connect';
 import { useWallets } from '../use-wallets';
 import { walletIconInfo } from '../icons';
@@ -20,14 +22,24 @@ import { WalletIcon } from './wallet-icon';
 import { CloseIcon, ErrorIcon, Spinner } from './chrome-icons';
 
 export interface WalletListProps {
-  client: PartyLayerClient;
-  theme: ReactNativeTheme;
+  /** Omit to use the client from `PartyLayerProvider`. */
+  client?: PartyLayerClient;
+  /** Omit to use the theme from `ThemeProvider`, or the default theme. */
+  theme?: ReactNativeTheme;
   visible: boolean;
   onClose: () => void;
   testID?: string;
 }
 
-export function WalletList({ client, theme, visible, onClose, testID }: WalletListProps) {
+export function WalletList({
+  client: explicitClient,
+  theme: explicitTheme,
+  visible,
+  onClose,
+  testID,
+}: WalletListProps) {
+  const client = useResolvedClient(explicitClient);
+  const theme = useResolvedTheme(explicitTheme);
   const { wallets, isLoading, isError, error, refetch } = useWallets(client);
   const { connect } = useConnect(client);
   const [connecting, setConnecting] = useState<WalletInfo | null>(null);

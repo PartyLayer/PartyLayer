@@ -71,6 +71,15 @@ export type { UseWalletsParameters, UseWalletsResult } from './use-wallets';
 export { useConnect } from './use-connect';
 export type { UseConnectResult, ConnectStatus } from './use-connect';
 
+// Theme provider and hook. Composes with the per component `theme` prop: the prop wins,
+// then this context, then the default. `useTheme` falls back rather than throwing.
+export { ThemeProvider, useTheme } from './theme-context';
+export type {
+  ThemeProviderProps,
+  ReactNativeThemeInput,
+  DynamicReactNativeTheme,
+} from './theme-context';
+
 // Icon data: per-wallet URL plus a format hint for the UI components.
 export { deriveIconFormat, walletIconInfo } from './icons';
 export type { IconFormat, WalletIconInfo } from './icons';

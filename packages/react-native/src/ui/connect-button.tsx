@@ -10,6 +10,8 @@ import { useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import type { PartyLayerClient } from '@partylayer/sdk';
 import type { ReactNativeTheme } from '../theme';
+import { useResolvedTheme } from '../theme-context';
+import { useResolvedClient } from '../context';
 import { useConnect } from '../use-connect';
 import { useWallets } from '../use-wallets';
 import { WalletIcon } from './wallet-icon';
@@ -23,14 +25,23 @@ export function truncateParty(partyId: string): string {
 }
 
 export interface ConnectButtonProps {
-  client: PartyLayerClient;
-  theme: ReactNativeTheme;
+  /** Omit to use the client from `PartyLayerProvider`. */
+  client?: PartyLayerClient;
+  /** Omit to use the theme from `ThemeProvider`, or the default theme. */
+  theme?: ReactNativeTheme;
   /** The disconnected label. Defaults to "Connect Wallet". */
   label?: string;
   testID?: string;
 }
 
-export function ConnectButton({ client, theme, label = 'Connect Wallet', testID }: ConnectButtonProps) {
+export function ConnectButton({
+  client: explicitClient,
+  theme: explicitTheme,
+  label = 'Connect Wallet',
+  testID,
+}: ConnectButtonProps = {}) {
+  const client = useResolvedClient(explicitClient);
+  const theme = useResolvedTheme(explicitTheme);
   const { session, status, disconnect } = useConnect(client);
   const { walletIcons } = useWallets(client);
   const [open, setOpen] = useState(false);

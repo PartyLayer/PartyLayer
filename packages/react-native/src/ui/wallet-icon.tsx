@@ -15,13 +15,15 @@ import { useEffect, useState } from 'react';
 import { View, Image } from 'react-native';
 import type { IconFormat } from '../icons';
 import type { ReactNativeTheme } from '../theme';
+import { useResolvedTheme } from '../theme-context';
 import { getSvgComponents } from './svg-loader';
 
 export interface WalletIconProps {
   url?: string;
   format: IconFormat;
   size: number;
-  theme: ReactNativeTheme;
+  /** Omit to use the theme from `ThemeProvider`, or the default theme. */
+  theme?: ReactNativeTheme;
   testID?: string;
 }
 
@@ -61,7 +63,8 @@ function NeutralWalletGlyph({ size, theme, testID }: { size: number; theme: Reac
   );
 }
 
-export function WalletIcon({ url, format, size, theme, testID }: WalletIconProps) {
+export function WalletIcon({ url, format, size, theme: explicitTheme, testID }: WalletIconProps) {
+  const theme = useResolvedTheme(explicitTheme);
   const [errored, setErrored] = useState(false);
   const [svgXml, setSvgXml] = useState<string | null>(null);
 
