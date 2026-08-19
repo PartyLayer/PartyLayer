@@ -29,6 +29,17 @@ vi.mock('react-native', () => {
         ),
       ),
     StyleSheet: { create: (s: unknown) => s, hairlineWidth: 1 },
+    // ConnectModal wraps the sheet in a KeyboardAvoidingView and reads Platform for the
+    // default bottom inset and the avoidance behavior.
+    KeyboardAvoidingView: pass('KeyboardAvoidingView'),
+    Platform: { OS: 'ios', select: (spec: Record<string, unknown>) => spec.ios ?? spec.default },
+    StatusBar: { currentHeight: 0 },
+    // Reduce motion off, so the sheet keeps its slide animation in these tests.
+    AccessibilityInfo: {
+      isReduceMotionEnabled: () => Promise.resolve(false),
+      addEventListener: () => ({ remove: () => {} }),
+    },
+    useColorScheme: () => 'light',
   };
 });
 

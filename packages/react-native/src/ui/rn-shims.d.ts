@@ -15,7 +15,14 @@ declare module 'react-native' {
     pointerEvents?: 'auto' | 'none' | 'box-none' | 'box-only';
     onLayout?: (event: { nativeEvent: { layout: { width: number; height: number } } }) => void;
   }>;
-  export const Text: ComponentType<{ style?: unknown; testID?: string; numberOfLines?: number; children?: ReactNode }>;
+  export const Text: ComponentType<{
+    style?: unknown;
+    testID?: string;
+    numberOfLines?: number;
+    children?: ReactNode;
+    accessibilityRole?: string;
+    accessibilityLabel?: string;
+  }>;
   export const Image: ComponentType<{ source: { uri: string }; style?: unknown; testID?: string; onError?: () => void }>;
   export const ActivityIndicator: ComponentType<{ size?: 'small' | 'large' | number; color?: string; testID?: string }>;
   export interface PressableStateCallbackType { pressed: boolean }
