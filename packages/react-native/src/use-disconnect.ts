@@ -8,7 +8,7 @@
  */
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { PartyLayerClient } from '@partylayer/sdk';
-import { useResolvedClient } from './context';
+import { useResolvedClient } from './party-layer-context';
 
 export interface UseDisconnectResult {
   /** Disconnect the current session. Rejects, and records `error`, on failure. */

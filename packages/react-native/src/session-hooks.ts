@@ -17,7 +17,7 @@ import type {
   SessionState,
   SessionStatus,
 } from '@partylayer/session';
-import { usePartyLayerContext } from './context';
+import { usePartyLayerContext } from './party-layer-context';
 
 // Must be a stable reference: useSyncExternalStore compares snapshots by identity, so a
 // fresh object here would loop.

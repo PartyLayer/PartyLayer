@@ -29,7 +29,7 @@ import type {
   SubmitTransactionParams,
   TxReceipt,
 } from '@partylayer/sdk';
-import { useResolvedClient } from './context';
+import { useResolvedClient } from './party-layer-context';
 
 interface MutationState<TParams, TResult> {
   run: (params: TParams) => Promise<TResult>;

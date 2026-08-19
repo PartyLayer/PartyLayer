@@ -34,7 +34,7 @@ import {
 import type { PartyLayerClient, WalletInfo } from '@partylayer/sdk';
 import type { ReactNativeTheme } from '../theme';
 import { useResolvedTheme } from '../theme-context';
-import { useResolvedClient } from '../context';
+import { useResolvedClient } from '../party-layer-context';
 import { useConnect } from '../use-connect';
 import { useWallets } from '../use-wallets';
 import { walletIconInfo } from '../icons';

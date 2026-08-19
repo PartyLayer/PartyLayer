@@ -11,7 +11,7 @@
  */
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { PartyLayerClient, ConnectOptions, Session, PartyLayerEvent } from '@partylayer/sdk';
-import { useResolvedClient } from './context';
+import { useResolvedClient } from './party-layer-context';
 
 /** The lifecycle status of the connect flow. */
 export type ConnectStatus = 'idle' | 'connecting' | 'connected' | 'error';

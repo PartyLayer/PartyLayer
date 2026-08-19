@@ -1,94 +1,32 @@
 /**
- * React Native provider and context.
+ * The React Native provider.
  *
- * Mirrors the react package's `PartyLayerProvider`: the context holds the client, the
- * active session, the registry wallet list, load state, and the shared framework-agnostic
- * `SessionStore` that the account and session hooks read. The provider does not create or
- * dispose the client; the app passes it in and owns its lifetime. Only the session store
- * is owned here.
+ * Mirrors the react package's `PartyLayerProvider`: it holds the client, the active
+ * session, the registry wallet list, load state, and the shared `SessionStore` the account
+ * hooks read. It does not create or dispose the client; the app passes it in and owns its
+ * lifetime. Only the session store is owned here.
  *
  * The provider is OPTIONAL. Every hook in this package also accepts an explicit client, so
  * an app written against 0.2.2 keeps working with no provider anywhere in its tree.
+ *
+ * The context object and its reader hooks live in ./party-layer-context so that importing a
+ * component does not pull `createSessionStore` into the bundle.
  */
-import { createContext, useContext, useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { PartyLayerClient, Session, WalletInfo } from '@partylayer/sdk';
-import {
-  createSessionStore,
-  type SessionStore,
-  type SessionStoreOptions,
-} from '@partylayer/session';
+import { createSessionStore, type SessionStore, type SessionStoreOptions } from '@partylayer/session';
 import { createAsyncStorage } from './storage';
 import type { RNAsyncStorage } from './types';
+import { PartyLayerContext } from './party-layer-context';
 
-export interface PartyLayerContextValue {
-  client: PartyLayerClient | null;
-  /** The sdk-level session, kept current by the client's session events. */
-  session: Session | null;
-  wallets: WalletInfo[];
-  isLoading: boolean;
-  error: Error | null;
-  /** Shared session store, read by `useAccount`, `useSession` and `useAccountEffect`. */
-  store: SessionStore | null;
-}
-
-const PartyLayerContext = createContext<PartyLayerContextValue | null>(null);
-
-/**
- * Read the context. Throws when no provider is above, naming the provider so the fix is
- * obvious. Hooks called with an explicit client never reach this.
- */
-export function usePartyLayerContext(): PartyLayerContextValue {
-  const context = useContext(PartyLayerContext);
-  if (!context) {
-    throw new Error(
-      'No PartyLayerProvider found. Wrap your app in <PartyLayerProvider client={client}>, ' +
-        'or pass the client to the hook directly, for example useConnect(client).',
-    );
-  }
-  return context;
-}
-
-/** The client from context. Throws when there is no provider, or no client on it. */
-export function usePartyLayer(): PartyLayerClient {
-  const { client } = usePartyLayerContext();
-  if (!client) {
-    throw new Error('PartyLayer client not initialized');
-  }
-  return client;
-}
-
-/**
- * Whether a value is a PartyLayer client rather than a hook parameters object.
- *
- * Deliberately duck typed rather than `instanceof PartyLayerClient`. Two reasons: test
- * doubles and stubs are plain objects that would fail an instance check, and a tree with
- * two copies of the sdk installed would fail it too. The parameter objects this has to be
- * told apart from (`UseWalletsParameters`) carry no methods, so a value exposing `connect`
- * or `listWallets` is unambiguously a client.
- */
-export function isPartyLayerClient(value: unknown): value is PartyLayerClient {
-  if (!value || typeof value !== 'object') return false;
-  const candidate = value as { connect?: unknown; listWallets?: unknown };
-  return typeof candidate.connect === 'function' || typeof candidate.listWallets === 'function';
-}
-
-/**
- * Resolve the client a hook should use: the explicit argument when given, else the one
- * from context. Kept in one place so every hook behaves identically.
- *
- * Hooks must call this unconditionally (it is a hook itself) to keep hook order stable.
- */
-export function useResolvedClient(explicit?: PartyLayerClient): PartyLayerClient {
-  const context = useContext(PartyLayerContext);
-  if (explicit) return explicit;
-  if (!context?.client) {
-    throw new Error(
-      'No PartyLayerProvider found. Wrap your app in <PartyLayerProvider client={client}>, ' +
-        'or pass the client to the hook directly, for example useConnect(client).',
-    );
-  }
-  return context.client;
-}
+export {
+  usePartyLayerContext,
+  usePartyLayer,
+  useResolvedClient,
+  isPartyLayerClient,
+  PartyLayerContext,
+} from './party-layer-context';
+export type { PartyLayerContextValue } from './party-layer-context';
 
 export interface PartyLayerProviderProps {
   client: PartyLayerClient;

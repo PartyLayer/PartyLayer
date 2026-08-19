@@ -14,7 +14,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { PartyLayerClient, WalletFilter, WalletInfo } from '@partylayer/sdk';
 import { walletIconInfo, type WalletIconInfo } from './icons';
-import { isPartyLayerClient, useResolvedClient } from './context';
+import { isPartyLayerClient, useResolvedClient } from './party-layer-context';
 
 export interface UseWalletsParameters {
   /** Forwarded to `client.listWallets`. */

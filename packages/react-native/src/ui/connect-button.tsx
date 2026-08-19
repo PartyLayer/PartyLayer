@@ -11,7 +11,7 @@ import { Pressable, Text, View } from 'react-native';
 import type { PartyLayerClient } from '@partylayer/sdk';
 import type { ReactNativeTheme } from '../theme';
 import { useResolvedTheme } from '../theme-context';
-import { useResolvedClient } from '../context';
+import { useResolvedClient } from '../party-layer-context';
 import { useConnect } from '../use-connect';
 import { useWallets } from '../use-wallets';
 import { WalletIcon } from './wallet-icon';
