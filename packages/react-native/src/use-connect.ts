@@ -6,10 +6,12 @@
  * errors without swallowing them. It does not reimplement any connect logic; it calls
  * `client.connect(options)` and `client.disconnect()`, the same methods the react
  * package uses, and keeps the session current by subscribing to the client's session
- * events. The client is passed explicitly, so this stays headless with no provider.
+ * events. The client may be passed explicitly, which is what 0.2.2 did and still works
+ * unchanged, or omitted to read the one from `PartyLayerProvider`.
  */
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { PartyLayerClient, ConnectOptions, Session, PartyLayerEvent } from '@partylayer/sdk';
+import { useResolvedClient } from './context';
 
 /** The lifecycle status of the connect flow. */
 export type ConnectStatus = 'idle' | 'connecting' | 'connected' | 'error';
@@ -31,7 +33,12 @@ export interface UseConnectResult {
   error: Error | null;
 }
 
-export function useConnect(client: PartyLayerClient): UseConnectResult {
+/** Read the client from `PartyLayerProvider`. */
+export function useConnect(): UseConnectResult;
+/** Use an explicit client, with no provider required. This is the 0.2.2 form. */
+export function useConnect(client: PartyLayerClient): UseConnectResult;
+export function useConnect(explicitClient?: PartyLayerClient): UseConnectResult {
+  const client = useResolvedClient(explicitClient);
   const [session, setSession] = useState<Session | null>(null);
   const [status, setStatus] = useState<ConnectStatus>('idle');
   const [error, setError] = useState<Error | null>(null);
@@ -41,6 +48,12 @@ export function useConnect(client: PartyLayerClient): UseConnectResult {
   // connect or disconnect anywhere is reflected here.
   useEffect(() => {
     mounted.current = true;
+
+    // A client swap starts from a clean slate: the previous client's session must not
+    // remain visible while the new client's session is still being read.
+    setSession(null);
+    setStatus('idle');
+    setError(null);
 
     client
       .getActiveSession()

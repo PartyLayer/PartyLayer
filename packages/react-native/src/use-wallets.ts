@@ -4,8 +4,9 @@
  * Mirrors the behavior of the react package's `useWallets`: it loads the registry
  * wallet list through the client and exposes loading, success, and error states. It
  * does not reimplement any registry logic; it calls `client.listWallets(filter)`, the
- * same method the react package's hook calls. The client is passed explicitly (rather
- * than read from a context), so this stays headless with no provider component.
+ * same method the react package's hook calls. The client may be passed explicitly, which
+ * is what 0.2.2 did and still works unchanged, or omitted to read the one from
+ * `PartyLayerProvider`.
  *
  * Also exposes, per wallet, the icon URL and a derived format hint (see
  * {@link walletIconInfo}) so the UI components can pick a renderer.
@@ -13,6 +14,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { PartyLayerClient, WalletFilter, WalletInfo } from '@partylayer/sdk';
 import { walletIconInfo, type WalletIconInfo } from './icons';
+import { isPartyLayerClient, useResolvedClient } from './context';
 
 export interface UseWalletsParameters {
   /** Forwarded to `client.listWallets`. */
@@ -36,7 +38,25 @@ export interface UseWalletsResult {
   refetch: () => void;
 }
 
-export function useWallets(client: PartyLayerClient, parameters: UseWalletsParameters = {}): UseWalletsResult {
+/** Read the client from `PartyLayerProvider`. */
+export function useWallets(): UseWalletsResult;
+/** Read the client from `PartyLayerProvider`, with parameters. */
+export function useWallets(parameters: UseWalletsParameters): UseWalletsResult;
+/** Use an explicit client, with no provider required. This is the 0.2.2 form. */
+export function useWallets(
+  client: PartyLayerClient,
+  parameters?: UseWalletsParameters,
+): UseWalletsResult;
+export function useWallets(
+  clientOrParameters?: PartyLayerClient | UseWalletsParameters,
+  maybeParameters: UseWalletsParameters = {},
+): UseWalletsResult {
+  // One argument is either the client (0.2.2 form) or the parameters (provider form).
+  const explicitClient = isPartyLayerClient(clientOrParameters) ? clientOrParameters : undefined;
+  const parameters = isPartyLayerClient(clientOrParameters)
+    ? maybeParameters
+    : ((clientOrParameters as UseWalletsParameters | undefined) ?? {});
+  const client = useResolvedClient(explicitClient);
   const { filter } = parameters;
   const [wallets, setWallets] = useState<WalletInfo[] | undefined>(undefined);
   const [isLoading, setIsLoading] = useState(true);
@@ -70,6 +90,10 @@ export function useWallets(client: PartyLayerClient, parameters: UseWalletsParam
 
   useEffect(() => {
     mounted.current = true;
+    // A client swap (or a filter change) starts from a clean slate rather than showing
+    // the previous client's wallets while the new list loads.
+    setWallets(undefined);
+    setIsSuccess(false);
     load();
     return () => {
       mounted.current = false;

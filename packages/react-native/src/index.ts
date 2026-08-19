@@ -8,6 +8,11 @@
  * hooks never installs the SVG renderer.
  */
 
+// Provider and context: optional. Every hook below also takes an explicit client, so an
+// app written against 0.2.2 needs no provider anywhere.
+export { PartyLayerProvider, usePartyLayerContext, usePartyLayer } from './context';
+export type { PartyLayerProviderProps, PartyLayerContextValue } from './context';
+
 export { createReactNativeDeepLinkPlatform } from './deeplink-platform';
 export { createAsyncStorage, createAsyncStorageAdapter } from './storage';
 export { createReactNativeClient } from './client';
