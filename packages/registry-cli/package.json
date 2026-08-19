@@ -6,10 +6,13 @@
   "bin": {
     "partylayer-registry": "./dist/index.js"
   },
+  "files": [
+    "dist"
+  ],
   "main": "./dist/index.js",
   "scripts": {
-    "build": "tsc",
-    "clean": "rm -rf dist *.tsbuildinfo",
+    "build": "tsup",
+    "clean": "rm -rf dist",
     "prepublishOnly": "pnpm run clean && pnpm run build"
   },
   "dependencies": {

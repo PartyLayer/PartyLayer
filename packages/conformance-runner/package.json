@@ -11,8 +11,8 @@
   ],
   "main": "./dist/index.js",
   "scripts": {
-    "build": "tsc && tsc --project tsconfig.esm.json",
-    "clean": "rm -rf dist *.tsbuildinfo",
+    "build": "tsup",
+    "clean": "rm -rf dist",
     "prepublishOnly": "pnpm run clean && pnpm run build",
     "lint": "eslint src --ext .ts",
     "typecheck": "tsc --noEmit",

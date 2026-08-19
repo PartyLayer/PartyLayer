@@ -14,8 +14,13 @@
  *
  *   1. every target named in `exports`, `main`, `module`, `types` and `bin` exists in the
  *      tarball, so nothing points at a file that was never emitted;
- *   2. LICENSE and README.md are present;
- *   3. no `src/`, no test files, no tsconfig and no tsbuildinfo are included.
+ *   2. every consumer-visible entry point actually RESOLVES, by running a real import and,
+ *      where a `require` condition is declared, a real require, against the unpacked
+ *      tarball. Existence is only a spelling check: one of the defects that reached the
+ *      registry was a file that existed but whose own relative imports Node could not
+ *      resolve, so it was present and still unloadable;
+ *   3. LICENSE and README.md are present;
+ *   4. no `src/`, no test files, no tsconfig and no tsbuildinfo are included.
  *
  * It packs with `pnpm pack`, not `npm pack`, because pnpm rewrites the `workspace:` protocol
  * into the range that will really be published. An npm-packed tarball would misrepresent
@@ -32,8 +37,9 @@
 import { execFileSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { dirname, join, resolve } from 'node:path';
-import { readdirSync, existsSync, readFileSync, mkdtempSync, rmSync } from 'node:fs';
+import { readdirSync, existsSync, readFileSync, mkdtempSync, rmSync, mkdirSync } from 'node:fs';
 import { tmpdir } from 'node:os';
+import { resolveEntryPoints } from './pack-resolve.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const repoRoot = resolve(__dirname, '..', '..');
@@ -141,6 +147,12 @@ try {
         );
       }
     }
+
+    // Existence is not enough: actually load every entry point from the unpacked tarball.
+    const unpackDir = join(staging, 'unpacked', name.replace('/', '__'));
+    mkdirSync(unpackDir, { recursive: true });
+    execFileSync('tar', ['-xzf', tarball, '-C', unpackDir, '--strip-components', '1'], { stdio: 'pipe' });
+    for (const problem of resolveEntryPoints(repoRoot, pkg, unpackDir)) problems.push(problem);
 
     rows.push({ name, count: listed.length, ok: problems.length === 0 });
     if (problems.length > 0) {
