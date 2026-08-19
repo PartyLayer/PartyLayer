@@ -4,13 +4,16 @@
  * Runs the real ConnectButton and WalletList from the ./ui entrypoint against local
  * builds of our packages, on a device, a simulator, or the web target.
  *
+ * Written in the provider style: PartyLayerProvider and ThemeProvider at the root, and the
+ * components and hooks below take no client and no theme. `asyncStorage` on the provider is
+ * what makes the session survive an app restart, which on React Native it otherwise does
+ * not, because the session store falls back to in-memory without it.
+ *
  * What it shows: the wallet list built from a live registry fetch, the connect flow UI
  * (the connecting state, the error state, and retry), the theme from the bridge, the
- * per-wallet icon rendering, and a client that persists its session with AsyncStorage
- * against the configured network. A connect that cannot complete renders the error path;
- * nothing here fakes a successful connect.
+ * per-wallet icon rendering, and the live account from the session store. A connect that
+ * cannot complete renders the error path; nothing here fakes a successful connect.
  */
-import { useMemo } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -20,11 +23,21 @@ import {
   toReactNativeTheme,
   themes,
   useWallets,
+  useAccount,
+  PartyLayerProvider,
+  ThemeProvider,
 } from '@partylayer/react-native';
 import { ConnectButton } from '@partylayer/react-native/ui';
 import { createAsyncStorage as createDefaultAsyncStorage } from '@partylayer/react-native/async-storage';
 
 const theme = toReactNativeTheme(themes.default.dark);
+
+// Module scope, so the client identity is stable across renders.
+const client = createReactNativeClient({
+  network: 'devnet',
+  app: { name: 'PartyLayer Expo Connect Demo' },
+  asyncStorage: AsyncStorage,
+});
 
 // The two previously bundler-invisible paths, exercised with NO argument: the deep link
 // platform defaults to a static react-native import, and the async-storage subpath
@@ -48,8 +61,10 @@ function checkNoArgAsyncStorage(): string {
 const NO_ARG_DEEPLINK = checkNoArgDeepLink();
 const NO_ARG_ASYNC_STORAGE = checkNoArgAsyncStorage();
 
-function DebugPanel({ client }: { client: ReturnType<typeof createReactNativeClient> }) {
-  const { wallets, walletIcons, isLoading, isError, error } = useWallets(client);
+function DebugPanel() {
+  // No client argument: it comes from the provider.
+  const { wallets, walletIcons, isLoading, isError, error } = useWallets();
+  const { party, status } = useAccount();
 
   return (
     <View style={[styles.panel, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}>
@@ -58,6 +73,8 @@ function DebugPanel({ client }: { client: ReturnType<typeof createReactNativeCli
       <Row label="deep link factory (no arg)" value={NO_ARG_DEEPLINK} ok={NO_ARG_DEEPLINK.startsWith('resolved')} />
       <Row label="async storage (no arg)" value={NO_ARG_ASYNC_STORAGE} ok={NO_ARG_ASYNC_STORAGE.startsWith('resolved')} />
       <Row label="registry" value={isLoading ? 'loading...' : isError ? `error: ${error?.message ?? ''}` : `${wallets?.length ?? 0} wallets`} ok={!isError} />
+      <Row label="session status" value={status} ok={status !== 'disconnected'} />
+      <Row label="party" value={party ?? 'none'} ok={!!party} />
 
       <Text style={[styles.h3, { color: theme.colors.textSecondary }]}>Wallets and icon formats</Text>
       {(walletIcons ?? []).map((w) => (
@@ -82,17 +99,7 @@ function Row({ label, value, ok }: { label: string; value: string; ok: boolean }
   );
 }
 
-export default function App() {
-  const client = useMemo(
-    () =>
-      createReactNativeClient({
-        network: 'devnet',
-        app: { name: 'PartyLayer Expo Connect Demo' },
-        asyncStorage: AsyncStorage,
-      }),
-    [],
-  );
-
+function Screen() {
   return (
     <View style={[styles.app, { backgroundColor: theme.colors.background }]}>
       <StatusBar style="light" />
@@ -101,17 +108,29 @@ export default function App() {
         <Text style={[styles.scope, { color: theme.colors.textSecondary }]}>
           This demo runs the real React Native connect UI against local package builds. It shows the
           wallet list from a live registry fetch, the connect flow UI, the theme, the icon rendering,
-          and a client that persists its session with AsyncStorage against the configured network. A
-          connect that cannot complete renders the error path.
+          and the live account from the session store, which persists through AsyncStorage. A connect
+          that cannot complete renders the error path.
         </Text>
 
         <View style={styles.buttonWrap}>
-          <ConnectButton client={client} theme={theme} />
+          {/* No client and no theme: both come from the providers below. */}
+          <ConnectButton />
         </View>
 
-        <DebugPanel client={client} />
+        <DebugPanel />
       </ScrollView>
     </View>
+  );
+}
+
+export default function App() {
+  return (
+    // `asyncStorage` is what persists the session across an app restart.
+    <PartyLayerProvider client={client} asyncStorage={AsyncStorage}>
+      <ThemeProvider theme={theme}>
+        <Screen />
+      </ThemeProvider>
+    </PartyLayerProvider>
   );
 }
 

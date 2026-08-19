@@ -9,16 +9,20 @@
 // ----------------------------------------------------------------------------
 declare function BackIcon({ color, size }: { color: string; size?: number; }): react_jsx_runtime.JSX.Element;
 declare function CloseIcon({ color, size }: { color: string; size?: number; }): react_jsx_runtime.JSX.Element;
-declare function ConnectButton({ client, theme, label, testID }: ConnectButtonProps): react_jsx_runtime.JSX.Element;
+declare function ConnectButton({ client: explicitClient, theme: explicitTheme, label, testID, }?: ConnectButtonProps): react_jsx_runtime.JSX.Element;
+declare function ConnectModal({ client: explicitClient, theme: explicitTheme, visible, onClose, insets, testID, }: ConnectModalProps): react_jsx_runtime.JSX.Element;
 declare function ErrorIcon({ color, size }: { color: string; size?: number; }): react_jsx_runtime.JSX.Element;
 declare function Spinner({ color, size }: { color: string; size?: 'small' | 'large' | number; }): react_jsx_runtime.JSX.Element;
-declare function WalletIcon({ url, format, size, theme, testID }: WalletIconProps): react_jsx_runtime.JSX.Element;
-declare function WalletList({ client, theme, visible, onClose, testID }: WalletListProps): react_jsx_runtime.JSX.Element;
+declare function WalletIcon({ url, format, size, theme: explicitTheme, testID }: WalletIconProps): react_jsx_runtime.JSX.Element;
+declare function WalletList(props: WalletListProps): react_jsx_runtime.JSX.Element;
 declare function truncateParty(partyId: string): string;
-export { BackIcon, CloseIcon, ConnectButton, type ConnectButtonProps, ErrorIcon, Spinner, WalletIcon, type WalletIconProps, WalletList, type WalletListProps, truncateParty };
+declare function useReducedMotion(): boolean;
+export { BackIcon, CloseIcon, ConnectButton, type ConnectButtonProps, ConnectModal, type ConnectModalInsets, type ConnectModalProps, ErrorIcon, Spinner, WalletIcon, type WalletIconProps, WalletList, type WalletListProps, truncateParty, useReducedMotion };
 import * as react_jsx_runtime from 'react/jsx-runtime';
 import { PartyLayerClient } from '@partylayer/sdk';
-import { b as ReactNativeTheme, I as IconFormat } from './icons-DdH3oA7q.js';
-interface ConnectButtonProps { client: PartyLayerClient; theme: ReactNativeTheme; label?: string; testID?: string; }
-interface WalletIconProps { url?: string; format: IconFormat; size: number; theme: ReactNativeTheme; testID?: string; }
-interface WalletListProps { client: PartyLayerClient; theme: ReactNativeTheme; visible: boolean; onClose: () => void; testID?: string; }
+import { R as ReactNativeTheme, I as IconFormat } from './icons-aZXHJrwj.js';
+interface ConnectButtonProps { client?: PartyLayerClient; theme?: ReactNativeTheme; label?: string; testID?: string; }
+interface ConnectModalInsets { top?: number; bottom?: number; }
+interface ConnectModalProps { client?: PartyLayerClient; theme?: ReactNativeTheme; visible: boolean; onClose: () => void; insets?: ConnectModalInsets; testID?: string; }
+interface WalletIconProps { url?: string; format: IconFormat; size: number; theme?: ReactNativeTheme; testID?: string; }
+interface WalletListProps { client?: PartyLayerClient; theme?: ReactNativeTheme; visible: boolean; onClose: () => void; insets?: ConnectModalInsets; testID?: string; }

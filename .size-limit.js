@@ -72,7 +72,11 @@ module.exports = [
     ignore: RN_PEERS,
     modifyEsbuildConfig: assetsAsEmpty,
     gzip: true,
-    limit: '3.5 kB',
+    // Raised from 3.5 kB when ConnectButton's modal gained the accessibility and motion
+    // work: the screen reader affordances, the live region, the reduce-motion subscription,
+    // the safe area inset, and resolving the client and theme from context instead of
+    // props. Measured 5.07 kB, so this leaves headroom without hiding a regression.
+    limit: '5.5 kB',
   },
   {
     name: 'sdk: createPartyLayer client',

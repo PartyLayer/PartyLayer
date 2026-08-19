@@ -11,6 +11,8 @@
  */
 export { ConnectButton, truncateParty } from './ui/connect-button';
 export type { ConnectButtonProps } from './ui/connect-button';
+export { ConnectModal, useReducedMotion } from './ui/connect-modal';
+export type { ConnectModalProps, ConnectModalInsets } from './ui/connect-modal';
 export { WalletList } from './ui/wallet-list';
 export type { WalletListProps } from './ui/wallet-list';
 export { WalletIcon } from './ui/wallet-icon';
