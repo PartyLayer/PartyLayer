@@ -20,70 +20,15 @@ import { PartyLayerProvider, usePartyLayerContext, usePartyLayer } from '../cont
 import { useConnect } from '../use-connect';
 import { useWallets } from '../use-wallets';
 import type { RNAsyncStorage } from '../types';
+import { makeClient, makeAsyncStorage, WALLET } from './doubles';
 
 vi.mock('react-native', () => ({
   Text: ({ children }: { children?: unknown }) => children as never,
   Linking: { openURL: vi.fn(), addEventListener: vi.fn(() => ({ remove: vi.fn() })), getInitialURL: vi.fn(async () => null) },
 }));
 
-const wallet = { walletId: 'console', name: 'Console', icons: { md: 'https://cdn/console.png' } } as unknown as WalletInfo;
+const wallet = WALLET;
 const session = { sessionId: 's1', walletId: 'console', partyId: 'party::a' } as unknown as Session;
-
-/** A CIP-0103 provider faithful to the calls the session store actually makes. */
-function makeProvider(connected = false) {
-  let isConnected = connected;
-  const listeners = new Map<string, ((payload: unknown) => void)[]>();
-  return {
-    request: vi.fn(async ({ method }: { method: string }) => {
-      if (method === 'status') return { status: isConnected ? 'connected' : 'disconnected' };
-      if (method === 'listAccounts') return isConnected ? [{ partyId: 'party::a' }] : [];
-      if (method === 'getActiveNetwork') return { networkId: 'canton:devnet' };
-      if (method === 'connect') {
-        isConnected = true;
-        return { status: 'connected' };
-      }
-      if (method === 'disconnect') {
-        isConnected = false;
-        return undefined;
-      }
-      return undefined;
-    }),
-    on: vi.fn((event: string, handler: (payload: unknown) => void) => {
-      listeners.set(event, [...(listeners.get(event) ?? []), handler]);
-    }),
-    removeListener: vi.fn(),
-  };
-}
-
-function makeClient(overrides: Record<string, unknown> = {}): PartyLayerClient {
-  return {
-    getActiveSession: vi.fn().mockResolvedValue(null),
-    listWallets: vi.fn().mockResolvedValue([wallet]),
-    connect: vi.fn().mockResolvedValue(session),
-    disconnect: vi.fn().mockResolvedValue(undefined),
-    on: vi.fn(() => () => {}),
-    off: vi.fn(),
-    asProvider: vi.fn(() => makeProvider()),
-    ...overrides,
-  } as unknown as PartyLayerClient;
-}
-
-/** A Map-backed AsyncStorage that OUTLIVES a provider, so it can model an app restart. */
-function makeAsyncStorage(backing = new Map<string, string>()) {
-  const storage: RNAsyncStorage = {
-    getItem: async (key) => (backing.has(key) ? (backing.get(key) as string) : null),
-    setItem: async (key, value) => {
-      backing.set(key, value);
-    },
-    removeItem: async (key) => {
-      backing.delete(key);
-    },
-    clear: async () => {
-      backing.clear();
-    },
-  };
-  return { storage, backing };
-}
 
 function wrapper(client: PartyLayerClient, asyncStorage?: RNAsyncStorage) {
   return function Wrapper({ children }: { children: React.ReactNode }) {

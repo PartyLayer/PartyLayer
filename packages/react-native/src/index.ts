@@ -38,6 +38,18 @@ export type {
   AccentPreset,
 } from './theme';
 
+// Account and session hooks over the shared session store. These read the store the
+// provider creates, so they require PartyLayerProvider.
+export { useAccount, useSession, useAccountEffect } from './session-hooks';
+export type {
+  UseAccountResult,
+  UseSessionResult,
+  UseAccountEffectParameters,
+  SessionChain,
+} from './session-hooks';
+export { useDisconnect } from './use-disconnect';
+export type { UseDisconnectResult } from './use-disconnect';
+
 // Headless hooks: wallets and connect, built on the client factory above.
 export { useWallets } from './use-wallets';
 export type { UseWalletsParameters, UseWalletsResult } from './use-wallets';
