@@ -1,5 +1,23 @@
 # @partylayer/sdk
 
+## 0.18.2
+
+### Patch Changes
+
+- d25d850: Report the signMessage capability from the announce entry's declared capabilities rather than a fixed baseline, so a wallet that cannot sign is not advertised as able to. Also widen the injected discovery scan to the window globals that announce-transport registry entries declare, so a wallet at its own dedicated global is found generically. Both are additive and change no behavior for any wallet currently in the registry.
+- Updated dependencies [f7ee857]
+- Updated dependencies [4309023]
+- Updated dependencies [4309023]
+  - @partylayer/provider@0.5.2
+  - @partylayer/core@0.13.0
+  - @partylayer/adapter-bron@0.4.1
+  - @partylayer/adapter-cantor8@0.4.1
+  - @partylayer/adapter-console@0.3.19
+  - @partylayer/adapter-loop@0.4.3
+  - @partylayer/adapter-nightly@0.2.21
+  - @partylayer/adapter-send@1.2.7
+  - @partylayer/registry-client@0.6.3
+
 ## 0.18.1
 
 ### Patch Changes

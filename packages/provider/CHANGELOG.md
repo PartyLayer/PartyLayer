@@ -1,5 +1,14 @@
 # @partylayer/provider
 
+## 0.5.2
+
+### Patch Changes
+
+- f7ee857: Injected discovery accepts an optional list of extra window global paths, so a wallet at its own dedicated global can be found. Announce discovery tolerates alternate id shapes (providerId, id, info.uuid, info.rdns, first non-empty wins) and adds a development-only warning, deduped per event shape, when an announce cannot be consumed. The warning never throws, never blocks discovery, and is silent in production.
+- 4309023: Widen the internal error code map to a Partial record so the new core SYNCHRONIZER_ERROR code compiles and falls through to the INTERNAL_ERROR default; no existing mapping changes.
+- Updated dependencies [4309023]
+  - @partylayer/core@0.13.0
+
 ## 0.5.1
 
 ### Patch Changes

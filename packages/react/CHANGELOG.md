@@ -1,5 +1,21 @@
 # @partylayer/react
 
+## 2.4.0
+
+### Minor Changes
+
+- 4309023: Add the attachDisclosedContracts helper to the query surface for merging disclosed contracts onto a command payload.
+
+### Patch Changes
+
+- 13aa1dc: TransactionToast now uses distinct semantic backgrounds (red for error, green for success, neutral for pending) and sets role alert on errors so failures are announced, completing the semantic feedback treatment.
+- Updated dependencies [d25d850]
+- Updated dependencies [4309023]
+  - @partylayer/sdk@0.18.2
+  - @partylayer/core@0.13.0
+  - @partylayer/registry-client@0.6.3
+  - @partylayer/session@1.1.7
+
 ## 2.3.3
 
 ### Patch Changes
