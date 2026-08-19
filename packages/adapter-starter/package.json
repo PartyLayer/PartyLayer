@@ -3,7 +3,6 @@
   "version": "0.1.19",
   "sideEffects": false,
   "description": "Starter template for building PartyLayer wallet adapters",
-  "type": "module",
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",
   "types": "./dist/index.d.ts",
@@ -15,12 +14,11 @@
     }
   },
   "files": [
-    "dist",
-    "README.md"
+    "dist"
   ],
   "scripts": {
-    "build": "tsc && tsc --project tsconfig.esm.json",
-    "clean": "rm -rf dist *.tsbuildinfo",
+    "build": "tsup",
+    "clean": "rm -rf dist",
     "prepublishOnly": "pnpm run clean && pnpm run build",
     "lint": "eslint src --ext .ts",
     "typecheck": "tsc --noEmit"

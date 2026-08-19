@@ -6,6 +6,9 @@
   "bin": {
     "partylayer-conformance": "./dist/index.js"
   },
+  "files": [
+    "dist"
+  ],
   "main": "./dist/index.js",
   "scripts": {
     "build": "tsc && tsc --project tsconfig.esm.json",
