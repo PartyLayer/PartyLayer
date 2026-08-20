@@ -81,6 +81,9 @@ const validate = ajv.compile(schema);
 // ─── Run ─────────────────────────────────────────────────────────────────────
 
 let failed = false;
+// Wallet id set per channel, collected below and compared after the loop so the
+// beta channel can be asserted a superset of stable.
+const walletIdsByChannel = {};
 
 for (const { channel, path } of channels) {
   if (!existsSync(path)) {
@@ -97,6 +100,8 @@ for (const { channel, path } of channels) {
     failed = true;
     continue;
   }
+
+  walletIdsByChannel[channel] = new Set((registry.wallets ?? []).map((w) => String(w.id)));
 
   // 1. Schema validation
   if (!validate(registry)) {
@@ -171,6 +176,26 @@ for (const { channel, path } of channels) {
   }
   if (!failed) {
     console.log(`✓ [${channel}] provider.id ownership is pairwise disjoint`);
+  }
+}
+
+// 4. CHANNEL SUPERSET. Every wallet id in stable must also exist in beta, so a
+// dApp that switches to the beta channel never silently loses a wallet it had on
+// stable. Beta means everything stable has, plus what is being trialled; a stable
+// id missing from beta makes the beta channel unusable for that dApp.
+if (walletIdsByChannel.stable && walletIdsByChannel.beta) {
+  const missing = [...walletIdsByChannel.stable].filter(
+    (id) => !walletIdsByChannel.beta.has(id),
+  );
+  if (missing.length > 0) {
+    console.error(
+      `✗ beta is not a superset of stable: [${missing.join(', ')}] exist in stable but ` +
+        `not in beta. Copy each stable-only entry into beta byte-identical so a channel ` +
+        `switch never drops a wallet stable offered.`,
+    );
+    failed = true;
+  } else {
+    console.log('✓ beta is a superset of stable (every stable wallet id exists in beta)');
   }
 }
 
