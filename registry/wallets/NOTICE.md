@@ -14,6 +14,7 @@ obtain your own permission from each mark's owner before redistributing these fi
 |---|---|
 | bron.png | Bron |
 | cantor8.png | Cantor8 |
+| cauri.svg | Cauri Wallet |
 | console.png | Console Wallet |
 | loop.svg | 5N Loop |
 | nightly.png | Nightly |
