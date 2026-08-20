@@ -4,7 +4,7 @@
     "schemaVersion": "1.0.0",
     "publishedAt": "2026-06-10T00:00:00Z",
     "channel": "beta",
-    "sequence": 9,
+    "sequence": 10,
     "publisher": "PartyLayer"
   },
   "wallets": [
@@ -167,6 +167,113 @@
         "since": "2026-08-03"
       },
       "sdkVersion": ">=0.1.0"
+    },
+    {
+      "id": "send",
+      "name": "Send",
+      "description": "Passkey-based Canton wallet. Mainnet only.",
+      "homepage": "https://cantonwallet.com",
+      "icon": "https://registry.partylayer.xyz/wallets/send-logo.jpg",
+      "supportedNetworks": ["mainnet"],
+      "capabilities": {
+        "signMessage": true,
+        "signTransaction": false,
+        "submitTransaction": true,
+        "transactionStatus": true,
+        "switchNetwork": false,
+        "multiParty": false,
+        "events": true
+      },
+      "adapter": {
+        "type": "@partylayer/adapter-send",
+        "transport": "announce",
+        "config": {
+          "metadata": true,
+          "restore": true,
+          "ledgerApi": true,
+          "staticMetadata": { "signingMethod": "webauthn-prf" }
+        }
+      },
+      "installation": {
+        "windowProperty": "canton"
+      },
+      "sdkVersion": ">=0.3.6",
+      "providerDetection": {
+        "transport": "window.canton",
+        "matchers": [
+          { "field": "provider.id", "match": "exact", "values": ["ldmohiccoioolenadmogclhoklmanpgi"] },
+          { "field": "kernel.url", "match": "domain", "value": "cantonwallet.com" },
+          { "field": "kernel.userUrl", "match": "domain", "value": "cantonwallet.com" },
+          { "field": "kernel.id", "match": "exact", "values": ["ldmohiccoioolenadmogclhoklmanpgi"] }
+        ]
+      },
+      "cip0103": {
+        "native": true,
+        "evidence": "https://sigilry.org",
+        "since": "2026-04-01"
+      }
+    },
+    {
+      "id": "walley",
+      "name": "Walley",
+      "description": "Popup/remote Canton wallet (CIP-0103), bridged via its official @k2flabs/walley-dapp-sdk ProviderAdapter — no PartyLayer-specific adapter package.",
+      "homepage": "https://walley.cc",
+      "icon": "https://registry.partylayer.xyz/wallets/walley-logo.png",
+      "supportedNetworks": ["mainnet", "testnet", "devnet"],
+      "capabilities": {
+        "signMessage": true,
+        "signTransaction": false,
+        "submitTransaction": true,
+        "transactionStatus": true,
+        "switchNetwork": false,
+        "multiParty": false,
+        "events": false
+      },
+      "adapter": {
+        "type": "@k2flabs/walley-dapp-sdk",
+        "transport": "discovery-adapter",
+        "config": { "providerId": "walley" },
+        "networkHosts": {
+          "devnet": "https://dev.walley.cc",
+          "testnet": "https://staging.walley.cc",
+          "mainnet": "https://walley.cc"
+        }
+      },
+      "sdkVersion": ">=0.8.0",
+      "cip0103": {
+        "native": true,
+        "evidence": "https://walley.cc",
+        "since": "2026-06-13"
+      }
+    },
+    {
+      "id": "walletconnect",
+      "name": "WalletConnect",
+      "description": "Connect Canton wallets over WalletConnect (hosted/mobile, e.g. Nightly mobile). Opt-in adapter wrapping @canton-network/dapp-sdk's official WalletConnect adapter.",
+      "homepage": "https://walletconnect.network",
+      "icon": "https://registry.partylayer.xyz/wallets/walletconnect.svg",
+      "supportedNetworks": ["devnet", "testnet", "mainnet"],
+      "capabilities": {
+        "signMessage": true,
+        "signTransaction": false,
+        "submitTransaction": true,
+        "transactionStatus": false,
+        "switchNetwork": false,
+        "multiParty": false,
+        "mobileConnect": true,
+        "remoteSigner": true
+      },
+      "adapter": {
+        "type": "@partylayer/adapter-walletconnect",
+        "requiresConfig": true
+      },
+      "installation": { "remote": true },
+      "sdkVersion": ">=0.3.0",
+      "cip0103": {
+        "native": false,
+        "evidence": "https://www.npmjs.com/package/@canton-network/dapp-sdk",
+        "since": "2026-06-18"
+      }
     }
   ]
 }
