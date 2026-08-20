@@ -390,9 +390,13 @@ export class PartyLayerClient {
       );
     }
 
-    // Filter experimental
+    // Filter to the client's configured channel (the same resolution the registry
+    // client uses at construction, see channel: config.channel || 'stable' above),
+    // defaulting to stable when unset. A client on stable is unchanged; a client on
+    // beta lists beta entries. includeExperimental still returns everything.
     if (!filter?.includeExperimental) {
-      return registryWallets.filter((walletInfo) => walletInfo.channel === 'stable');
+      const channel = this.config.channel || 'stable';
+      return registryWallets.filter((walletInfo) => walletInfo.channel === channel);
     }
 
     return registryWallets;
