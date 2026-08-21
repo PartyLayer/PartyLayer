@@ -75,6 +75,9 @@ importers:
       '@k2flabs/walley-dapp-sdk':
         specifier: 1.2.0
         version: 1.2.0(@canton-network/dapp-sdk@0.24.0)
+      '@lithiumdigital/cauri-dapp-sdk':
+        specifier: 0.2.0
+        version: 0.2.0(@canton-network/core-splice-provider@1.8.0)(@canton-network/core-types@1.8.0)(@canton-network/core-wallet-dapp-rpc-client@1.8.0)(@canton-network/core-wallet-discovery@1.4.0)
       '@partylayer/adapter-bron':
         specifier: workspace:^
         version: link:../../packages/adapters/bron
@@ -2064,6 +2067,14 @@ packages:
 
   '@lit/reactive-element@2.1.2':
     resolution: {integrity: sha512-pbCDiVMnne1lYUIaYNN5wrwQXDtHaYtg7YEFPeW+hws6U47WeFvISGUWekPGKWOP1ygrs0ef0o1VJMk1exos5A==}
+
+  '@lithiumdigital/cauri-dapp-sdk@0.2.0':
+    resolution: {integrity: sha512-ollAg/f/vufS0lYwBDam10FlZqlgDSYNt5Fp7+n6MhiYEev2xmADV/g/bXC0rjkmCTk80mdx6oJvHdJRpNnu6g==}
+    peerDependencies:
+      '@canton-network/core-splice-provider': ^1.7.0
+      '@canton-network/core-types': ^1.7.0
+      '@canton-network/core-wallet-dapp-rpc-client': ^1.7.0
+      '@canton-network/core-wallet-discovery': ^1.7.0
 
   '@manypkg/find-root@1.1.0':
     resolution: {integrity: sha512-mki5uBvhHzO8kYYix/WRy2WX8S3B5wdVSc9D6KcU5lQNglP2yt58/VfLuAK49glRXChosY8ap2oJ1qgma3GUVA==}
@@ -7603,6 +7614,13 @@ snapshots:
   '@lit/reactive-element@2.1.2':
     dependencies:
       '@lit-labs/ssr-dom-shim': 1.6.0
+
+  '@lithiumdigital/cauri-dapp-sdk@0.2.0(@canton-network/core-splice-provider@1.8.0)(@canton-network/core-types@1.8.0)(@canton-network/core-wallet-dapp-rpc-client@1.8.0)(@canton-network/core-wallet-discovery@1.4.0)':
+    dependencies:
+      '@canton-network/core-splice-provider': 1.8.0
+      '@canton-network/core-types': 1.8.0
+      '@canton-network/core-wallet-dapp-rpc-client': 1.8.0
+      '@canton-network/core-wallet-discovery': 1.4.0
 
   '@manypkg/find-root@1.1.0':
     dependencies:
