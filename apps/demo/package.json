@@ -9,6 +9,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
+    "test": "tsx --test --test-force-exit src/lib/cauri-kit-demo.test.ts",
     "test:e2e": "playwright test",
     "test:e2e:pr": "playwright test smoke.spec.ts full-connect-flow.spec.ts",
     "typecheck": "tsc --noEmit -p tsconfig.typecheck.json"
@@ -32,6 +33,7 @@
     "react-dom": "^18.2.0",
     "@partylayer/session": "workspace:^",
     "@k2flabs/walley-dapp-sdk": "1.2.0",
+    "@lithiumdigital/cauri-dapp-sdk": "0.2.0",
     "@canton-network/dapp-sdk": "^0.24.0"
   },
   "devDependencies": {
