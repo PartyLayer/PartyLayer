@@ -78,12 +78,36 @@ const ajv = new Ajv({ allErrors: true, strict: false });
 const schema = JSON.parse(readFileSync(schemaPath, 'utf-8'));
 const validate = ajv.compile(schema);
 
+// Deep structural diff: returns the list of field paths where `a` and `b` differ
+// (scalars by value, arrays element-wise, objects by key). Used to name exactly
+// which fields drifted between a wallet's stable and beta entries.
+function deepDiffPaths(a, b, prefix = '') {
+  const isObj = (v) => v && typeof v === 'object' && !Array.isArray(v);
+  if (isObj(a) && isObj(b)) {
+    const paths = [];
+    for (const k of new Set([...Object.keys(a), ...Object.keys(b)])) {
+      paths.push(...deepDiffPaths(a[k], b[k], prefix ? `${prefix}.${k}` : k));
+    }
+    return paths;
+  }
+  if (Array.isArray(a) && Array.isArray(b)) {
+    const paths = [];
+    for (let i = 0; i < Math.max(a.length, b.length); i++) {
+      paths.push(...deepDiffPaths(a[i], b[i], `${prefix}[${i}]`));
+    }
+    return paths;
+  }
+  return JSON.stringify(a) === JSON.stringify(b) ? [] : [prefix || '(root)'];
+}
+
 // ─── Run ─────────────────────────────────────────────────────────────────────
 
 let failed = false;
-// Wallet id set per channel, collected below and compared after the loop so the
-// beta channel can be asserted a superset of stable.
-const walletIdsByChannel = {};
+// Wallet entries (id -> entry) per channel, collected below and compared after
+// the loop so the beta channel can be asserted a true superset of stable: every
+// stable id present in beta (presence) AND every shared entry deeply equal
+// (content).
+const walletEntriesByChannel = {};
 
 for (const { channel, path } of channels) {
   if (!existsSync(path)) {
@@ -100,8 +124,6 @@ for (const { channel, path } of channels) {
     failed = true;
     continue;
   }
-
-  walletIdsByChannel[channel] = new Set((registry.wallets ?? []).map((w) => String(w.id)));
 
   // 1. Schema validation
   if (!validate(registry)) {
@@ -125,6 +147,7 @@ for (const { channel, path } of channels) {
     }
     byId.set(w.id, w);
   }
+  walletEntriesByChannel[channel] = byId;
 
   // 2. CIP-0103 footgun guard
   const required = REQUIRED_CIP0103_NATIVE[channel] ?? [];
@@ -179,14 +202,23 @@ for (const { channel, path } of channels) {
   }
 }
 
-// 4. CHANNEL SUPERSET. Every wallet id in stable must also exist in beta, so a
-// dApp that switches to the beta channel never silently loses a wallet it had on
-// stable. Beta means everything stable has, plus what is being trialled; a stable
-// id missing from beta makes the beta channel unusable for that dApp.
-if (walletIdsByChannel.stable && walletIdsByChannel.beta) {
-  const missing = [...walletIdsByChannel.stable].filter(
-    (id) => !walletIdsByChannel.beta.has(id),
-  );
+// 4. CHANNEL SUPERSET: presence AND content. The beta channel must be a true
+// superset of stable, which means two things:
+//   (a) PRESENCE: every wallet id in stable also exists in beta, so a dApp that
+//       switches to beta never silently loses a wallet it had on stable.
+//   (b) CONTENT: for every wallet id present in BOTH channels, the entries are
+//       deeply equal. Two channels listing the same wallet must describe the SAME
+//       wallet; the only legitimate difference between channels is presence, not
+//       content. A drifted field (e.g. a stale beta entry missing
+//       adapter.transport) makes the wallet behave differently per channel, the
+//       class of bug that dropped Console from a beta surface. An id-only check
+//       misses this, so the content half is asserted field-by-field.
+if (walletEntriesByChannel.stable && walletEntriesByChannel.beta) {
+  const stable = walletEntriesByChannel.stable;
+  const beta = walletEntriesByChannel.beta;
+  const stableIds = [...stable.keys()];
+
+  const missing = stableIds.filter((id) => !beta.has(id));
   if (missing.length > 0) {
     console.error(
       `✗ beta is not a superset of stable: [${missing.join(', ')}] exist in stable but ` +
@@ -196,6 +228,24 @@ if (walletIdsByChannel.stable && walletIdsByChannel.beta) {
     failed = true;
   } else {
     console.log('✓ beta is a superset of stable (every stable wallet id exists in beta)');
+  }
+
+  let drift = false;
+  for (const id of stableIds) {
+    if (!beta.has(id)) continue; // presence already reported above
+    const paths = deepDiffPaths(stable.get(id), beta.get(id));
+    if (paths.length > 0) {
+      console.error(
+        `✗ wallet "${id}" is not identical across channels, differs at: ${paths.join(', ')}. ` +
+          `Shared entries must be deeply equal (channels differ by presence, not content). ` +
+          `Make the beta entry byte-identical to stable.`,
+      );
+      failed = true;
+      drift = true;
+    }
+  }
+  if (!drift) {
+    console.log('✓ every wallet shared by stable and beta is byte-identical across channels');
   }
 }
 
