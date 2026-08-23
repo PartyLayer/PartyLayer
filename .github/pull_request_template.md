@@ -1,3 +1,18 @@
+## Handoff
+
+<!-- So a reviewer can fetch the exact ref instead of guessing it. Fill with:
+     git rev-parse --abbrev-ref HEAD; git rev-parse HEAD; git rev-parse origin/main
+     git diff --numstat origin/main...HEAD -->
+
+```
+branch:
+head sha:
+base sha:
+files:
+```
+
+Supersedes / follows: <!-- #NNN, or delete this line -->
+
 ## Summary
 
 <!-- What changes, and why. -->
