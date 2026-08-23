@@ -50,22 +50,53 @@ function stableDiscoveryWallets() {
     .map((w) => ({ id: String(w.id), pkg: String(w.adapter?.type ?? '') }));
 }
 
-/** The dependency names an app declares (prod + dev). */
-function appDependencies(appDir) {
-  const p = join(ROOT, appDir, 'package.json');
+/**
+ * The shared adapter set. An app that depends on this package registers whatever
+ * the package registers, so for this guard the package's dependencies and source
+ * count as the app's. Without this the guard would fail the moment the wallet
+ * wiring moved out of each app and into one place, which is the opposite of what
+ * it is for: it checks that a wallet is genuinely reachable from the app, not
+ * that the import statement sits in a particular file.
+ */
+const SHARED_ADAPTERS_DIR = 'apps/shared-adapters';
+const SHARED_ADAPTERS_PKG = '@partylayer/demo-adapters';
+
+/** Raw dependency names a package directory declares (prod + dev). */
+function ownDependencies(dir) {
+  const p = join(ROOT, dir, 'package.json');
   if (!existsSync(p)) return null;
   const j = JSON.parse(readFileSync(p, 'utf8'));
   return new Set([...Object.keys(j.dependencies ?? {}), ...Object.keys(j.devDependencies ?? {})]);
 }
 
-/** Whether any source file under the app references the package name. */
-function appSourceReferences(appDir, pkg) {
-  const srcRoots = [join(ROOT, appDir, 'src')];
-  const stack = [...srcRoots.filter(existsSync)];
+/** Directories whose deps and source stand in for the app's: itself, plus the
+ *  shared adapter set when the app depends on it. */
+function resolutionRoots(appDir) {
+  const own = ownDependencies(appDir);
+  if (!own) return null;
+  const roots = [appDir];
+  if (own.has(SHARED_ADAPTERS_PKG) && existsSync(join(ROOT, SHARED_ADAPTERS_DIR))) {
+    roots.push(SHARED_ADAPTERS_DIR);
+  }
+  return roots;
+}
+
+/** The dependency names an app declares, following the shared set. */
+function appDependencies(appDir) {
+  const roots = resolutionRoots(appDir);
+  if (!roots) return null;
+  const all = new Set();
+  for (const dir of roots) for (const d of ownDependencies(dir) ?? []) all.add(d);
+  return all;
+}
+
+/** Whether any source file under a directory references the package name. */
+function sourceReferences(dir, pkg) {
+  const stack = [join(ROOT, dir, 'src')].filter(existsSync);
   while (stack.length) {
-    const dir = stack.pop();
-    for (const entry of readdirSync(dir, { withFileTypes: true })) {
-      const full = join(dir, entry.name);
+    const d = stack.pop();
+    for (const entry of readdirSync(d, { withFileTypes: true })) {
+      const full = join(d, entry.name);
       if (entry.isDirectory()) {
         if (entry.name !== 'node_modules') stack.push(full);
       } else if (/\.[cm]?[jt]sx?$/.test(entry.name) && !/\.(test|spec)\./.test(entry.name)) {
@@ -74,6 +105,39 @@ function appSourceReferences(appDir, pkg) {
     }
   }
   return false;
+}
+
+/** Whether the app, or the shared set it depends on, references the package. */
+function appSourceReferences(appDir, pkg) {
+  const roots = resolutionRoots(appDir) ?? [appDir];
+  return roots.some((dir) => sourceReferences(dir, pkg));
+}
+
+/**
+ * Wallet keys an app opts out of at its `buildWalletAdapters({ exclude: [...] })`
+ * call. Resolving through the shared set would otherwise let an app drop a wallet
+ * silently while the guard still saw it declared in the shared package, which is
+ * exactly the blindness this guard exists to prevent. An opt-out is legitimate,
+ * but it is an omission and has to be recorded in EXCEPTIONS like any other.
+ */
+function appExcludedKeys(appDir) {
+  const excluded = new Set();
+  const stack = [join(ROOT, appDir, 'src')].filter(existsSync);
+  while (stack.length) {
+    const d = stack.pop();
+    for (const entry of readdirSync(d, { withFileTypes: true })) {
+      const full = join(d, entry.name);
+      if (entry.isDirectory()) {
+        if (entry.name !== 'node_modules') stack.push(full);
+      } else if (/\.[cm]?[jt]sx?$/.test(entry.name) && !/\.(test|spec)\./.test(entry.name)) {
+        const src = readFileSync(full, 'utf8');
+        for (const m of src.matchAll(/exclude\s*:\s*\[([^\]]*)\]/g)) {
+          for (const key of m[1].matchAll(/['"]([a-z0-9-]+)['"]/gi)) excluded.add(key[1]);
+        }
+      }
+    }
+  }
+  return excluded;
 }
 
 const DISCOVERY_WALLETS = stableDiscoveryWallets();
@@ -96,18 +160,27 @@ for (const app of SHOWCASE_APPS) {
       const declared = deps.has(wallet.pkg);
       const referenced = appSourceReferences(app, wallet.pkg);
 
+      const via = (resolutionRoots(app) ?? [app]).join(' or ');
+      const optedOut = appExcludedKeys(app).has(wallet.id);
       const problems = [];
-      if (!declared) problems.push(`${app}/package.json does not depend on ${wallet.pkg}`);
-      if (!referenced) problems.push(`no source file under ${app}/src imports ${wallet.pkg}`);
+      if (!declared) problems.push(`neither ${via} depends on ${wallet.pkg}`);
+      if (!referenced) problems.push(`no source file under ${via} imports ${wallet.pkg}`);
+      if (optedOut) {
+        problems.push(
+          `${app} opts out of "${wallet.id}" at its buildWalletAdapters exclude list, ` +
+            `so the shared set supplying it does not make it reachable here`,
+        );
+      }
 
       assert.ok(
-        declared && referenced,
+        declared && referenced && !optedOut,
         `The stable registry lists discovery-adapter wallet "${wallet.id}" (package ${wallet.pkg}), ` +
           `but ${problems.join(' and ')}. The SDK hides a discovery-adapter entry whose adapter is not ` +
           `supplied, so this wallet is invisible in ${app}.\n` +
-          `  Fix: install ${wallet.pkg} (pinned exactly) in ${app} and supply its adapter alongside the ` +
-          `others (see apps/tokenization/src/App.tsx for the pattern). If ${app} deliberately should not ` +
-          `carry "${wallet.id}", add "${app}:${wallet.id}" to EXCEPTIONS in this file with a reason.`,
+          `  Fix: add ${wallet.pkg} (pinned exactly) to ${SHARED_ADAPTERS_DIR}/package.json and register ` +
+          `it in ${SHARED_ADAPTERS_DIR}/src/index.ts, which every showcase app consumes. If ${app} ` +
+          `deliberately should not carry "${wallet.id}", exclude it at that app's buildWalletAdapters ` +
+          `call with a comment, or add "${app}:${wallet.id}" to EXCEPTIONS in this file with a reason.`,
       );
     });
   }
