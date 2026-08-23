@@ -82,7 +82,7 @@ importers:
         specifier: workspace:^
         version: link:../../packages/core
       '@partylayer/demo-adapters':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../shared-adapters
       '@partylayer/provider':
         specifier: workspace:^
@@ -171,7 +171,7 @@ importers:
   apps/dvp:
     dependencies:
       '@partylayer/demo-adapters':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../shared-adapters
       '@partylayer/react':
         specifier: workspace:^
@@ -325,7 +325,7 @@ importers:
   apps/tokenization:
     dependencies:
       '@partylayer/demo-adapters':
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../shared-adapters
       '@partylayer/react':
         specifier: workspace:^

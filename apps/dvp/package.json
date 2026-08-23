@@ -12,7 +12,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@partylayer/demo-adapters": "workspace:*",
+    "@partylayer/demo-adapters": "workspace:^",
     "@partylayer/react": "workspace:^",
     "@partylayer/sdk": "workspace:^",
     "@tanstack/react-query": "^5.0.0",
