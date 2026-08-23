@@ -14,12 +14,11 @@ import {
 } from '@partylayer/react';
 import { isCip0103Native } from '@partylayer/sdk';
 import { useBreakpoint, responsive } from '../hooks/useBreakpoint';
+// Cauri now ships in the stable registry and is registered inside
+// buildDemoAdapters() alongside Walley, so this surface no longer needs its own
+// factory import or a beta channel override: it reads the default stable channel
+// like every other surface.
 import { buildDemoAdapters } from '../../lib/canton-demo-adapter';
-// Cauri is a beta-channel discovery-adapter wallet. Its own SDK ships an
-// OfficialAdapterFactory (providerId + create), so it is passed straight to the
-// kit and the SDK resolves the host from the registry entry's networkHosts. Only
-// this kit demo surface registers it, and only this surface reads the beta channel.
-import { cauriAdapterFactory } from '@lithiumdigital/cauri-dapp-sdk';
 import { sortByCanonicalOrder, CANONICAL_WALLET_ORDER } from '../../lib/wallet-order';
 
 // ─── Design Tokens (light + dark, matching marketing/landing page) ──────────
@@ -806,7 +805,7 @@ export default function KitDemoPage() {
         fontFamily: font,
         transition: 'background-color 200ms, color 200ms',
       }}>
-        <PartyLayerKit network="devnet" appName="PartyLayer Kit Demo" theme={kitTheme} showAttribution={showAttr} walletOrder={CANONICAL_WALLET_ORDER} adapters={[...buildDemoAdapters(), cauriAdapterFactory]} channel="beta" registryUrl="/registry">
+        <PartyLayerKit network="devnet" appName="PartyLayer Kit Demo" theme={kitTheme} showAttribution={showAttr} walletOrder={CANONICAL_WALLET_ORDER} adapters={buildDemoAdapters()} registryUrl="/registry">
           <div style={{ maxWidth: '880px', margin: '0 auto', padding: '0 24px' }}>
 
             {/* Navbar */}

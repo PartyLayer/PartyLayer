@@ -188,6 +188,9 @@ importers:
       '@k2flabs/walley-dapp-sdk':
         specifier: 1.2.0
         version: 1.2.0(@canton-network/dapp-sdk@1.2.0(@walletconnect/sign-client@2.23.9(typescript@5.9.3)(zod@4.4.3))(@walletconnect/types@2.23.9))
+      '@lithiumdigital/cauri-dapp-sdk':
+        specifier: 0.2.0
+        version: 0.2.0(@canton-network/core-splice-provider@1.8.0)(@canton-network/core-types@1.8.0)(@canton-network/core-wallet-dapp-rpc-client@1.8.0)(@canton-network/core-wallet-discovery@1.4.0)
       '@partylayer/adapter-bron':
         specifier: workspace:^
         version: link:../../packages/adapters/bron
@@ -317,6 +320,9 @@ importers:
       '@k2flabs/walley-dapp-sdk':
         specifier: 1.2.0
         version: 1.2.0(@canton-network/dapp-sdk@1.2.0(@walletconnect/sign-client@2.23.9(typescript@5.9.3)(zod@4.4.3))(@walletconnect/types@2.23.9))
+      '@lithiumdigital/cauri-dapp-sdk':
+        specifier: 0.2.0
+        version: 0.2.0(@canton-network/core-splice-provider@1.8.0)(@canton-network/core-types@1.8.0)(@canton-network/core-wallet-dapp-rpc-client@1.8.0)(@canton-network/core-wallet-discovery@1.4.0)
       '@partylayer/adapter-bron':
         specifier: workspace:^
         version: link:../../packages/adapters/bron

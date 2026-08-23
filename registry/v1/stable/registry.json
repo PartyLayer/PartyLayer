@@ -4,7 +4,7 @@
     "schemaVersion": "1.0.0",
     "publishedAt": "2026-06-24T00:00:00Z",
     "channel": "stable",
-    "sequence": 19,
+    "sequence": 20,
     "publisher": "PartyLayer"
   },
   "wallets": [
@@ -141,6 +141,39 @@
       },
       "installation": {
         "windowProperty": "nightly"
+      },
+      "sdkVersion": ">=0.1.0"
+    },
+    {
+      "id": "cauri",
+      "name": "Cauri Wallet",
+      "description": "Non-custodial passkey-based wallet for Canton Network",
+      "homepage": "https://cauri.cc",
+      "icon": "https://registry.partylayer.xyz/wallets/cauri.svg",
+      "supportedNetworks": ["devnet", "mainnet"],
+      "capabilities": {
+        "signMessage": true,
+        "signTransaction": true,
+        "submitTransaction": true,
+        "transactionStatus": true,
+        "switchNetwork": false,
+        "multiParty": false,
+        "remoteSigner": true,
+        "events": true
+      },
+      "adapter": {
+        "type": "@lithiumdigital/cauri-dapp-sdk",
+        "transport": "discovery-adapter",
+        "config": { "providerId": "cauri" },
+        "networkHosts": {
+          "devnet": "https://devnet.cauri.cc",
+          "mainnet": "https://cauri.cc"
+        }
+      },
+      "cip0103": {
+        "native": true,
+        "evidence": "https://www.npmjs.com/package/@lithiumdigital/cauri-dapp-sdk",
+        "since": "2026-08-03"
       },
       "sdkVersion": ">=0.1.0"
     },
