@@ -14,7 +14,7 @@ test.describe('Cantor8 Connect Flow', () => {
   // Tracked: see /tmp/mock-mode-investigation.md
   test.fixme('cantor8 connect with mock transport', async ({ page }) => {
     // Set mock mode
-    await page.goto('http://localhost:3000?mockWallets=1');
+    await page.goto('/?mockWallets=1');
 
     // Wait for page to load
     await page.waitForSelector('h1', { timeout: 10000 });
