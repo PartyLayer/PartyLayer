@@ -18,6 +18,7 @@ obtain your own permission from each mark's owner before redistributing these fi
 | console.png | Console Wallet |
 | loop.svg | 5N Loop |
 | nightly.png | Nightly |
+| oneswap.svg | OneSwap V2 Wallet. Used with the vendor's permission. |
 | send-logo.jpg | Send |
 | walletconnect.svg | WalletConnect |
 | walley-logo.png | Walley |

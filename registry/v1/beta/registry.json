@@ -4,7 +4,7 @@
     "schemaVersion": "1.0.0",
     "publishedAt": "2026-06-10T00:00:00Z",
     "channel": "beta",
-    "sequence": 11,
+    "sequence": 12,
     "publisher": "PartyLayer"
   },
   "wallets": [
@@ -174,6 +174,38 @@
         "native": true,
         "evidence": "https://www.npmjs.com/package/@lithiumdigital/cauri-dapp-sdk",
         "since": "2026-08-03"
+      },
+      "sdkVersion": ">=0.1.0"
+    },
+    {
+      "id": "oneswap",
+      "name": "OneSwap V2 Wallet",
+      "description": "Hosted custodial Canton wallet. Approval and submission happen in the OneSwap popup.",
+      "homepage": "https://oneswap.cc",
+      "icon": "https://registry.partylayer.xyz/wallets/oneswap.svg",
+      "supportedNetworks": ["devnet"],
+      "capabilities": {
+        "signMessage": true,
+        "signTransaction": false,
+        "submitTransaction": true,
+        "transactionStatus": false,
+        "switchNetwork": false,
+        "multiParty": false,
+        "remoteSigner": true,
+        "events": false
+      },
+      "adapter": {
+        "type": "@oneswap/wallet-cip0103-adapter",
+        "transport": "discovery-adapter",
+        "config": { "providerId": "oneswap" },
+        "networkHosts": {
+          "devnet": "https://devnet.oneswap.cc"
+        }
+      },
+      "cip0103": {
+        "native": true,
+        "evidence": "https://www.npmjs.com/package/@oneswap/wallet-cip0103-adapter",
+        "since": "2026-08-05"
       },
       "sdkVersion": ">=0.1.0"
     },
