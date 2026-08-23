@@ -49,5 +49,26 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      # The gate's final stage (gate:verify-e2e) runs the mock E2E and security
+      # suites, which need a real browser. ci.yml has always installed chromium
+      # before its own verify:e2e step; this job did not, because until the gate
+      # gained that stage it had no browser-dependent work. Without this the two
+      # suites skip, the gate still passes, and the coverage silently disappears
+      # from every pull request.
+      - name: Install Playwright Chromium
+        run: pnpm --filter partylayer-demo exec playwright install --with-deps chromium
+
       - name: Run regression safety gate
         run: pnpm gate
+
+      # `pnpm gate` uploads nothing on its own, so a failure used to leave only
+      # the console. The log now names each failing test, and this keeps the full
+      # report for the cases where the first line is not enough.
+      - name: Upload verification report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: regression-gate-verify-report
+          path: artifacts/verify/**/*
+          if-no-files-found: ignore
+          retention-days: 30
