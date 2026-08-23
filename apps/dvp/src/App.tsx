@@ -72,6 +72,8 @@ function makeBronConfig(): BronAdapterConfig | undefined {
 const BRON_CONFIG = makeBronConfig();
 
 const ADAPTERS = buildWalletAdapters({
+  // Same value this app passes to PartyLayerKit below.
+  network: 'devnet',
   walletConnectProjectId: WC_PROJECT_ID,
   bron: BRON_CONFIG,
 });

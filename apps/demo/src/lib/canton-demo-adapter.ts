@@ -201,6 +201,8 @@ export class CantonDemoWalletAdapter implements WalletAdapter {
 export function buildDemoAdapters(): (WalletAdapter | OfficialProviderAdapter | OfficialAdapterFactory)[] {
   const adapters: (WalletAdapter | OfficialProviderAdapter | OfficialAdapterFactory)[] =
     buildWalletAdapters({
+      // Same value both demo surfaces pass to PartyLayerKit.
+      network: 'devnet',
       // WalletConnect is opt-in (live mobile-wallet scan). Registering it surfaces
       // "WalletConnect" in the picker; its dapp-sdk barrel only loads at connect.
       walletConnectProjectId: wcProjectId(),
