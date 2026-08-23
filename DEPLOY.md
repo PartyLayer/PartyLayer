@@ -8,10 +8,27 @@ bring the gateway up first, since the apps call it in live mode.
 
 ## Access
 
-- **Host**: reach the production host through the SSH alias `partylayer-prod`, defined in
-  the operator's local ssh config. This is what the `<user>@<validator-host>` placeholder
-  under "Sync to the host" resolves to. Host details live in the private ops notes, never
-  in this repository.
+- **Host**: every deploy step reaches the production host through the SSH alias
+  `partylayer-prod`. The alias is what the `rsync` and `ssh` commands below use, and it is
+  the only form the host appears in anywhere in this repository.
+- **If the alias is not defined on your machine**, `ssh partylayer-prod` fails to resolve
+  and the deploy stops at the sync step. Define it once by adding a block to
+  `~/.ssh/config`, which is outside this repository:
+
+  ```
+  Host partylayer-prod
+      HostName <from the private ops notes>
+      User     <from the private ops notes>
+  ```
+
+  Take both values from the private ops notes. Do not commit them, do not paste them into
+  a pull request, an issue, or a commit message, and do not write them into any file inside
+  this repository. If the file did not already exist, `chmod 600 ~/.ssh/config` after
+  creating it. Confirm the alias works with a read-only check before deploying:
+
+  ```
+  ssh -o BatchMode=yes partylayer-prod "hostname && ls -d /opt/partylayer-apps/*"
+  ```
 - **Apps**: served from `/opt/partylayer-apps/<app>`, one directory per app
   (`tokenization`, `dvp`).
 - **Gateway**: runs as a plain `docker run` container named `partylayer-devnet-proxy`, not
@@ -19,6 +36,32 @@ bring the gateway up first, since the apps call it in live mode.
   `docker logs partylayer-devnet-proxy`, and `docker restart partylayer-devnet-proxy`. Its
   build and run arguments are in
   [apps/devnet-proxy/RUNBOOK.md](./apps/devnet-proxy/RUNBOOK.md).
+
+## Deploying from a checkout when main is held elsewhere
+
+This repository is often used with several git worktrees at once, and `main` can only be
+checked out in one of them. In any other worktree `git checkout main` fails with
+`fatal: 'main' is already used by worktree at ...`. That is not a problem to force past:
+checking out `main` is not the goal, deploying `main`'s content is.
+
+Fetch, then verify the tree you are about to build matches `origin/main` rather than
+forcing a checkout:
+
+```
+git fetch origin
+git rev-parse HEAD                 # the sha you will record in version.txt
+git rev-parse origin/main          # must be the same sha
+git diff origin/main --stat        # must print nothing
+git status --porcelain             # must print nothing
+```
+
+Same sha, empty diff, and a clean tree together mean the working tree is byte-identical to
+`origin/main`, whichever branch name is currently checked out. Build and deploy from that.
+If the shas differ or the diff is non-empty, stop and reconcile before building: a
+`version.txt` recording a sha whose content was never built is worse than a failed deploy,
+because the deployed build then looks verified when it is not.
+
+`git worktree list` shows which worktree currently holds `main` if you need to know.
 
 ## Topology
 

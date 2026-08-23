@@ -1,0 +1,44 @@
+{
+  "name": "@partylayer/demo-adapters",
+  "version": "0.0.0",
+  "private": true,
+  "description": "The wallet adapter set the PartyLayer demo surfaces share. Repo-internal, never published.",
+  "main": "./dist/index.js",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "clean": "rm -rf dist",
+    "lint": "eslint src --ext .ts",
+    "typecheck": "tsc --noEmit",
+    "test": "tsx --test src/adapters.test.ts"
+  },
+  "dependencies": {
+    "@partylayer/adapter-bron": "workspace:^",
+    "@partylayer/adapter-cantor8": "workspace:^",
+    "@partylayer/adapter-console": "workspace:^",
+    "@partylayer/adapter-loop": "workspace:^",
+    "@partylayer/adapter-nightly": "workspace:^",
+    "@partylayer/adapter-send": "workspace:^",
+    "@partylayer/adapter-walletconnect": "workspace:^",
+    "@partylayer/core": "workspace:^",
+    "@partylayer/sdk": "workspace:^",
+    "@k2flabs/walley-dapp-sdk": "1.2.0",
+    "@lithiumdigital/cauri-dapp-sdk": "0.2.0"
+  },
+  "devDependencies": {
+    "tsup": "^8.0.0",
+    "tsx": "^4.21.0",
+    "typescript": "^5.3.3"
+  }
+}

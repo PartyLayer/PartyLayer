@@ -38,10 +38,9 @@ import {
   type SignedMessage,
   type WalletAdapter,
 } from '@partylayer/core';
-import { getBuiltinAdapters, type OfficialProviderAdapter, type OfficialAdapterFactory } from '@partylayer/sdk';
-import { WalleyAdapter } from '@k2flabs/walley-dapp-sdk';
-import { cauriAdapterFactory } from '@lithiumdigital/cauri-dapp-sdk';
-import { buildWalletConnectAdapter } from './walletconnect-demo';
+import { type OfficialProviderAdapter, type OfficialAdapterFactory } from '@partylayer/sdk';
+import { buildWalletAdapters } from '@partylayer/demo-adapters';
+import { WC_METADATA, wcProjectId } from './walletconnect-demo';
 import { sortByCanonicalOrder } from './wallet-order';
 
 const WALLET_ID = 'canton-demo';
@@ -195,32 +194,27 @@ export class CantonDemoWalletAdapter implements WalletAdapter {
 }
 
 /**
- * Demo's canonical adapter list. Equal to `getBuiltinAdapters()` in
- * production; in dev / Playwright it also registers the
- * CantonDemoWalletAdapter so the fixture-backed test wallet surfaces
- * in the picker.
+ * Demo's canonical adapter list: the shared set from `@partylayer/demo-adapters`,
+ * plus the fixture-backed test wallet in dev / Playwright, in the demo's own
+ * canonical order.
  */
 export function buildDemoAdapters(): (WalletAdapter | OfficialProviderAdapter | OfficialAdapterFactory)[] {
-  // Opt-in WalletConnect (live mobile-wallet scan). Registering it surfaces
-  // "WalletConnect" in the picker; its dapp-sdk barrel only loads at connect.
-  const adapters: (WalletAdapter | OfficialProviderAdapter | OfficialAdapterFactory)[] = [
-    ...getBuiltinAdapters(),
-    buildWalletConnectAdapter(),
-    // Walley — popup/remote wallet. FACTORY form: the SDK resolves the host from
-    // the registry entry's adapter.networkHosts for the active network (no
-    // hardcoded URL) and constructs the official adapter with it. No
-    // @partylayer/adapter-walley package. Validated against real dev.walley.cc
-    // by the walley E2E (devnet host resolved from the registry entry).
-    { providerId: 'walley', create: (host: string) => new WalleyAdapter({ host }) },
-    // Cauri — passkey/remote wallet on the same discovery-adapter path as Walley.
-    // Its SDK exports a ready OfficialAdapterFactory, so it is passed straight
-    // through rather than constructed inline; the SDK still resolves the host
-    // from the registry entry's adapter.networkHosts for the active network.
-    // Registered here (not per surface) so the landing page and the kit demo
-    // both carry it, which is what lets the connect modal agree with the
-    // registry-derived supported-wallets section.
-    cauriAdapterFactory,
-  ];
+  const adapters: (WalletAdapter | OfficialProviderAdapter | OfficialAdapterFactory)[] =
+    buildWalletAdapters({
+      // WalletConnect is opt-in (live mobile-wallet scan). Registering it surfaces
+      // "WalletConnect" in the picker; its dapp-sdk barrel only loads at connect.
+      walletConnectProjectId: wcProjectId(),
+      walletConnectMetadata: WC_METADATA,
+      // Console and Send reach this surface over the CIP-0103 announce transport
+      // (their registry entries carry transport:'announce'), which is how the demo
+      // has always listed them. Registering explicit adapters would change how this
+      // app CONNECTS them, and that is a separate decision from moving code, so
+      // they stay excluded here. The two verticals do register them, deliberately,
+      // so a direct connect works there without waiting on the announce event.
+      exclude: ['console', 'send'],
+      // Bron is absent: it needs real OAuth credentials a public demo cannot ship,
+      // and omitting the config means it is never registered.
+    });
   if (process.env.NODE_ENV !== 'production') {
     adapters.push(new CantonDemoWalletAdapter());
   }
