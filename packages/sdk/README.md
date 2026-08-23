@@ -125,6 +125,7 @@ await client.disconnect();
 | Cantor8 | devnet, mainnet | submitTransaction, transactionStatus | No | `@partylayer/adapter-cantor8` |
 | Bron | devnet, testnet, mainnet | signMessage, signTransaction | Yes | `@partylayer/adapter-bron` |
 | Nightly | devnet, testnet, mainnet | signMessage, submitTransaction | No | `@partylayer/adapter-nightly` |
+| Cauri Wallet | devnet, mainnet | signMessage, signTransaction, submitTransaction, transactionStatus | No | `@lithiumdigital/cauri-dapp-sdk` |
 | Send | mainnet | signMessage, submitTransaction, transactionStatus | No | `@partylayer/adapter-send` |
 | Walley | mainnet, testnet, devnet | signMessage, submitTransaction, transactionStatus | No | `@k2flabs/walley-dapp-sdk` |
 | WalletConnect | devnet, testnet, mainnet | signMessage, submitTransaction | Yes | `@partylayer/adapter-walletconnect` |

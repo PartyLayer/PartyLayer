@@ -25,6 +25,11 @@ import { BronAdapter } from '@partylayer/adapter-bron';
 // Walley is the stable registry's discovery-adapter (Path B) wallet. Pinned exactly
 // because this is a third-party runtime dependency shipped on a public demo page.
 import { WalleyAdapter } from '@k2flabs/walley-dapp-sdk';
+// Cauri is the stable registry's other discovery-adapter (Path B) wallet. Pinned
+// exactly for the same reason. Its SDK exports a ready OfficialAdapterFactory
+// rather than an adapter class, so it is registered as-is and the SDK resolves
+// the host from the registry entry's networkHosts for the active network.
+import { cauriAdapterFactory } from '@lithiumdigital/cauri-dapp-sdk';
 import { DemoProvider } from './context/DemoContext';
 import { demoBackend } from './lib/backend';
 import { createLiveBackend, fetchGatewayParties } from './lib/liveBackend';
@@ -85,6 +90,7 @@ const ADAPTERS = [
   new Cantor8Adapter(),
   new NightlyAdapter(),
   new WalleyAdapter({ host: 'https://dev.walley.cc' }),
+  cauriAdapterFactory,
   new WalletConnectAdapter({ projectId: WC_PROJECT_ID }),
   ...(BRON_ADAPTER ? [BRON_ADAPTER] : []),
 ];

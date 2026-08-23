@@ -60,6 +60,14 @@ export const GENERATED_WALLETS: GeneratedWallet[] = [
     adapter: "@partylayer/adapter-nightly",
   },
   {
+    id: 'cauri',
+    name: "Cauri Wallet",
+    networks: ['devnet', 'mainnet'],
+    capabilities: { signMessage: true, signTransaction: true, submitTransaction: true, transactionStatus: true, switchNetwork: false, multiParty: false },
+    optIn: false,
+    adapter: "@lithiumdigital/cauri-dapp-sdk",
+  },
+  {
     id: 'send',
     name: "Send",
     networks: ['mainnet'],

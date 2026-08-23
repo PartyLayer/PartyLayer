@@ -40,6 +40,7 @@ import {
 } from '@partylayer/core';
 import { getBuiltinAdapters, type OfficialProviderAdapter, type OfficialAdapterFactory } from '@partylayer/sdk';
 import { WalleyAdapter } from '@k2flabs/walley-dapp-sdk';
+import { cauriAdapterFactory } from '@lithiumdigital/cauri-dapp-sdk';
 import { buildWalletConnectAdapter } from './walletconnect-demo';
 import { sortByCanonicalOrder } from './wallet-order';
 
@@ -211,6 +212,14 @@ export function buildDemoAdapters(): (WalletAdapter | OfficialProviderAdapter | 
     // @partylayer/adapter-walley package. Validated against real dev.walley.cc
     // by the walley E2E (devnet host resolved from the registry entry).
     { providerId: 'walley', create: (host: string) => new WalleyAdapter({ host }) },
+    // Cauri — passkey/remote wallet on the same discovery-adapter path as Walley.
+    // Its SDK exports a ready OfficialAdapterFactory, so it is passed straight
+    // through rather than constructed inline; the SDK still resolves the host
+    // from the registry entry's adapter.networkHosts for the active network.
+    // Registered here (not per surface) so the landing page and the kit demo
+    // both carry it, which is what lets the connect modal agree with the
+    // registry-derived supported-wallets section.
+    cauriAdapterFactory,
   ];
   if (process.env.NODE_ENV !== 'production') {
     adapters.push(new CantonDemoWalletAdapter());
