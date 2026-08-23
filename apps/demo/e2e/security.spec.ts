@@ -27,7 +27,7 @@ test.describe('Security Tests', () => {
       // This test verifies that tampered registry is rejected
       // and falls back to last-known-good cache
       
-      await page.goto('http://localhost:3000?mockWallets=1');
+      await page.goto('/?mockWallets=1');
       await page.waitForSelector('h1', { timeout: 10000 });
 
       // Verify registry status shows verified
@@ -43,7 +43,7 @@ test.describe('Security Tests', () => {
       // This test verifies sequence downgrade is rejected
       // Unit tests cover the logic; E2E verifies error handling
       
-      await page.goto('http://localhost:3000?mockWallets=1');
+      await page.goto('/?mockWallets=1');
       await page.waitForSelector('h1', { timeout: 10000 });
 
       // Registry client should reject downgrades
@@ -57,7 +57,7 @@ test.describe('Security Tests', () => {
   test.describe('Origin Security', () => {
     test('origin not allowed -> ORIGIN_NOT_ALLOWED error', async ({ page, context }) => {
       // Test origin allowlist enforcement
-      await page.goto('http://localhost:3000?mockWallets=1');
+      await page.goto('/?mockWallets=1');
       await page.waitForSelector('h1', { timeout: 10000 });
 
       // Open connect modal
@@ -78,7 +78,7 @@ test.describe('Security Tests', () => {
     // Tracked: see /tmp/mock-mode-investigation.md
     test.fixme('callback origin spoof -> reject', async ({ page }) => {
       // Test that postMessage from wrong origin is rejected
-      await page.goto('http://localhost:3000?mockWallets=1');
+      await page.goto('/?mockWallets=1');
       
       // Inject malicious postMessage
       await page.evaluate(() => {
@@ -105,7 +105,7 @@ test.describe('Security Tests', () => {
   test.describe('State Replay Protection', () => {
     test('replay state -> reject', async ({ page }) => {
       // Test that reused state parameter is rejected
-      await page.goto('http://localhost:3000?mockWallets=1');
+      await page.goto('/?mockWallets=1');
       await page.waitForSelector('h1', { timeout: 10000 });
 
       // State replay protection is handled in transport layer
@@ -123,7 +123,7 @@ test.describe('Security Tests', () => {
     // Tracked: see /tmp/mock-mode-investigation.md
     test.fixme('Bron tokens not persisted by default', async ({ page, context }) => {
       // Test that Bron access tokens are not persisted unless opt-in
-      await page.goto('http://localhost:3000?mockWallets=1');
+      await page.goto('/?mockWallets=1');
       await page.waitForSelector('h1', { timeout: 10000 });
 
       // Connect with Bron (mock)
@@ -153,7 +153,7 @@ test.describe('Security Tests', () => {
   test.describe('Transport Security', () => {
     test('transport timeout -> TIMEOUT error', async ({ page }) => {
       // Test timeout handling
-      await page.goto('http://localhost:3000?mockWallets=1');
+      await page.goto('/?mockWallets=1');
       await page.waitForSelector('h1', { timeout: 10000 });
 
       // Timeout behavior is tested in transport unit tests
@@ -165,7 +165,7 @@ test.describe('Security Tests', () => {
 
     test('wallet not installed -> WALLET_NOT_INSTALLED', async ({ page }) => {
       // Test missing wallet error
-      await page.goto('http://localhost:3000');
+      await page.goto('/');
       await page.waitForSelector('h1', { timeout: 10000 });
 
       // In non-mock mode, Console/Loop should show "not installed"

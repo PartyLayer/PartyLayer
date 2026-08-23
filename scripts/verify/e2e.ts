@@ -138,16 +138,44 @@ function runStep<T>(name: string, fn: () => T): T {
   }
 }
 
+/**
+ * The `test` script a workspace package declares, or null when it has none.
+ *
+ * Asked rather than assumed. The unit step used to carry two hardcoded entries
+ * claiming "sdk and react don't have test scripts", which was simply untrue:
+ * both declare one and both run under `gate:test` (28 and 35 test files). The
+ * report therefore understated coverage, and nothing would ever have corrected
+ * it, because nothing was reading the manifest.
+ */
+function packageTestScript(packageName: string): string | null {
+  const short = packageName.replace(/^@partylayer\//, '');
+  for (const dir of [`packages/${short}`, `packages/adapters/${short}`]) {
+    const manifest = join(ROOT, dir, 'package.json');
+    if (!existsSync(manifest)) continue;
+    const pkg = JSON.parse(readFileSync(manifest, 'utf-8'));
+    if (pkg.name !== packageName) continue;
+    return typeof pkg.scripts?.test === 'string' && pkg.scripts.test ? pkg.scripts.test : null;
+  }
+  return null;
+}
+
 function runTests(packageFilter: string, testType: string): TestResult[] {
+  const script = packageTestScript(packageFilter);
+  if (!script) {
+    const reason = `${packageFilter} declares no test script`;
+    console.log(`\nSkipping ${testType} tests: ${reason}`);
+    return [{ name: testType, status: 'skipped', error: reason }];
+  }
+
   console.log(`\nRunning ${testType} tests...`);
   try {
     exec(`pnpm --filter ${packageFilter} test`, ROOT);
     return [{ name: testType, status: 'passed' }];
   } catch (error: any) {
-    return [{ 
-      name: testType, 
-      status: 'failed', 
-      error: error.message 
+    return [{
+      name: testType,
+      status: 'failed',
+      error: error.message
     }];
   }
 }
@@ -389,15 +417,15 @@ async function main() {
 
     // Step 5: Run unit tests
     // Only run tests for packages that have test scripts configured
-    runStep('Run unit tests', () => {
-      report.testResults.unit = [
-        ...runTests('@partylayer/core', 'core'),
-        ...runTests('@partylayer/registry-client', 'registry-client'),
-        // sdk and react don't have test scripts - mark as skipped
-        { name: 'sdk', status: 'skipped', error: 'No test script defined' },
-        { name: 'react', status: 'skipped', error: 'No test script defined' },
-      ];
-    });
+    // Returned, not assigned inside, so runStep sees the results and a failing
+    // package makes the step print [x] with its name instead of "completed".
+    report.testResults.unit = runStep('Run unit tests', (): TestResult[] => [
+      ...runTests('@partylayer/core', 'core'),
+      ...runTests('@partylayer/registry-client', 'registry-client'),
+      // Detected from each manifest, never asserted here: see packageTestScript.
+      ...runTests('@partylayer/sdk', 'sdk'),
+      ...runTests('@partylayer/react', 'react'),
+    ]);
 
     // Step 6: Run integration tests (adapter unit tests)
     runStep('Run integration tests', () => {
@@ -410,9 +438,10 @@ async function main() {
     });
 
     // Step 7: Run conformance tests
-    runStep('Run conformance tests', () => {
-      report.testResults.conformance = runConformanceTests();
-    });
+    report.testResults.conformance = runStep(
+      'Run conformance tests',
+      (): TestResult[] => runConformanceTests(),
+    );
 
     // Step 8: Build demo app
     runStep('Build demo app', () => {
