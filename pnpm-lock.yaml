@@ -238,6 +238,9 @@ importers:
       '@lithiumdigital/cauri-dapp-sdk':
         specifier: 0.2.0
         version: 0.2.0(@canton-network/core-splice-provider@1.8.0)(@canton-network/core-types@1.8.0)(@canton-network/core-wallet-dapp-rpc-client@1.8.0)(@canton-network/core-wallet-discovery@1.4.0)
+      '@oneswap/wallet-cip0103-adapter':
+        specifier: 0.2.0
+        version: 0.2.0(@partylayer/core@packages+core)
       '@partylayer/adapter-bron':
         specifier: workspace:^
         version: link:../../packages/adapters/bron
@@ -2206,6 +2209,11 @@ packages:
 
   '@one-ini/wasm@0.1.1':
     resolution: {integrity: sha512-XuySG1E38YScSJoMlqovLru4KTUNSjgVTIjyh7qMX6aNN5HY5Ct5LhRJdxO79JtTzKfzV/bnWpz+zquYrISsvw==}
+
+  '@oneswap/wallet-cip0103-adapter@0.2.0':
+    resolution: {integrity: sha512-ZGtSfVJDK+LJgrHMhEdnSTDTQWHiKCHzjS8RGrJKR6OSj0e0Me0fEsYobwXUlPqSUxxYLw4HNl2hAT/DO1vMIA==}
+    peerDependencies:
+      '@partylayer/core': ^0.12.1
 
   '@open-draft/deferred-promise@2.2.0':
     resolution: {integrity: sha512-CecwLWx3rhxVQF6V4bAgPS5t+So2sTbPgAzafKkVizyi7tlwpcFpdFqq+wqF2OwNBmqFuu6tOyouTuxgpMfzmA==}
@@ -7725,6 +7733,10 @@ snapshots:
       fastq: 1.20.1
 
   '@one-ini/wasm@0.1.1': {}
+
+  '@oneswap/wallet-cip0103-adapter@0.2.0(@partylayer/core@packages+core)':
+    dependencies:
+      '@partylayer/core': link:packages/core
 
   '@open-draft/deferred-promise@2.2.0': {}
 

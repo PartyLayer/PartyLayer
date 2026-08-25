@@ -126,6 +126,7 @@ await client.disconnect();
 | Bron | devnet, testnet, mainnet | signMessage, signTransaction | Yes | `@partylayer/adapter-bron` |
 | Nightly | devnet, testnet, mainnet | signMessage, submitTransaction | No | `@partylayer/adapter-nightly` |
 | Cauri Wallet | devnet, mainnet | signMessage, signTransaction, submitTransaction, transactionStatus | No | `@lithiumdigital/cauri-dapp-sdk` |
+| OneSwap V2 Wallet | devnet, mainnet | signMessage, submitTransaction | No | `@oneswap/wallet-cip0103-adapter` |
 | Send | mainnet | signMessage, submitTransaction, transactionStatus | No | `@partylayer/adapter-send` |
 | Walley | mainnet, testnet, devnet | signMessage, submitTransaction, transactionStatus | No | `@k2flabs/walley-dapp-sdk` |
 | WalletConnect | devnet, testnet, mainnet | signMessage, submitTransaction | Yes | `@partylayer/adapter-walletconnect` |

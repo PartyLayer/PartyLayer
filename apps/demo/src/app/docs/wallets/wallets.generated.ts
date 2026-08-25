@@ -68,6 +68,14 @@ export const GENERATED_WALLETS: GeneratedWallet[] = [
     adapter: "@lithiumdigital/cauri-dapp-sdk",
   },
   {
+    id: 'oneswap',
+    name: "OneSwap V2 Wallet",
+    networks: ['devnet', 'mainnet'],
+    capabilities: { signMessage: true, signTransaction: false, submitTransaction: true, transactionStatus: false, switchNetwork: false, multiParty: false },
+    optIn: false,
+    adapter: "@oneswap/wallet-cip0103-adapter",
+  },
+  {
     id: 'send',
     name: "Send",
     networks: ['mainnet'],

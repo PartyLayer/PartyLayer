@@ -18,10 +18,10 @@ import {
   type AdapterEntry,
   type SharedAdapterOptions,
   type WalletKey,
-} from './index';
+} from './index.js';
 
 /** How each consuming app calls the builder, minus anything app-specific. */
-const BASE: SharedAdapterOptions = { walletConnectProjectId: 'test-project-id' };
+const BASE: SharedAdapterOptions = { network: 'devnet', walletConnectProjectId: 'test-project-id' };
 
 /** The id an entry will register under, whichever form it takes. */
 function idOf(entry: AdapterEntry): string {
@@ -114,7 +114,7 @@ test('no wallet host is hardcoded: the discovery wallets are registered as facto
   // Walley and Cauri carry networkHosts in their registry entries. Registering
   // them in factory form is what lets the SDK resolve the host per network, and
   // is why no wallet URL appears in the shared module or in any app.
-  for (const id of ['walley', 'cauri']) {
+  for (const id of ['walley', 'cauri', 'oneswap']) {
     const entry = buildWalletAdapters(BASE).find((e) => idOf(e) === id);
     assert.ok(entry, `${id} should be registered`);
     assert.equal(
