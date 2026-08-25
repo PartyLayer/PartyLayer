@@ -2,17 +2,16 @@
   "name": "@partylayer/demo-adapters",
   "version": "0.0.0",
   "private": true,
-  "description": "The wallet adapter set the PartyLayer demo surfaces share. Repo-internal, never published.",
-  "main": "./dist/index.js",
-  "module": "./dist/index.mjs",
+  "type": "module",
+  "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "import": "./dist/index.mjs",
-      "require": "./dist/index.js"
+      "import": "./dist/index.js"
     }
   },
+  "description": "The wallet adapter set the PartyLayer demo surfaces share. Repo-internal, never published.",
   "files": [
     "dist"
   ],
@@ -21,9 +20,12 @@
     "clean": "rm -rf dist",
     "lint": "eslint src --ext .ts",
     "typecheck": "tsc --noEmit",
-    "test": "tsx --test src/adapters.test.ts"
+    "test": "tsx --test src/adapters.test.mts"
   },
   "dependencies": {
+    "@k2flabs/walley-dapp-sdk": "1.2.0",
+    "@lithiumdigital/cauri-dapp-sdk": "0.2.0",
+    "@oneswap/wallet-cip0103-adapter": "0.2.0",
     "@partylayer/adapter-bron": "workspace:^",
     "@partylayer/adapter-cantor8": "workspace:^",
     "@partylayer/adapter-console": "workspace:^",
@@ -32,9 +34,7 @@
     "@partylayer/adapter-send": "workspace:^",
     "@partylayer/adapter-walletconnect": "workspace:^",
     "@partylayer/core": "workspace:^",
-    "@partylayer/sdk": "workspace:^",
-    "@k2flabs/walley-dapp-sdk": "1.2.0",
-    "@lithiumdigital/cauri-dapp-sdk": "0.2.0"
+    "@partylayer/sdk": "workspace:^"
   },
   "devDependencies": {
     "tsup": "^8.0.0",

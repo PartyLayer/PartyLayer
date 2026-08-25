@@ -4,7 +4,7 @@
     "schemaVersion": "1.0.0",
     "publishedAt": "2026-06-10T00:00:00Z",
     "channel": "beta",
-    "sequence": 12,
+    "sequence": 13,
     "publisher": "PartyLayer"
   },
   "wallets": [
@@ -183,7 +183,7 @@
       "description": "Hosted custodial Canton wallet. Approval and submission happen in the OneSwap popup.",
       "homepage": "https://oneswap.cc",
       "icon": "https://registry.partylayer.xyz/wallets/oneswap.svg",
-      "supportedNetworks": ["devnet"],
+      "supportedNetworks": ["devnet", "mainnet"],
       "capabilities": {
         "signMessage": true,
         "signTransaction": false,
@@ -199,7 +199,8 @@
         "transport": "discovery-adapter",
         "config": { "providerId": "oneswap" },
         "networkHosts": {
-          "devnet": "https://devnet.oneswap.cc"
+          "devnet": "https://devnet.oneswap.cc",
+          "mainnet": "https://www.oneswap.cc"
         }
       },
       "cip0103": {
