@@ -125,6 +125,23 @@ function toBase64Message(message: string): string {
 }
 
 /**
+ * The signature Console reports for a submitted transaction, or `undefined`.
+ *
+ * NOTE ON THE NAME IT ENDS UP UNDER. Callers receive this as `transactionHash`,
+ * and a signature is not a Canton transaction hash. That mislabelling is real
+ * but it is a TYPE problem, not a value problem: `TxReceipt.transactionHash` and
+ * `SignedTransaction.transactionHash` are required fields, so an adapter with no
+ * hash to give has nowhere to put nothing. Fixing the label properly means making
+ * those fields optional, which is a published-interface change and its own
+ * decision. What this file no longer does is INVENT the value.
+ */
+function readSignature(result: unknown): string | undefined {
+  if (!result || typeof result !== 'object' || !('signature' in result)) return undefined;
+  const signature = (result as { signature?: unknown }).signature;
+  return typeof signature === 'string' && signature.length > 0 ? signature : undefined;
+}
+
+/**
  * How long to wait for the wallet's `executed` tx event after the user has
  * approved a transfer, before giving up and throwing.
  *
@@ -427,7 +444,15 @@ export class ConsoleAdapter implements WalletAdapter {
 
       // Get primary account for party ID
       const account = await (await getConsoleWallet()).getPrimaryAccount();
-      const partyIdStr = account?.partyId || `party-${Date.now()}`;
+      // Never invent a party id. A session carrying a fabricated party is not a
+      // degraded session, it is a broken one: every later call acts as a party
+      // that does not exist, and the failure surfaces far from its cause.
+      if (!account?.partyId) {
+        throw new Error(
+          'Console Wallet returned no party id from getPrimaryAccount, so there is no account to connect.',
+        );
+      }
+      const partyIdStr = account.partyId;
 
       // Get active network. Trust the wallet-reported network ONLY when it is a
       // RECOGNIZED Canton network; otherwise fall back to the dApp's configured
@@ -650,11 +675,20 @@ export class ConsoleAdapter implements WalletAdapter {
         params.tx as Parameters<ConsoleWalletApi['submitCommands']>[0],
       );
 
-      const txHash = `tx_${Date.now()}_${Math.random().toString(36).substring(2, 15)}`;
+      // Was an unconditionally generated `tx_<now>_<random>` string — not a
+      // fallback but a fabrication on every call. Console reports the signature
+      // it produced; when it does not, there is nothing real to return and this
+      // fails rather than inventing one.
+      const signature = readSignature(result);
+      if (!signature) {
+        throw new Error(
+          'Console Wallet returned no signature for the transaction, so there is no real identifier to report.',
+        );
+      }
 
       return {
         signedTx: result,
-        transactionHash: toTransactionHash(txHash),
+        transactionHash: toTransactionHash(signature),
         partyId: session.partyId,
       };
     } catch (err) {
@@ -689,10 +723,12 @@ export class ConsoleAdapter implements WalletAdapter {
         waitForFinalization: 5000,
       });
 
-      const signature =
-        result && typeof result === 'object' && 'signature' in result
-          ? String(result.signature)
-          : `tx_${Date.now()}`;
+      const signature = readSignature(result);
+      if (!signature) {
+        throw new Error(
+          'Console Wallet returned no signature for the submitted transaction, so there is no real identifier to report.',
+        );
+      }
 
       return {
         transactionHash: toTransactionHash(signature),

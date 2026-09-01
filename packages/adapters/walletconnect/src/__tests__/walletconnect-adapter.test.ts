@@ -564,3 +564,45 @@ describe('WalletConnectAdapter — CAIP-2 chain derivation (A1)', () => {
     expect(calls).toBe(1);
   });
 });
+
+// ── no invented values ───────────────────────────────────────────────────────
+
+describe('WalletConnectAdapter — submitTransaction invents nothing', () => {
+  it('returns the real updateId and commandId', async () => {
+    const adapter = new WalletConnectAdapter(
+      { projectId: 'p' },
+      { createOfficialAdapter: (cfg) => makeMockOfficial(cfg) },
+    );
+    const ctx = createMockContext();
+    await adapter.connect(ctx);
+
+    const receipt = await adapter.submitTransaction(ctx, {} as never, { signedTx: {} });
+
+    expect(receipt.updateId).toBe('update-2');
+    expect(String(receipt.transactionHash)).toBe('update-2');
+    expect(receipt.commandId).toBe('cmd-2');
+  });
+
+  it('fails when the response carries no updateId, rather than reporting "pending"', async () => {
+    // Was `updateId ?? commandId ?? 'pending'` — the literal string "pending"
+    // returned as a transactionHash. Matches the Send adapter, which reaches the
+    // same response and already throws.
+    const official = makeMockOfficial({});
+    official.request.mockImplementation(async (args: { method: string }) => {
+      if (args.method === 'connect') return { isConnected: true };
+      if (args.method === 'getPrimaryAccount') return { partyId: 'party::wc-1' };
+      if (args.method === 'prepareExecuteAndWait') return { tx: { commandId: 'cmd-3' } };
+      return {};
+    });
+    const adapter = new WalletConnectAdapter(
+      { projectId: 'p' },
+      { createOfficialAdapter: () => official },
+    );
+    const ctx = createMockContext();
+    await adapter.connect(ctx);
+
+    await expect(
+      adapter.submitTransaction(ctx, {} as never, { signedTx: {} }),
+    ).rejects.toThrow(/no updateId/);
+  });
+});

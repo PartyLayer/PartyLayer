@@ -308,8 +308,19 @@ export class CantonDemoWalletAdapter implements WalletAdapter {
       method: 'prepareExecute',
       params: { tx: params.signedTx },
     })) as { transactionHash?: string; commandId?: string; updateId?: string };
+    // Was: transactionHash ?? commandId ?? '' — the empty string is the worst of
+    // the placeholders this repository had. An undefined fails a null check, and a
+    // generated tx_<timestamp> at least looks wrong on sight; an empty string is
+    // present, well-typed and falsy, so it erases the difference between absent
+    // and empty. A caller guarding on truthiness gets the same answer for both,
+    // and a caller rendering it shows nothing at all.
+    if (!result.transactionHash && !result.commandId) {
+      throw new Error(
+        'The demo wallet fixture returned neither a transactionHash nor a commandId, so there is no identifier to show.',
+      );
+    }
     return {
-      transactionHash: toTransactionHash(result.transactionHash ?? result.commandId ?? ''),
+      transactionHash: toTransactionHash(result.transactionHash ?? (result.commandId as string)),
       submittedAt: Date.now(),
       commandId: result.commandId,
       updateId: result.updateId,

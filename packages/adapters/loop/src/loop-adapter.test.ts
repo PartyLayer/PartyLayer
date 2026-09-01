@@ -687,7 +687,12 @@ describe('LoopAdapter', () => {
         ).rejects.toThrow(/unexpected response shape/);
       });
 
-      it('direct submitTransaction: succeeds with full { command_id, submission_id } shape', async () => {
+      // Was: asserted `receipt.updateId === 'sub-42'` — that the SUBMISSION id
+      // became the update id. It pinned the defect rather than the contract: a
+      // submission id identifies the request, not the committed update, so this
+      // test would have kept passing forever while callers received the wrong
+      // value under the right name.
+      it('direct submitTransaction: reports the command id and omits updateId when the response has none', async () => {
         mockProvider.submitTransaction.mockResolvedValue({
           command_id: 'cmd-42',
           submission_id: 'sub-42',
@@ -696,7 +701,24 @@ describe('LoopAdapter', () => {
           signedTx: { commands: [{}] },
         });
         expect(receipt.commandId).toBe('cmd-42');
-        expect(receipt.updateId).toBe('sub-42');
+        // Absent, not substituted: a caller can now tell "no update id" from
+        // "here is one", which `submission_id ?? command_id` made impossible.
+        expect(receipt.updateId).toBeUndefined();
+        expect('updateId' in receipt).toBe(false);
+      });
+
+      it('direct submitTransaction: reports the real update_id when the response carries one', async () => {
+        // The field the SDK has always returned and the adapter never read.
+        mockProvider.submitTransaction.mockResolvedValue({
+          command_id: 'cmd-42',
+          submission_id: 'sub-42',
+          update_id: 'update-42',
+        });
+        const receipt = await adapter.submitTransaction(ctx, createMockSession(), {
+          signedTx: { commands: [{}] },
+        });
+        expect(receipt.updateId).toBe('update-42');
+        expect(receipt.updateId).not.toBe('sub-42');
       });
 
       // ── Unsupported endpoints ─────────────────────────────────────

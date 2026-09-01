@@ -464,6 +464,36 @@ describe('createSession', () => {
 - One assertion per test when possible
 - Mock external dependencies
 
+#### Assert what the call returned, not that it was reached
+
+A test that checks a dependency was *called* passes whether the answer was right
+or wrong. It is a verification that cannot fail on the thing its name implies it
+covers, and it will sit green through exactly the defect it looks like it guards.
+
+This has cost us twice, both found while fixing the same bug:
+
+- `discovery-adapter.test.ts` asserted `submitTransaction` reached the provider
+  as `prepareExecute`, and nothing about the receipt. The receipt was a cast of a
+  `Null` — every field `undefined` — and the test could never have said so.
+- `loop-adapter.test.ts` had a case named "succeeds with full
+  `{ command_id, submission_id }` shape" whose body asserted
+  `receipt.updateId === 'sub-42'`. A submission id is not an update id, so the
+  test pinned the defect in place rather than the contract.
+
+So: when the point of a call is the value it produces, assert the value. Reserve
+"was it called, and with what" for cases where the *call itself* is the
+behaviour — a params-forwarding check, a called-once guarantee, a "does not
+forward this option" guard.
+
+A useful check on a new test: if the code under it returned a plausible-looking
+wrong answer, would this test fail? If not, it is testing the wiring, and the
+value still needs a test.
+
+Related: a mock that is more generous than the real dependency hides the same
+class of bug. Both of the cases above also had a fixture returning a receipt from
+a call the standard defines as returning null, so the mock, not the wallet, was
+supplying the value the assertion relied on.
+
 ---
 
 ## Documentation

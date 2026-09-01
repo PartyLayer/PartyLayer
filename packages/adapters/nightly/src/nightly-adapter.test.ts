@@ -567,4 +567,60 @@ describe('NightlyAdapter', () => {
       });
     });
   });
+  // ── no invented values ─────────────────────────────────────────────────────
+
+  describe('submitTransaction invents nothing', () => {
+    it('reports the real updateId as both the hash and the updateId', async () => {
+      installNightly(
+        createNightlyProvider({
+          submitResponse: {
+            type: 'sign_request_approved',
+            data: { updateId: 'update-real', signature: 'sig' },
+          },
+        }),
+      );
+      await adapter.connect(ctx);
+
+      const receipt = await adapter.submitTransaction(ctx, createMockSession(), {
+        signedTx: { command: {}, disclosedContracts: [] },
+      });
+
+      expect(String(receipt.transactionHash)).toBe('update-real');
+      expect(receipt.updateId).toBe('update-real');
+    });
+
+    it('omits updateId when only a signature came back', async () => {
+      installNightly(
+        createNightlyProvider({
+          submitResponse: { type: 'sign_request_approved', data: { signature: 'sig-only' } },
+        }),
+      );
+      await adapter.connect(ctx);
+
+      const receipt = await adapter.submitTransaction(ctx, createMockSession(), {
+        signedTx: { command: {}, disclosedContracts: [] },
+      });
+
+      // The signature is real, so it is reported; there is no update id, so the
+      // field is absent rather than filled with the signature.
+      expect(String(receipt.transactionHash)).toBe('sig-only');
+      expect(receipt.updateId).toBeUndefined();
+    });
+
+    it('fails when the wallet approves but reports neither', async () => {
+      // Was a generated `tx_<now>_<random>`.
+      installNightly(
+        createNightlyProvider({
+          submitResponse: { type: 'sign_request_approved', data: {} },
+        }),
+      );
+      await adapter.connect(ctx);
+
+      await expect(
+        adapter.submitTransaction(ctx, createMockSession(), {
+          signedTx: { command: {}, disclosedContracts: [] },
+        }),
+      ).rejects.toThrow(/neither an updateId nor a signature/);
+    });
+  });
 });

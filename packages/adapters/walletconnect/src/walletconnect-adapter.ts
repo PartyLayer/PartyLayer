@@ -158,6 +158,23 @@ const EVENT_MAP: Partial<Record<AdapterEventName, string>> = {
   disconnect: 'disconnected',
 };
 
+/**
+ * A short, safe rendering of an unexpected response for an error message.
+ * Mirrors the Send adapter's `safePreview` (`packages/adapters/send/src/errors.ts:282`),
+ * which is not exported across package boundaries.
+ */
+function safePreview(value: unknown, maxLen = 200): string {
+  if (value === undefined) return 'undefined';
+  if (value === null) return 'null';
+  try {
+    const s = JSON.stringify(value);
+    if (typeof s !== 'string') return String(value);
+    return s.length > maxLen ? s.slice(0, maxLen) + '...' : s;
+  } catch {
+    return String(value);
+  }
+}
+
 export class WalletConnectAdapter implements WalletAdapter {
   readonly walletId = toWalletId(WALLET_ID);
   readonly name = 'WalletConnect';
@@ -415,8 +432,24 @@ export class WalletConnectAdapter implements WalletAdapter {
       const result = await wc.request<{
         tx?: { payload?: { updateId?: string }; commandId?: string };
       }>({ method: 'prepareExecuteAndWait', params: params.signedTx });
-      const updateId = result?.tx?.payload?.updateId ?? result?.tx?.commandId ?? 'pending';
-      return { transactionHash: toTransactionHash(updateId), submittedAt: Date.now() };
+      // Was `updateId ?? commandId ?? 'pending'` — a three-level chain ending in
+      // the literal string "pending" as a transactionHash. It now reads the real
+      // field and fails when it is absent, matching the Send adapter, which
+      // reaches the same prepareExecuteAndWait response and already does this
+      // (packages/adapters/send/src/send-adapter.ts:300-306).
+      const updateId = result?.tx?.payload?.updateId;
+      if (!updateId) {
+        throw new Error(
+          'Canton WalletConnect returned no updateId from prepareExecuteAndWait. '
+            + `Expected { tx: { commandId, payload: { updateId } } } but received ${safePreview(result)}.`,
+        );
+      }
+      return {
+        transactionHash: toTransactionHash(updateId),
+        submittedAt: Date.now(),
+        updateId,
+        ...(result?.tx?.commandId ? { commandId: result.tx.commandId } : {}),
+      };
     } catch (err) {
       throw mapUnknownErrorToPartyLayerError(err, {
         walletId: this.walletId,
