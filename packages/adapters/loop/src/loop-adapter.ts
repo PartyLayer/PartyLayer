@@ -25,6 +25,8 @@ import type {
   PersistedSession,
   CapabilityKey,
   PartyId,
+  TransferIntent,
+  TransferResult,
 } from '@partylayer/core';
 import {
   toWalletId,
@@ -36,6 +38,7 @@ import {
   CapabilityNotSupportedError,
   mapUnknownErrorToPartyLayerError,
   ledgerApiBodyToString,
+  toTransferIntent,
 } from '@partylayer/core';
 import type { ErrorCode } from '@partylayer/core';
 import {
@@ -121,6 +124,11 @@ export class LoopAdapter implements WalletAdapter {
       'signMessage',
       'submitTransaction',
       'ledgerApi',
+      // Loop satisfies both halves of the transfer contract: the SDK's own
+      // transfer() takes the intent (recipient, amount, instrument AND its
+      // admin, memo, deadline) and prompts in the popup, and in 'wait' mode
+      // RunTransactionResponse carries the real update_id.
+      'transfer',
       'events',
       'popup',
     ];
@@ -499,6 +507,116 @@ export class LoopAdapter implements WalletAdapter {
         },
       });
     }
+  }
+
+  /**
+   * Request a typed transfer.
+   *
+   * Uses the Loop SDK's own `transfer(recipient, amount, instrument, options)`,
+   * which is a typed transfer end to end: the WALLET builds the command, shows
+   * it in its popup for the user to approve, signs and submits. PartyLayer
+   * builds no command and sees no prepared transaction.
+   *
+   * Runs in `executionMode: 'wait'` because that is the mode in which Loop's
+   * `RunTransactionResponse` carries `update_id`. The `submitTransaction` path
+   * on this adapter reports `submission_id ?? command_id` as its `updateId`;
+   * neither is an update id, and this method reads the real field instead.
+   */
+  async requestTransfer(
+    ctx: AdapterContext,
+    session: Session,
+    intent: TransferIntent,
+  ): Promise<TransferResult> {
+    // Defensive: the client narrows before calling, but an adapter can be driven
+    // directly, and the allowlist is what keeps a caller-supplied option away
+    // from the wallet.
+    const safe = toTransferIntent(intent);
+    const memo = this.loopMemoFor(safe);
+
+    try {
+      if (!this.currentProvider) {
+        throw new Error('Not connected to Loop Wallet');
+      }
+
+      ctx.logger.debug('Requesting transfer via Loop Wallet', {
+        sessionId: session.sessionId,
+      });
+
+      const result = await this.currentProvider.transfer(
+        safe.receiver,
+        safe.amount,
+        {
+          instrument_id: safe.instrumentId.id,
+          instrument_admin: safe.instrumentId.admin,
+        },
+        {
+          // 'wait' is required: in 'async' mode the response returns before the
+          // ledger has committed and carries no update_id.
+          executionMode: 'wait',
+          message: 'Transfer via PartyLayer',
+          ...(memo === undefined ? {} : { memo }),
+          ...(safe.executeBefore === undefined ? {} : { executeBefore: safe.executeBefore }),
+        },
+      );
+
+      const r = result as
+        | {
+            command_id?: string;
+            update_id?: string;
+            status?: 'succeeded' | 'failed';
+            error?: { error_message?: string };
+          }
+        | null
+        | undefined;
+
+      if (!r) {
+        throw new Error(
+          'Loop Wallet returned no response for the transfer. Likely the popup closed before confirmation.',
+        );
+      }
+      if (r.status === 'failed') {
+        throw new Error(
+          `Loop Wallet reported the transfer failed: ${r.error?.error_message ?? 'no reason given'}`,
+        );
+      }
+      if (!r.update_id) {
+        // Never substitute submission_id or command_id: neither is an update id.
+        throw new Error(
+          'Loop Wallet did not return an update_id for the transfer, so it cannot be reported as committed.',
+        );
+      }
+
+      return {
+        updateId: r.update_id,
+        commandId: r.command_id,
+        partyId: session.partyId,
+      };
+    } catch (err) {
+      throw mapUnknownErrorToPartyLayerError(err, {
+        walletId: this.walletId,
+        phase: 'requestTransfer',
+        transport: 'popup',
+        details: { sessionId: session.sessionId },
+      });
+    }
+  }
+
+  /**
+   * Loop's `memo` is a single string while a `TransferIntent.meta` is a map.
+   * Accept an absent/empty map, or exactly `{ memo }`; refuse anything else so
+   * metadata is never silently dropped from what the user approves.
+   */
+  private loopMemoFor(intent: TransferIntent): string | undefined {
+    const meta = intent.meta;
+    if (!meta) return undefined;
+    const keys = Object.keys(meta);
+    if (keys.length === 0) return undefined;
+    if (keys.length === 1 && keys[0] === 'memo') return meta.memo;
+    throw new CapabilityNotSupportedError(
+      this.walletId,
+      `transfer — Loop carries a single "memo" string, not a metadata map; `
+      + `intent.meta has [${keys.join(', ')}]`,
+    );
   }
 
   /**

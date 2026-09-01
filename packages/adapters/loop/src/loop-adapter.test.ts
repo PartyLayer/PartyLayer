@@ -774,3 +774,133 @@ describe('LoopAdapter', () => {
     });
   });
 });
+
+// ── requestTransfer ──────────────────────────────────────────────────────────
+
+describe('LoopAdapter.requestTransfer', () => {
+  const INTENT = {
+    receiver: 'party::bob',
+    amount: '10.5',
+    instrumentId: { admin: 'party::registry', id: 'CC' },
+  };
+
+  let adapter: LoopAdapter;
+  let ctx: AdapterContext;
+  let session: Session;
+  let provider: { transfer: ReturnType<typeof vi.fn> };
+
+  beforeEach(() => {
+    adapter = new LoopAdapter({ apiKey: 'test-key' });
+    ctx = createMockContext();
+    session = createMockSession();
+    provider = { transfer: vi.fn() };
+    (adapter as unknown as { currentProvider: unknown }).currentProvider = provider;
+  });
+
+  it('declares the transfer capability', () => {
+    expect(adapter.getCapabilities()).toContain('transfer');
+  });
+
+  it('returns the real update_id, not the submission_id', async () => {
+    // The submitTransaction path on this adapter reports submission_id as its
+    // updateId. A submission id is not an update id, and this path reads the
+    // field that actually holds one.
+    provider.transfer.mockResolvedValue({
+      command_id: 'cmd-7',
+      submission_id: 'sub-should-be-ignored',
+      update_id: 'update-real-9',
+      status: 'succeeded',
+    });
+
+    const result = await adapter.requestTransfer(ctx, session, INTENT);
+
+    expect(result.updateId).toBe('update-real-9');
+    expect(result.updateId).not.toBe('sub-should-be-ignored');
+    expect(result.commandId).toBe('cmd-7');
+  });
+
+  it('passes the intent to the SDK transfer, in wait mode, with the instrument admin', async () => {
+    provider.transfer.mockResolvedValue({ command_id: 'c', update_id: 'u', status: 'succeeded' });
+
+    await adapter.requestTransfer(ctx, session, {
+      ...INTENT,
+      meta: { memo: 'invoice-7' },
+      executeBefore: '2026-12-31T23:59:59Z',
+    });
+
+    expect(provider.transfer).toHaveBeenCalledWith(
+      'party::bob',
+      '10.5',
+      { instrument_id: 'CC', instrument_admin: 'party::registry' },
+      expect.objectContaining({
+        // 'wait' is what makes update_id present at all.
+        executionMode: 'wait',
+        memo: 'invoice-7',
+        executeBefore: '2026-12-31T23:59:59Z',
+      }),
+    );
+  });
+
+  it('does not forward a caller-supplied option to the wallet', async () => {
+    provider.transfer.mockResolvedValue({ command_id: 'c', update_id: 'u', status: 'succeeded' });
+
+    await adapter.requestTransfer(ctx, session, {
+      ...INTENT,
+      skipConfirmation: true,
+      executionMode: 'async',
+      sender: 'party::mallory',
+    } as never);
+
+    const [recipient, , , options] = provider.transfer.mock.calls[0];
+    expect(recipient).toBe('party::bob');
+    expect(options).not.toHaveProperty('skipConfirmation');
+    expect(options).not.toHaveProperty('sender');
+    // A caller cannot downgrade the mode to one that skips the committed result.
+    expect(options.executionMode).toBe('wait');
+  });
+
+  describe('real values or an error', () => {
+    it('throws when the wallet reports the transfer failed', async () => {
+      provider.transfer.mockResolvedValue({
+        command_id: 'c',
+        status: 'failed',
+        error: { error_message: 'insufficient funds' },
+      });
+
+      await expect(adapter.requestTransfer(ctx, session, INTENT)).rejects.toThrow(
+        /insufficient funds/,
+      );
+    });
+
+    it('throws when no update_id comes back, rather than using submission_id', async () => {
+      provider.transfer.mockResolvedValue({ command_id: 'c', submission_id: 'sub-1' });
+
+      await expect(adapter.requestTransfer(ctx, session, INTENT)).rejects.toThrow(
+        /did not return an update_id/,
+      );
+    });
+
+    it('throws when the popup closes without a response', async () => {
+      provider.transfer.mockResolvedValue(undefined);
+
+      await expect(adapter.requestTransfer(ctx, session, INTENT)).rejects.toThrow(
+        /no response/,
+      );
+    });
+
+    it('throws when not connected', async () => {
+      (adapter as unknown as { currentProvider: unknown }).currentProvider = null;
+
+      await expect(adapter.requestTransfer(ctx, session, INTENT)).rejects.toThrow(
+        /Not connected/,
+      );
+    });
+
+    it('refuses a metadata map it cannot represent as a single memo', async () => {
+      await expect(
+        adapter.requestTransfer(ctx, session, { ...INTENT, meta: { ref: 'a', note: 'b' } }),
+      ).rejects.toThrow(/single "memo" string/);
+      expect(provider.transfer).not.toHaveBeenCalled();
+    });
+  });
+});
