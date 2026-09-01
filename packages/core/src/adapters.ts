@@ -24,6 +24,7 @@ import type {
   SignedTransaction,
   TxReceipt,
 } from './types';
+import type { TransferIntent, TransferResult } from './transfer';
 import {
   CapabilityNotSupportedError,
   WalletNotInstalledError,
@@ -403,6 +404,36 @@ export interface WalletAdapter {
     session: Session,
     params: LedgerApiParams
   ): Promise<LedgerApiResult>;
+
+  /**
+   * Request a typed transfer (optional - only if the wallet supports it).
+   *
+   * The application supplies an intent; the WALLET builds the command, prepares
+   * it against its own validator, displays it, obtains the user's approval,
+   * signs, executes, and reports the real update id. PartyLayer relays the
+   * intent and the result and never touches the prepared transaction — see the
+   * Model 2 boundary in docs/partylayer-and-canton-topology.md.
+   *
+   * An implementation MUST:
+   * - build its wallet request only from {@link TRANSFER_INTENT_FIELDS}, via
+   *   {@link toTransferIntent}, so a caller-supplied option can never reach the
+   *   wallet;
+   * - return a real `updateId` or throw — never a command id, a submission id,
+   *   a signature, or a generated placeholder;
+   * - reach a wallet call that shows the user an explicit approval.
+   *
+   * An adapter that cannot satisfy all three does not implement this method,
+   * and its `getCapabilities()` therefore omits `'transfer'`.
+   *
+   * @param ctx Adapter context
+   * @param session Active session — the acting party comes from here, never from the caller
+   * @param intent What to transfer
+   */
+  requestTransfer?(
+    ctx: AdapterContext,
+    session: Session,
+    intent: TransferIntent
+  ): Promise<TransferResult>;
 
   /**
    * Subscribe to adapter events (optional)

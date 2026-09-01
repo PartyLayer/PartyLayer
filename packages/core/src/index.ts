@@ -14,6 +14,7 @@ export * from './metrics-payload';
 export * from './cip0103-types';
 export * from './network';
 export * from './cost';
+export * from './transfer';
 export { DeepLinkTransport, createBrowserDeepLinkPlatform } from './transport/deeplink';
 export type { DeepLinkPlatform, DeepLinkCallback } from './transport/deeplink';
 export { PopupTransport } from './transport/popup';

@@ -82,7 +82,10 @@ import type {
   SubmitTransactionParams,
   LedgerApiParams,
   LedgerApiResult,
+  TransferIntent,
+  TransferResult,
 } from '@partylayer/core';
+import { toTransferIntent } from '@partylayer/core';
 
 /**
  * Storage key used for the active session.
@@ -1215,6 +1218,63 @@ export class PartyLayerClient {
         walletId: String(session.walletId),
       });
       this.emit('error', { type: 'error', error });
+      throw error;
+    }
+  }
+
+  /**
+   * Request a typed transfer. The application says what it wants; the wallet
+   * builds the command, shows the user what they are authorising, obtains their
+   * approval, signs, executes, and returns the real update id.
+   *
+   * The acting party comes from the active session, never from the caller, and
+   * the intent is narrowed to the allowlisted fields before any adapter sees it,
+   * so no caller-supplied option can reach the wallet.
+   *
+   * Throws `CapabilityNotSupportedError` when the active wallet does not
+   * implement it. Ask first with `session.capabilitiesSnapshot.includes('transfer')`,
+   * or require it at connect with `connect({ requiredCapabilities: ['transfer'] })`.
+   */
+  async requestTransfer(intent: TransferIntent): Promise<TransferResult> {
+    const session = await this.getActiveSession();
+    if (!session) {
+      throw new Error('No active session');
+    }
+
+    const adapter = this.adapters.get(session.walletId);
+    if (!adapter || !adapter.requestTransfer) {
+      throw new CapabilityNotSupportedError(
+        session.walletId,
+        'transfer'
+      );
+    }
+
+    // Narrow BEFORE the adapter sees it. Unknown keys are dropped here, which is
+    // what makes "the approval cannot be suppressed by the caller" structural.
+    const safeIntent = toTransferIntent(intent);
+
+    const correlationId = newCorrelationId();
+    this.log('debug', 'requestTransfer:start', 'requestTransfer', {}, correlationId);
+    try {
+      this.assertNetworkOk(session);
+      const ctx = this.createAdapterContext();
+      const result = await adapter.requestTransfer(ctx, session, safeIntent);
+
+      this.emit('tx:status', {
+        type: 'tx:status',
+        sessionId: session.sessionId,
+        txId: result.updateId as unknown as TxReceipt['transactionHash'],
+        status: 'committed',
+        raw: result,
+      }, correlationId);
+
+      return result;
+    } catch (err) {
+      const error = mapUnknownErrorToPartyLayerError(err, {
+        phase: 'requestTransfer',
+        walletId: String(session.walletId),
+      });
+      this.emit('error', { type: 'error', error }, correlationId);
       throw error;
     }
   }

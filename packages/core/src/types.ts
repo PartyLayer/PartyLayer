@@ -35,6 +35,13 @@ export type CapabilityKey =
   | 'signTransaction'
   | 'submitTransaction'
   | 'ledgerApi'
+  /**
+   * Typed transfer intent: the wallet builds, displays, approves, signs and
+   * executes a transfer and returns the real update id. Declared only by a
+   * wallet that can do BOTH halves — a real update id and an explicit user
+   * approval. A wallet that can do one but not the other declares it false.
+   */
+  | 'transfer'
   | 'events'
   | 'deeplink'
   | 'popup'
