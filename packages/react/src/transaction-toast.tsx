@@ -97,7 +97,11 @@ export function TransactionToast({
 
   const detail =
     status === 'success' && receipt
-      ? receipt.updateId ?? receipt.commandId ?? String(receipt.transactionHash)
+      ? receipt.updateId ??
+        receipt.commandId ??
+        // `transactionHash` is optional, so stringify it only when it exists —
+        // otherwise this line renders the word "undefined" to the user.
+        (receipt.transactionHash === undefined ? null : String(receipt.transactionHash))
       : null;
 
   return (

@@ -44,7 +44,7 @@ interface SessionDisconnectedEvent { type: 'session:disconnected'; sessionId: Se
 interface SessionExpiredEvent { type: 'session:expired'; sessionId: SessionId; }
 interface SessionNetworkMismatchEvent { type: 'session:networkMismatch'; sessionId: SessionId; expected: string; actual: string; enforced: boolean; }
 interface TelemetryConfig { enabled: boolean; endpoint?: string; sampleRate?: number; appId?: string; includeOrigin?: boolean; batchSize?: number; flushIntervalMs?: number; network?: NetworkId; }
-interface TxStatusEvent { type: 'tx:status'; sessionId: SessionId; txId: TransactionHash; status: TransactionStatus; raw?: unknown; }
+interface TxStatusEvent { type: 'tx:status'; sessionId: SessionId; txId?: TransactionHash; status: TransactionStatus; raw?: unknown; }
 interface WalletFilter { requiredCapabilities?: string[]; includeExperimental?: boolean; }
 interface WalletsChangedEvent { type: 'wallets:changed'; reason: 'announced'; }
 type AdapterClass = new () => WalletAdapter;

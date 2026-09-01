@@ -120,7 +120,7 @@ interface SignRequest { message?: string; transaction?: unknown; state: string; 
 interface SignResponse { state: string; signature?: string; transactionHash?: string; jobId?: string; error?: { code: string; message: string; }; }
 interface SignTransactionParams { tx: unknown; }
 interface SignedMessage { signature: Signature; partyId: PartyId; message: string; nonce?: string; domain?: string; }
-interface SignedTransaction { signedTx: unknown; transactionHash: TransactionHash; partyId: PartyId; }
+interface SignedTransaction { signedTx: unknown; transactionHash?: TransactionHash; partyId: PartyId; }
 interface StorageAdapter { get(key: string): Promise<string | null>; set(key: string, value: string): Promise<void>; remove(key: string): Promise<void>; clear(): Promise<void>; }
 interface SubmitTransactionParams { signedTx: unknown; }
 interface TelemetryAdapter { track(event: string, properties?: Record<string, unknown>): void; error(error: Error, properties?: Record<string, unknown>): void; increment?(metric: string, value?: number): void; gauge?(metric: string, value: number): void; flush?(): Promise<void>; isEnabled?(): boolean; }
@@ -132,8 +132,8 @@ interface Transport$1 { openConnectRequest(url: string, request: ConnectRequest,
 interface TransportMessage<T = unknown> { id: string; type: string; payload: T; timestamp: number; origin?: string; }
 interface TransportOptions { timeoutMs?: number; allowedOrigins?: string[]; origin: string; }
 interface TransportResponse<T = unknown> { id: string; success: boolean; data?: T; error?: { code: string; message: string; }; }
-interface TxReceipt { transactionHash: TransactionHash; submittedAt: number; commandId?: string; updateId?: string; }
-interface TxStatusUpdate { sessionId: SessionId; txId: TransactionHash; status: TransactionStatus; raw?: unknown; timestamp: number; }
+interface TxReceipt { transactionHash?: TransactionHash; submittedAt: number; commandId?: string; updateId?: string; }
+interface TxStatusUpdate { sessionId: SessionId; txId?: TransactionHash; status: TransactionStatus; raw?: unknown; timestamp: number; }
 interface WalletAdapter { readonly walletId: WalletId; readonly name: string; getCapabilities(): CapabilityKey[]; detectInstalled(): Promise<AdapterDetectResult>; connect(ctx: AdapterContext, opts?: { timeoutMs?: number; partyId?: PartyId; preferInstalled?: boolean; onDisplayUri?: (uri: string) => void; }): Promise<AdapterConnectResult>; disconnect(ctx: AdapterContext, session: Session): Promise<void>; restore?(ctx: AdapterContext, persisted: PersistedSession): Promise<Session | null>; signMessage?(ctx: AdapterContext, session: Session, params: SignMessageParams): Promise<SignedMessage>; signTransaction?(ctx: AdapterContext, session: Session, params: SignTransactionParams): Promise<SignedTransaction>; submitTransaction?(ctx: AdapterContext, session: Session, params: SubmitTransactionParams): Promise<TxReceipt>; ledgerApi?(ctx: AdapterContext, session: Session, params: LedgerApiParams): Promise<LedgerApiResult>; requestTransfer?(ctx: AdapterContext, session: Session, intent: TransferIntent): Promise<TransferResult>; on?(event: AdapterEventName, handler: (payload: unknown) => void): () => void; }
 interface WalletInfo { walletId: WalletId; name: string; website: string; icons: { sm?: string; md?: string; lg?: string; }; category?: string; capabilities: CapabilityKey[]; installHints?: InstallHints; adapter: AdapterMetadata; docs: string[]; minSdkVersion?: string; networks: NetworkId[]; channel: 'stable' | 'beta'; metadata?: Record<string, string>; providerDetection?: ProviderDetection; cip0103?: Cip0103Support; }
 type AdapterEventName = 'connect' | 'disconnect' | 'sessionExpired' | 'txStatus' | 'error';

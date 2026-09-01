@@ -68,14 +68,16 @@ export interface BridgeableClient {
     domain?: string;
   }): Promise<{ signature: unknown }>;
   signTransaction(params: { tx: unknown }): Promise<{
-    transactionHash: unknown;
+    // Optional: an adapter whose wallet reports no hash omits it rather than
+    // inventing one. See TxReceipt.transactionHash in @partylayer/core.
+    transactionHash?: unknown;
     signedTx?: unknown;
     partyId?: unknown;
   }>;
   submitTransaction(params: {
     signedTx: unknown;
   }): Promise<{
-    transactionHash: unknown;
+    transactionHash?: unknown;
     submittedAt?: number;
     commandId?: string;
     updateId?: string;
@@ -232,15 +234,21 @@ async function handleRequest(
           // 3. Emit 'signed' with signature metadata
           const session = await client.getActiveSession();
           const partyId = String(signResult.partyId ?? session?.partyId ?? 'unknown');
-          eventBus.emit<CIP0103TxChangedEvent>(CIP0103_EVENTS.TX_CHANGED, {
-            status: 'signed',
-            commandId: cmdId,
-            payload: {
-              signature: String(signResult.transactionHash),
-              signedBy: partyId,
-              party: partyId,
-            },
-          } as CIP0103TxChangedEvent);
+          // `transactionHash` is optional now, so `String(...)` would render the
+          // literal "undefined" here — a placeholder created by the very change
+          // that removed the others. The `signed` event is emitted only when
+          // there is something real to report as its signature.
+          if (signResult.transactionHash !== undefined) {
+            eventBus.emit<CIP0103TxChangedEvent>(CIP0103_EVENTS.TX_CHANGED, {
+              status: 'signed',
+              commandId: cmdId,
+              payload: {
+                signature: String(signResult.transactionHash),
+                signedBy: partyId,
+                party: partyId,
+              },
+            } as CIP0103TxChangedEvent);
+          }
 
           // 4. Submit transaction
           try {
@@ -254,7 +262,11 @@ async function handleRequest(
               status: 'executed',
               commandId: cmdId,
               payload: {
-                updateId: receipt.updateId ?? receipt.commandId ?? String(receipt.transactionHash),
+                // All three are real identifiers — the receipt's update id, the
+                // wallet's command id, or the bridge's own command id for this
+                // operation. `String(receipt.transactionHash)` was the old tail
+                // and would now stringify `undefined`.
+                updateId: receipt.updateId ?? receipt.commandId ?? cmdId,
                 completionOffset: 0,
               },
             } as CIP0103TxChangedEvent);
