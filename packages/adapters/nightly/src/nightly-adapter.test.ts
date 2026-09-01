@@ -439,4 +439,132 @@ describe('NightlyAdapter', () => {
       ).rejects.toBeInstanceOf(CapabilityNotSupportedError);
     });
   });
+  // ── requestTransfer ────────────────────────────────────────────────────────
+
+  describe('requestTransfer', () => {
+    const INTENT = {
+      receiver: 'party::bob',
+      amount: '10.5',
+      instrumentId: { admin: 'party::registry', id: 'CC' },
+    };
+
+    it('declares the transfer capability', () => {
+      expect(adapter.getCapabilities()).toContain('transfer');
+    });
+
+    it('returns the real update id the wallet reports on approval', async () => {
+      const provider = createNightlyProvider({
+        submitResponse: {
+          type: 'sign_request_approved',
+          data: { updateId: 'update-real-42', signature: 'sig' },
+        },
+      });
+      installNightly(provider);
+      await adapter.connect(ctx);
+
+      const result = await adapter.requestTransfer(ctx, createMockSession(), INTENT);
+
+      expect(result.updateId).toBe('update-real-42');
+      expect(String(result.partyId)).toBe('party::test');
+    });
+
+    it('hands the wallet the intent verbatim, including the instrument admin', async () => {
+      const provider = createNightlyProvider();
+      installNightly(provider);
+      await adapter.connect(ctx);
+
+      await adapter.requestTransfer(ctx, createMockSession(), {
+        ...INTENT,
+        meta: { memo: 'invoice-7' },
+        executeBefore: '2026-12-31T23:59:59Z',
+      });
+
+      expect(provider.createTransferCommand).toHaveBeenCalledWith({
+        receiverPartyId: 'party::bob',
+        amount: '10.5',
+        // The issuing admin reaches the wallet, so its confirmation can name who
+        // issues the instrument and not just its symbol.
+        instrument: { id: 'CC', admin: 'party::registry' },
+        memo: 'invoice-7',
+        expiryDate: '2026-12-31T23:59:59Z',
+      });
+    });
+
+    it('does not forward a caller-supplied option to the wallet', async () => {
+      const provider = createNightlyProvider();
+      installNightly(provider);
+      await adapter.connect(ctx);
+
+      await adapter.requestTransfer(ctx, createMockSession(), {
+        ...INTENT,
+        skipConfirmation: true,
+        sender: 'party::mallory',
+      } as never);
+
+      const sent = provider.createTransferCommand.mock.calls[0][0];
+      expect(sent).not.toHaveProperty('skipConfirmation');
+      expect(sent).not.toHaveProperty('sender');
+      expect(Object.keys(sent).sort()).toEqual(['amount', 'instrument', 'receiverPartyId']);
+    });
+
+    describe('real values or an error', () => {
+      it('maps a user rejection to UserRejectedError', async () => {
+        installNightly(
+          createNightlyProvider({
+            submitResponse: { type: 'sign_request_rejected', data: { reason: 'user declined' } },
+          }),
+        );
+        await adapter.connect(ctx);
+
+        await expect(
+          adapter.requestTransfer(ctx, createMockSession(), INTENT),
+        ).rejects.toBeInstanceOf(UserRejectedError);
+      });
+
+      it('throws when approved without an update id, rather than falling back', async () => {
+        // The pre-existing submitTransaction path falls back to the signature and
+        // then to a generated string. This path must not.
+        installNightly(
+          createNightlyProvider({
+            submitResponse: {
+              type: 'sign_request_approved',
+              data: { signature: 'sig-only' },
+            },
+          }),
+        );
+        await adapter.connect(ctx);
+
+        await expect(
+          adapter.requestTransfer(ctx, createMockSession(), INTENT),
+        ).rejects.toThrow(/no update id/);
+      });
+
+      it('throws when the wallet reports an error', async () => {
+        installNightly(
+          createNightlyProvider({
+            submitResponse: { type: 'sign_request_error', data: { error: 'boom' } },
+          }),
+        );
+        await adapter.connect(ctx);
+
+        await expect(
+          adapter.requestTransfer(ctx, createMockSession(), INTENT),
+        ).rejects.toThrow(/boom/);
+      });
+
+      it('refuses a metadata map it cannot represent as a single memo', async () => {
+        const provider = createNightlyProvider();
+        installNightly(provider);
+        await adapter.connect(ctx);
+
+        await expect(
+          adapter.requestTransfer(ctx, createMockSession(), {
+            ...INTENT,
+            meta: { ref: 'a', note: 'b' },
+          }),
+        ).rejects.toThrow(/single "memo" string/);
+        expect(provider.createTransferCommand).not.toHaveBeenCalled();
+      });
+    });
+  });
 });

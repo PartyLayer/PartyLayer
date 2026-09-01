@@ -63,7 +63,17 @@ module.exports = [
     ignore: [...RN_PEERS, ...LAZY_WALLET_SDKS],
     modifyEsbuildConfig: assetsAsEmpty,
     gzip: true,
-    limit: '43 kB',
+    // Raised from 43 kB when the client gained requestTransfer: the method plus
+    // toTransferIntent, which narrows a caller's intent to the allowlisted fields
+    // before any adapter sees it. That narrowing is reachable from the client, so
+    // it is in every consumer's bundle by design — it is the guarantee that a
+    // caller-supplied option cannot reach a wallet, and making it optional would
+    // make the guarantee optional. First measured at 43.12 kB and compacted to
+    // 43.06 kB (one shared throw helper instead of a construction site per check,
+    // without shortening the messages a developer actually reads). 43.5 kB leaves
+    // ~440 B of headroom: enough not to hide the next regression, not so much
+    // that it stops being a budget.
+    limit: '43.5 kB',
   },
   {
     name: 'react-native: ui (ConnectButton)',

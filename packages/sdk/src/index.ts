@@ -95,7 +95,13 @@ export type {
   SubmitTransactionParams,
   LedgerApiParams,
   LedgerApiResult,
+  TransferIntent,
+  TransferResult,
+  TokenInstrumentId,
 } from '@partylayer/core';
+// Typed-transfer helpers: the field allowlist and the normalizer every adapter
+// builds its wallet request through.
+export { toTransferIntent, TRANSFER_INTENT_FIELDS } from '@partylayer/core';
 // The structural guards for the above (apps rarely need them, but they are part
 // of the official-adapter contract the bridge consumes).
 export { isOfficialProviderAdapter, isOfficialAdapterFactory } from '@partylayer/core';
