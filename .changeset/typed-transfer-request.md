@@ -1,6 +1,9 @@
 ---
 "@partylayer/core": minor
 "@partylayer/sdk": minor
+"@partylayer/adapter-console": minor
+"@partylayer/adapter-nightly": minor
+"@partylayer/adapter-loop": minor
 ---
 
 Add `requestTransfer`, a typed transfer method where the wallet performs the interactive submission.
@@ -23,3 +26,11 @@ New in `@partylayer/sdk`:
 Additive throughout: no existing method signature, adapter contract, or published interface changes. Ask before calling with `session.capabilitiesSnapshot.includes('transfer')`, or require it at connect with `connect({ requiredCapabilities: ['transfer'] })`.
 
 `TransferResult.updateId` is required and always real. An adapter that cannot obtain one throws rather than substituting a command id, a submission id, a signature, or a generated string.
+
+Implemented natively by three adapters, each mapping the intent onto its wallet's own typed transfer:
+
+- **Console** — `submitCommands`, with the update id read from the `txChanged` stream and correlated to the call by signature. Requires `executeBefore`, and carries `meta` only as a single `memo`; both are refused rather than silently dropped.
+- **Nightly** — `createTransferCommand` + `submitTransactionCommand`. The only one of the three that carries the instrument's issuing admin through to the wallet.
+- **Loop** — the SDK's `transfer()` in `wait` mode, which is where `RunTransactionResponse.update_id` is populated.
+
+Each declares the `transfer` capability. Every other wallet — Bron, Cantor8, Send, WalletConnect, and both generic paths — reports it absent, each for a documented reason with a route to changing it. See docs/typed-transfer-support.md.

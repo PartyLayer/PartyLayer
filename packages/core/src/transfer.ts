@@ -139,21 +139,27 @@ export const TRANSFER_INTENT_FIELDS = Object.freeze([
   'executeBefore',
 ] as const);
 
-/** Reject a non-empty string early, with the field named. */
-function requireNonEmptyString(value: unknown, field: string): string {
-  if (typeof value !== 'string' || value.length === 0) {
-    throw new TransportError(
-      `transfer intent: "${field}" must be a non-empty string (received ${describe(value)})`,
-    );
-  }
-  return value;
+/**
+ * Throw a consistent, actionable failure for one field. Every message shares the
+ * `transfer intent:` prefix so a caller can grep for the class, and names the
+ * field so they can find it — one helper rather than a construction site per
+ * check, which keeps the client bundle small enough to matter (see .size-limit.js).
+ */
+function bad(detail: string): never {
+  throw new TransportError(`transfer intent: ${detail}`);
 }
 
-/** A short, safe description of a bad value for an error message. */
-function describe(value: unknown): string {
-  if (value === null) return 'null';
-  if (Array.isArray(value)) return 'an array';
-  return typeof value;
+/** Require a non-empty string, naming the field when it is not. */
+function str(value: unknown, field: string): string {
+  if (typeof value !== 'string' || value.length === 0) {
+    bad(`"${field}" must be a non-empty string`);
+  }
+  return value as string;
+}
+
+/** True for a plain object — not null, not an array. */
+function isPlainObject(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
 /**
@@ -170,60 +176,40 @@ function describe(value: unknown): string {
  * by `ledgerApiBodyToObject` for a bad parameter at the SDK boundary.
  */
 export function toTransferIntent(input: unknown): TransferIntent {
-  if (typeof input !== 'object' || input === null || Array.isArray(input)) {
-    throw new TransportError(
-      `transfer intent must be an object (received ${describe(input)})`,
-    );
-  }
-  const raw = input as Record<string, unknown>;
-
-  const receiver = requireNonEmptyString(raw.receiver, 'receiver');
+  if (!isPlainObject(input)) bad('must be an object');
+  const raw = input;
 
   // A JS number is rejected outright rather than stringified: Number cannot hold
   // a large or precise Daml Decimal losslessly, so coercing here would silently
   // change the amount the user is about to approve.
   if (typeof raw.amount === 'number') {
-    throw new TransportError(
-      'transfer intent: "amount" must be a decimal string, not a number — a JS number cannot represent a Daml Decimal losslessly',
-    );
+    bad('"amount" must be a decimal string, not a number — a number cannot represent a Daml Decimal losslessly');
   }
-  const amount = requireNonEmptyString(raw.amount, 'amount');
 
-  const instrumentRaw = raw.instrumentId;
-  if (typeof instrumentRaw !== 'object' || instrumentRaw === null || Array.isArray(instrumentRaw)) {
-    throw new TransportError(
-      `transfer intent: "instrumentId" must be an object with "admin" and "id" (received ${describe(instrumentRaw)})`,
-    );
+  if (!isPlainObject(raw.instrumentId)) {
+    bad('"instrumentId" must be an object with "admin" and "id"');
   }
-  const instrumentObj = instrumentRaw as Record<string, unknown>;
-  const instrumentId: TokenInstrumentId = {
-    admin: requireNonEmptyString(instrumentObj.admin, 'instrumentId.admin'),
-    id: requireNonEmptyString(instrumentObj.id, 'instrumentId.id'),
+
+  const intent: TransferIntent = {
+    receiver: str(raw.receiver, 'receiver'),
+    amount: str(raw.amount, 'amount'),
+    instrumentId: {
+      admin: str(raw.instrumentId.admin, 'instrumentId.admin'),
+      id: str(raw.instrumentId.id, 'instrumentId.id'),
+    },
   };
 
-  const intent: TransferIntent = { receiver, amount, instrumentId };
-
   if (raw.meta !== undefined) {
-    const metaRaw = raw.meta;
-    if (typeof metaRaw !== 'object' || metaRaw === null || Array.isArray(metaRaw)) {
-      throw new TransportError(
-        `transfer intent: "meta" must be a string-to-string object (received ${describe(metaRaw)})`,
-      );
-    }
+    if (!isPlainObject(raw.meta)) bad('"meta" must be a string-to-string object');
     const meta: Record<string, string> = {};
-    for (const [key, value] of Object.entries(metaRaw as Record<string, unknown>)) {
-      if (typeof value !== 'string') {
-        throw new TransportError(
-          `transfer intent: "meta.${key}" must be a string (received ${describe(value)})`,
-        );
-      }
-      meta[key] = value;
+    for (const [key, value] of Object.entries(raw.meta)) {
+      meta[key] = str(value, `meta.${key}`);
     }
     intent.meta = meta;
   }
 
   if (raw.executeBefore !== undefined) {
-    intent.executeBefore = requireNonEmptyString(raw.executeBefore, 'executeBefore');
+    intent.executeBefore = str(raw.executeBefore, 'executeBefore');
   }
 
   return intent;
