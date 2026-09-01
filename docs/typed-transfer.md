@@ -136,24 +136,32 @@ try {
 
 | Wallet | `transfer` | Notes |
 |---|---|---|
-| Console | yes | Maps to `submitCommands`; update id read from the `txChanged` stream. Requires `executeBefore`, and carries `meta` only as a single `memo`. |
-| Nightly | yes | Maps to `createTransferCommand` + `submitTransactionCommand`. Carries the instrument admin through. `meta` as a single `memo`. |
-| Loop | yes | Maps to the SDK's `transfer()` in `wait` mode. `meta` as a single `memo`. |
-| Send, WalletConnect, announce (Path A), discovery (Path B) | no | CIP-0103's only write verb, `prepareExecute`, takes a prepared command body rather than an intent. See below. |
-| Bron | no | An enterprise remote signer with no execute path at all. |
+| Nightly | yes | `createTransferCommand` + `submitTransactionCommand`. Carries the instrument admin through. Default path. |
+| Loop | yes | The SDK's `transfer()` in `wait` mode. Default path. |
+| Console | yes, opt-in only | `submitCommands`; update id from the `txChanged` stream. Its registry entry is `transport: announce`, so you must pass `adapters: [new ConsoleAdapter()]` to get it — the registry path does not carry it. |
+| Send | no | Real update id and passkey approval, but its RPC surface has no intent-level verb. |
+| Cauri | no | Standards implementation: real update id, approval with `rejected`/`timeout`/`popup_closed` separated, but no intent verb. |
+| Walley | no | Standards implementation; the same gap. |
+| OneSwap V2 | no | Real update id and a raised popup approval, but its own protocol's only write verb takes commands. |
+| WalletConnect | no | Inherits the standard's gap through the `canton_` namespace. |
 | Cantor8 | no | Its SDK exposes no ledger update id, and its `send()` takes `amount` as a JS number. |
+| Bron | no | An enterprise remote signer with no execute path at all. |
+
+Per-wallet reasoning, with the deciding file and line for each, is in
+[per-wallet verdicts](./typed-transfer-support.md).
 
 Where a wallet cannot carry a field, the adapter **refuses the intent** rather
 than dropping it. Metadata the user was shown but that would not be written would
 make the confirmation untrue, so a `meta` map that a single-memo wallet cannot
 represent is an error, not a silent omission.
 
-### Why the generic paths do not have it yet
+### Why most wallets do not have it yet
 
-CIP-0103 has no intent-level transfer method. Its write verb, `prepareExecute`,
-takes a prepared command body — Console types it as
-`Omit<PrepareTransactionBodyDTO, 'partyId'>`, Send as a request with a `commands`
-array. Two independent implementations, both command-level.
+CIP-0103 has no intent-level transfer method. The canonical dApp API
+(`@canton-network/core-wallet-dapp-rpc-client@1.4.0`) defines fourteen methods,
+and its only two write verbs — `prepareExecute` and `prepareExecuteAndWait` —
+both take `PrepareExecuteParams`, whose `commands` field is documented as a
+"non-empty array of Daml command atoms". A prepared command body, not an intent.
 
 PartyLayer could close that gap only by building the Daml command itself, which
 would make it a ledger client. It is not one, and the boundary is deliberate —
