@@ -299,10 +299,52 @@ adapter's `getCapabilities()` includes an optional method only when it was
 assigned (`announce-adapter.ts:217`), and discovery's is a fixed baseline
 (`discovery-adapter.ts:191`). Neither lists it.
 
-Worth recording while here: the standard types `prepareExecute` as
-`(params) => Promise<Null>` (`core-wallet-dapp-rpc-client@1.4.0/dist/index.d.ts:586`).
-Both generic adapters cast that `Null` to `TxReceipt`. That is the defect tracked
-separately; the standard's own type is the clearest possible evidence for it.
+Both adapters now negotiate the execute verb rather than assuming one. The
+standard types `prepareExecute` as `(params) => Promise<Null>`
+(`core-wallet-dapp-rpc-client@1.4.0/dist/index.d.ts:586`) while
+`prepareExecuteAndWait` on the next line returns a real result, so they prefer
+the awaited verb and fall back only for a wallet that does not implement it —
+OneSwap being the one in this registry. See
+`packages/sdk/src/prepare-execute.ts`.
+
+## The double-submit hazard
+
+**A fallback on a submit path issues a second submit.** That is the constraint
+governing any retry, alternative verb, or degradation added to a submit path in
+this repository, and it will outlive the change that prompted writing it down.
+
+The negotiation above is the current instance. It calls
+`prepareExecuteAndWait`, and when the wallet does not have that method it calls
+`prepareExecute` instead. Those are two submissions of the same transaction, and
+only one thing makes the second one safe: the first was rejected as a *method*,
+so nothing ever reached the ledger.
+
+**The rule.** A fallback fires only on a coded unsupported-method error —
+CIP-0103's `4200` or JSON-RPC's `-32601`. A user rejection (`4001`), a timeout,
+and any uncoded failure re-throw rather than retrying.
+
+**The reason.** A loose trigger puts the same transaction in front of a user
+twice. If a decline were treated as "try the other verb", the wallet would
+re-prompt for a transfer the person had just refused, and a second prompt is
+something a user may approve out of confusion. Surfacing an error is strictly
+better than that.
+
+The same rule covers a subtler case. When the awaited verb *succeeds* but returns
+no update id, the response is returned as it is and the other verb is not tried —
+the transaction is already committed, and a thin receipt is a far smaller problem
+than a duplicate transfer.
+
+The cost of the rule is a known, narrow gap, recorded here so it is a decision
+rather than an oversight: a wallet that lacks the awaited verb *and* signals that
+with an uncoded error will fail where it would previously have worked. No wallet
+in this registry does that — OneSwap throws a proper `4200`, and the other four on
+these paths implement the method. It applies only to an unknown announcing
+wallet, for which the pre-negotiation behaviour was already the broken one.
+
+Tests pin all three behaviours in `packages/sdk/src/prepare-execute.test.ts`,
+under "it never submits twice". They are the most load-bearing tests in that
+file: everything else there is about correctness of a value, and these are about
+not moving someone's money twice.
 
 ## Cannot be met
 
