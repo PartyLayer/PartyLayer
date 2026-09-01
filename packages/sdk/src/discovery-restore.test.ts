@@ -53,7 +53,7 @@ import { createPartyLayer } from './index';
 
 /**
  * A CIP-0103 provider that requires a connection: a fresh one is NOT connected,
- * so `getPrimaryAccount`/`signMessage`/`prepareExecute` throw until `connect`
+ * so `getPrimaryAccount`/`signMessage`/`prepareExecuteAndWait` throw until `connect`
  * runs (mirrors Walley's `requireConnected`). Pass `connected: true` for the
  * live provider `restore()` hands back.
  */
@@ -77,6 +77,11 @@ function makeProvider(opts: { connected?: boolean; network?: string } = {}): CIP
         case 'signMessage':
           if (!connected) throw new Error('Not connected');
           return { signature: 'sig', message: 'm' };
+        // Both execute verbs carry the same not-connected gating, which is what
+        // this suite is about. The adapter now prefers the awaited one.
+        case 'prepareExecuteAndWait':
+          if (!connected) throw new Error('Not connected');
+          return { tx: { commandId: 'cmd-1', payload: { updateId: 'update-1' } } };
         case 'prepareExecute':
           if (!connected) throw new Error('Not connected');
           return { transactionHash: '0xabc' };

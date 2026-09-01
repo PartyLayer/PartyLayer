@@ -38,7 +38,13 @@ function makeOfficial(
     status: { connection: { isConnected: true }, network: { networkId: 'canton:da-devnet' } },
     disconnect: null,
     signMessage: { signature: 'sig', message: 'm' },
-    prepareExecute: { transactionHash: '0xabc' },
+    // Was: `prepareExecute: { transactionHash: '0xabc' }` — a mock more generous
+    // than the standard, which types prepareExecute as returning Null. The
+    // adapter now prefers the awaited verb, so the fixture models what a real
+    // wallet returns from it: the executed txChanged event.
+    prepareExecuteAndWait: {
+      tx: { commandId: 'cmd-1', payload: { updateId: 'update-1', completionOffset: 7 } },
+    },
     ...providerHandlers,
   });
   const providerFactory = vi.fn(() => provider);
@@ -160,9 +166,60 @@ describe('GenericDiscoveryAdapter', () => {
     await a.signMessage(ctx, session, { message: 'hello' });
     expect(reqMock).toHaveBeenCalledWith({ method: 'signMessage', params: { message: 'hello' } });
 
-    await a.submitTransaction(ctx, session, { signedTx: { foo: 1 } });
+    // Was: asserted the submit reached the provider as `prepareExecute`. It now
+    // asserts the awaited verb AND that the receipt carries the real update id,
+    // which is the thing the old assertion could not have caught.
+    const receipt = await a.submitTransaction(ctx, session, { signedTx: { foo: 1 } });
     expect(reqMock).toHaveBeenCalledWith(
-      expect.objectContaining({ method: 'prepareExecute' }),
+      expect.objectContaining({ method: 'prepareExecuteAndWait' }),
     );
+    expect(receipt.updateId).toBe('update-1');
+    expect(String(receipt.transactionHash)).toBe('update-1');
+    expect(receipt.commandId).toBe('cmd-1');
+  });
+
+  // The OneSwap case: a wallet that implements prepareExecute and rejects the
+  // awaited verb with 4200. It must keep working exactly as it does today.
+  it('falls back to prepareExecute for a wallet without the awaited verb', async () => {
+    const unsupported = Object.assign(new Error('Unsupported CIP-0103 method'), { code: 4200 });
+    const { official } = makeOfficial();
+    const a = new GenericDiscoveryAdapter({ official });
+    await a.connect(ctx);
+    const req = (official.provider() as CIP0103Provider).request as ReturnType<typeof vi.fn>;
+    req.mockImplementation(async (args: { method: string }) => {
+      if (args.method === 'prepareExecuteAndWait') throw unsupported;
+      if (args.method === 'prepareExecute') {
+        return { transactionHash: '0xabc', updateId: 'oneswap-update' };
+      }
+      return undefined;
+    });
+
+    const receipt = await a.submitTransaction(ctx, session, { signedTx: { foo: 1 } });
+
+    expect(req).toHaveBeenCalledWith(expect.objectContaining({ method: 'prepareExecuteAndWait' }));
+    expect(req).toHaveBeenCalledWith(expect.objectContaining({ method: 'prepareExecute' }));
+    // Byte-for-byte what today's code returns for this wallet.
+    expect(receipt).toEqual({ transactionHash: '0xabc', updateId: 'oneswap-update' });
+  });
+
+  it('asks the wallet for the awaited verb only once', async () => {
+    const unsupported = Object.assign(new Error('Unsupported CIP-0103 method'), { code: 4200 });
+    const { official } = makeOfficial();
+    const a = new GenericDiscoveryAdapter({ official });
+    await a.connect(ctx);
+    const req = (official.provider() as CIP0103Provider).request as ReturnType<typeof vi.fn>;
+    req.mockImplementation(async (args: { method: string }) => {
+      if (args.method === 'prepareExecuteAndWait') throw unsupported;
+      return { transactionHash: '0xabc' };
+    });
+
+    await a.submitTransaction(ctx, session, { signedTx: { foo: 1 } });
+    await a.submitTransaction(ctx, session, { signedTx: { foo: 2 } });
+    await a.submitTransaction(ctx, session, { signedTx: { foo: 3 } });
+
+    const awaited = req.mock.calls.filter(
+      (c: unknown[]) => (c[0] as { method: string }).method === 'prepareExecuteAndWait',
+    );
+    expect(awaited).toHaveLength(1);
   });
 });
