@@ -360,6 +360,99 @@ and returns the ledger update id. That is a change to Bron's service and its API
 not to PartyLayer. Once it exists, this adapter implements `requestTransfer` as
 `requestSignature` → execute.
 
+## Deferred, by decision — not dropped
+
+Two follow-ups are known, scoped and deliberately not being done now. They are
+recorded here so that neither is rediscovered from scratch later.
+
+### A technical note to OneSwap — pending
+
+**OneSwap is the only wallet in the registry that could add an intent-level
+transfer without waiting for CIP-0103.** Every other blocked wallet — Send,
+Cauri, Walley, WalletConnect — speaks the official RPC surface, so its method set
+is the standard's method set and it cannot grow a verb the standard does not
+define. OneSwap's popup surface is a **private protocol**: its wire method is
+`canton_prepareSignExecute` (`@oneswap/wallet-cip0103-adapter@0.2.0`,
+`dist/index.js:38-39`), not an official RPC, and OneSwap operates both the dApp
+adapter and the wallet at the other end of it. Adding a typed transfer there is a
+change entirely within its own control, and it already satisfies both hard rules
+— a real `updateId` reported separately from `transactionHash`
+(`dist/index.d.ts:65-69`) and an explicit popup approval that is re-raised before
+every request (`:79-89`). It is therefore the shortest available route to a
+fourth supported wallet. A technical note proposing this to the OneSwap team is
+**pending and not yet sent**.
+
+One question should travel with that note, because it decides the verdict rather
+than refining it: is `updateId` ever `null` on a *successful* transfer? The type
+admits it (`updateId: string | null`). If it is routinely null, OneSwap moves
+from "blocked on its own protocol" to "cannot be met", and the intent verb would
+not be enough on its own.
+
+### The case for a CIP-0103 amendment — pending
+
+An intent-level transfer method in the standard is the single change that would
+unblock the most wallets at once. The evidence gathered here is the case for it,
+assembled in one place so it can be made without redoing the survey.
+
+**1. The standard has no intent-level transfer, and this is verifiable from its
+own published types rather than inferred.**
+`@canton-network/core-wallet-dapp-rpc-client@1.4.0` is the canonical dApp API.
+Its `RpcTypes` (`dist/index.d.ts:597-654`) defines fourteen methods: `status`,
+`connect`, `disconnect`, `isConnected`, `getActiveNetwork`, `prepareExecute`,
+`prepareExecuteAndWait`, `signMessage`, `ledgerApi`, `accountsChanged`,
+`getPrimaryAccount`, `listAccounts`, `txChanged`, `messageSignature`. None of
+them is a transfer.
+
+**2. Both write verbs take a prepared command body.** `prepareExecute` and
+`prepareExecuteAndWait` both take `PrepareExecuteParams`
+(`dist/index.d.ts:492-500`), whose `commands` field is documented as "a non-empty
+array of Daml command atoms" (`:61`). A dApp using the standard as it stands must
+therefore construct Daml commands, which means either the dApp or the connection
+layer becomes a ledger client. `PrepareExecuteParams` also accepts `actAs`,
+letting the caller name the acting party.
+
+**3. Seven of ten registry wallets already satisfy both hard rules.** Nightly,
+Loop, Console, Send, Cauri, Walley and OneSwap all return a real ledger update id
+and all show an explicit user approval. The capability is not the obstacle.
+
+**4. Six of those seven are blocked by nothing except the missing verb.** Only
+Nightly and Loop reach a typed transfer today, and they do so through their own
+proprietary SDK methods, outside the standard. Console reaches one the same way,
+but only on the opt-in adapter path. The rest have everything the contract needs
+except a way for an application to express what it wants.
+
+**5. Walley is the proof that the gap is the standard's and not any wallet's.**
+`@k2flabs/walley-dapp-sdk@1.2.0` is a pure standards implementation:
+`request<M extends keyof RpcTypes>` (`dist/index.d.ts:98`) is type-bound to the
+official method set, its handlers are exactly that set, and the strings
+`transfer`, `amount` and `instrument` do not appear anywhere in its type surface.
+A wallet that implements CIP-0103 faithfully and completely still cannot offer a
+typed transfer — because there is nothing in CIP-0103 to implement. That is the
+argument in one wallet.
+
+**6. The shape is already agreed in practice, so the amendment does not have to
+invent one.** The intent in [typed transfer](./typed-transfer.md) is where the
+CIP-0056 Canton Token Standard `Transfer` record and three independent wallet
+SDKs converge: Console's `SignSendRequest` (`to` / `token` / `amount` / `memo`),
+Nightly's `CreateTransferCommandParams` (`receiverPartyId` / `instrument` /
+`amount` / `memo` / `expiryDate`), and Loop's
+`transfer(recipient, amount, instrument, options)`. Cantor8's `send()` agrees too
+and goes further, carrying a full `metadata` map. Four wallet vendors arrived at
+substantially the same parameters independently.
+
+**7. The standard already solves the harder half.** `prepareExecuteAndWait`
+returns `PrepareExecuteAndWaitResult = { tx: TxChangedExecutedEvent }`
+(`dist/index.d.ts:533-535`) whose payload is `{ updateId, completionOffset }`
+(`:292-305`). A real ledger update id is already specified and already flowing.
+An intent-level verb could reuse that result type unchanged; only the request
+side is missing.
+
+Two design points worth carrying into any proposal, both learned here: the
+acting party should come from the session rather than a caller-supplied `actAs`,
+and the request should not carry input holding contract ids — the wallet chooses
+which of its own holdings to spend. The reasoning for both is in
+[typed transfer](./typed-transfer.md).
+
 ## Live verification: what still needs a wallet
 
 Everything above is established from source and unit tests. Three things can only
