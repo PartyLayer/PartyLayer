@@ -26,8 +26,10 @@ import type {
   PersistedSession,
   CapabilityKey,
   PartyId,
+  TransferIntent,
+  TransferResult,
 } from '@partylayer/core';
-import { normalizeLedgerMethodLower, ledgerApiBodyToObject } from '@partylayer/core';
+import { normalizeLedgerMethodLower, ledgerApiBodyToObject, toTransferIntent } from '@partylayer/core';
 import {
   toWalletId,
   toPartyId,
@@ -133,6 +135,11 @@ export class NightlyAdapter implements WalletAdapter {
       'signMessage',
       'submitTransaction',
       'ledgerApi',
+      // Nightly satisfies both halves of the transfer contract:
+      // createTransferCommand takes the intent verbatim (instrument AND its
+      // admin), and submitTransactionCommand reports an explicit approve or
+      // reject and carries the real update id on approval.
+      'transfer',
       'events',
       'injected',
     ];
@@ -399,6 +406,104 @@ export class NightlyAdapter implements WalletAdapter {
         details: { sessionId: session.sessionId },
       });
     }
+  }
+
+  /**
+   * Request a typed transfer.
+   *
+   * Nightly's own provider takes the intent almost verbatim:
+   * `createTransferCommand` accepts the receiving party, the amount, and the
+   * instrument WITH its administering party, then `submitTransactionCommand`
+   * puts it in front of the user and reports an explicit approve or reject. The
+   * wallet builds the command; PartyLayer builds nothing.
+   *
+   * On approval the wallet returns the real `updateId`. If it does not, this
+   * throws — the pre-existing `submitTransaction` path falls back to a
+   * signature and then to a generated string, and that fallback is exactly what
+   * this method must not do.
+   */
+  async requestTransfer(
+    ctx: AdapterContext,
+    session: Session,
+    intent: TransferIntent,
+  ): Promise<TransferResult> {
+    // Defensive: the client narrows before calling, but an adapter can be driven
+    // directly, and the allowlist is what keeps a caller-supplied option away
+    // from the wallet.
+    const safe = toTransferIntent(intent);
+    const memo = this.nightlyMemoFor(safe);
+
+    try {
+      if (!this.wallet) {
+        throw new Error('Not connected to Nightly Wallet');
+      }
+
+      ctx.logger.debug('Requesting transfer via Nightly Wallet', {
+        sessionId: session.sessionId,
+      });
+
+      const command = await this.wallet.createTransferCommand({
+        receiverPartyId: safe.receiver,
+        amount: safe.amount,
+        instrument: { id: safe.instrumentId.id, admin: safe.instrumentId.admin },
+        ...(memo === undefined ? {} : { memo }),
+        ...(safe.executeBefore === undefined ? {} : { expiryDate: safe.executeBefore }),
+      });
+
+      const approved = await new Promise<{ signature?: string; updateId?: string }>(
+        (resolve, reject) => {
+          this.wallet!.submitTransactionCommand(command, (response) => {
+            if (response.type === SignRequestResponseType.SIGN_REQUEST_APPROVED) {
+              resolve(response.data as { signature?: string; updateId?: string });
+            } else if (response.type === SignRequestResponseType.SIGN_REQUEST_REJECTED) {
+              const data = response.data as { reason: string };
+              // "rejected" is load-bearing: the core error mapper classifies it
+              // as a UserRejectedError, which is what a decline actually is.
+              reject(new Error(`Transaction rejected: ${data.reason}`));
+            } else {
+              const data = response.data as { error: string };
+              reject(new Error(`Transaction error: ${data.error}`));
+            }
+          });
+        },
+      );
+
+      if (!approved.updateId) {
+        throw new Error(
+          'Nightly Wallet approved the transfer but supplied no update id, so the transfer cannot be reported as committed.',
+        );
+      }
+
+      return {
+        updateId: approved.updateId,
+        partyId: session.partyId,
+      };
+    } catch (err) {
+      throw mapUnknownErrorToPartyLayerError(err, {
+        walletId: this.walletId,
+        phase: 'requestTransfer',
+        transport: 'injected',
+        details: { sessionId: session.sessionId },
+      });
+    }
+  }
+
+  /**
+   * Nightly's `memo` is a single string while a `TransferIntent.meta` is a map.
+   * Accept an absent/empty map, or exactly `{ memo }`; refuse anything else so
+   * metadata is never silently dropped from what the user approves.
+   */
+  private nightlyMemoFor(intent: TransferIntent): string | undefined {
+    const meta = intent.meta;
+    if (!meta) return undefined;
+    const keys = Object.keys(meta);
+    if (keys.length === 0) return undefined;
+    if (keys.length === 1 && keys[0] === 'memo') return meta.memo;
+    throw new CapabilityNotSupportedError(
+      this.walletId,
+      `transfer — Nightly carries a single "memo" string, not a metadata map; `
+      + `intent.meta has [${keys.join(', ')}]`,
+    );
   }
 
   /**
