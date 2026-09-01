@@ -47,6 +47,7 @@ import type {
   WalletId,
 } from '@partylayer/core';
 import { toPartyId, toWalletId, toSignature, normalizeLedgerMethodLower, ledgerApiBodyToObject, isRecognizedNetwork } from '@partylayer/core';
+import { submitViaPrepareExecute, type ExecuteVerbState } from './prepare-execute';
 
 /** Canonical providerId prefix for an announced extension (provider.md: `browser:ext:<id>`). */
 export const ANNOUNCED_WALLET_ID_PREFIX = 'browser:ext:';
@@ -176,6 +177,12 @@ export class GenericAnnounceAdapter implements WalletAdapter {
   private readonly staticMetadata?: Record<string, string>;
   private readonly mapError?: (err: unknown) => Error | undefined;
   private readonly signMessageBase64: boolean;
+
+  /**
+   * Which execute verb this wallet turned out to support. Resolved on the first
+   * submit and reused, so the wallet is asked at most once.
+   */
+  private readonly executeVerb: ExecuteVerbState = {};
 
   // Optional WalletAdapter surface — assigned in the ctor ONLY when configured,
   // so `getCapabilities()` and `'x' in adapter` feature-detection stay honest.
@@ -321,14 +328,15 @@ export class GenericAnnounceAdapter implements WalletAdapter {
   }
 
   async submitTransaction(
-    _ctx: AdapterContext,
+    ctx: AdapterContext,
     _session: Session,
     params: SubmitTransactionParams,
   ): Promise<TxReceipt> {
     return this.guarded(() =>
-      this.provider.request<TxReceipt>({
-        method: 'prepareExecute',
-        params: params as unknown as Record<string, unknown>,
+      submitViaPrepareExecute(this.provider, params, {
+        walletId: String(this.walletId),
+        state: this.executeVerb,
+        logger: ctx.logger,
       }),
     );
   }

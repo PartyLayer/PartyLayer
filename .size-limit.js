@@ -95,6 +95,16 @@ module.exports = [
     ignore: LAZY_WALLET_SDKS,
     modifyEsbuildConfig: assetsAsEmpty,
     gzip: true,
-    limit: '43 kB',
+    // Raised from 43 kB when the generic adapters stopped casting a void
+    // prepareExecute response to a TxReceipt. The cost is the negotiation that
+    // replaced the cast: preferring prepareExecuteAndWait, validating its
+    // executed-transaction response, and falling back for a wallet that does not
+    // implement it (OneSwap). It cannot be code-split — it is on the submit path
+    // itself. Measured 43.20 kB, trimmed to 43.15 kB by dropping a completionOffset
+    // that TxReceipt has no field for and shortening the log strings without
+    // losing the wallet name or the missing method. 43.5 kB leaves ~350 B of
+    // headroom, matching the react-native entry above, whose own headroom
+    // absorbed this same change without needing a raise.
+    limit: '43.5 kB',
   },
 ];

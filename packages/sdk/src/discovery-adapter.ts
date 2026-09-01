@@ -52,6 +52,7 @@ import type {
   WalletId,
 } from '@partylayer/core';
 import { toPartyId, toWalletId, isRecognizedNetwork } from '@partylayer/core';
+import { submitViaPrepareExecute, type ExecuteVerbState } from './prepare-execute';
 
 export interface GenericDiscoveryAdapterArgs {
   /**
@@ -103,6 +104,12 @@ export class GenericDiscoveryAdapter implements WalletAdapter {
   private networkHosts: NetworkHosts;
   /** Lazily resolved from `official.provider()` — NOT at construction (SSR-safe). */
   private providerInstance: CIP0103Provider | null = null;
+
+  /**
+   * Which execute verb this wallet turned out to support. Resolved on the first
+   * submit and reused, so the wallet is asked at most once.
+   */
+  private readonly executeVerb: ExecuteVerbState = {};
 
   constructor(args: GenericDiscoveryAdapterArgs) {
     if (args.official) {
@@ -324,13 +331,14 @@ export class GenericDiscoveryAdapter implements WalletAdapter {
   }
 
   async submitTransaction(
-    _ctx: AdapterContext,
+    ctx: AdapterContext,
     _session: Session,
     params: SubmitTransactionParams,
   ): Promise<TxReceipt> {
-    return this.provider.request<TxReceipt>({
-      method: 'prepareExecute',
-      params: params as unknown as Record<string, unknown>,
+    return submitViaPrepareExecute(this.provider, params, {
+      walletId: String(this.walletId),
+      state: this.executeVerb,
+      logger: ctx.logger,
     });
   }
 }
