@@ -36,8 +36,15 @@ import type {
   PersistedSession,
   CapabilityKey,
   PartyId,
+  TransferIntent,
+  TransferResult,
 } from '@partylayer/core';
-import { normalizeLedgerMethodLower, ledgerApiBodyToObject, isRecognizedNetwork } from '@partylayer/core';
+import {
+  normalizeLedgerMethodLower,
+  ledgerApiBodyToObject,
+  isRecognizedNetwork,
+  toTransferIntent,
+} from '@partylayer/core';
 import {
   toWalletId,
   toPartyId,
@@ -118,6 +125,119 @@ function toBase64Message(message: string): string {
 }
 
 /**
+ * How long to wait for the wallet's `executed` tx event after the user has
+ * approved a transfer, before giving up and throwing.
+ *
+ * The wait exists because Console's `submitCommands` response does not carry an
+ * update id — only the `txChanged` stream does. Timing out throws rather than
+ * returning a partial result: a transfer with no update id is not a transfer we
+ * can report as done.
+ */
+const TRANSFER_EXECUTION_TIMEOUT_MS = 120_000;
+
+/** A Console `txChanged` event, narrowed to the fields the adapter reads. */
+interface ConsoleTxEvent {
+  status: string;
+  commandId?: string;
+  payload?: {
+    signature?: string;
+    updateId?: string;
+    completionOffset?: number;
+  };
+}
+
+/**
+ * Correlates one `submitCommands` call with its `executed` event on the shared
+ * `txChanged` stream.
+ *
+ * Console's `submitCommands` resolves with `{ status, signature }` and no
+ * command id, while the update id arrives separately on `txChanged`. The link
+ * between them is the signature: the `signed` event carries the same signature
+ * string the call returns, and its `commandId` then identifies the `executed`
+ * event to wait for.
+ *
+ * Events are buffered from before the call is made, because `signed` can arrive
+ * before `submitCommands` resolves.
+ */
+class ConsoleTransferWaiter {
+  private readonly buffer: ConsoleTxEvent[] = [];
+  private commandId?: string;
+  private settled = false;
+  private resolveFn?: (value: ConsoleTxEvent) => void;
+  private rejectFn?: (err: Error) => void;
+
+  /** Feed one event from the shared stream. */
+  accept(event: ConsoleTxEvent): void {
+    if (this.settled) return;
+    this.buffer.push(event);
+    if (this.commandId) this.scanForTerminal();
+  }
+
+  /**
+   * Called once `submitCommands` has resolved. Resolves the command id from the
+   * signature, then settles as soon as the terminal event is present.
+   */
+  correlate(signature: string | undefined): void {
+    if (this.settled) return;
+
+    if (signature) {
+      const signed = this.buffer.find(
+        (e) => e.status === 'signed' && e.payload?.signature === signature,
+      );
+      if (signed?.commandId) this.commandId = signed.commandId;
+    }
+
+    if (!this.commandId) {
+      // Fallback: if exactly one command was seen on the stream during this
+      // call's window, it is unambiguously ours. With more than one in flight
+      // we refuse rather than guess — attributing another transfer's update id
+      // to this one would be worse than failing.
+      const ids = [...new Set(this.buffer.map((e) => e.commandId).filter(Boolean))];
+      if (ids.length === 1) this.commandId = ids[0];
+    }
+
+    if (!this.commandId) {
+      this.reject(
+        new Error(
+          'Console Wallet did not report a command id for this transfer, so its update id cannot be identified. '
+          + 'The transfer may still have been submitted; check the wallet before retrying.',
+        ),
+      );
+      return;
+    }
+
+    this.scanForTerminal();
+  }
+
+  /** The terminal event for this transfer, or a rejection. */
+  promise(): Promise<ConsoleTxEvent> {
+    return new Promise<ConsoleTxEvent>((resolve, reject) => {
+      this.resolveFn = resolve;
+      this.rejectFn = reject;
+    });
+  }
+
+  reject(err: Error): void {
+    if (this.settled) return;
+    this.settled = true;
+    this.rejectFn?.(err);
+  }
+
+  private scanForTerminal(): void {
+    const terminal = this.buffer.find(
+      (e) => e.commandId === this.commandId && (e.status === 'executed' || e.status === 'failed'),
+    );
+    if (!terminal) return;
+    this.settled = true;
+    if (terminal.status === 'failed') {
+      this.rejectFn?.(new Error(`Console Wallet reported the transfer failed (commandId ${this.commandId}).`));
+      return;
+    }
+    this.resolveFn?.(terminal);
+  }
+}
+
+/**
  * Console Wallet adapter
  *
  * Implements WalletAdapter interface for Console Wallet using the official
@@ -144,6 +264,12 @@ export class ConsoleAdapter implements WalletAdapter {
    */
   private activeTransport: 'injected' | 'remote' | null = null;
 
+  /** In-flight transfer waiters fed by the single shared txChanged subscription. */
+  private readonly transferWaiters = new Set<ConsoleTransferWaiter>();
+
+  /** Whether the shared txChanged subscription has been installed (once only). */
+  private txStreamAttached = false;
+
   constructor(config: ConsoleAdapterConfig = {}) {
     this.target = config.target ?? 'combined';
   }
@@ -157,6 +283,10 @@ export class ConsoleAdapter implements WalletAdapter {
       'signTransaction',
       'submitTransaction',
       'ledgerApi',
+      // Console satisfies both halves of the transfer contract: submitCommands
+      // takes a typed transfer and prompts the user for an explicit approval,
+      // and the txChanged stream carries the real ledger update id.
+      'transfer',
       'events',
     ];
 
@@ -664,6 +794,150 @@ export class ConsoleAdapter implements WalletAdapter {
         details: { sessionId: session.sessionId },
       });
     }
+  }
+
+  /**
+   * Request a typed transfer.
+   *
+   * Maps the intent onto Console's `submitCommands` (the SDK's sign-and-send),
+   * which is itself a typed transfer: the WALLET builds the command, shows the
+   * user the recipient, token, amount and memo, takes their approval, signs and
+   * submits. PartyLayer never builds a command and never sees a prepared
+   * transaction.
+   *
+   * The update id comes from the `txChanged` stream, not from the call's return
+   * value — `SignSendResponse` carries only `{ status, signature }`. See
+   * {@link ConsoleTransferWaiter} for how the two are correlated.
+   *
+   * Two intent fields Console cannot carry are refused rather than dropped:
+   * an absent `executeBefore` (its `expireDate` is required and PartyLayer will
+   * not invent a deadline the user would then be shown) and a `meta` map with
+   * anything other than a single `memo` key (its `memo` is one string). Silently
+   * discarding either would make the confirmation the user approves untrue.
+   */
+  async requestTransfer(
+    ctx: AdapterContext,
+    session: Session,
+    intent: TransferIntent,
+  ): Promise<TransferResult> {
+    const transport = resolveTransportLabel(this.target, this.activeTransport);
+    // Defensive: the client narrows before calling, but an adapter can be driven
+    // directly, and the allowlist is the guarantee that no caller-supplied
+    // option reaches the wallet.
+    const safe = toTransferIntent(intent);
+
+    if (!safe.executeBefore) {
+      throw new CapabilityNotSupportedError(
+        this.walletId,
+        'transfer — Console Wallet requires an explicit deadline; set intent.executeBefore (ISO 8601)',
+      );
+    }
+
+    const memo = this.consoleMemoFor(safe);
+
+    try {
+      ctx.logger.debug('Requesting transfer via Console Wallet', {
+        sessionId: session.sessionId,
+        transport,
+      });
+
+      const waiter = new ConsoleTransferWaiter();
+      const detach = this.attachTransferWaiter(waiter);
+      const terminal = waiter.promise();
+      // Buffer from before the call: `signed` can arrive before the call resolves.
+      const timer = setTimeout(
+        () =>
+          waiter.reject(
+            new Error(
+              `Console Wallet did not report an executed transfer within ${TRANSFER_EXECUTION_TIMEOUT_MS}ms. `
+              + 'The transfer may still be in flight; check the wallet before retrying.',
+            ),
+          ),
+        TRANSFER_EXECUTION_TIMEOUT_MS,
+      );
+
+      try {
+        const response = await (await getConsoleWallet()).submitCommands({
+          // The acting party is the session's, never the caller's.
+          from: String(session.partyId),
+          to: safe.receiver,
+          token: safe.instrumentId.id,
+          amount: safe.amount,
+          expireDate: safe.executeBefore,
+          ...(memo === undefined ? {} : { memo }),
+        });
+
+        if (!response || response.status !== true) {
+          throw new Error('Console Wallet did not approve the transfer.');
+        }
+
+        waiter.correlate(response.signature);
+        const executed = await terminal;
+
+        const updateId = executed.payload?.updateId;
+        if (!updateId) {
+          // Never substitute a command id, a signature, or a generated string.
+          throw new Error(
+            'Console Wallet reported the transfer executed but supplied no update id.',
+          );
+        }
+
+        return {
+          updateId,
+          commandId: executed.commandId,
+          completionOffset: executed.payload?.completionOffset,
+          partyId: session.partyId,
+        };
+      } finally {
+        clearTimeout(timer);
+        detach();
+      }
+    } catch (err) {
+      throw mapUnknownErrorToPartyLayerError(err, {
+        walletId: this.walletId,
+        phase: 'requestTransfer',
+        transport,
+        details: { sessionId: session.sessionId },
+      });
+    }
+  }
+
+  /**
+   * Console's `memo` is a single string while a `TransferIntent.meta` is a map.
+   * Accept an absent/empty map, or exactly `{ memo }`; refuse anything else so
+   * metadata is never silently dropped from what the user approves.
+   */
+  private consoleMemoFor(intent: TransferIntent): string | undefined {
+    const meta = intent.meta;
+    if (!meta) return undefined;
+    const keys = Object.keys(meta);
+    if (keys.length === 0) return undefined;
+    if (keys.length === 1 && keys[0] === 'memo') return meta.memo;
+    throw new CapabilityNotSupportedError(
+      this.walletId,
+      `transfer — Console Wallet carries a single "memo" string, not a metadata map; `
+      + `intent.meta has [${keys.join(', ')}]`,
+    );
+  }
+
+  /**
+   * Register a waiter on the shared `txChanged` stream, returning a detach fn.
+   *
+   * The stream is subscribed ONCE per adapter. The SDK's `onTxStatusChanged`
+   * adds a `window` message listener and returns no unsubscribe, so subscribing
+   * per transfer would leak a listener on every call.
+   */
+  private attachTransferWaiter(waiter: ConsoleTransferWaiter): () => void {
+    this.transferWaiters.add(waiter);
+    if (!this.txStreamAttached) {
+      this.txStreamAttached = true;
+      void getConsoleWallet().then((cw) =>
+        cw.onTxStatusChanged((txEvent) => {
+          for (const w of this.transferWaiters) w.accept(txEvent as unknown as ConsoleTxEvent);
+        }),
+      );
+    }
+    return () => this.transferWaiters.delete(waiter);
   }
 
   /**

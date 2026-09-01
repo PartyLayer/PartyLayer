@@ -1000,7 +1000,32 @@ describe('ConsoleAdapter', () => {
     it('local mode should match original capabilities exactly', () => {
       const adapter = new ConsoleAdapter({ target: 'local' });
       const caps = adapter.getCapabilities();
+      // The exact list, so a capability can never be dropped or reordered
+      // unnoticed. It grew once, deliberately: `transfer` was added when the
+      // adapter gained requestTransfer, because Console satisfies both halves
+      // of that contract (a typed sign-and-send the user must approve, and a
+      // real update id on the txChanged stream). Nothing was removed; a wallet
+      // must declare the capability for a dApp to be able to ask for it.
       const expected = [
+        'connect',
+        'disconnect',
+        'restore',
+        'signMessage',
+        'signTransaction',
+        'submitTransaction',
+        'ledgerApi',
+        'transfer',
+        'events',
+        'injected',
+      ];
+      expect(caps).toEqual(expected);
+    });
+
+    it('still reports every pre-transfer capability, in order', () => {
+      // The backward-compatibility guarantee stated as what it actually is:
+      // no capability that existed before requestTransfer was removed.
+      const caps = new ConsoleAdapter({ target: 'local' }).getCapabilities();
+      const original = [
         'connect',
         'disconnect',
         'restore',
@@ -1011,7 +1036,7 @@ describe('ConsoleAdapter', () => {
         'events',
         'injected',
       ];
-      expect(caps).toEqual(expected);
+      expect(caps.filter((c) => original.includes(c))).toEqual(original);
     });
 
     it('no-arg constructor should work (backward compatible)', () => {
