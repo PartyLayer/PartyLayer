@@ -389,14 +389,20 @@ export class NightlyAdapter implements WalletAdapter {
         },
       );
 
-      const hash =
-        result.updateId ||
-        result.signature ||
-        `tx_${Date.now()}_${Math.random().toString(36).substring(2, 10)}`;
+      // Was `updateId || signature || tx_<now>_<random>`. The generated tail is
+      // gone: when the wallet reports neither, there is nothing real to return
+      // and this fails instead of manufacturing an identifier.
+      const hash = result.updateId || result.signature;
+      if (!hash) {
+        throw new Error(
+          'Nightly Wallet approved the transaction but reported neither an updateId nor a signature, so there is no real identifier to report.',
+        );
+      }
 
       return {
         transactionHash: toTransactionHash(hash),
         submittedAt: Date.now(),
+        ...(result.updateId ? { updateId: result.updateId } : {}),
       };
     } catch (err) {
       throw mapUnknownErrorToPartyLayerError(err, {

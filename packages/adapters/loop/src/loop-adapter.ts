@@ -477,7 +477,10 @@ export class LoopAdapter implements WalletAdapter {
       // Guard before dereferencing so consumers don't see an opaque
       // "Cannot read properties of undefined" or "Unexpected end of JSON
       // input" — give them an actionable error instead.
-      const r = result as { command_id?: string; submission_id?: string } | null | undefined;
+      const r = result as
+        | { command_id?: string; submission_id?: string; update_id?: string }
+        | null
+        | undefined;
       if (!r || typeof r.command_id !== 'string') {
         // Do not use words like "rejected"/"denied"/"cancelled" here — the
         // core error mapper auto-classifies those as UserRejectedError and
@@ -491,11 +494,21 @@ export class LoopAdapter implements WalletAdapter {
         );
       }
 
+      // `updateId` was `submission_id ?? command_id`. Neither is an update id: a
+      // submission id identifies the request, a command id identifies the
+      // command. The SDK's own response carries `update_id`, which went unread.
+      // It is reported when present and OMITTED when absent, so a caller can
+      // tell "no update id" from "here is one".
+      //
+      // `transactionHash` remains the command id — a real value the wallet
+      // issued, not an invented one, but still not a transaction hash. See the
+      // note in the console adapter's `readSignature`: correcting the label
+      // needs the field to become optional, which is its own decision.
       return {
         transactionHash: toTransactionHash(r.command_id),
         submittedAt: Date.now(),
         commandId: r.command_id,
-        updateId: r.submission_id ?? r.command_id,
+        ...(r.update_id ? { updateId: r.update_id } : {}),
       };
     } catch (err) {
       throw mapUnknownErrorToPartyLayerError(err, {
