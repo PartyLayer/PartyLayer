@@ -479,20 +479,50 @@ adapters manufactured a value to satisfy them: `tx_<now>_<random>`, `tx_<now>`,
 fallback anybody designed.** Each was written by someone with a working adapter,
 a wallet that reported no hash, and a compiler demanding a string.
 
-Two of the nine were found only when the field was made optional — an earlier
-survey looking for exactly this problem had missed them, because they were
-ternaries rather than `??` chains. Fixing such sites one at a time finds the ones
-you already know how to grep for; removing the pressure that creates them is what
-finds the rest.
-
 The failure mode is worse than an obviously wrong value. `''` is present,
 well-typed and falsy, so it passes a null check while carrying nothing. A command
 id in a field named `transactionHash` is a real value under a wrong name, which
 for anyone reading the field by its name is the same error as a fabricated one.
 
+#### Searching finds the shapes you already know
+
+Two of those nine sites were found only when the field was made optional. A
+survey looking for exactly that problem, with the patterns fresh in mind, had
+already been over the same adapter and declared it clean — it missed them because
+they were ternaries rather than `??` chains. The count in the report was seven.
+It was nine.
+
+Nothing about the search was careless. It was a search, and a search enumerates
+what you thought to look for. What found the last two was not a better pattern:
+it was making the field optional, so every write site had to be revisited because
+it no longer compiled.
+
+**Where a defect class can be expressed as a type constraint, change the type and
+let the compiler enumerate.** A grep enumerates what you thought of; a type
+enumerates what exists. The same holds for anything else the toolchain can be
+made to check for you — a lint rule, a schema, a gate script. Prefer the check
+that fails on instances nobody has imagined yet.
+
+This is worth stating as a rule because it keeps recurring, in unrelated
+material: link markup, file naming, prose wording, and now a type — four times in
+two days, each time a sweep that found most instances and left the ones shaped
+differently from the examples in front of us.
+
+#### A fix can introduce the defect it removes
+
 When you do make such a field optional, sweep for `String(x)` on it. That pattern
-compiles and renders the literal text `"undefined"` — a fresh placeholder created
-by the change meant to remove them.
+compiles and renders the literal text `"undefined"`.
+
+Three of those appeared in the change that removed the placeholders — the same
+defect wearing the fix's clothes, and harder to spot than the originals, because
+a fabricated `tx_<now>` at least looks wrong on sight while `"undefined"` arrives
+looking like ordinary output. The compiler is no help here: `String(undefined)`
+is valid and total.
+
+So after a change of this kind, ask the question the change itself invites: what
+new way of producing nothing-shaped-as-something did I just create? For
+optionality specifically that is `String(x)`, template interpolation, and string
+concatenation. Each renders `undefined` without complaint.
 
 #### Assert what the call returned, not that it was reached
 
