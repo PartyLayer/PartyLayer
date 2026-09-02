@@ -569,6 +569,24 @@ the grep had simply found the claim again. It was removed rather than copied
 forward, because this codebase never reads an update by id and the JSON Ledger
 API differs across versions, so there was no verified route to give.
 
+It happened again the next day, pointing outward, and that instance is the one
+worth remembering. A wallet-support document stated that a third-party wallet
+"signs; it does not submit", and told that vendor what to add to their service.
+The only source for either claim was **this repository's own adapter for them** —
+a hand-written client with no dependency on anything the vendor publishes. An
+adapter that implements no submit path is evidence about the adapter. What their
+service can actually do had never been established, because we had never
+integrated it.
+
+Note what the rule cost by being late: it was written one day earlier, from the
+first instance, and did not prevent the second. Rules of this kind are not
+self-executing — the question has to be asked at the moment of writing the
+sentence, which is exactly when the sentence feels obviously true.
+
+And note which instance did more damage. An unsourced claim about your own
+system wastes your own time. An unsourced claim about someone else's is published
+as a judgement of their work, under your name, where they can read it.
+
 **One hit, in prose we wrote, is an echo and not a source.** Corroboration comes
 from outside: a dependency's published types, an upstream specification, a
 generated client, a live system that answers. In this same work the CIP-0103
