@@ -139,16 +139,16 @@ try {
 | Nightly | yes | `createTransferCommand` + `submitTransactionCommand`. Carries the instrument admin through. Default path. |
 | Loop | yes | The SDK's `transfer()` in `wait` mode. Default path. |
 | Console | yes, opt-in only | `submitCommands`; update id from the `txChanged` stream. Its registry entry is `transport: announce`, so you must pass `adapters: [new ConsoleAdapter()]` to get it — the registry path does not carry it. |
-| Send | no | Real update id and passkey approval, but its RPC surface has no intent-level verb. |
-| Cauri | no | Standards implementation: real update id, approval with `rejected`/`timeout`/`popup_closed` separated, but no intent verb. |
-| Walley | no | Standards implementation; the same gap. |
-| OneSwap V2 | no | Real update id and a raised popup approval, but its own protocol's only write verb takes commands. |
+| Send | no | Real update id and passkey approval; its RPC surface has no intent-level verb. |
+| Cauri | no | Real update id and an approval that separates `rejected`/`timeout`/`popup_closed`; no intent verb in the standard it implements. |
+| Walley | no | Implements the official method set, which has no intent verb. |
+| OneSwap V2 | no | Real update id and a raised popup approval; its protocol's write verb takes commands. |
 | WalletConnect | no | Inherits the standard's gap through the `canton_` namespace. |
-| Cantor8 | no | Its SDK exposes no ledger update id, and its `send()` takes `amount` as a JS number. |
-| Bron | no | An enterprise remote signer with no execute path at all. |
+| Cantor8 | no | Its SDK exposes no ledger update id, and `send()` takes `amount` as a JS number. |
+| Bron | no | Our adapter implements signing only; submission was never integrated. |
 
-Per-wallet reasoning, with the deciding file and line for each, is in
-[per-wallet verdicts](./typed-transfer-support.md).
+Per-wallet detail, with the file and line each status is read from, is in
+[integration status](./typed-transfer-support.md).
 
 Where a wallet cannot carry a field, the adapter **refuses the intent** rather
 than dropping it. Metadata the user was shown but that would not be written would

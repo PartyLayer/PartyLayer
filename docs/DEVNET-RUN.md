@@ -237,9 +237,8 @@ OpenAPI/docs page:
 2. **the host** — deliberately not written here, since infrastructure addresses
    do not go in public docs; it is in the private ops notes, referred to as
    `<validator>`;
-3. **whether auth is needed** — on PartyLayer's own devnet participant auth is
-   disabled, and a bearer token, if sent, only carries a user id. Your validator
-   may differ.
+3. **whether auth is needed**, and if so what token — validators differ, and the
+   one you are pointed at may want a bearer token or nothing at all.
 
 The call then looks like:
 
@@ -270,9 +269,9 @@ differs from what you typed; or declining does not produce an error in the panel
 
 | Wallet | Should show | Watch for |
 |---|---|---|
-| **Nightly** | payee, amount, instrument **including its admin**, memo, expiry | It is the only one that receives the admin. If the issuer is not shown here, that is a wallet-side display gap, not a PartyLayer one. |
+| **Nightly** | payee, amount, instrument **including its admin**, memo, expiry | It is the only one of the three that receives the admin, so it is the one place the issuer could be shown. Record what it actually shows. |
 | **Loop** | recipient, amount, instrument, memo, in the popup | Approving without the popup appearing at all. |
-| **Console** | payee, amount, token, memo | **The issuing admin is expected to be missing.** Console's send request has no admin field, so PartyLayer cannot pass it. Confirm whether Console names the issuer from its own registry — if it shows only a bare symbol, note it. |
+| **Console** | payee, amount, token, memo | Console's send request has no admin field (`@console-wallet/dapp-sdk@2.2.8`), so PartyLayer does not pass one. Record whether the screen names the issuer anyway — the wallet may resolve it from its own registry. |
 
 **The Console question is the one worth answering carefully**, because it decides
 whether the Console mapping is safe: if two different admins can issue an
