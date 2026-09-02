@@ -76,7 +76,12 @@ export const TransactionToast = defineComponent({
       // On success, show the receipt's identifying fields when provided.
       if (status === 'success' && props.receipt) {
         const receipt = props.receipt;
-        const detail = receipt.updateId ?? receipt.commandId ?? String(receipt.transactionHash);
+        // Stringify `transactionHash` only when it exists: it is optional now,
+        // and `String(undefined)` would show the user the word "undefined".
+        const detail =
+          receipt.updateId ??
+          receipt.commandId ??
+          (receipt.transactionHash === undefined ? undefined : String(receipt.transactionHash));
         children.push(
           h(
             'div',

@@ -31,7 +31,6 @@ import type {
 import {
   toWalletId,
   toPartyId,
-  toTransactionHash,
   toSignature,
   PartyLayerError,
   WalletNotInstalledError,
@@ -500,12 +499,12 @@ export class LoopAdapter implements WalletAdapter {
       // It is reported when present and OMITTED when absent, so a caller can
       // tell "no update id" from "here is one".
       //
-      // `transactionHash` remains the command id — a real value the wallet
-      // issued, not an invented one, but still not a transaction hash. See the
-      // note in the console adapter's `readSignature`: correcting the label
-      // needs the field to become optional, which is its own decision.
+      // `transactionHash` is no longer set to the command id. Loop reports no
+      // transaction hash, so the field is omitted; the command id is reported
+      // under `commandId`, where it belongs. Reading a command id from a field
+      // named `transactionHash` is the same class of error as reading a
+      // fabricated one — the name is what a caller trusts.
       return {
-        transactionHash: toTransactionHash(r.command_id),
         submittedAt: Date.now(),
         commandId: r.command_id,
         ...(r.update_id ? { updateId: r.update_id } : {}),

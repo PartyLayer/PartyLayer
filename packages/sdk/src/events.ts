@@ -82,7 +82,14 @@ export interface SessionNetworkMismatchEvent {
 export interface TxStatusEvent {
   type: 'tx:status';
   sessionId: SessionId;
-  txId: TransactionHash;
+  /**
+   * The transaction id, when the wallet reported one. Optional for the same
+   * reason as `TxReceipt.transactionHash`, which is where it comes from: a
+   * wallet with no hash to give produces an event with no id, and saying so
+   * beats emitting an invented one. Prefer reading `updateId` off the receipt
+   * when you need a ledger identifier.
+   */
+  txId?: TransactionHash;
   status: TransactionStatus;
   raw?: unknown;
 }

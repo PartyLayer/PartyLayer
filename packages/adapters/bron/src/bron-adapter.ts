@@ -292,9 +292,11 @@ export class BronAdapter implements WalletAdapter {
             : { tx: params.tx, signature: status.signature };
           return {
             signedTx,
-            transactionHash: status.transactionHash
-              ? toTransactionHash(status.transactionHash)
-              : toTransactionHash('pending'),
+            // Was `toTransactionHash('pending')` when Bron reported no hash.
+            // The field is optional now, so nothing is what gets reported.
+            ...(status.transactionHash
+              ? { transactionHash: toTransactionHash(status.transactionHash) }
+              : {}),
             partyId: session.partyId,
           };
         }
@@ -315,9 +317,9 @@ export class BronAdapter implements WalletAdapter {
         : { tx: params.tx, signature: signResponse.signature };
       return {
         signedTx,
-        transactionHash: signResponse.transactionHash
-          ? toTransactionHash(signResponse.transactionHash)
-          : toTransactionHash('pending'),
+        ...(signResponse.transactionHash
+          ? { transactionHash: toTransactionHash(signResponse.transactionHash) }
+          : {}),
         partyId: session.partyId,
       };
     } catch (err) {

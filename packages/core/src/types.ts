@@ -289,8 +289,21 @@ export interface SignedMessage {
 export interface SignedTransaction {
   /** Signed transaction data */
   signedTx: unknown;
-  /** Transaction hash */
-  transactionHash: TransactionHash;
+  /**
+   * The transaction hash, when the wallet reports one.
+   *
+   * OPTIONAL, and that is the point. This field was required, and a required
+   * field with no honest value is a defect factory: an adapter whose wallet
+   * gives it no hash still has to put something here, so it invents one. Nine
+   * sites across five adapters did exactly that — `tx_<now>_<random>`,
+   * `'pending'`, `''` — and none of them arose from a fallback anyone designed.
+   * They arose from the type demanding a value the path could not produce.
+   *
+   * An adapter with no hash now omits this. A caller that needs one must handle
+   * its absence, which is the truth of the situation rather than a hash-shaped
+   * string that means nothing.
+   */
+  transactionHash?: TransactionHash;
   /** Party ID that signed */
   partyId: PartyId;
 }
@@ -299,8 +312,15 @@ export interface SignedTransaction {
  * Transaction receipt
  */
 export interface TxReceipt {
-  /** Transaction hash */
-  transactionHash: TransactionHash;
+  /**
+   * The transaction hash, when the wallet reports one. See
+   * {@link SignedTransaction.transactionHash} for why this is optional.
+   *
+   * Prefer {@link TxReceipt.updateId} when you need a ledger identifier: it is
+   * the ledger's own id for the committed update, and several wallets report a
+   * real one here while having no hash to give at all.
+   */
+  transactionHash?: TransactionHash;
   /** Submission timestamp */
   submittedAt: number;
   /** Command ID (if available) */
@@ -325,8 +345,14 @@ export type TransactionStatus =
 export interface TxStatusUpdate {
   /** Session ID */
   sessionId: SessionId;
-  /** Transaction ID */
-  txId: TransactionHash;
+  /**
+   * Transaction ID, when one is available.
+   *
+   * Optional for the same reason as {@link TxReceipt.transactionHash}, which is
+   * where it comes from: a wallet that reports no hash produces a status update
+   * with no id, and saying so is better than emitting an invented one.
+   */
+  txId?: TransactionHash;
   /** Current status */
   status: TransactionStatus;
   /** Raw transaction data (if available) */

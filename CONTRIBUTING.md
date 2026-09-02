@@ -464,6 +464,36 @@ describe('createSession', () => {
 - One assertion per test when possible
 - Mock external dependencies
 
+#### A required field with no honest value is a defect factory
+
+Before adding a required field to a type an adapter must return, ask what an
+implementation does when it has no value for it. If the answer is "there is no
+sensible answer", the field must be optional. Otherwise every implementation
+that lacks the value invents one, because the type leaves it nowhere to put
+nothing.
+
+This is not hypothetical here. `TxReceipt.transactionHash` and
+`SignedTransaction.transactionHash` were required, and nine sites across five
+adapters manufactured a value to satisfy them: `tx_<now>_<random>`, `tx_<now>`,
+`'pending'` three times, `''`, a command id, and a signature. **Not one was a
+fallback anybody designed.** Each was written by someone with a working adapter,
+a wallet that reported no hash, and a compiler demanding a string.
+
+Two of the nine were found only when the field was made optional — an earlier
+survey looking for exactly this problem had missed them, because they were
+ternaries rather than `??` chains. Fixing such sites one at a time finds the ones
+you already know how to grep for; removing the pressure that creates them is what
+finds the rest.
+
+The failure mode is worse than an obviously wrong value. `''` is present,
+well-typed and falsy, so it passes a null check while carrying nothing. A command
+id in a field named `transactionHash` is a real value under a wrong name, which
+for anyone reading the field by its name is the same error as a fabricated one.
+
+When you do make such a field optional, sweep for `String(x)` on it. That pattern
+compiles and renders the literal text `"undefined"` — a fresh placeholder created
+by the change meant to remove them.
+
 #### Assert what the call returned, not that it was reached
 
 A test that checks a dependency was *called* passes whether the answer was right

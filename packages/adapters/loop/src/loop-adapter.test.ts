@@ -707,6 +707,23 @@ describe('LoopAdapter', () => {
         expect('updateId' in receipt).toBe(false);
       });
 
+      it('direct submitTransaction: omits transactionHash rather than reporting the command id under it', async () => {
+        // Loop reports no transaction hash. It used to report the COMMAND id in
+        // that field — a real value under a wrong name, which for anyone reading
+        // the field by its name is the same error as a fabricated one.
+        mockProvider.submitTransaction.mockResolvedValue({
+          command_id: 'cmd-42',
+          submission_id: 'sub-42',
+        });
+        const receipt = await adapter.submitTransaction(ctx, createMockSession(), {
+          signedTx: { commands: [{}] },
+        });
+        expect(receipt.transactionHash).toBeUndefined();
+        expect('transactionHash' in receipt).toBe(false);
+        // The command id is still reported, under the name that is true of it.
+        expect(receipt.commandId).toBe('cmd-42');
+      });
+
       it('direct submitTransaction: reports the real update_id when the response carries one', async () => {
         // The field the SDK has always returned and the adapter never read.
         mockProvider.submitTransaction.mockResolvedValue({
