@@ -33,4 +33,4 @@ Implemented natively by three adapters, each mapping the intent onto its wallet'
 - **Nightly** — `createTransferCommand` + `submitTransactionCommand`. The only one of the three that carries the instrument's issuing admin through to the wallet.
 - **Loop** — the SDK's `transfer()` in `wait` mode, which is where `RunTransactionResponse.update_id` is populated.
 
-Each declares the `transfer` capability. Every other wallet — Bron, Cantor8, Send, WalletConnect, and both generic paths — reports it absent, each for a documented reason with a route to changing it. See docs/typed-transfer-support.md.
+Each declares the `transfer` capability. Every other adapter reports it absent, so a dApp can ask before offering the action. The per-adapter integration status is in docs/typed-transfer-support.md.
