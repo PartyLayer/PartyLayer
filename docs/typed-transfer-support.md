@@ -507,17 +507,25 @@ three for each implemented adapter:
 3. the returned `updateId` is a real ledger update id.
 
 Because (3) is the claim most easily believed and hardest to check, verify it
-against the ledger rather than against the wallet's own display. The update id
-should resolve through your validator's JSON API:
+against the ledger rather than against the wallet's own display.
 
-```
-GET /v2/updates/{updateId}
-```
+Two checks. First, shape: **a Canton update id is a 64-character hexadecimal
+string**, which alone catches every fabricated value this codebase has produced.
+Second, a ledger lookup by that id — if it does not resolve, the value is not an
+update id whatever the field is called, and that is exactly the failure this
+method exists to prevent.
 
-If it does not resolve, the value is not an update id, whatever the field is
-called — and that is exactly the failure this method exists to prevent.
+An earlier revision of this section named `GET /v2/updates/{updateId}` as the
+lookup route. That was not sourced from anything: this repository never reads an
+update by id, so there is no verified route here, and the JSON Ledger API differs
+across versions. The claim has been removed rather than left to be copied. See
+[the devnet runbook](./DEVNET-RUN.md) for what to establish about your own
+validator before running the check.
 
 ### Procedure, per wallet
+
+The step-by-step version, including the page to run and the file to create, is in
+[docs/DEVNET-RUN.md](./DEVNET-RUN.md). What follows is the short form.
 
 With the wallet connected to devnet and holding a small balance:
 
