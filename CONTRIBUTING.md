@@ -549,6 +549,41 @@ new way of producing nothing-shaped-as-something did I just create? For
 optionality specifically that is `String(x)`, template interpolation, and string
 concatenation. Each renders `undefined` without complaint.
 
+#### A document citing no source outside itself is not evidence
+
+The three rules above are about checks that could not see what was there. This
+one is the same failure pointing the other way: a document that could not be
+checked.
+
+A value that arrives in conversation — a route, a host, a version, a field name —
+and gets written into a document stops looking like a guess on the next read. It
+is now prose in the repository, in the same typeface as everything that was
+verified, and the person reading it has no way to tell which it is. That person is
+usually you, later.
+
+This happened here. A runbook stated the ledger route for looking up a
+transaction as `GET /v2/updates/{updateId}`. Rewriting the runbook, the author
+went to confirm it and found **exactly one occurrence in the entire repository:
+the earlier sentence they had written themselves**. Nothing had corroborated it;
+the grep had simply found the claim again. It was removed rather than copied
+forward, because this codebase never reads an update by id and the JSON Ledger
+API differs across versions, so there was no verified route to give.
+
+**One hit, in prose we wrote, is an echo and not a source.** Corroboration comes
+from outside: a dependency's published types, an upstream specification, a
+generated client, a live system that answers. In this same work the CIP-0103
+method set was established that way — read off
+`@canton-network/core-wallet-dapp-rpc-client`'s own type declarations, which
+nobody here wrote and which the standard's authors ship. That is what the
+difference looks like in practice.
+
+So when a document asserts something specific and load-bearing — a route, an
+endpoint, a limit, a guarantee — ask where it would be checked. If the answer is
+"another sentence in this repository", it has not been checked. Either trace it to
+something external, or say plainly what is unknown and what it would take to find
+out. An honest gap is usable; a confident sentence with nothing behind it is worse
+than silence, because it stops the next person looking.
+
 #### Assert what the call returned, not that it was reached
 
 A test that checks a dependency was *called* passes whether the answer was right
