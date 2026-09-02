@@ -503,10 +503,35 @@ enumerates what exists. The same holds for anything else the toolchain can be
 made to check for you — a lint rule, a schema, a gate script. Prefer the check
 that fails on instances nobody has imagined yet.
 
-This is worth stating as a rule because it keeps recurring, in unrelated
-material: link markup, file naming, prose wording, and now a type — four times in
-two days, each time a sweep that found most instances and left the ones shaped
-differently from the examples in front of us.
+This is worth stating as a rule because it keeps recurring, and the instances
+look nothing alike. Four in two days. The first three happened in a sibling
+repository rather than this one, but the shape is identical and they are more
+useful named than summarised:
+
+1. **An object prop.** A link check searched the source for `href="/app/..."`.
+   Two primary calls to action were written as
+   `primary={{ href: '/app/observe' }}` — the href inside an object prop rather
+   than an attribute — so the check never saw them. They shipped as 404s on a
+   live product page.
+
+2. **A bare filename.** A citation guard searched for full paths of the form
+   `packages/sdk/src/...`. Four citations written as bare adapter filenames were
+   never checked.
+
+3. **A gerund.** A claim sweep searched for the string `"closes itself"` and
+   missed `"each one closing itself"` — inside the very commit that was
+   correcting the claim.
+
+4. **A ternary.** The two Bron sites above, written as `cond ? a : b` rather than
+   the `??` chains the sweep had been shaped around.
+
+What these share is not carelessness, and reading them as carelessness is the way
+to keep repeating them. In every case the person searching knew exactly what they
+were looking for, and **each search returned everything it was capable of
+returning.** The pattern was the limit, not the effort. A fifth instance is
+already written, somewhere, in a form nobody has pictured yet — which is the
+argument for handing the enumeration to something that does not have to picture
+it.
 
 #### A fix can introduce the defect it removes
 
