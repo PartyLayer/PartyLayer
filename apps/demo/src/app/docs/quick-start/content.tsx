@@ -71,8 +71,9 @@ export default function QuickStartPage() {
       <H2 id="prerequisites">Before you start</H2>
       <UL>
         <LI>
-          <Strong>React 18 or 19</Strong> and Node 18 or newer. Any bundler; the examples are plain
-          React and work in Next.js, Vite or Remix.
+          <Strong>React 18 or 19</Strong> and Node 18 or newer. Every code block below has a
+          Next.js and a Vite tab. The code is plain React, so another bundler will work, but those
+          two are the ones actually shown.
         </LI>
         <LI>
           <Strong>A wallet to connect to.</Strong> On devnet you do not need one installed to see the
