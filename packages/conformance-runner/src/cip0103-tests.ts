@@ -4,6 +4,15 @@
  * Validates that a Provider implementation conforms to CIP-0103:
  * - Interface shape (request, on, emit, removeListener)
  * - All 10 mandatory methods are handled
+ *
+ * "Mandatory" means the specification's synchronous method table, and nothing
+ * else. It iterates CIP0103_MANDATORY_METHODS, which is written out explicitly
+ * rather than derived from CIP0103_METHODS: this SDK speaks one method the
+ * standard does not define (prepareExecuteAndWait, from the upstream client),
+ * and that method is DELIBERATELY EXCLUDED here. A vendor running this suite
+ * reads its output as a list of their obligations, so an extension of ours
+ * appearing in it would tell them the standard requires something it does not.
+ * See the comment on CIP0103_MANDATORY_METHODS in @partylayer/core.
  * - Event subscription returns Provider for chaining
  * - Error responses use ProviderRpcError with numeric codes
  *
