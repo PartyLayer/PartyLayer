@@ -132,17 +132,29 @@ const client = createPartyLayer({
 
       <H2 id="registry">Registry Internals</H2>
       <P>
-        The PartyLayer wallet registry is a signed JSON manifest containing metadata for all
-        verified Canton wallets.
+        The PartyLayer wallet registry is a JSON manifest of wallet metadata, published from a
+        public repository and served from a single HTTPS origin. It is validated against a JSON
+        Schema on every build. It is not signed today: see <Strong>Integrity</Strong> below.
       </P>
 
       <H3>How the Registry Works</H3>
       <UL>
         <LI><Strong>Fetch</Strong>, On init, the SDK fetches the registry from <Code>{'registry.partylayer.xyz'}</Code></LI>
-        <LI><Strong>Verify</Strong>, The registry payload is verified against embedded public keys</LI>
-        <LI><Strong>Cache</Strong>, Verified data is cached with ETag support for efficient updates</LI>
+        <LI><Strong>Validate</Strong>, The payload is checked against the registry schema; entries that do not match are rejected</LI>
+        <LI><Strong>Cache</Strong>, Validated data is cached with ETag support for efficient updates</LI>
         <LI><Strong>Fallback</Strong>, If the registry is unreachable, the SDK falls back to adapter-only discovery</LI>
       </UL>
+
+      <H3>Integrity</H3>
+      <P>
+        What protects the registry today is schema validation on every build, a gate that blocks the
+        removal of a wallet{"'"}s CIP-0103 native flag, a public commit history, and TLS to a single
+        origin. <Strong>Ed25519 signing is implemented in the client but is not enabled in
+        production.</Strong> Verification only runs when a consumer passes{' '}
+        <Code>{'registryPublicKeys'}</Code>, and no signature is published for either channel, so the
+        verification path does not execute. Do not treat registry contents as cryptographically
+        attested.
+      </P>
 
       <H3>Custom Registry</H3>
       <CodeBlock language="typescript">{`<PartyLayerKit

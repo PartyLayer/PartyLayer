@@ -57,7 +57,7 @@ export default function ErrorHandlingPage() {
               { code: 'CAPABILITY_NOT_SUPPORTED', cls: 'CapabilityNotSupportedError', desc: 'The wallet does not support the requested capability (e.g., signTransaction).' },
               { code: 'TRANSPORT_ERROR', cls: 'TransportError', desc: 'Communication failure with the wallet (PostMessage, deep link, etc.).' },
               { code: 'REGISTRY_FETCH_FAILED', cls: 'RegistryFetchFailedError', desc: 'Could not fetch the wallet registry. SDK falls back to adapters.' },
-              { code: 'REGISTRY_VERIFICATION_FAILED', cls: 'RegistryVerificationFailedError', desc: 'Registry signature verification failed (possible tampering).' },
+              { code: 'REGISTRY_VERIFICATION_FAILED', cls: 'RegistryVerificationFailedError', desc: 'Registry signature verification failed. Only reachable when you configure registryPublicKeys yourself; no signature is published today, so this does not fire by default.' },
               { code: 'REGISTRY_SCHEMA_INVALID', cls: 'RegistrySchemaInvalidError', desc: 'Registry data did not match the expected schema.' },
               { code: 'INTERNAL_ERROR', cls: 'InternalError', desc: 'Unexpected internal SDK error. This is a bug. Please report it.' },
               { code: 'NETWORK_MISMATCH', cls: 'NetworkMismatchError', desc: 'The wallet is on a different network than the dApp requires. Switch the wallet network, then reconnect.' },

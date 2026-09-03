@@ -519,8 +519,13 @@ All wallet operations require explicit user approval:
 - Signing operations show the payload to be signed
 - Transaction submissions display transaction details
 
-### Registry Verification
-The wallet registry supports cryptographic signatures to prevent tampering.
+### Registry Integrity
+The registry is validated against its JSON Schema on every build, a gate blocks the
+removal of a wallet's CIP-0103 native flag, it is published from this public
+repository so every change is visible in commit history, and it is served from a
+single HTTPS origin. Ed25519 signing is implemented in the client but is **not
+enabled in production**: verification runs only when a consumer configures
+`registryPublicKeys`, and no signature is published. See `SIGNING.md`.
 
 ---
 
