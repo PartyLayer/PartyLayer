@@ -360,7 +360,10 @@ The SDK includes built-in registry security:
 
 | Feature | Description |
 |---------|-------------|
-| **Ed25519 Signatures** | Registry is cryptographically signed |
+| **Schema Validation** | Every entry checked against the registry schema on each build |
+| **CIP-0103 Flag Gate** | Blocks removal of a wallet's `cip0103.native` marker |
+| **Public History** | Published from a public repository; every change is in commit history |
+| **Ed25519 Signatures** | Implemented in the client, NOT enabled in production (see `SIGNING.md`) |
 | **Sequence Numbers** | Prevents downgrade attacks |
 | **Schema Validation** | Validates registry structure |
 | **Last-Known-Good Cache** | Falls back to verified cache on failure |

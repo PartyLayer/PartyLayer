@@ -209,9 +209,11 @@ and the signing steps are in
 
 ### Declare capabilities truthfully
 
-The registry is signed, and dApps rely on the capability snapshot to decide what to offer
-a user: a wallet that claims `signMessage` or `events` will be asked for it. Claim only
-what the wallet actually implements. An honest, smaller entry is always better than an
+dApps read the capability snapshot at runtime to decide what to offer a user: a wallet
+that claims `signMessage` or `events` will be asked for it, and an entry that overstates
+what a wallet implements breaks that wallet's own users at the moment they try to use it.
+That is true whether or not the file is signed, and the registry is not signed today (see
+`SIGNING.md`). Claim only what the wallet actually implements. An honest, smaller entry is always better than an
 aspirational one, and a capability can be added by a later entry once it ships.
 
 In particular, set `capabilities.signMessage: false` if the wallet cannot sign an arbitrary
