@@ -79,6 +79,7 @@ const SIDEBAR_NAV = [
       { label: 'Send (Beta)', href: '/docs/wallets/send' },
       { label: 'CIP-0103 Provider', href: '/docs/cip-0103' },
       { label: 'Generic Bridge', href: '/docs/generic-bridge' },
+      { label: 'wagmi for Canton', href: '/docs/wagmi-for-canton' },
     ],
   },
   {
@@ -185,6 +186,7 @@ const SEARCH_INDEX: SearchEntry[] = [
 
   // CIP-0103
   { title: 'CIP-0103 Provider', href: '/docs/cip-0103', keywords: ['cip-0103', 'canton', 'standard', 'provider', 'dApp'] },
+  { title: 'wagmi for Canton', href: '/docs/wagmi-for-canton', keywords: ['wagmi', 'evm', 'ethereum', 'migrate', 'port', 'useConnection', 'useReadContract'] },
   { title: 'Provider Methods', section: 'CIP-0103', href: '/docs/cip-0103#methods', keywords: ['request', 'connect', 'listAccounts', 'getPrimaryAccount', 'signMessage', 'prepareExecute', 'ledgerApi'] },
   { title: 'Provider Events', section: 'CIP-0103', href: '/docs/cip-0103#events', keywords: ['statusChanged', 'accountsChanged', 'txChanged', 'connected'] },
   { title: 'asProvider() Bridge', section: 'CIP-0103', href: '/docs/cip-0103#bridge', keywords: ['bridge', 'asProvider', 'PartyLayerClient', 'wrapper'] },

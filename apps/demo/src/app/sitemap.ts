@@ -32,6 +32,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: `${base}/docs/wallets/send`, lastModified: new Date(), changeFrequency: 'monthly', priority: 0.7 },
     { url: `${base}/docs/cip-0103`, lastModified: new Date(), changeFrequency: 'monthly', priority: 0.8 },
     { url: `${base}/docs/generic-bridge`, lastModified: new Date(), changeFrequency: 'monthly', priority: 0.9 },
+    { url: `${base}/docs/wagmi-for-canton`, lastModified: new Date(), changeFrequency: 'monthly', priority: 0.8 },
     { url: `${base}/docs/error-handling`, lastModified: new Date(), changeFrequency: 'monthly', priority: 0.7 },
     { url: `${base}/docs/typescript`, lastModified: new Date(), changeFrequency: 'monthly', priority: 0.7 },
     { url: `${base}/docs/wallet-balances`, lastModified: new Date(), changeFrequency: 'monthly', priority: 0.8 },

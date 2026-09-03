@@ -15,6 +15,11 @@ export default function IntroductionPage() {
       </P>
 
       <P>
+        Coming from Ethereum? <A href="/docs/wagmi-for-canton">wagmi for Canton</A> maps the hooks you
+        already know onto these, and is blunt about the places the analogy breaks.
+      </P>
+
+      <P>
         Transfers follow Canton{"'"}s Token Standard (<Strong>CIP-56</Strong>), the current
         protocol for Amulet and other token transfers. See the{' '}
         <A href="/docs/token-transfers">Token Transfers</A> guide for the full flow.
