@@ -1126,10 +1126,15 @@ export class PartyLayerClient {
     if (this.activeSession) {
       // Check expiration
       if (this.activeSession.expiresAt && Date.now() >= this.activeSession.expiresAt) {
+        // Captured before disconnect(): it sets this.activeSession to null on
+        // success, so reading the id after it throws a TypeError and takes down
+        // every caller of getActiveSession, which is signMessage and
+        // submitTransaction among others.
+        const sessionId = this.activeSession.sessionId;
         await this.disconnect();
         this.emit('session:expired', {
           type: 'session:expired',
-          sessionId: this.activeSession.sessionId,
+          sessionId,
         });
         return null;
       }
