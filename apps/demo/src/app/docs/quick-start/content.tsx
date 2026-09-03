@@ -13,6 +13,13 @@ export default function QuickStartPage() {
         By the end of this guide, your users will be able to connect any Canton wallet.
       </P>
 
+      <P>
+        <Strong>Coming from Ethereum?</Strong> The connect layer below will feel familiar, and{' '}
+        <A href="/docs/wagmi-for-canton">wagmi for Canton</A> maps the hooks you already know onto
+        these ones. Read it before you port a read path, because that is the part that does not
+        translate.
+      </P>
+
       <H2 id="which-sdk">Which Canton SDK do you need?</H2>
       <P>
         Searching for a Canton Network SDK returns several packages that do different jobs, and
