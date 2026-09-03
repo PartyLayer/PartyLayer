@@ -4,7 +4,7 @@
 
 ## Overview
 
-The PartyLayer wallet registry is a signed, versioned JSON file that lists available wallets. Wallets start in the `beta` channel and are promoted to `stable` after validation. Each wallet is one entry in the `wallets` array of `registry/v1/<channel>/registry.json`, and every entry must match the `RegistryWalletEntry` schema in `packages/registry-client/src/schema.ts` (also enforced by `tooling/registry-schema/registry.schema.json`).
+The PartyLayer wallet registry is a versioned JSON file that lists available wallets. It is schema-validated on every build and published in public; it is not signed today (see `SIGNING.md`). Wallets start in the `beta` channel and are promoted to `stable` after validation. Each wallet is one entry in the `wallets` array of `registry/v1/<channel>/registry.json`, and every entry must match the `RegistryWalletEntry` schema in `packages/registry-client/src/schema.ts` (also enforced by `tooling/registry-schema/registry.schema.json`).
 
 ## Registry Entry Schema
 
@@ -245,7 +245,7 @@ If a bad registry is published:
 ## Security Considerations
 
 - **Origin Allowlist**: use for production wallets to restrict access.
-- **Signature Verification**: always verify registry signatures.
+- **Signature Verification**: not available today. Signing is implemented in the client but no signature is published, so verification only runs if you supply `registryPublicKeys` and a signature yourself. See `SIGNING.md`.
 - **Sequence Numbers**: never decrease the sequence (prevents downgrade attacks).
 
 ## Support

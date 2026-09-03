@@ -407,7 +407,7 @@ manual path is the real-world confirmation.
 ## Submitting your registry entry
 
 You add a registry entry five times over in this guide; here is how you actually get it
-in. The registry is a signed JSON file the SDK fetches from
+in. The registry is a JSON file the SDK fetches over HTTPS from
 `https://registry.partylayer.xyz`, one file per channel:
 `registry/v1/beta/registry.json` and `registry/v1/stable/registry.json` in this
 repository. Your wallet is one entry in the `wallets` array.

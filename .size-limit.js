@@ -73,7 +73,24 @@ module.exports = [
     // without shortening the messages a developer actually reads). 43.5 kB leaves
     // ~440 B of headroom: enough not to hide the next regression, not so much
     // that it stops being a budget.
-    limit: '43.5 kB',
+    //
+    // Raised again from 43.5 kB when the registry client stopped reporting
+    // verification it had not performed. The cost is the signature path itself:
+    // fetching the manifest and its signature as a unit and verifying the bytes
+    // that call received, separating a missing signature from an unreachable
+    // one so an outage cannot be mistaken for tampering, and letting a failed
+    // verification propagate instead of being absorbed by the cache fallback.
+    // None of it is code-splittable: it sits on the registry fetch path that
+    // every client runs at startup, and making it optional would make the
+    // guarantee optional.
+    //
+    // First measured at 43.74 kB and compacted in three passes to 43.71 kB:
+    // shortened the runtime strings (not the messages a developer reads in a
+    // stack trace), one construction site for the unavailable outcome instead
+    // of three literals, and inlined a single-use exported helper. 43.75 kB
+    // leaves ~40 B, which is deliberately tight: this budget has now moved
+    // twice, and the next increase should have to argue for itself.
+    limit: '43.75 kB',
   },
   {
     name: 'react-native: ui (ConnectButton)',
