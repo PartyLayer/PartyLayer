@@ -122,6 +122,21 @@ module.exports = [
     // losing the wallet name or the missing method. 43.5 kB leaves ~350 B of
     // headroom, matching the react-native entry above, whose own headroom
     // absorbed this same change without needing a raise.
-    limit: '43.5 kB',
+    //
+    // Raised again from 43.5 kB when CIP0103_MANDATORY_METHODS stopped being
+    // Object.values(CIP0103_METHODS) and became an explicit list of the
+    // specification's ten. The cost IS the explicitness: ten string literals
+    // that used to be derived for free. It buys a guarantee worth paying for,
+    // that the yardstick we hold other people's wallets to cannot silently
+    // widen when this SDK learns a method the standard does not define, so it
+    // cannot be optimised away without giving the property back.
+    //
+    // Measured 43.53 kB. The obvious compaction, referencing
+    // CIP0103_METHODS.CONNECT and friends rather than repeating the strings,
+    // was tried and is WORSE: it keeps that object alive in every consumer's
+    // bundle, came out at 43.55 kB, and pushed react-native 15 B over as well.
+    // The raw strings minify well beside their own copies in the object
+    // literal. 43.6 kB leaves ~70 B, deliberately tight.
+    limit: '43.6 kB',
   },
 ];

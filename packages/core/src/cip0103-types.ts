@@ -230,6 +230,11 @@ export type CIP0103Method = (typeof CIP0103_METHODS)[keyof typeof CIP0103_METHOD
  * `cip0103-mandatory-methods.test.ts` fails if the two are recoupled.
  */
 export const CIP0103_MANDATORY_METHODS: readonly CIP0103Method[] = [
+  // Written out, not derived and not referenced off CIP0103_METHODS. Both
+  // alternatives were measured: referencing the members keeps that object alive
+  // in every consumer's bundle and cost MORE than repeating the strings, which
+  // minify and gzip well next to their own copies in the object literal.
+  // PREPARE_EXECUTE_AND_WAIT is absent on purpose; see above.
   'connect',
   'disconnect',
   'isConnected',
