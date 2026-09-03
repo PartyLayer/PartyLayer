@@ -59,9 +59,33 @@ any single registry-entry change. Entries ship unsigned until step 5 lands.
 
 # The key ceremony
 
-Written before any key exists, deliberately. A ceremony invented at the moment
-it is needed gets skipped under pressure, and the transition it was supposed to
-protect is the thing that gets dropped.
+## Current status: NO PRODUCTION KEY EXISTS
+
+Read this first, because the rest of this section is written in the present
+tense and describes a procedure, not a thing that has happened.
+
+- **No production signing key has been generated.** Not by anyone, not
+  anywhere. `registry/keys/` does not exist in this repository, and its absence
+  is not evidence that a key is being kept somewhere else.
+- **Nothing is signed.** Neither channel has a `registry.sig`. The registry is
+  served unsigned, exactly as the top of this document says.
+- **The holder and backup-holder fields below are deliberately blank.** They are
+  not an oversight and not a redaction. There is nobody to name yet.
+- **Generating the key is a separate decision that has not been taken.** The
+  guardrails and this procedure landed first, on purpose, so that the decision
+  can be made later without also having to invent the process under time
+  pressure. Custody in particular is open: the arrangement described below is
+  the proposal, not a settled choice.
+
+If you are reading this in three months and want to know whether a key exists,
+the answer is in this section and in `git log`, not in anyone's memory. If a key
+has since been generated, this block should have been replaced with the holder
+names and the fingerprint. If it still says what it says now, no key exists.
+
+## Why it was written early
+
+A ceremony invented at the moment it is needed gets skipped under pressure, and
+the transition it was supposed to protect is the thing that gets dropped.
 
 **This repository is public.** The public key, the `.sig` files, `sign.ts`,
 `verify.ts` and this document all belong in it: publishing them is what lets
@@ -87,9 +111,20 @@ and never in CI.
 ## Who can use it
 
 One named holder at a time, plus one named backup who holds a copy under the
-same conditions. Both are recorded in this file when the key is generated. The
-holder signs; nobody else needs the key, because verification only ever needs
-the public half.
+same conditions. The holder signs; nobody else needs the key, because
+verification only ever needs the public half.
+
+    Holder:  (none, no key exists)
+    Backup:  (none, no key exists)
+
+Both fields are filled in **in the same change that generates the key**, never
+after. A key whose holder is not written down is a key nobody can be asked
+about, and the backup holder is the only thing between a lost machine and an
+emergency rotation.
+
+The single-holder arrangement is a proposal and is the open question in this
+document: it puts one person in the path of every registry publish. Settle it
+before generating, not after.
 
 ## Generating it
 
