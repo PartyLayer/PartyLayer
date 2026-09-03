@@ -11,7 +11,7 @@ Connect your dApp to multiple Canton wallets with a single integration.
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=flat-square)](./LICENSE)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-square)](./CONTRIBUTING.md)
 
-[Website](https://partylayer.xyz) | [Quick Start](#quick-start) | [CIP-0103](#cip-0103-canton-dapp-standard-compliance) | [Documentation](https://partylayer.xyz/docs/introduction) | [Examples](#usage-examples) | [API Reference](#api-reference) | [Contributing](#contributing)
+[Website](https://partylayer.xyz) | [Quick Start](#quick-start) | [CIP-0103](#cip-0103-canton-dapp-standard-compliance) | [Documentation](https://partylayer.xyz/docs) | [Examples](#usage-examples) | [API Reference](#api-reference) | [Contributing](#contributing)
 
 </div>
 

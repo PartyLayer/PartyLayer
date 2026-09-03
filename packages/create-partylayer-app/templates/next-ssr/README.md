@@ -24,5 +24,5 @@ npm run build && npm start
 
 ## Docs
 
-- [PartyLayer docs](https://partylayer.xyz/docs/introduction)
+- [PartyLayer docs](https://partylayer.xyz/docs)
 - [@partylayer/session: createCookieStorage](https://www.npmjs.com/package/@partylayer/session)

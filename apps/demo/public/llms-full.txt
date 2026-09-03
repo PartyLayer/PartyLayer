@@ -91,7 +91,7 @@ Wallet providers can apply for registry inclusion by submitting a pull request t
 
 ## Docs
 
-- [Introduction](https://partylayer.xyz/docs/introduction)
+- [Introduction](https://partylayer.xyz/docs)
 - [Installation](https://partylayer.xyz/docs/installation)
 - [Quick Start](https://partylayer.xyz/docs/quick-start)
 - [PartyLayer Kit](https://partylayer.xyz/docs/partylayer-kit)

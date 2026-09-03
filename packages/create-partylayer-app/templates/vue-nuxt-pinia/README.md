@@ -23,5 +23,5 @@ npm run build && npm run preview
 
 ## Docs
 
-- [PartyLayer docs](https://partylayer.xyz/docs/introduction)
+- [PartyLayer docs](https://partylayer.xyz/docs)
 - [@partylayer/vue composables](https://www.npmjs.com/package/@partylayer/vue)
