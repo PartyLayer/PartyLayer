@@ -1,5 +1,17 @@
 # @partylayer/react-native
 
+## 1.0.1
+
+### Patch Changes
+
+- Updated dependencies [9e8ca31]
+- Updated dependencies [18e7e42]
+- Updated dependencies [2eee6b1]
+- Updated dependencies [fbda51f]
+  - @partylayer/core@0.14.0
+  - @partylayer/sdk@0.19.0
+  - @partylayer/session@1.1.8
+
 ## 1.0.0
 
 ### Major Changes

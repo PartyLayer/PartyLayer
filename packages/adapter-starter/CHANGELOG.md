@@ -1,5 +1,13 @@
 # @partylayer/adapter-starter
 
+## 0.1.21
+
+### Patch Changes
+
+- Updated dependencies [9e8ca31]
+- Updated dependencies [fbda51f]
+  - @partylayer/core@0.14.0
+
 ## 0.1.20
 
 ### Patch Changes

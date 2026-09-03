@@ -1,5 +1,13 @@
 # @partylayer/session
 
+## 1.1.8
+
+### Patch Changes
+
+- Updated dependencies [9e8ca31]
+- Updated dependencies [fbda51f]
+  - @partylayer/core@0.14.0
+
 ## 1.1.7
 
 ### Patch Changes

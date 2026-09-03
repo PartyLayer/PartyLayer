@@ -1,6 +1,6 @@
 {
   "name": "@partylayer/devnet-proxy",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "private": true,
   "description": "DevNet gateway: server-side ledger and registry access for the tokenization and dvp verticals, built on the official Canton wallet sdk. The browser never holds a ledger credential.",
   "type": "module",

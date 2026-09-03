@@ -1,6 +1,6 @@
 {
   "name": "@partylayer/react-native",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "sideEffects": false,
   "description": "React Native client for PartyLayer: shared core client factory, AsyncStorage session storage, hooks, and UI components including ConnectButton and WalletList",
   "main": "./dist/index.js",
