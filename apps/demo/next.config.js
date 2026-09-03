@@ -3,6 +3,17 @@ const path = require('path');
 
 const nextConfig = {
   reactStrictMode: true,
+  // /docs is the introduction page itself (apps/demo/src/app/docs/page.tsx), so
+  // the old /docs/introduction URL consolidates into it. Declared here rather
+  // than as a redirect() inside a page component: a redirect() in a statically
+  // prerendered server component deploys as a 307 with no Location header and
+  // an error-shell body. A redirects() entry is resolved at the edge and emits
+  // a real 301 with a real Location.
+  async redirects() {
+    return [
+      { source: '/docs/introduction', destination: '/docs', statusCode: 301 },
+    ];
+  },
   // Produce a self-contained standalone server bundle for host-node deployment.
   output: 'standalone',
   transpilePackages: [

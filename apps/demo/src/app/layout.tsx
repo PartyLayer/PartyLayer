@@ -38,7 +38,9 @@ export const metadata: Metadata = {
     type: 'website',
     siteName: 'PartyLayer',
     locale: 'en_US',
-    url: 'https://partylayer.xyz',
+    // No `url` here on purpose. openGraph.url is inherited by every descendant
+    // route, so a value set at the root makes each page announce the homepage's
+    // identity. Each route sets its own alongside its canonical.
     title: 'PartyLayer — One SDK for Every Canton Wallet',
     description:
       'Open-source wallet integration SDK for Canton Network. Connect any Canton wallet with a single unified API.',
@@ -59,9 +61,11 @@ export const metadata: Metadata = {
       'Open-source wallet integration SDK for Canton Network. Connect any Canton wallet with a single unified API.',
     images: ['/opengraph-image'],
   },
-  alternates: {
-    canonical: 'https://partylayer.xyz',
-  },
+  // No `alternates.canonical` here on purpose. Next.js inherits root metadata
+  // into every route that does not override it, so a canonical set here made
+  // /kit-demo, /cost-demo, /debug and /docs all declare themselves the homepage
+  // (Search Console: "duplicate without user-selected canonical"). Every route
+  // now derives its own from its own path.
 };
 
 // Minimal WebSite identity block (no SearchAction: the site has no query

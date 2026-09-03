@@ -56,7 +56,7 @@ const SIDEBAR_NAV = [
   {
     category: 'Overview',
     items: [
-      { label: 'Introduction', href: '/docs/introduction' },
+      { label: 'Introduction', href: '/docs' },
       { label: 'Installation', href: '/docs/installation' },
       { label: 'Quick Start', href: '/docs/quick-start' },
     ],
@@ -126,7 +126,7 @@ interface SearchEntry {
 
 const SEARCH_INDEX: SearchEntry[] = [
   // Overview
-  { title: 'Introduction', href: '/docs/introduction', keywords: ['overview', 'what is', 'features', 'getting started', 'partylayer'] },
+  { title: 'Introduction', href: '/docs', keywords: ['overview', 'what is', 'features', 'getting started', 'partylayer'] },
   { title: 'Installation', href: '/docs/installation', keywords: ['install', 'npm', 'pnpm', 'yarn', 'setup', 'peer dependencies', 'package'] },
   { title: 'Quick Start', href: '/docs/quick-start', keywords: ['quickstart', 'tutorial', 'hello world', 'first app', 'setup'] },
 
