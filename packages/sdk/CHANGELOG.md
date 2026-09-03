@@ -1,5 +1,115 @@
 # @partylayer/sdk
 
+## 0.19.0
+
+### Minor Changes
+
+- 9e8ca31: **Breaking, and one value changes meaning rather than merely appearing.**
+
+  **`transactionHash` is now optional**, so an adapter with no honest value omits it. If you read `receipt.transactionHash` or `signed.transactionHash`, you must handle `undefined`.
+
+  **On Loop, `receipt.updateId` has changed meaning.** It previously held `submission_id ?? command_id` — a submission id identifies the request, not the committed update. It now holds the Loop SDK's real `update_id`, and is **omitted when that is absent**. So a consumer reading `receipt.updateId` on Loop who previously always got a string may now get `undefined`, and the string they got before did not mean what its name said. This is a value quietly changing meaning, not a field appearing, so it will not show up as a type error at the point that matters.
+
+  **Grep your own code for `String(receipt.transactionHash)`.** Now that the field is optional, that renders the literal text `"undefined"` — it compiles, it is not a type error, and it reaches your UI looking like ordinary output. Template interpolation (`` `${receipt.transactionHash}` ``) and string concatenation do the same. Three such sites existed inside this repository and are fixed here; yours are yours to find.
+
+  ## Why this is breaking, by the rules
+
+  `docs/releasing.md` lists "Changing method signatures (parameters, return types)" as a breaking change. `TxReceipt.transactionHash` and `SignedTransaction.transactionHash` go from `TransactionHash` to `TransactionHash | undefined`, so every consumer reading them must now handle absence. It is a breaking change and is described as one here.
+
+  `@partylayer/react` (2 → 3) and `@partylayer/vue` (1 → 2) take major bumps for it. `@partylayer/core`, `@partylayer/sdk` and `@partylayer/provider` are pre-1.0 and take minor bumps: a jump to 1.0.0 would announce a stability commitment this change does not warrant, and 0.x already sets the expectation that a minor can break. Read the change, not the number.
+
+  Also optional, for the same reason and from the same source: `TxStatusUpdate.txId` (core) and `TxStatusEvent.txId` (sdk).
+
+  ## Who is affected
+
+  The compiler enumerated this, not a grep. Every site that had to change:
+  - `@partylayer/sdk` — the three `tx:status` emissions in `client.ts` (sign, submit, transfer)
+  - `@partylayer/provider` — `BridgeableClient`'s structural type, and the `signed` / `executed` CIP-0103 payloads
+  - `@partylayer/react` and `@partylayer/vue` — the `TransactionToast` detail line
+
+  If you read `receipt.transactionHash`, you now need to handle `undefined`. If you want a ledger identifier, prefer `receipt.updateId`: it is the ledger's own id for the committed update, and several wallets report a real one while having no hash at all.
+
+  **Watch for `String(receipt.transactionHash)`.** That pattern compiles fine and renders the literal text `"undefined"` — a new placeholder created by the very change that removed the old ones. Three such sites existed inside this repository and are fixed here; check yours.
+
+  ## The finding this comes from
+
+  **A required field with no honest value is a defect factory.**
+
+  Nine sites across five adapters manufactured a transaction hash: `tx_<now>_<random>`, `tx_<now>`, `'pending'` (three times), `''`, a command id, a signature. Not one of them was a fallback anybody designed. Every one existed because the type demanded a value the code path could not produce, and the adapter had nowhere to put nothing.
+
+  Two of the nine were found only while making this change — in our Bron adapter, which an earlier survey of this exact problem had missed because they were ternaries rather than `??` chains. That is the argument in miniature: fixing the sites one at a time finds the ones you already know how to look for, and leaving the field required guarantees the next adapter writes a tenth.
+
+  ## Also fixed here
+  - **`BronAdapter`** omits `transactionHash` instead of reporting the word `'pending'` as one (two sites).
+  - **`LoopAdapter`** omits it instead of reporting the command id under it. The command id is still reported as `commandId`, which is true of it. A real value under a wrong name is the same error as a fabricated one for anyone reading the field by its name.
+
+- 18e7e42: Fix `submitTransaction` on the generic CIP-0103 paths returning a receipt of `undefined`s.
+
+  **Read this before upgrading: fields that were always `undefined` on the generic paths now carry real values.**
+
+  Providers that implement `prepareExecuteAndWait` now populate `updateId` and `transactionHash` on the `TxReceipt` from `submitTransaction`; before this change those fields were `undefined` on the generic paths regardless of provider. **Application code that branches on their absence will now take a path it never took** — an `if (!receipt.updateId)` fallback, a "pending" placeholder, a skipped block, a conditional render. Nothing was removed and no type changed, so this is a fix restoring intended behaviour rather than a breaking change, but it is a real change in what your code receives at runtime and it is worth grepping for.
+
+  **What was wrong.** CIP-0103 has two execute verbs, and the standard's own types (`@canton-network/core-wallet-dapp-rpc-client@1.4.0`) define them as:
+
+  ```ts
+  PrepareExecute = (params) => Promise<Null>;
+  PrepareExecuteAndWait = (params) => Promise<PrepareExecuteAndWaitResult>;
+  ```
+
+  Both generic adapters called the first and read its result as though it were the second, casting a `Null` to a `TxReceipt`. Against a conformant wallet the caller received a receipt whose every field was `undefined`. It is also why several adapters invented `transactionHash` values: the interface asked for something the path could not produce.
+
+  **What changed.** `GenericAnnounceAdapter` and `GenericDiscoveryAdapter` now prefer `prepareExecuteAndWait` and read the real `updateId` and `completionOffset` out of its executed-transaction response.
+
+  **This is a negotiation, not a substitution.** `prepareExecuteAndWait` is optional in the standard — PartyLayer's own `CIP0103_MANDATORY_METHODS` lists ten methods and does not include it — and at least one provider we integrate implements only `prepareExecute` and answers the other with `4200`. Switching unconditionally would therefore have broken a working integration. So the adapter asks once per provider, falls back to `prepareExecute` when — and only when — the provider reports the method as unsupported (`4200` / `-32601`), and remembers the answer.
+
+  **Wallets without the awaited verb are unchanged.** They keep exactly today's behaviour, degraded rather than broken, and the adapter logs the reason once, naming the wallet and the missing method, so the cause is visible without interrupting the flow.
+
+  **It never submits twice.** A fallback issues a second submit, so it fires only when the wallet rejected the _method_ and nothing reached the ledger. A user rejection, a timeout, or any uncoded failure re-throws instead. If the awaited verb succeeds but returns no update id, the response is returned as-is rather than retried — the transaction is already committed.
+
+  Adapters that do not go through the generic paths are untouched.
+
+- fbda51f: Add `requestTransfer`, a typed transfer method where the wallet performs the interactive submission.
+
+  An application passes an intent — receiver, amount, instrument and its issuing admin, optional metadata and deadline. The wallet builds the command from it, prepares it against its own validator, decodes and displays it, obtains the user's approval, signs, executes, and returns the real ledger update id. The application never holds the prepared transaction and never sees the hash before the user does.
+
+  This exists so that a transfer does not have to be routed through `ledgerApi`. A generic proxy pointed at the interactive-submission endpoints is a request to sign arbitrary bytes: the wallet cannot decode what was asked for, so it cannot render a meaningful confirmation, so the user approves a hash. `ledgerApi` is unchanged, and this method sits alongside it.
+
+  New in `@partylayer/core`:
+  - `TransferIntent`, `TransferResult`, `TokenInstrumentId`
+  - `toTransferIntent()` and `TRANSFER_INTENT_FIELDS` — the field allowlist every adapter builds its wallet request through, so a caller-supplied option cannot reach a wallet
+  - `WalletAdapter.requestTransfer?()` — optional; a wallet that cannot both return a real update id and show an explicit user approval does not implement it
+  - `CapabilityKey` gains `'transfer'`; `ErrorMappingContext.phase` gains `'requestTransfer'`
+
+  New in `@partylayer/sdk`:
+  - `PartyLayerClient.requestTransfer()`, which narrows the intent through the allowlist before any adapter sees it and throws `CapabilityNotSupportedError` when the active wallet does not implement it
+
+  Additive throughout: no existing method signature, adapter contract, or published interface changes. Ask before calling with `session.capabilitiesSnapshot.includes('transfer')`, or require it at connect with `connect({ requiredCapabilities: ['transfer'] })`.
+
+  `TransferResult.updateId` is required and always real. An adapter that cannot obtain one throws rather than substituting a command id, a submission id, a signature, or a generated string.
+
+  Implemented natively by three adapters, each mapping the intent onto its wallet's own typed transfer:
+  - **Console** — `submitCommands`, with the update id read from the `txChanged` stream and correlated to the call by signature. Requires `executeBefore`, and carries `meta` only as a single `memo`; both are refused rather than silently dropped.
+  - **Nightly** — `createTransferCommand` + `submitTransactionCommand`. The only one of the three that carries the instrument's issuing admin through to the wallet.
+  - **Loop** — the SDK's `transfer()` in `wait` mode, which is where `RunTransactionResponse.update_id` is populated.
+
+  Each declares the `transfer` capability. Every other adapter reports it absent, so a dApp can ask before offering the action. The per-adapter integration status is in docs/typed-transfer-support.md.
+
+### Patch Changes
+
+- 2eee6b1: listWallets now filters to the client's configured channel rather than the literal 'stable'. The channel option now affects listing: a client on channel 'beta' lists the beta entries. A client on stable behaves exactly as before, and includeExperimental still returns everything unfiltered.
+- Updated dependencies [a0292e5]
+- Updated dependencies [9e8ca31]
+- Updated dependencies [fbda51f]
+  - @partylayer/adapter-console@0.4.0
+  - @partylayer/adapter-nightly@0.3.0
+  - @partylayer/adapter-loop@0.5.0
+  - @partylayer/core@0.14.0
+  - @partylayer/provider@0.6.0
+  - @partylayer/adapter-bron@0.5.0
+  - @partylayer/adapter-cantor8@0.4.2
+  - @partylayer/adapter-send@1.2.8
+  - @partylayer/registry-client@0.6.4
+
 ## 0.18.2
 
 ### Patch Changes

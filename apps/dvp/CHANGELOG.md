@@ -1,5 +1,17 @@
 # partylayer-dvp
 
+## 0.0.5
+
+### Patch Changes
+
+- Updated dependencies [9e8ca31]
+- Updated dependencies [18e7e42]
+- Updated dependencies [2eee6b1]
+- Updated dependencies [fbda51f]
+  - @partylayer/sdk@0.19.0
+  - @partylayer/react@3.0.0
+  - @partylayer/demo-adapters@0.0.1
+
 ## 0.0.4
 
 ### Patch Changes

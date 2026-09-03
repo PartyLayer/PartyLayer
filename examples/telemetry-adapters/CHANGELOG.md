@@ -1,5 +1,16 @@
 # partylayer-telemetry-adapters
 
+## 1.0.4
+
+### Patch Changes
+
+- Updated dependencies [9e8ca31]
+- Updated dependencies [18e7e42]
+- Updated dependencies [2eee6b1]
+- Updated dependencies [fbda51f]
+  - @partylayer/sdk@0.19.0
+  - @partylayer/react@3.0.0
+
 ## 1.0.3
 
 ### Patch Changes

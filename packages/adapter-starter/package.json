@@ -1,6 +1,6 @@
 {
   "name": "@partylayer/adapter-starter",
-  "version": "0.1.20",
+  "version": "0.1.21",
   "sideEffects": false,
   "description": "Starter template for building PartyLayer wallet adapters",
   "main": "./dist/index.js",

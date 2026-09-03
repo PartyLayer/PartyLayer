@@ -1,5 +1,15 @@
 # @partylayer/testing
 
+## 1.1.10
+
+### Patch Changes
+
+- Updated dependencies [9e8ca31]
+- Updated dependencies [fbda51f]
+  - @partylayer/core@0.14.0
+  - @partylayer/provider@0.6.0
+  - @partylayer/session@1.1.8
+
 ## 1.1.9
 
 ### Patch Changes
