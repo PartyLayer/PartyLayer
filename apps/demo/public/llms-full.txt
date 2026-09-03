@@ -71,7 +71,7 @@ Yes! PartyLayer is fully open source under the MIT license. You can view the sou
 
 ### How does registry verification work?
 
-The wallet registry is a cryptographically signed JSON manifest containing metadata for each verified wallet. The SDK fetches this registry and validates signatures before displaying wallets to users. This prevents phishing attacks where malicious apps impersonate legitimate wallets.
+The registry is a JSON manifest of wallet metadata, served from a single HTTPS origin and published from a public repository, so every change to it is visible in commit history. Each entry is validated against a JSON Schema on every build, and a gate blocks the removal of a wallet's CIP-0103 native flag, because losing that flag silently downgrades how the SDK detects it. The client also supports Ed25519 signature verification, but that path only runs when a consumer configures registryPublicKeys, and no signature is published today. Treat the registry as a version-controlled list served over TLS, not as a cryptographically attested one.
 
 ### Which networks are supported?
 
@@ -83,7 +83,7 @@ Common error codes include WALLET_NOT_INSTALLED (wallet app not detected), USER_
 
 ### How is security tested?
 
-We run comprehensive security testing including registry signature verification, session hijacking prevention, and transport layer security. The SDK includes built-in protections against common attack vectors. See our security checklist in the docs.
+The suite covers origin allowlisting and session binding, transport handling, and registry schema validation, and it runs on every build. Registry signature verification is implemented in the client but is not exercised in production, because no signature is published and nothing configures registryPublicKeys. See the security checklist in the docs for what is enforced today.
 
 ### How do I add a new wallet to the registry?
 

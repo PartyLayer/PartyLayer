@@ -528,7 +528,7 @@ partylayer-conformance --help`}</CodeBlock>
       <H2 id="submitting-your-registry-entry">Submitting your registry entry</H2>
       <P>
         You add a registry entry five times over in this guide; here is how you actually get it in. The
-        registry is a signed JSON file the SDK fetches from{' '}
+        registry is a JSON file the SDK fetches over HTTPS from{' '}
         <Code>{'https://registry.partylayer.xyz'}</Code>, one file per channel:{' '}
         <Code>{'registry/v1/beta/registry.json'}</Code> and{' '}
         <Code>{'registry/v1/stable/registry.json'}</Code> in this repository. Your wallet is one entry in

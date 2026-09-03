@@ -41,7 +41,8 @@ declaratively, still with no code.
 
 `adapter.transport: "announce"` routes the entry through the generic announce path, and
 `cip0103.native: true` is the canonical marker that the wallet speaks CIP-0103. Declare
-capabilities truthfully: the registry is signed and dApps rely on that snapshot.
+capabilities truthfully: dApps read that snapshot at runtime to decide what to offer, so an
+entry that overstates what the wallet implements breaks its own users at the point of use.
 
 How to get an entry published, beta first and then promoted:
 [docs/registry-onboarding.md](../../docs/registry-onboarding.md)
