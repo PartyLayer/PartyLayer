@@ -3,15 +3,82 @@
 import { useDocs } from '../layout';
 
 export default function QuickStartPage() {
-  const { H1, H2, P, Code, CodeBlock, Callout, PrevNext, A, OL, LI, Strong, TabGroup } = useDocs();
+  const { H1, H2, P, Code, CodeBlock, Callout, PrevNext, A, OL, UL, LI, Strong, TabGroup } = useDocs();
 
   return (
     <>
-      <H1>Quick Start</H1>
+      <H1>Canton dApp quickstart: zero to a working wallet connection</H1>
       <P>
         Get a full wallet connection flow working in your React app in 3 steps.
         By the end of this guide, your users will be able to connect any Canton wallet.
       </P>
+
+      <H2 id="which-sdk">Which Canton SDK do you need?</H2>
+      <P>
+        Searching for a Canton Network SDK returns several packages that do different jobs, and
+        picking the wrong one costs a day. Here is the honest layout, with each package described by
+        what its own publisher says it is.
+      </P>
+
+      <div style={{ overflowX: 'auto', marginBottom: 20 }}>
+        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 14, border: '1px solid rgba(15,23,42,0.10)' }}>
+          <thead>
+            <tr style={{ background: '#F5F6F8' }}>
+              <th style={{ textAlign: 'left', padding: '9px 12px', borderBottom: '1px solid rgba(15,23,42,0.10)' }}>Package</th>
+              <th style={{ textAlign: 'left', padding: '9px 12px', borderBottom: '1px solid rgba(15,23,42,0.10)' }}>Use it when</th>
+            </tr>
+          </thead>
+          <tbody>
+            {[
+              [
+                '@canton-network/wallet-sdk',
+                'You are building a wallet, an exchange or a custody service and need to talk to the ledger directly: allocate parties, authenticate to synchronizers, sign and submit. Published as a Node and browser SDK for integrating with Canton Network. Not what a dApp frontend needs.',
+              ],
+              [
+                '@canton-network/dapp-sdk',
+                'You are building a dApp frontend and want the first-party CIP-0103 implementation, published as a browser SDK for dApp development on the Canton Network. It ships its own discovery and wallet-picker component. If you want the reference implementation with no third-party layer, use this.',
+              ],
+              [
+                '@partylayer/react',
+                'You are building a dApp frontend in React and want per-wallet quirks handled for you, a registry-backed wallet list, and a themeable connect UI. That is this page. It speaks CIP-0103 too, and adds adapters for wallets that do not.',
+              ],
+            ].map(([pkg, when]) => (
+              <tr key={pkg}>
+                <td style={{ padding: '10px 12px', borderBottom: '1px solid rgba(15,23,42,0.06)', fontFamily: 'ui-monospace, Menlo, monospace', fontSize: 13, verticalAlign: 'top', whiteSpace: 'nowrap' }}>{pkg}</td>
+                <td style={{ padding: '10px 12px', borderBottom: '1px solid rgba(15,23,42,0.06)' }}>{when}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      <Callout type="note">
+        <Strong>The honest comparison.</Strong> If your app targets one CIP-0103 native wallet and you
+        want the fewest dependencies, the first-party <Code>{'@canton-network/dapp-sdk'}</Code> is the
+        shorter path and you should take it. PartyLayer earns its place when you need several wallets
+        at once, including ones that are not CIP-0103 native and need an adapter, and when you would
+        rather not discover each wallet&apos;s quirks yourself. The{' '}
+        <A href="/wallets">wallet directory</A> lists which is which, with the evidence for each.
+      </Callout>
+
+      <H2 id="prerequisites">Before you start</H2>
+      <UL>
+        <LI>
+          <Strong>React 18 or 19</Strong> and Node 18 or newer. Any bundler; the examples are plain
+          React and work in Next.js, Vite or Remix.
+        </LI>
+        <LI>
+          <Strong>A wallet to connect to.</Strong> On devnet you do not need one installed to see the
+          flow: the modal lists registry wallets and shows install prompts for the ones you lack. To
+          complete a real connection you need one of the wallets from the{' '}
+          <A href="/wallets">directory</A> that supports your target network.
+        </LI>
+        <LI>
+          <Strong>No ledger credentials, no participant node, no Daml.</Strong> Connecting a wallet
+          and reading the connected party needs none of that. You need them when you start submitting
+          transactions, which is <A href="/docs/token-transfers">Token transfers</A>.
+        </LI>
+      </UL>
 
       <H2 id="step-1">Step 1: Install</H2>
       <P>
@@ -222,6 +289,75 @@ function Profile() {
     </div>
   );
 }`}</CodeBlock>
+
+      <H2 id="verify">Verify it actually works</H2>
+      <P>
+        Three checks, in order. Each one fails differently, so knowing which passed tells you where to
+        look.
+      </P>
+      <OL>
+        <LI>
+          <Strong>The modal opens and lists wallets.</Strong> If it opens empty, the registry did not
+          load. Check the browser console for a registry fetch error; the SDK falls back to
+          adapter-only discovery, so an empty list means neither the registry nor any adapter
+          produced a wallet.
+        </LI>
+        <LI>
+          <Strong>Selecting a wallet starts its flow.</Strong> An extension wallet prompts, a QR
+          wallet opens a window. If nothing happens for a relay wallet, you probably have not wired
+          its pairing URI; see the per-wallet notes on the{' '}
+          <A href="/wallets">wallet directory</A>.
+        </LI>
+        <LI>
+          <Strong>
+            <Code>{'useAccount()'}</Code> reports a party id.
+          </Strong>{' '}
+          This is the one that matters. A connection that resolves without a party id is not a usable
+          session, and the SDK now throws rather than inventing one, so you will see an error rather
+          than a silent half-state.
+        </LI>
+      </OL>
+
+      <H2 id="troubleshooting">If it does not work</H2>
+      <div style={{ overflowX: 'auto', marginBottom: 24 }}>
+        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 14, border: '1px solid rgba(15,23,42,0.10)' }}>
+          <thead>
+            <tr style={{ background: '#F5F6F8' }}>
+              <th style={{ textAlign: 'left', padding: '9px 12px', borderBottom: '1px solid rgba(15,23,42,0.10)' }}>Symptom</th>
+              <th style={{ textAlign: 'left', padding: '9px 12px', borderBottom: '1px solid rgba(15,23,42,0.10)' }}>Cause and fix</th>
+            </tr>
+          </thead>
+          <tbody>
+            {[
+              [
+                'Modal lists no wallets',
+                'The registry fetch failed and no adapter was registered. PartyLayerKit registers the built-in set by default; if you passed your own adapters prop you have replaced it, not added to it.',
+              ],
+              [
+                'A wallet is missing from the list',
+                'Some adapters need configuration and are skipped without it. Bron needs OAuth config and WalletConnect needs a project id, and both are simply absent when unconfigured rather than shown as broken.',
+              ],
+              [
+                'Hydration mismatch in Next.js',
+                'Wallet detection reads window. Render the connect UI on the client. The ConnectButton handles this; a custom picker built on useWallets has to.',
+              ],
+              [
+                'useSignMessage rejects on some wallets',
+                'Not every adapter implements it. Three registry wallets declare signMessage: false, so an app that gates login on a signed message has no path through them. Check the capability matrix before offering a wallet.',
+              ],
+              [
+                'Signature does not verify against my backend',
+                'Console Wallet base64-encodes the message bytes before signing. If your backend verifies raw bytes the signatures will not match.',
+              ],
+            ].map(([sym, fix]) => (
+              <tr key={sym}>
+                <td style={{ padding: '10px 12px', borderBottom: '1px solid rgba(15,23,42,0.06)', verticalAlign: 'top', fontWeight: 600 }}>{sym}</td>
+                <td style={{ padding: '10px 12px', borderBottom: '1px solid rgba(15,23,42,0.06)' }}>{fix}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
 
       <H2 id="next-steps">Next Steps</H2>
       <P>Now that you have basic connectivity, explore more:</P>
