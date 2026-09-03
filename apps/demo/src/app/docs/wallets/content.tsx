@@ -7,7 +7,7 @@ import { useDocs } from '../layout';
 import { GENERATED_WALLETS } from './wallets.generated';
 
 export default function WalletsPage() {
-  const { H1, H2, H3, P, Code, CodeBlock, PropsTable, Callout, PrevNext, Strong, UL, LI } = useDocs();
+  const { H1, H2, H3, P, Code, CodeBlock, PropsTable, Callout, PrevNext, Strong, UL, LI, A } = useDocs();
 
   return (
     <>
@@ -15,6 +15,11 @@ export default function WalletsPage() {
       <P>
         PartyLayer includes built-in wallet adapters and supports custom adapters for any Canton wallet.
         Wallets are discovered through the registry and CIP-0103 native provider detection.
+      </P>
+      <P>
+        This page is about registering and writing adapters. For the wallet list itself, with the
+        transport each one connects over and a page per integration, see the{' '}
+        <A href="/wallets">Canton wallet directory</A>.
       </P>
 
       <H2 id="built-in-wallets">Built-in Wallets</H2>

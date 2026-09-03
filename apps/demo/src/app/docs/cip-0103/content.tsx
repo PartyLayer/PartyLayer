@@ -3,7 +3,7 @@
 import { useDocs } from '../layout';
 
 export default function CIP0103Page() {
-  const { H1, H2, H3, P, Code, CodeBlock, Callout, PrevNext, UL, LI, Strong } = useDocs();
+  const { H1, H2, H3, P, Code, CodeBlock, Callout, PrevNext, UL, LI, Strong, A } = useDocs();
 
   return (
     <>
@@ -12,6 +12,10 @@ export default function CIP0103Page() {
         CIP-0103 is the Canton dApp Standard, the specification for how wallets and dApps communicate
         on the Canton Network. PartyLayer fully implements CIP-0103 with 10 methods, 4 events, and a
         typed error model.
+      </P>
+      <P>
+        For which wallets declare CIP-0103 native support, with the evidence recorded for each, see
+        the <A href="/wallets">Canton wallet directory</A>.
       </P>
 
       <H2 id="integration-paths">Two Integration Paths</H2>
