@@ -78,3 +78,28 @@ apps/metrics-backend/
 apps/demo/e2e/walley-harness/bundle.js
 # Test-only: branch registry copied into the harness servedir by serve.mjs
 apps/demo/e2e/walley-harness/registry/
+
+# ─── Private keys. Never in this repository, at all. ────────────────────────
+# This repository is PUBLIC. The registry signing public key, the .sig files,
+# sign.ts, verify.ts and SIGNING.md all belong here, because that is what makes
+# verification possible by anyone. The PRIVATE key must never be here and never
+# reach CI.
+#
+# This block is first-line defence, not the only one: a private key that lands
+# in public git history is compromised permanently, and deleting it later does
+# not undo that. `pnpm gate:no-private-keys` fails the build if a key-shaped
+# file is present in the tree, and scripts/registry/sign.ts refuses to write a
+# private key anywhere inside the working tree.
+#
+# `.pub` is deliberately NOT ignored: the public key is meant to be committed.
+*.key
+*.pem
+*.p8
+*.p12
+*.pfx
+id_rsa
+id_ed25519
+id_ecdsa
+registry/keys/*
+!registry/keys/*.pub
+!registry/keys/README.md
