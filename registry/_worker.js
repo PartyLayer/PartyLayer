@@ -110,8 +110,21 @@ export default {
       // not-found response above, which would make a 404 cacheable for five minutes;
       // keeping the policy on the pass-through path leaves that 404 uncacheable.
       // The values below reproduce exactly what _headers used to serve.
-      if (/^\/v1\/[^/]+\/registry\.json$/.test(url.pathname)) {
+      if (/^\/v1\/[^/]+\/registry\.(json|sig)$/.test(url.pathname)) {
         // A new entry or an icon correction propagates in about a minute.
+        //
+        // The .sig MUST carry the same max-age as the manifest it signs. The
+        // signature covers the manifest's exact bytes, so a client holding a
+        // fresh manifest and a stale signature fails verification on a pair
+        // that is perfectly valid at the origin. With the manifest at 60s and
+        // .sig at 300s there was a four-minute window after every registry
+        // update in which that could happen, and the symptom would have looked
+        // like tampering.
+        //
+        // Matching the values closes the window; the client closes the class,
+        // by fetching the pair together and verifying the bytes it actually
+        // received (packages/registry-client/src/client.ts, fetchFromNetwork).
+        // Both, deliberately: this header is one edit away from drifting again.
         newHeaders.set('Cache-Control', 'public, max-age=60');
       } else if (url.pathname === '/health.json') {
         newHeaders.set('Cache-Control', 'no-cache');
