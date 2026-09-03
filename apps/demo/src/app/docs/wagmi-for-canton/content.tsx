@@ -17,7 +17,9 @@ export default function WagmiForCantonPage() {
       <Callout type="note">
         <Strong>Sources and versions.</Strong> wagmi hook names were read from{' '}
         <A href="https://wagmi.sh/react/api/hooks">wagmi&apos;s own hook reference</A> at version{' '}
-        <Code>{'3.7.7'}</Code>. PartyLayer hook names come from this SDK. Both matter, because wagmi
+        <Code>{'3.7.7'}</Code>, <Strong>verified 2026-09-03</Strong>. The version is pinned here
+        because it is the claim on this page most likely to go stale without anything telling us:
+        wagmi renames hooks across majors. Both matter, because wagmi
         renamed several hooks in v3 and a mapping written from memory would be wrong on the most
         familiar one: <Code>{'useAccount'}</Code> no longer exists in wagmi. It is{' '}
         <Code>{'useConnection'}</Code> now.
