@@ -22,6 +22,7 @@ export type ErrorCode =
   | 'TRANSPORT_ERROR'
   | 'REGISTRY_FETCH_FAILED'
   | 'REGISTRY_VERIFICATION_FAILED'
+  | 'REGISTRY_SIGNATURE_MISSING'
   | 'REGISTRY_SCHEMA_INVALID'
   | 'INTERNAL_ERROR'
   | 'NETWORK_MISMATCH'
@@ -268,6 +269,27 @@ export class RegistryVerificationFailedError extends PartyLayerError {
       details: { reason, ...details },
     });
     this.name = 'RegistryVerificationFailedError';
+  }
+}
+
+/**
+ * The registry signature a verifying client requires was definitively absent
+ * (the endpoint answered, and said it is not there).
+ *
+ * Deliberately NOT the same error as a failed verification. A missing signature
+ * is a deployment state: signing has not been published for this channel yet,
+ * or was not published for this release. A failed verification means bytes were
+ * served that do not match the key, which is the case signature checking exists
+ * to catch. Collapsing the two would make an outage indistinguishable from an
+ * attack, and the reflex when that fires in production is to switch verification
+ * off, which is how the control dies.
+ */
+export class RegistrySignatureMissingError extends PartyLayerError {
+  constructor(url: string, details?: Record<string, unknown>) {
+    super(`No registry signature at "${url}"`, 'REGISTRY_SIGNATURE_MISSING', {
+      details: { url, ...details },
+    });
+    this.name = 'RegistrySignatureMissingError';
   }
 }
 
