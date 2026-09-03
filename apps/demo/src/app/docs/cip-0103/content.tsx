@@ -26,7 +26,10 @@ export default function CIP0103Page() {
         <A href="https://www.npmjs.com/package/@canton-network/core-wallet-dapp-rpc-client">
           @canton-network/core-wallet-dapp-rpc-client
         </A>{' '}
-        at version 1.11.0, which the standard&apos;s authors ship. For the reasoning behind the
+        at version 1.11.0, which the standard&apos;s authors ship, <Strong>verified 2026-09-03</Strong>.
+        That version is pinned here on purpose: it is the one claim on this page that can go stale
+        without anything telling us, so it is stated where a reader can judge its age. For the
+        reasoning behind the
         standard rather than its mechanics, read Canton&apos;s own{' '}
         <A href="https://www.canton.network/blog/scaling-canton-apps-with-a-standard-for-wallet-and-app-interoperability">
           Scaling Canton Apps
