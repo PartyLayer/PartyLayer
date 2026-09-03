@@ -174,8 +174,9 @@ import { BronAdapter } from '@partylayer/adapter-bron';
       <H3>1. Registry Discovery</H3>
       <P>
         On initialization, the SDK fetches the wallet registry from <Code>{'registry.partylayer.xyz'}</Code>.
-        The registry contains verified wallet metadata, names, icons, capabilities, install hints,
-        and supported networks. Registry entries are cryptographically signed.
+        The registry contains wallet metadata, names, icons, capabilities, install hints,
+        and supported networks. Entries are validated against the registry schema on every build;
+        they are not signed today.
       </P>
       <P>
         If the registry is unreachable, the SDK gracefully falls back to adapter-only discovery,

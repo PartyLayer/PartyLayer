@@ -10,8 +10,8 @@
  *   tsx scripts/registry/sign.ts --channel beta --key registry/keys/dev.key
  */
 
-import { readFileSync, writeFileSync } from 'fs';
-import { join, dirname } from 'path';
+import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'fs';
+import { join, dirname, resolve, relative, isAbsolute } from 'path';
 import { fileURLToPath } from 'url';
 import { createHash } from 'crypto';
 import { program } from 'commander';
@@ -126,30 +126,72 @@ async function main() {
   program
     .option('--channel <channel>', 'Registry channel (stable or beta)', 'stable')
     .option('--key <path>', 'Path to private key file (base64)')
-    .option('--generate-key', 'Generate a new key pair (dev only)')
+    .option('--generate-key', 'Generate a new key pair')
+    .option('--private-key-out <path>', 'Where to write the private key. MUST be outside this repository.')
     .option('--output-dir <dir>', 'Output directory', join(ROOT_DIR, 'registry/v1'))
     .parse();
 
   const options = program.opts();
 
   if (options.generateKey) {
+    // This repository is PUBLIC. A private key written inside the working tree
+    // is one `git add -A` away from being published, and a private key that
+    // reaches public git history is compromised permanently: rotating is the
+    // only remedy, and deleting the file does not undo it. So refuse outright
+    // rather than printing a warning and writing it anyway, which is what this
+    // script used to do (into registry/keys/, tracked, with no ignore rule).
+    if (!options.privateKeyOut) {
+      console.error(
+        'Error: --private-key-out <path> is required with --generate-key.\n' +
+          '\n' +
+          'The private key must be written OUTSIDE this repository. Pass an\n' +
+          'absolute path somewhere private, for example:\n' +
+          '\n' +
+          '  pnpm registry:sign --generate-key \\\n' +
+          '    --private-key-out ~/.partylayer-keys/registry-prod.key\n' +
+          '\n' +
+          'The PUBLIC key is written into registry/keys/ and is meant to be\n' +
+          'committed. See SIGNING.md for the full key ceremony.',
+      );
+      process.exit(1);
+    }
+
+    const privateOut = resolve(options.privateKeyOut);
+    const rel = relative(ROOT_DIR, privateOut);
+    const insideRepo = rel !== '' && !rel.startsWith('..') && !isAbsolute(rel);
+    if (insideRepo) {
+      console.error(
+        `Error: refusing to write a private key inside the repository.\n` +
+          `\n` +
+          `  requested: ${privateOut}\n` +
+          `  repo root: ${ROOT_DIR}\n` +
+          `\n` +
+          `This repository is public. Choose a path outside it, for example\n` +
+          `~/.partylayer-keys/registry-prod.key. See SIGNING.md.`,
+      );
+      process.exit(1);
+    }
+
     console.log('Generating Ed25519 key pair...');
     const { publicKey, privateKey } = await generateKeyPair();
     const pubKeyBase64 = await exportPublicKey(publicKey);
     const privKeyBase64 = await exportPrivateKey(privateKey);
 
-    const keysDir = join(ROOT_DIR, 'registry/keys');
-    const keyName = `dev-${Date.now()}`;
-
-    writeFileSync(join(keysDir, `${keyName}.pub`), pubKeyBase64);
-    writeFileSync(join(keysDir, `${keyName}.key`), privKeyBase64);
-
     const fingerprint = await computeKeyFingerprint(publicKey);
+    const keysDir = join(ROOT_DIR, 'registry/keys');
+    if (!existsSync(keysDir)) mkdirSync(keysDir, { recursive: true });
+    const pubPath = join(keysDir, `${fingerprint}.pub`);
+
+    mkdirSync(dirname(privateOut), { recursive: true });
+    // Owner-read-only. The public key keeps default permissions on purpose.
+    writeFileSync(privateOut, privKeyBase64, { mode: 0o600 });
+    writeFileSync(pubPath, pubKeyBase64);
+
     console.log(`\n✅ Key pair generated:`);
-    console.log(`   Public key: registry/keys/${keyName}.pub`);
-    console.log(`   Private key: registry/keys/${keyName}.key`);
     console.log(`   Fingerprint: ${fingerprint}`);
-    console.log(`\n⚠️  Keep private key secure! Do NOT commit to git.`);
+    console.log(`   Public key:  registry/keys/${fingerprint}.pub  (commit this)`);
+    console.log(`   Private key: ${privateOut}  (mode 0600, never commit, never in CI)`);
+    console.log(`\nNext: run \`pnpm gate:no-private-keys\` before committing.`);
     return;
   }
 

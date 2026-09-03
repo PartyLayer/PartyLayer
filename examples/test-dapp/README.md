@@ -217,8 +217,8 @@ export const client = createPartyLayer({
 **Fix:** Run `pnpm install` from PartyLayer root (workspace setup)
 
 ### Registry Status: "Not Verified"
-**Cause:** Registry signature invalid or missing  
-**Fix:** Verify registry signatures: `pnpm registry:verify --channel stable`
+**Cause:** Expected. No registry signature is published, and verification only runs when a consumer passes `registryPublicKeys` (see `SIGNING.md`), so this is the normal state rather than a fault.  
+**Fix:** Nothing to fix. To confirm the registry parsed, check that wallets are listed; `pnpm gate:registry` validates its shape.
 
 ### Session Not Restoring
 **Cause:** Wallet doesn't support restore, or storage cleared  

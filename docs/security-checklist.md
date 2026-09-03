@@ -191,8 +191,9 @@ const { verifier, challenge } = await generatePKCE();
 
 ## Registry Security
 
-✅ **Verify registry signatures**:
-- Always verify Ed25519 signatures
+⚠️ **Registry signatures are not a control today**:
+- Ed25519 verification is implemented in the client but not enabled in production: no signature is published, and it runs only if you configure `registryPublicKeys` yourself. See `SIGNING.md`. Do not list it as a mitigation.
+- What does hold: schema validation on every build, a gate blocking removal of `cip0103.native` flags, public commit history, and a single HTTPS origin.
 - Check sequence numbers (prevent downgrades)
 - Use last-known-good cache on failure
 
