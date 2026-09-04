@@ -186,22 +186,34 @@ describe('Cantor8Adapter: signMessage fails cleanly (no counterpart in the SDK)'
   });
 });
 
-describe('Cantor8Adapter: detectInstalled is the hosted-popup gateway contract', () => {
-  it('reports available in a browser regardless of user agent (no UA sniff)', async () => {
-    setUserAgent('Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X)');
-    expect((await new Cantor8Adapter().detectInstalled()).installed).toBe(true);
-    setUserAgent('Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) Chrome/120');
-    expect((await new Cantor8Adapter().detectInstalled()).installed).toBe(true);
+// DELETED, not renamed: `Cantor8Adapter: detectInstalled is the hosted-popup
+// gateway contract`. It asserted `installed === true` unconditionally, under a
+// contract name that contradicted the one written in core/adapters.ts and in
+// console-adapter.ts. Its subject no longer exists: `installed` means a local
+// install is present, and Cantor8 has none. The INTENT it was protecting —
+// availability must not depend on a discovery event or a user-agent sniff — is
+// preserved below against the field that can now express it.
+describe('Cantor8Adapter: detectInstalled reports no-local-install', () => {
+  it('is not installed, because there is nothing local to install', async () => {
+    const res = await new Cantor8Adapter().detectInstalled();
+    expect(res.availability?.kind).toBe('no-local-install');
+    // The defect this replaces: a hosted web wallet claiming to be installed
+    // put a ready tile in the picker, and clicking it opened a tab.
+    expect(res.installed).toBe(false);
   });
 
-  it('reports available even though nothing announces in the page, and never waits on the event', async () => {
-    // A hosted popup never fires c8#provider_discovery in this page. Availability
-    // must NOT be gated on that event (the previous bug), and detect must not even
-    // consult it: it is unconditionally available, checked for real at connect().
+  it('answers the same regardless of user agent (no UA sniff)', async () => {
+    setUserAgent('Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X)');
+    expect((await new Cantor8Adapter().detectInstalled()).availability?.kind).toBe('no-local-install');
+    setUserAgent('Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) Chrome/120');
+    expect((await new Cantor8Adapter().detectInstalled()).availability?.kind).toBe('no-local-install');
+  });
+
+  it('never waits on a discovery event that a hosted popup does not fire', async () => {
     h.discover = false;
     const res = await new Cantor8Adapter().detectInstalled();
-    expect(res.installed).toBe(true);
-    expect(h.discoveredCount).toBe(0); // detect does not subscribe to the discovery event
+    expect(res.availability?.kind).toBe('no-local-install');
+    expect(h.discoveredCount).toBe(0);
   });
 });
 

@@ -134,26 +134,54 @@ describe('Adapter conformance: detection truthfulness (negative path)', () => {
     expect(result.installed).toBe(false);
   });
 
-  // The next three are documented-as-skipped to make the design intent
-  // explicit. If any of these adapters acquires an install state in the
-  // future, un-skip the corresponding test.
-  it.skip('Loop: install-less by design — QR / popup, no extension to detect', () => {
-    /* Loop is a web/mobile wallet; every browser environment can reach it
-       via QR or popup. detectInstalled returning true reflects "available
-       transport", not a false claim about a missing extension. */
+  // ── The availability contract, as tests rather than convention ───────────
+  //
+  // These three were `it.skip` with prose explaining that Loop, Cantor8 and Bron
+  // are "install-less by design". The prose was right about the world and wrong
+  // about the field: they expressed it by returning `installed: true`, which the
+  // picker rendered as a ready tile. One of the comments was also simply false —
+  // it claimed Cantor8 returns true only on mobile user agents, while Cantor8's
+  // own test asserts it returns true regardless of user agent. A skipped test
+  // preserved a description of behaviour that did not exist.
+  //
+  // `no-local-install` gives them somewhere true to put the answer, so the
+  // contract can be asserted instead of described.
+
+  it('RULE 1: a wallet declaring no-local-install must not also claim installed', async () => {
+    const installLess = [
+      ['Loop', new LoopAdapter()],
+      ['Cantor8', new Cantor8Adapter()],
+    ] as const;
+
+    for (const [name, adapter] of installLess) {
+      const result = await adapter.detectInstalled();
+      expect(result.availability?.kind, `${name} availability`).toBe('no-local-install');
+      // The whole defect in one assertion: these used to answer `true` here.
+      expect(result.installed, `${name} must not claim installed`).toBe(false);
+    }
   });
 
-  it.skip('Cantor8: install-less by design — mobile deep-link, no extension', () => {
-    /* Cantor8 returns installed:true only when the user agent string
-       indicates a mobile device (where the deep-link can be intercepted).
-       Desktop browsers correctly receive false. There is no extension to
-       detect either way. */
-  });
+  // RULE 2 needs a `window` to withdraw evidence from, so it lives in
+  // adapter-conformance.probe.test.ts with its own `@vitest-environment jsdom`
+  // docblock rather than an `if (typeof window ...)` here. Declaring the
+  // environment instead of branching on it is the rule gate:test-skips enforces.
+  it('RULE 3: installed and availability.kind never disagree', async () => {
+    const adapters = [
+      ['Loop', new LoopAdapter()],
+      ['Cantor8', new Cantor8Adapter()],
+      ['Nightly', new NightlyAdapter()],
+    ] as const;
 
-  it.skip('Bron: install-less by design — OAuth-based remote signer', () => {
-    /* Bron is an enterprise remote signer reached via OAuth2 + REST API.
-       There is no client-side install state; reachability is governed by
-       OAuth configuration, which the adapter does not own. */
+    for (const [name, adapter] of adapters) {
+      const r = await adapter.detectInstalled();
+      expect(r.availability, `${name} must report availability`).toBeDefined();
+      // The deprecated field must remain derivable from the new one, so a
+      // consumer still reading `installed` is never told something different
+      // from a consumer reading `availability`.
+      expect(r.installed, `${name}: installed must equal (kind === 'installed')`).toBe(
+        r.availability?.kind === 'installed',
+      );
+    }
   });
 });
 

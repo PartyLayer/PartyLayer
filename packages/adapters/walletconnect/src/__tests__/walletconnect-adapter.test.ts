@@ -167,14 +167,19 @@ describe('WalletConnectAdapter — identity & detection', () => {
     expect(a.name).toBe('WalletConnect');
   });
 
-  it('detectInstalled() is available when a projectId is configured (no dapp-sdk import)', async () => {
+  it('detectInstalled() reports no-local-install when a projectId is configured (no dapp-sdk import)', async () => {
     const before = h.dappSdkLoaded;
     const a = new WalletConnectAdapter({ projectId: 'p' });
     const detect = await a.detectInstalled();
-    expect(detect.installed).toBe(true);
+    // WAS `installed: true`, which answered "the app supplied a projectId" to a
+    // question asking whether a wallet is installed on this machine. It is a
+    // relay: there is nothing local, configured or not.
+    expect(detect.availability?.kind).toBe('no-local-install');
+    expect(detect.installed).toBe(false);
     // detection must not trigger the dapp-sdk dynamic import
     expect(h.dappSdkLoaded).toBe(before);
   });
+
 
   it('declares WC capabilities incl. remoteSigner; not signTransaction', () => {
     const caps = new WalletConnectAdapter({ projectId: 'p' }).getCapabilities();

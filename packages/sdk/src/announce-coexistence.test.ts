@@ -161,8 +161,19 @@ describe('generic-announce coexistence + isolation', () => {
       throw new WalletNotFoundError(id);
     });
 
+    const warmAdapter = client.getAdapter(toWalletId('walley'));
+    const detectSpy = vi.spyOn(
+      warmAdapter as unknown as { detectInstalled: () => Promise<unknown> },
+      'detectInstalled',
+    );
     await client.listWallets({ includeExperimental: true }); // warms Walley
-    await vi.waitFor(() => expect(official.detect).toHaveBeenCalled());
+    // Warm-up is fire-and-forget. It used to be observed through
+    // `official.detect`, which the install guard no longer calls: a
+    // discovery-adapter's availability is derived from its transport rather
+    // than probed. The guard still runs, and it still goes through the
+    // ADAPTER's detectInstalled — so spy there instead. Same event, one layer
+    // in, and it no longer depends on a vendor call we deliberately removed.
+    await vi.waitFor(() => expect(detectSpy).toHaveBeenCalled());
 
     announce('genid'); // generic announce → re-aggregation path
     await new Promise((r) => setTimeout(r, 40));
