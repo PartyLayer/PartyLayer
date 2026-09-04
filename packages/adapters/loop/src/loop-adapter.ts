@@ -144,13 +144,20 @@ export class LoopAdapter implements WalletAdapter {
     if (typeof window === 'undefined') {
       return {
         installed: false,
+        availability: { kind: 'unknown', reason: 'No browser environment' },
         reason: 'Browser environment required',
       };
     }
 
+    // Loop is reached by scanning a QR with the phone app, or a popup. There is
+    // no extension and no injected global — nothing on this machine to probe.
+    // This used to answer `installed: true`, which the picker rendered as a
+    // ready tile for a wallet that was never installed. `no-local-install` is
+    // the true answer and tells the picker to say how it opens instead.
     return {
-      installed: true,
-      reason: 'Loop Wallet available via QR code scan or popup.',
+      installed: false,
+      availability: { kind: 'no-local-install' },
+      reason: 'Scan the QR with the Loop app — nothing is installed locally',
     };
   }
 

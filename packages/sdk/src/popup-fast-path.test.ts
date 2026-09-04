@@ -129,9 +129,19 @@ describe('popup-safe connect fast-path', () => {
   it('after listWallets warms the plan, connect() fast-paths (no re-listing)', async () => {
     const { client, official, getWallets } = makeClient();
 
+    const warmAdapter = client.getAdapter(WALLEY);
+    const detectSpy = vi.spyOn(
+      warmAdapter as unknown as { detectInstalled: () => Promise<unknown> },
+      'detectInstalled',
+    );
     await client.listWallets({ includeExperimental: true });
-    // Warm-up is fire-and-forget; it runs the install guard (official.detect).
-    await vi.waitFor(() => expect(official.detect).toHaveBeenCalled());
+    // Warm-up is fire-and-forget. It used to be observed through
+    // `official.detect`, which the install guard no longer calls: a
+    // discovery-adapter's availability is derived from its transport rather
+    // than probed. The guard still runs, and it still goes through the
+    // ADAPTER's detectInstalled — so spy there instead. Same event, one layer
+    // in, and it no longer depends on a vendor call we deliberately removed.
+    await vi.waitFor(() => expect(detectSpy).toHaveBeenCalled());
 
     getWallets.mockClear();
     const session = await client.connect({ walletId: WALLEY });

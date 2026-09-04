@@ -14,6 +14,9 @@ describe('LoopAdapter: SSR (no window)', () => {
     expect(typeof window).toBe('undefined');
     const result = await new LoopAdapter().detectInstalled();
     expect(result.installed).toBe(false);
+    // Distinct from `no-local-install`: we could not probe, rather than having
+    // established there is nothing to probe.
+    expect(result.availability?.kind).toBe('unknown');
     expect(result.reason).toBeDefined();
   });
 });

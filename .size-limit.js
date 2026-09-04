@@ -126,8 +126,54 @@ module.exports = [
     // If a FUTURE increase is for a feature rather than a correctness fix, it
     // should be held to a harder standard than this one was.
     //
-    // Measured 43.97 kB after the four passes above. 44 kB leaves ~30 B.
-    limit: '44 kB',
+    // Measured 43.97 kB after the four passes above. 44 kB left ~30 B.
+    //
+    // MOVED A FOURTH TIME — but the THIRD move for this entry point, and all
+    // three have been correctness fixes, not features. This one is the
+    // `availability` contract: `detectInstalled()` now answers what a wallet's
+    // presence actually is, because `installed` could only say yes or no and
+    // eight of twelve adapters had no honest way to answer it.
+    //
+    // The bytes ARE the honest answers: the `availability: { kind: ... }`
+    // literals the adapters return. Two candidate savings were measured and
+    // both came back at ZERO:
+    //   - removing the `needs-config` variant (which turned out to be
+    //     unreachable anyway — Bron and WalletConnect both require their config
+    //     in the constructor, so neither adapter can exist unconfigured): 0 B,
+    //     type-only plus a branch the minifier already dropped;
+    //   - rewriting installGuard to read `availability`: 0 B ON THIS ENTRY
+    //     POINT. It is NOT free everywhere — it costs ~26 B on
+    //     `sdk: createPartyLayer client`, and compacting it to a single
+    //     ternary recovered 8 B of that and 10 B here. A saving measured on
+    //     one bundle is not a saving; check each budget the code reaches.
+    //
+    // Finding the remaining 19 B elsewhere in this entry point would pay for a
+    // correctness fix with an unrelated optimisation hunt — the same trade that
+    // was considered and rejected on the error-classifier change above.
+    //
+    // IF A FOURTH INCREASE IS EVER PROPOSED FOR A FEATURE, the bar is higher
+    // than any of these three cleared, and this comment is where that is
+    // recorded. Three moves for correctness does not establish a precedent for
+    // a move for convenience.
+    //
+    //
+    // TWO BUDGETS MOVED TOGETHER FOR THIS ONE CHANGE — this entry point and the
+    // other one below/above. That is a fact worth seeing rather than splitting
+    // across two commits: the `availability` contract reaches both bundles, so
+    // both paid. If a single change ever needs a third budget, that is a signal
+    // about the change, not about the budgets.
+    //
+    // AND AN ATTRIBUTION ERROR WORTH MORE THAN THE BYTE COUNT: the installGuard
+    // rewrite was reported as "0 B". It was measured on ONE bundle
+    // (react-native), where it genuinely was free, and it cost ~26 B on the
+    // other. `pnpm gate` caught that, not the person who measured it. A saving
+    // is only a saving on the budgets you actually measured it against — check
+    // EVERY budget the changed code reaches, not the first one that looked fine.
+    // Compacting the guard to a single ternary then recovered 8 B on the sdk
+    // entry and 10 B here.
+    //
+    // Measured 44.04 kB after that compaction. 44.05 kB leaves ~10 B.
+    limit: '44.05 kB',
   },
   {
     name: 'react-native: ui (ConnectButton)',
@@ -175,6 +221,36 @@ module.exports = [
     // The raw strings minify well beside their own copies in the object
     // literal. 43.6 kB left ~70 B, deliberately tight.
     //
+    // RAISED for the `availability` contract — the same correctness fix that
+    // moved the react-native budget above, in the same pull request. The bytes
+    // here are `availability` reaching the connect path through installGuard:
+    // `detectInstalled()` now reports what a wallet's presence actually IS,
+    // because `installed` could only say yes or no and eight of twelve adapters
+    // had no honest way to answer it.
+    //
+    // The false `true` was load-bearing: installGuard read `installed` and threw
+    // on false, so returning the truth blocked connect for every wallet with
+    // nothing to install (19 sdk failures, all WalletNotInstalledError). The
+    // guard now asks its real question — "do we already know this cannot work",
+    // which only `not-installed` answers yes to.
+    //
+    // TWO BUDGETS MOVED TOGETHER FOR THIS ONE CHANGE — this entry point and the
+    // other one below/above. That is a fact worth seeing rather than splitting
+    // across two commits: the `availability` contract reaches both bundles, so
+    // both paid. If a single change ever needs a third budget, that is a signal
+    // about the change, not about the budgets.
+    //
+    // AND AN ATTRIBUTION ERROR WORTH MORE THAN THE BYTE COUNT: the installGuard
+    // rewrite was reported as "0 B". It was measured on ONE bundle
+    // (react-native), where it genuinely was free, and it cost ~26 B on the
+    // other. `pnpm gate` caught that, not the person who measured it. A saving
+    // is only a saving on the budgets you actually measured it against — check
+    // EVERY budget the changed code reaches, not the first one that looked fine.
+    // Compacting the guard to a single ternary then recovered 8 B on the sdk
+    // entry and 10 B here.
+    //
+    // Measured 43.82 kB. 43.85 kB leaves ~30 B.
+    //
     // MOVED A THIRD TIME, for the error classifier. This one is a correctness
     // fix, not a feature, and that distinction is the whole reason it was
     // allowed to move: the alternative was leaving a classifier that told a
@@ -212,6 +288,6 @@ module.exports = [
     // should be held to a harder standard than this one was.
     //
     // Measured 43.75 kB after the four passes above. 43.8 kB leaves ~50 B.
-    limit: '43.8 kB',
+    limit: '43.85 kB',
   },
 ];

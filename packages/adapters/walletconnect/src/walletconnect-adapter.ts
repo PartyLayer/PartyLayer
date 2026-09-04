@@ -205,12 +205,15 @@ export class WalletConnectAdapter implements WalletAdapter {
    * picker never pulls dapp-sdk.
    */
   async detectInstalled(): Promise<AdapterDetectResult> {
-    if (!this.config.projectId) {
-      return { installed: false, reason: 'WalletConnect requires a projectId' };
-    }
+    // WalletConnect is a relay: nothing is installed locally, configured or not.
+    // `installed: true` for "the app set a projectId" answered a different
+    // question from the one asked. There is no unconfigured branch here because
+    // the constructor throws without a projectId, so this adapter cannot exist
+    // in that state.
     return {
-      installed: true,
-      reason: 'WalletConnect available — scan the QR with a Canton wallet',
+      installed: false,
+      availability: { kind: 'no-local-install' },
+      reason: 'Scan the QR with a Canton wallet — nothing is installed locally',
     };
   }
 

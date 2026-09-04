@@ -32,11 +32,70 @@ import {
 } from './errors';
 
 /**
+ * What a wallet's presence actually is.
+ *
+ * `installed` could only ever say yes or no, and eight of our twelve adapters
+ * had no honest way to answer it — a QR wallet, a hosted popup, a relay and an
+ * OAuth service have no local artefact to probe. They answered `true`, meaning
+ * "reachable", and the picker read it as "installed". Cantor8 is not even an
+ * extension: its tile said installed, and clicking it opened a tab.
+ *
+ * So the question splits. `no-local-install` is NOT a degraded `installed` and
+ * must never be rendered as one — it is a different, true answer.
+ *
+ * `docs/adapters.md` carries the table of which adapters probe what, and the
+ * one known mismatch still outstanding (Cantor8 classifies as `scan` but opens
+ * a tab — a registry-data fix queued with D5/D6).
+ */
+export type Availability =
+  /** A local artefact was probed and is present. */
+  | { kind: 'installed' }
+  /** A local artefact was probed and is absent. `install` offers the download. */
+  | { kind: 'not-installed'; install?: string }
+  /**
+   * There is nothing local to probe: the wallet is reached by QR, a hosted
+   * popup, or a relay. Not a failure, and not an install prompt — the picker
+   * should say how it opens ("Scan with the Loop app", "Opens cantor8.tech").
+   */
+  | { kind: 'no-local-install' }
+  // NO `needs-config` VARIANT. It was drafted, and nothing could produce it:
+  // BronAdapter and WalletConnectAdapter both REQUIRE their config in the
+  // constructor (WalletConnect throws without a projectId), so an unconfigured
+  // wallet has no adapter instance to ask. That case is already handled a level
+  // up by not registering the adapter, which is why Bron is absent from the
+  // picker rather than present and broken. Shipping a state nothing returns
+  // would be the same defect as a required field with no honest value.
+  /** The probe failed or timed out. Distinct from a probe that said no. */
+  | { kind: 'unknown'; reason?: string };
+
+/**
  * Adapter detection result
  */
 export interface AdapterDetectResult {
-  /** Whether wallet is installed */
+  /**
+   * @deprecated Read {@link AdapterDetectResult.availability} instead.
+   *
+   * MISLEADING FOR MOST WALLETS. This field asks "is a local install present?",
+   * which only has an answer for the four adapters that have something local to
+   * probe (Console, Nightly, Send, and the announce adapter, whose presence is
+   * established by the announce itself). The other eight — Loop, Cantor8, Bron,
+   * WalletConnect, and the three vendor popup adapters behind
+   * GenericDiscoveryAdapter — return a constant `true` that asserts nothing,
+   * because there is no local install for them to have.
+   *
+   * A picker branching on `installed` therefore shows a wallet as ready when it
+   * has only established that a browser exists. Read `availability` and switch
+   * on its `kind`. This field remains for source compatibility and is still
+   * populated (`kind === 'installed'`), so existing consumers do not break.
+   */
   installed: boolean;
+  /**
+   * What the wallet's presence actually is. Prefer this over `installed`.
+   * Optional only so an out-of-tree adapter that predates it still type-checks;
+   * every adapter in this repo populates it, and `gate:conformance` enforces
+   * that it agrees with `installed`.
+   */
+  availability?: Availability;
   /** Reason if not installed */
   reason?: string;
 }
@@ -612,14 +671,39 @@ export function capabilityGuard(
 }
 
 /**
- * Check if wallet is installed
- * Throws WalletNotInstalledError if not installed
+ * Refuse to connect to a wallet we PROVED is absent.
+ *
+ * This guard used to read `installed`, and that was the load-bearing reason the
+ * dishonest `true` could not simply be corrected: eight adapters returned it
+ * because returning the truth would have made this guard block them. Making
+ * Loop, Cantor8, WalletConnect, Bron and the popup wallets answer honestly broke
+ * connect for every one of them until this changed — the guard was the consumer
+ * the lie was written for.
+ *
+ * The question here was never "is it installed". It is "do we already know this
+ * cannot work", and only ONE availability answers yes: `not-installed`, which
+ * means a local artefact was looked for and was not there. Specifically:
+ *
+ *   - `no-local-install` proceeds. There is nothing to install; connect() opens
+ *     the QR, popup or relay. Blocking it was the regression.
+ *   - `unknown` proceeds. A probe that timed out is not proof of absence, and
+ *     refusing on it would turn a slow extension into a missing one.
+ *   - `installed` proceeds, obviously.
+ *
+ * An adapter that predates `availability` still works: absent the field, the
+ * deprecated `installed` boolean is used exactly as before.
  */
 export async function installGuard(
   adapter: WalletAdapter
 ): Promise<void> {
   const detect = await adapter.detectInstalled();
-  if (!detect.installed) {
+  // Absent `availability` (an out-of-tree adapter predating it), fall back to
+  // the deprecated boolean, which behaves exactly as it did before.
+  const known = detect.availability
+    ? detect.availability.kind === 'not-installed'
+    : !detect.installed;
+
+  if (known) {
     throw new WalletNotInstalledError(adapter.walletId, detect.reason);
   }
 }

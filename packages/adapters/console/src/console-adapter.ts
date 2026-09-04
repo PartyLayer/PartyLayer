@@ -326,7 +326,11 @@ export class ConsoleAdapter implements WalletAdapter {
    */
   async detectInstalled(): Promise<AdapterDetectResult> {
     if (typeof window === 'undefined') {
-      return { installed: false, reason: 'Browser environment required' };
+      return {
+        installed: false,
+        availability: { kind: 'unknown', reason: 'No browser environment' },
+        reason: 'Browser environment required',
+      };
     }
 
     // 'local' target: extension-only — answer matches the postMessage probe.
@@ -342,6 +346,10 @@ export class ConsoleAdapter implements WalletAdapter {
     if (this.target === 'remote') {
       return {
         installed: false,
+        // The contract this adapter already documented, now expressible: there
+        // IS no local install on the remote target, which is different from an
+        // extension being absent.
+        availability: { kind: 'no-local-install' },
         reason:
           'Console Wallet (remote target): no local install — connect() opens QR / deep link flow',
       };
@@ -1023,12 +1031,14 @@ export class ConsoleAdapter implements WalletAdapter {
       if (availability.status === 'installed') {
         return {
           installed: true,
+          availability: { kind: 'installed' },
           reason: `Console Wallet detected${availability.currentVersion ? ` (v${availability.currentVersion})` : ''}`,
         };
       }
 
       return {
         installed: false,
+        availability: { kind: 'not-installed', install: 'https://consolewallet.io' },
         reason:
           'Console Wallet extension not detected. Install from https://consolewallet.io',
       };
@@ -1036,6 +1046,9 @@ export class ConsoleAdapter implements WalletAdapter {
       // checkExtensionAvailability may timeout if extension is not present
       return {
         installed: false,
+        // A timed-out probe is NOT proof of absence: say so rather than
+        // reporting a confident "not installed" we did not establish.
+        availability: { kind: 'unknown', reason: 'Extension probe timed out' },
         reason:
           'Console Wallet extension not responding. Ensure it is installed and enabled.',
       };

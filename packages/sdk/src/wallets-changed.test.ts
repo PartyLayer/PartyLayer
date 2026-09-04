@@ -111,8 +111,19 @@ describe('reactive wallet-list — wallets:changed', () => {
     const official = makeOfficial();
     const { client, getWallets } = makeClient([official]);
 
+    const warmAdapter = client.getAdapter(WALLEY);
+    const detectSpy = vi.spyOn(
+      warmAdapter as unknown as { detectInstalled: () => Promise<unknown> },
+      'detectInstalled',
+    );
     await client.listWallets({ includeExperimental: true }); // warms WALLEY
-    await vi.waitFor(() => expect(official.detect).toHaveBeenCalled());
+    // Warm-up is fire-and-forget. It used to be observed through
+    // `official.detect`, which the install guard no longer calls: a
+    // discovery-adapter's availability is derived from its transport rather
+    // than probed. The guard still runs, and it still goes through the
+    // ADAPTER's detectInstalled — so spy there instead. Same event, one layer
+    // in, and it no longer depends on a vendor call we deliberately removed.
+    await vi.waitFor(() => expect(detectSpy).toHaveBeenCalled());
 
     const changed = vi.fn();
     client.on('wallets:changed', changed);

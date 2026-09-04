@@ -236,7 +236,15 @@ export class GenericAnnounceAdapter implements WalletAdapter {
    * its presence is established by the announce handshake itself.
    */
   async detectInstalled(): Promise<AdapterDetectResult> {
-    return { installed: true, reason: 'Announced via canton:announceProvider' };
+    return {
+      installed: true,
+      // Presence by CONSTRUCTION: this adapter only exists because an announce
+      // arrived on the wallet's own target channel. There is no probe to be
+      // wrong about, which is why this is the one path that cannot report a
+      // wallet that is not there.
+      availability: { kind: 'installed' },
+      reason: 'Announced via canton:announceProvider',
+    };
   }
 
   async connect(ctx: AdapterContext): Promise<AdapterConnectResult> {

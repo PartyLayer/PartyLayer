@@ -152,18 +152,24 @@ export class NightlyAdapter implements WalletAdapter {
    */
   async detectInstalled(): Promise<AdapterDetectResult> {
     if (typeof window === 'undefined') {
-      return { installed: false, reason: 'Browser environment required' };
+      return {
+        installed: false,
+        availability: { kind: 'unknown', reason: 'No browser environment' },
+        reason: 'Browser environment required',
+      };
     }
 
     if (window.nightly?.canton) {
       return {
         installed: true,
+        availability: { kind: 'installed' },
         reason: 'Nightly wallet detected',
       };
     }
 
     return {
       installed: false,
+      availability: { kind: 'not-installed', install: 'https://nightly.app/download' },
       reason:
         'Nightly wallet not detected. Install from https://nightly.app/download',
     };

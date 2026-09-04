@@ -96,23 +96,35 @@ describe('GenericDiscoveryAdapter', () => {
     expect(providerFactory).not.toHaveBeenCalled();
   });
 
-  it('detectInstalled delegates to official.detect()', async () => {
-    const { official } = makeOfficial({ detect: vi.fn(async () => false) });
+  // REPLACED. These two asserted that detectInstalled delegates to
+  // `official.detect()` — and that delegation is now deliberately gone. All
+  // three vendor implementations are constants (walley: window.open exists;
+  // cauri: Promise.resolve(true); oneswap: typeof window !== 'undefined'), so
+  // awaiting them bought no information while adding an async hop to the
+  // picker's render path. A `discovery-adapter` transport IS the answer: there
+  // is no local install. See GenericDiscoveryAdapter.detectInstalled.
+  it('detectInstalled reports no-local-install without consulting the vendor', async () => {
+    const detect = vi.fn(async () => true);
+    const { official } = makeOfficial({ detect });
     const a = new GenericDiscoveryAdapter({ official });
-    expect(await a.detectInstalled()).toEqual({
-      installed: false,
-      reason: 'Wallet reported not available',
-    });
+
+    const result = await a.detectInstalled();
+    expect(result.availability).toEqual({ kind: 'no-local-install' });
+    expect(result.installed).toBe(false);
+    // The point of the change: the vendor is never asked.
+    expect(detect).not.toHaveBeenCalled();
   });
 
-  it('detectInstalled treats a throwing detect() as not-installed (no crash)', async () => {
-    const { official } = makeOfficial({
-      detect: vi.fn(async () => {
-        throw new Error('boom');
-      }),
+  it('a vendor detect() that throws cannot affect detection, because it is not called', async () => {
+    const detect = vi.fn(async () => {
+      throw new Error('boom');
     });
+    const { official } = makeOfficial({ detect });
     const a = new GenericDiscoveryAdapter({ official });
-    expect(await a.detectInstalled()).toEqual({ installed: false, reason: 'Detection failed' });
+
+    const result = await a.detectInstalled();
+    expect(result.availability).toEqual({ kind: 'no-local-install' });
+    expect(detect).not.toHaveBeenCalled();
   });
 
   it('connect delegates connect → getPrimaryAccount → status and builds the session', async () => {
