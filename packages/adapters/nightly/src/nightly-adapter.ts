@@ -38,6 +38,7 @@ import {
   WalletNotInstalledError,
   CapabilityNotSupportedError,
   mapUnknownErrorToPartyLayerError,
+  UserRejectedError,
 } from '@partylayer/core';
 
 // ─── Nightly Canton Types ───────────────────────────────────────────────────
@@ -303,7 +304,7 @@ export class NightlyAdapter implements WalletAdapter {
             response.type === SignRequestResponseType.SIGN_REQUEST_REJECTED
           ) {
             const data = response.data as { reason: string };
-            reject(new Error(`Sign rejected: ${data.reason}`));
+            reject(new UserRejectedError('signMessage', { walletId: 'nightly', originalMessage: data.reason }));
           } else {
             const data = response.data as { error: string };
             reject(new Error(`Sign error: ${data.error}`));
@@ -380,7 +381,7 @@ export class NightlyAdapter implements WalletAdapter {
               response.type === SignRequestResponseType.SIGN_REQUEST_REJECTED
             ) {
               const data = response.data as { reason: string };
-              reject(new Error(`Transaction rejected: ${data.reason}`));
+              reject(new UserRejectedError('submitTransaction', { walletId: 'nightly', originalMessage: data.reason }));
             } else {
               const data = response.data as { error: string };
               reject(new Error(`Transaction error: ${data.error}`));
@@ -463,9 +464,11 @@ export class NightlyAdapter implements WalletAdapter {
               resolve(response.data as { signature?: string; updateId?: string });
             } else if (response.type === SignRequestResponseType.SIGN_REQUEST_REJECTED) {
               const data = response.data as { reason: string };
-              // "rejected" is load-bearing: the core error mapper classifies it
-              // as a UserRejectedError, which is what a decline actually is.
-              reject(new Error(`Transaction rejected: ${data.reason}`));
+              // Nightly names the outcome in its protocol, so throw the typed
+              // error here rather than encoding it in prose and relying on the
+              // core mapper to recognise the word "rejected" — that coupling is
+              // what made every wallet-side refusal look like a user cancelling.
+              reject(new UserRejectedError('submitTransaction', { walletId: 'nightly', originalMessage: data.reason }));
             } else {
               const data = response.data as { error: string };
               reject(new Error(`Transaction error: ${data.error}`));
