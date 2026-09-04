@@ -761,6 +761,62 @@ A useful corollary: prefer a fixture written out independently of the thing it
 checks. A fixture derived from the code under test passes whatever that code
 does.
 
+##### The fourth shape: right observation, wrong machine
+
+The three above are all "the test observed the wrong thing". This one is "the
+test observed the right thing, on this machine, this time", and mutation does not
+catch it, because the code is fine and the harness is not.
+
+It cost a red CI on the very branch that added the rule above. A test drove the
+`listWallets` re-probe and waited for the constructor's fire-and-forget
+`restoreSession()` (`client.ts:283`) with one macrotask tick:
+
+```ts
+await new Promise((r) => setTimeout(r, 0));   // enough here, not on CI
+```
+
+Locally the session was revived in time. On a CI runner it was not, and the test
+failed at its precondition. Reproduced afterwards by delaying `storage.get` by
+120ms, which fails the fixed-sleep version and passes the polled one, so the fix
+was verified against the actual cause rather than against a green run.
+
+**Never gate a test on a fixed sleep for work you did not start.** If you did not
+create the promise, you cannot know when it settles. Poll for the condition with
+a bound:
+
+```ts
+async function waitFor(check: () => boolean, timeoutMs = 5000): Promise<void> {
+  const deadline = Date.now() + timeoutMs;
+  while (Date.now() < deadline) {
+    if (check()) return;
+    await new Promise((r) => setTimeout(r, 5));
+  }
+}
+```
+
+Note what it does NOT do: assert or throw on timeout. It returns either way, so
+the caller's own assertion runs and reports the state actually observed, instead
+of a generic "timed out" that hides it. A longer sleep is not a fix; it is the
+same bug with a better hit rate, and it fails later and on someone else's branch.
+
+**Assert the setup happened before asserting the behaviour.** The failure above
+was legible only because the test checked its own preconditions:
+
+```ts
+expect(internals.activeSession).not.toBeNull();      // setup
+expect(internals.activeSessionNeedsProbe).toBe(true);
+...
+expect(seen.length).toBeGreaterThanOrEqual(1);       // behaviour
+```
+
+Without the first two it would have failed at the last one, reporting zero
+events, which reads as *"the emit site never fires"* rather than *"the session
+was never restored"*. A missing precondition and a missing behaviour are
+indistinguishable at the assertion that matters, and the first is a harness bug
+while the second is a product bug. Checking the setup separately is what tells
+them apart, and it is cheap.
+
+
 
 ---
 

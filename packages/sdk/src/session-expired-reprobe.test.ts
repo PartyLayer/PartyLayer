@@ -154,6 +154,26 @@ import { createPartyLayer } from './index';
 // announce path touches window.
 vi.stubGlobal('window', {});
 
+/**
+ * Poll for a condition with a bound, rather than sleeping a fixed tick.
+ *
+ * The constructor's restoreSession() is fire-and-forget (client.ts:283), so the
+ * test does not own the promise it is waiting on. This originally waited one
+ * macrotask, which was enough on a dev machine and not on CI: the session had
+ * not been revived yet and the precondition failed there and only there.
+ *
+ * Deliberately does NOT assert on timeout. It returns either way, so the
+ * caller's own assertion runs and reports what was actually observed, rather
+ * than a generic "timed out" that hides the state.
+ */
+async function waitFor(check: () => boolean, timeoutMs = 5000): Promise<void> {
+  const deadline = Date.now() + timeoutMs;
+  while (Date.now() < deadline) {
+    if (check()) return;
+    await new Promise((r) => setTimeout(r, 5));
+  }
+}
+
 function makeStorage(): Storage {
   const data = new Map<string, string>();
   return {
@@ -214,13 +234,15 @@ describe('session:expired from the listWallets re-probe', () => {
       storage,
     });
 
-    // Let the constructor's fire-and-forget restoreSession settle.
-    await new Promise((r) => setTimeout(r, 0));
-
     const internals = client as unknown as {
       activeSession: Session | null;
       activeSessionNeedsProbe: boolean;
     };
+
+    // Wait for the constructor's fire-and-forget restoreSession to revive the
+    // session as-is. Bounded poll, not a fixed sleep: a bigger sleep is the same
+    // bug with a better hit rate.
+    await waitFor(() => internals.activeSession !== null);
     // Preconditions for the branch. Asserted, not assumed: if the as-is revive
     // stops happening, this test would otherwise silently stop covering the site.
     expect(internals.activeSession).not.toBeNull();
