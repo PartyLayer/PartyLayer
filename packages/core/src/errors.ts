@@ -187,11 +187,10 @@ export class UserRejectedError extends PartyLayerError {
 export class WalletRefusedError extends PartyLayerError {
   constructor(
     operation: string,
-    originalMessage: string,
-    details?: Record<string, unknown>
+    details: { originalMessage: string } & Record<string, unknown>
   ) {
-    super(`Wallet refused ${operation}: ${originalMessage}`, 'WALLET_REFUSED', {
-      details: { operation, originalMessage, ...details },
+    super(`Wallet refused ${operation}: ${details.originalMessage}`, 'WALLET_REFUSED', {
+      details: { operation, ...details },
     });
     this.name = 'WalletRefusedError';
   }
@@ -450,44 +449,27 @@ export function mapUnknownErrorToPartyLayerError(
     // collapse every wallet-side refusal into USER_REJECTED — Nightly's
     // "Connect request rejected - tab is not active" reported a cancellation
     // the user never made. Only an explicit signal counts as the user saying no.
-    const rpcCode = (err as { code?: unknown }).code;
-    const isUserRejectedCode =
-      // EIP-1193 4001 / JSON-RPC 4001: "user rejected request"
-      rpcCode === 4001 || rpcCode === 'ACTION_REJECTED';
+    // `err.name` and EIP-1193 4001 are the only unambiguous "the user said no"
+    // signals. Failing those, the phrasing must actually NAME the user — either
+    // side of the verb — so "rejected by the wallet because X" does not match.
+    const isUserRejection =
+      err.name === 'UserRejectedError' ||
+      (err as { code?: unknown }).code === 4001 ||
+      /\buser\b.{0,24}(reject|den|declin|cancel|abort)|(reject|den|declin|cancel|abort)\w*.{0,24}\bby (?:the )?user\b/.test(
+        message,
+      );
 
-    if (err.name === 'UserRejectedError' || isUserRejectedCode) {
-      return new UserRejectedError(context.phase, {
-        walletId: context.walletId,
-        transport: context.transport,
-        originalMessage: err.message,
-      });
-    }
+    const detail = {
+      walletId: context.walletId,
+      transport: context.transport,
+      originalMessage: err.message,
+    };
 
-    // Failing a structured signal, only phrasing that names the USER counts.
-    // "rejected by the wallet because X" must not match.
-    const saysUser =
-      /\buser\b[^.]{0,24}\b(rejected|denied|declined|cancell?ed|aborted)\b/.test(message) ||
-      /\b(rejected|denied|declined|cancell?ed)\b[^.]{0,24}\bby (the )?user\b/.test(message);
-
-    if (saysUser) {
-      return new UserRejectedError(context.phase, {
-        walletId: context.walletId,
-        transport: context.transport,
-        originalMessage: err.message,
-      });
-    }
+    if (isUserRejection) return new UserRejectedError(context.phase, detail);
 
     // A refusal that is NOT the user's: keep the wallet's own words.
-    if (
-      message.includes('rejected') ||
-      message.includes('denied') ||
-      message.includes('declined') ||
-      message.includes('refused')
-    ) {
-      return new WalletRefusedError(context.phase, err.message, {
-        walletId: context.walletId,
-        transport: context.transport,
-      });
+    if (/reject|denied|declin|refus/.test(message)) {
+      return new WalletRefusedError(context.phase, detail);
     }
 
     // Timeout patterns

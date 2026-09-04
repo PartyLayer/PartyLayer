@@ -1,6 +1,7 @@
 ---
 '@partylayer/core': minor
 '@partylayer/sdk': minor
+'@partylayer/adapter-nightly': patch
 ---
 
 Report what the wallet actually said, and hold the connect deadline you set.
@@ -31,6 +32,12 @@ that had timed out kept its popup, QR overlay or socket live and could still
 complete against a caller that had given up. `connect()` receives an
 `AbortSignal` that fires when the deadline does. Adapters that ignore it behave
 exactly as before.
+
+The Nightly adapter had the same shape internally: its protocol names the
+outcome (`sign_request_rejected`) and it degraded that to prose for the mapper to
+recognise, with a comment noting the word "rejected" was load-bearing. All three
+sites now throw the typed error where the type is known, so a Nightly decline no
+longer depends on string matching to be classified correctly.
 
 `WALLET_REFUSED` is additive. Code branching on `USER_REJECTED` for a genuine
 cancellation is unaffected; code that was relying on `USER_REJECTED` to catch
