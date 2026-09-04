@@ -28,7 +28,16 @@ export type ErrorCode =
   | 'NETWORK_MISMATCH'
   | 'TIMEOUT'
   | 'INSUFFICIENT_TRAFFIC'
-  | 'SYNCHRONIZER_ERROR';
+  | 'SYNCHRONIZER_ERROR'
+  /**
+   * The WALLET refused the request for a reason of its own — not the user
+   * declining a prompt. Nightly refusing because the tab is unfocused
+   * ("Connect request rejected - tab is not active") is the canonical case:
+   * no prompt was ever shown, so reporting USER_REJECTED told the dApp
+   * something untrue. The wallet's own words are preserved in
+   * `details.originalMessage` and repeated in `message`.
+   */
+  | 'WALLET_REFUSED';
 
 /**
  * Error mapping context
@@ -164,6 +173,26 @@ export class UserRejectedError extends PartyLayerError {
       details: { operation, ...details },
     });
     this.name = 'UserRejectedError';
+  }
+}
+
+/**
+ * The wallet refused the request for its own reason.
+ *
+ * Distinct from {@link UserRejectedError}: nobody was asked. Use this whenever
+ * the wallet declined without a user-facing prompt — unfocused tab, locked
+ * vault, unsupported network, origin not allowlisted. The wallet's message is
+ * carried through verbatim so a dApp can show it instead of guessing.
+ */
+export class WalletRefusedError extends PartyLayerError {
+  constructor(
+    operation: string,
+    details: { originalMessage: string } & Record<string, unknown>
+  ) {
+    super(`Wallet refused ${operation}: ${details.originalMessage}`, 'WALLET_REFUSED', {
+      details: { operation, ...details },
+    });
+    this.name = 'WalletRefusedError';
   }
 }
 
@@ -323,12 +352,20 @@ export class InternalError extends PartyLayerError {
  * Timeout error
  */
 export class TimeoutError extends PartyLayerError {
-  constructor(operation: string, timeoutMs: number) {
+  /**
+   * `timeoutMs` is OPTIONAL on purpose. Previously an unknown deadline was
+   * coerced to `0`, so the message read "timed out after 0ms" — a number that
+   * described nothing. When the deadline is genuinely unknown we now say so
+   * rather than inventing a figure.
+   */
+  constructor(operation: string, timeoutMs?: number) {
     super(
-      `Operation "${operation}" timed out after ${timeoutMs}ms`,
+      typeof timeoutMs === 'number'
+        ? `Operation "${operation}" timed out after ${timeoutMs}ms`
+        : `Operation "${operation}" timed out`,
       'TIMEOUT',
       {
-        details: { operation, timeoutMs },
+        details: { operation, ...(typeof timeoutMs === 'number' ? { timeoutMs } : {}) },
       }
     );
     this.name = 'TimeoutError';
@@ -407,19 +444,32 @@ export function mapUnknownErrorToPartyLayerError(
       });
     }
 
-    // User rejection patterns
-    if (
-      message.includes('rejected') ||
-      message.includes('denied') ||
-      message.includes('cancelled') ||
-      message.includes('canceled') ||
-      err.name === 'UserRejectedError'
-    ) {
-      return new UserRejectedError(context.phase, {
-        walletId: context.walletId,
-        transport: context.transport,
-        originalMessage: err.message,
-      });
+    // ── Refusals ────────────────────────────────────────────────────────
+    // STRUCTURED SIGNALS FIRST. A bare substring scan for "rejected" used to
+    // collapse every wallet-side refusal into USER_REJECTED — Nightly's
+    // "Connect request rejected - tab is not active" reported a cancellation
+    // the user never made. Only an explicit signal counts as the user saying no.
+    // `err.name` and EIP-1193 4001 are the only unambiguous "the user said no"
+    // signals. Failing those, the phrasing must actually NAME the user — either
+    // side of the verb — so "rejected by the wallet because X" does not match.
+    const isUserRejection =
+      err.name === 'UserRejectedError' ||
+      (err as { code?: unknown }).code === 4001 ||
+      /\buser\b.{0,24}(reject|den|declin|cancel|abort)|(reject|den|declin|cancel|abort)\w*.{0,24}\bby (?:the )?user\b/.test(
+        message,
+      );
+
+    const detail = {
+      walletId: context.walletId,
+      transport: context.transport,
+      originalMessage: err.message,
+    };
+
+    if (isUserRejection) return new UserRejectedError(context.phase, detail);
+
+    // A refusal that is NOT the user's: keep the wallet's own words.
+    if (/reject|denied|declin|refus/.test(message)) {
+      return new WalletRefusedError(context.phase, detail);
     }
 
     // Timeout patterns
@@ -428,18 +478,26 @@ export function mapUnknownErrorToPartyLayerError(
       message.includes('timed out') ||
       err.name === 'TimeoutError'
     ) {
-      // Try to get timeout from context, or extract from error message, or default to 0
-      let timeoutMs = context.timeoutMs ?? 0;
-      if (timeoutMs === 0) {
-        // Try to extract from message like "timed out after 30000ms" or "timeout after 30s"
-        const msMatch = err.message.match(/(\d+)\s*ms/i);
-        const secMatch = err.message.match(/(\d+)\s*(?:sec|second)/i);
-        if (msMatch) {
-          timeoutMs = parseInt(msMatch[1], 10);
-        } else if (secMatch) {
-          timeoutMs = parseInt(secMatch[1], 10) * 1000;
-        }
-      }
+      // THE NUMBER IN THE MESSAGE WINS. The timeout that actually fired put its
+      // own deadline in the string; `context.timeoutMs` is whatever the calling
+      // layer happened to hold and was previously allowed to overwrite it — that
+      // is how a 120 000 ms race came to be reported as "30000ms". Context is a
+      // FALLBACK now, used only when the message carries no figure, and an
+      // unknown deadline stays unknown instead of becoming 0.
+      const msMatch = err.message.match(/(\d+)\s*ms\b/i);
+      const secMatch = err.message.match(/(\d+)\s*(?:s\b|sec|second)/i);
+      const fromMessage = msMatch
+        ? parseInt(msMatch[1], 10)
+        : secMatch
+          ? parseInt(secMatch[1], 10) * 1000
+          : undefined;
+
+      const timeoutMs =
+        fromMessage ??
+        (typeof context.timeoutMs === 'number' && context.timeoutMs > 0
+          ? context.timeoutMs
+          : undefined);
+
       return new TimeoutError(context.phase, timeoutMs);
     }
 

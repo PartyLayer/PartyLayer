@@ -337,6 +337,16 @@ export interface WalletAdapter {
        * URI (their own SDK shows the QR) simply never call it.
        */
       onDisplayUri?: (uri: string) => void;
+      /**
+       * Aborted when the caller's connect deadline fires. An adapter that opens
+       * a popup, QR overlay or socket should listen and tear it down: without
+       * this the SDK's `Promise.race` walked away and the wallet UI stayed on
+       * screen, able to complete a connect nobody was waiting for any more.
+       *
+       * Optional, and ignoring it is safe — behaviour is then exactly what it
+       * was before the signal existed.
+       */
+      signal?: AbortSignal;
     }
   ): Promise<AdapterConnectResult>;
 

@@ -88,9 +88,46 @@ module.exports = [
     // shortened the runtime strings (not the messages a developer reads in a
     // stack trace), one construction site for the unavailable outcome instead
     // of three literals, and inlined a single-use exported helper. 43.75 kB
-    // leaves ~40 B, which is deliberately tight: this budget has now moved
-    // twice, and the next increase should have to argue for itself.
-    limit: '43.75 kB',
+    // left ~40 B, deliberately tight.
+    //
+    // MOVED A THIRD TIME, for the error classifier. This one is a correctness
+    // fix, not a feature, and that distinction is the whole reason it was
+    // allowed to move: the alternative was leaving a classifier that told a
+    // dApp the user had clicked cancel when no prompt was ever drawn. Nightly
+    // refusing because the tab was unfocused ("Connect request rejected - tab
+    // is not active") was reported as USER_REJECTED, because classification was
+    // a substring scan over prose.
+    //
+    // What the bytes bought:
+    //   - WalletRefusedError as a REAL class, not just a code, so a dApp can
+    //     `instanceof` a wallet's own refusal and tell it apart from a user
+    //     cancellation. Dropping the class was measured (below) and rejected.
+    //   - Structured-signal classification: `err.name` and EIP-1193 4001 first,
+    //     then phrasing that actually names the user, then a refusal that is
+    //     explicitly NOT the user's.
+    //
+    // The AbortSignal that makes a connect timeout actually cancel measured at
+    // ZERO bytes here — reverting client.ts entirely moved neither budget. The
+    // cost is all in the classifier and the class.
+    //
+    // Four compactions measured, 49 B recovered, two more REJECTED — recorded
+    // so the next person does not re-run them:
+    //   - merging the two user-detection regexes and the duplicate return
+    //     path: -26 B, KEPT.
+    //   - slimming WalletRefusedError's constructor to take one details object
+    //     instead of a separate originalMessage argument: -6 B, KEPT.
+    //   - dropping the class entirely for `new PartyLayerError(..., 'WALLET_REFUSED')`:
+    //     -17 B, REJECTED. It buys almost nothing and costs consumers
+    //     `instanceof`, and it still would not have cleared the gate.
+    //   - replacing the regex with `message.includes('user') && /reject|.../`:
+    //     -35 B, REJECTED. It matches "rejected by the wallet, contact user
+    //     support", which is the exact class of false positive being fixed.
+    //
+    // If a FUTURE increase is for a feature rather than a correctness fix, it
+    // should be held to a harder standard than this one was.
+    //
+    // Measured 43.97 kB after the four passes above. 44 kB leaves ~30 B.
+    limit: '44 kB',
   },
   {
     name: 'react-native: ui (ConnectButton)',
@@ -136,7 +173,45 @@ module.exports = [
     // was tried and is WORSE: it keeps that object alive in every consumer's
     // bundle, came out at 43.55 kB, and pushed react-native 15 B over as well.
     // The raw strings minify well beside their own copies in the object
-    // literal. 43.6 kB leaves ~70 B, deliberately tight.
-    limit: '43.6 kB',
+    // literal. 43.6 kB left ~70 B, deliberately tight.
+    //
+    // MOVED A THIRD TIME, for the error classifier. This one is a correctness
+    // fix, not a feature, and that distinction is the whole reason it was
+    // allowed to move: the alternative was leaving a classifier that told a
+    // dApp the user had clicked cancel when no prompt was ever drawn. Nightly
+    // refusing because the tab was unfocused ("Connect request rejected - tab
+    // is not active") was reported as USER_REJECTED, because classification was
+    // a substring scan over prose.
+    //
+    // What the bytes bought:
+    //   - WalletRefusedError as a REAL class, not just a code, so a dApp can
+    //     `instanceof` a wallet's own refusal and tell it apart from a user
+    //     cancellation. Dropping the class was measured (below) and rejected.
+    //   - Structured-signal classification: `err.name` and EIP-1193 4001 first,
+    //     then phrasing that actually names the user, then a refusal that is
+    //     explicitly NOT the user's.
+    //
+    // The AbortSignal that makes a connect timeout actually cancel measured at
+    // ZERO bytes here — reverting client.ts entirely moved neither budget. The
+    // cost is all in the classifier and the class.
+    //
+    // Four compactions measured, 49 B recovered, two more REJECTED — recorded
+    // so the next person does not re-run them:
+    //   - merging the two user-detection regexes and the duplicate return
+    //     path: -26 B, KEPT.
+    //   - slimming WalletRefusedError's constructor to take one details object
+    //     instead of a separate originalMessage argument: -6 B, KEPT.
+    //   - dropping the class entirely for `new PartyLayerError(..., 'WALLET_REFUSED')`:
+    //     -17 B, REJECTED. It buys almost nothing and costs consumers
+    //     `instanceof`, and it still would not have cleared the gate.
+    //   - replacing the regex with `message.includes('user') && /reject|.../`:
+    //     -35 B, REJECTED. It matches "rejected by the wallet, contact user
+    //     support", which is the exact class of false positive being fixed.
+    //
+    // If a FUTURE increase is for a feature rather than a correctness fix, it
+    // should be held to a harder standard than this one was.
+    //
+    // Measured 43.75 kB after the four passes above. 43.8 kB leaves ~50 B.
+    limit: '43.8 kB',
   },
 ];

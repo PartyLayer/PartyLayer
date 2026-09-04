@@ -11,6 +11,7 @@
  */
 
 import type {
+  AdapterConnectResult,
   WalletId,
   SessionId,
   CapabilityKey,
@@ -157,6 +158,20 @@ interface ConnectPlan {
  *
  * Main client interface for dApps to interact with Canton wallets.
  */
+/**
+ * The ONE connect deadline.
+ *
+ * There used to be two independent defaults: 120000 at the race that actually
+ * timed the connect, and 30000 in the catch block that formatted the error. The
+ * message therefore reported a budget four times smaller than the one enforced —
+ * a connect that ran the full two minutes was described as "timed out after
+ * 30000ms". Both sites now read this.
+ *
+ * Two minutes because QR-code and popup wallets need the user to pick up a
+ * phone, unlock it and scan.
+ */
+export const DEFAULT_CONNECT_TIMEOUT_MS = 120_000;
+
 export class PartyLayerClient {
   private config: PartyLayerConfig;
   private adapters = new Map<WalletId, WalletAdapter>();
@@ -728,7 +743,7 @@ export class PartyLayerClient {
       const plan = await this.resolveConnectPlan(options);
       return await this.completeConnect(plan, options, correlationId);
     } catch (err) {
-      const timeoutMs = options?.timeoutMs || 30000;
+      const timeoutMs = options?.timeoutMs || DEFAULT_CONNECT_TIMEOUT_MS;
       const error = mapUnknownErrorToPartyLayerError(err, {
         phase: 'connect',
         walletId: options?.walletId ? String(options.walletId) : undefined,
@@ -884,22 +899,38 @@ export class PartyLayerClient {
     const { selectedWallet, adapter, ctx } = plan;
 
     // Connect
-    // Default timeout: 2 minutes for QR code/popup based wallets
-    const timeoutMs = options?.timeoutMs || 120000;
+    const timeoutMs = options?.timeoutMs || DEFAULT_CONNECT_TIMEOUT_MS;
+
+    // `Promise.race` does not cancel the loser: when the deadline won, the
+    // adapter's connect kept running and its popup / QR overlay / WebSocket
+    // stayed live, so a "timed out" connect could still complete later against
+    // a caller that had already given up. The signal is how an adapter learns
+    // the race is over; adapters that ignore it are no worse off than before.
+    const abort = new AbortController();
     const connectPromise = adapter.connect(ctx, {
       timeoutMs,
+      signal: abort.signal,
       partyId: undefined,
       preferInstalled: options?.preferInstalled,
       onDisplayUri: options?.onDisplayUri,
     });
 
+    let timeoutHandle: ReturnType<typeof setTimeout> | undefined;
     const timeoutPromise = new Promise<never>((_, reject) => {
-      setTimeout(() => {
+      timeoutHandle = setTimeout(() => {
+        abort.abort();
         reject(new Error(`Connection timed out after ${timeoutMs}ms - user did not complete wallet connection`));
       }, timeoutMs);
     });
 
-    const result = await Promise.race([connectPromise, timeoutPromise]);
+    let result: AdapterConnectResult;
+    try {
+      result = await Promise.race([connectPromise, timeoutPromise]);
+    } finally {
+      // Always clear the timer: on the success path it would otherwise fire
+      // later and abort a live session's adapter.
+      if (timeoutHandle !== undefined) clearTimeout(timeoutHandle);
+    }
 
     // Create session
     const session: Session = {
