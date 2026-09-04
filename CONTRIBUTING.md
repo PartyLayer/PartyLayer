@@ -713,6 +713,55 @@ class of bug. Both of the cases above also had a fixture returning a receipt fro
 a call the standard defines as returning null, so the mock, not the wallet, was
 supplying the value the assertion relied on.
 
+#### A test can also never reach the code it names
+
+The rule above is about a test that asserts the wrong thing. This one is about a
+test that asserts the right thing and never gets there. Both go green, or go red,
+for reasons unrelated to the behaviour in the title, and neither is visible from
+reading the test.
+
+Three instances turned up in one session, which is what makes it a pattern rather
+than bad luck:
+
+- **Failed for the wrong reason.** A test proving a null dereference in
+  `getActiveSession` died with `TransportError: fetch failed` inside `connect()`,
+  from the registry client reaching a placeholder URL. It never reached the line
+  under test. Reported as "the defect is proven" it would have been evidence of
+  nothing. Fixed by the `vi.mock` stubs the neighbouring test file already had.
+- **Passed for the wrong reason.** Registry signature tests seeded a cache and
+  asserted against it; the SWR path returned that seed before the network call
+  resolved, so two tests never executed the code they named. They only surfaced
+  because they failed *after* the fix, which is the wrong direction to learn it.
+- **Silently unreachable.** A test for the `listWallets` re-probe passed its
+  preconditions, ran the call, and saw zero events. The cause was
+  `announceEnabled` returning false when `typeof window === 'undefined'`, so in a
+  Node runner the entire announce path does not exist. Without
+  `vi.stubGlobal('window', {})` the result reads as "this site never fires"
+  rather than "my harness never got there".
+
+The third is the worst of the three, because absence of a signal looks like a
+finding. A test that cannot reach its subject will happily report that the
+subject does nothing.
+
+**The check that catches all three: break the thing on purpose and watch the test
+notice.** Delete the emit, swap the guarded local for the field it guards
+against, return the wrong value. If the test still passes, it is not testing what
+its name says, and no amount of reading it will reveal that. If it fails, the
+failure message also tells you *which* assertion carries the weight.
+
+That mutation is worth keeping in the commit message rather than only in the
+session, because it is the evidence, not the test's existence. Two examples from
+this codebase: `session-expired-reprobe.test.ts` records that swapping `active`
+for `this.activeSession` makes it fail, which is what makes "this site is
+guarded" a claim rather than an observation about code shape; and the
+`CIP0103_MANDATORY_METHODS` guard records that restoring `Object.values(...)`
+fails two of its five cases.
+
+A useful corollary: prefer a fixture written out independently of the thing it
+checks. A fixture derived from the code under test passes whatever that code
+does.
+
+
 ---
 
 ## Documentation

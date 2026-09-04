@@ -18,17 +18,11 @@
  *   restoreSession, restore null DRIVEN.
  *   restoreSession, mismatch     DRIVEN. Verified by mutation: deleting that
  *                                emit fails this test and only this test.
- *   listWallets re-probe         NOT DRIVEN. It needs a session restored while
- *                                its adapter does not yet exist, which is then
- *                                born during listWallets (client.ts:612 requires
- *                                configured.restore, and the flag is only set on
- *                                the restore-not-supported path at :1558). That
- *                                is the lazily-born announce-wallet scenario and
- *                                needs scaffolding this file does not have.
- *                                Reading it, it uses a local `active` captured
- *                                before the session is nulled, so it does not
- *                                share the defect. That is an argument, not
- *                                evidence, and it is recorded as such.
+ *   listWallets re-probe         DRIVEN, in session-expired-reprobe.test.ts.
+ *                                It needs its own file because reaching it
+ *                                requires a stubbed `window` and a mocked
+ *                                announce discovery. Guarded, and the guard is
+ *                                itself tested by mutation.
  */
 
 import { describe, it, expect, vi } from 'vitest';

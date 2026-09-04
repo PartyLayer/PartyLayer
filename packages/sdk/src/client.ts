@@ -674,6 +674,17 @@ export class PartyLayerClient {
                       this.emit('session:connected', { type: 'session:connected', session: reprobed });
                     } else {
                       // Wallet disconnected between reloads — clear the stale as-is session.
+                      //
+                      // `active` is read here, NOT this.activeSession, which is
+                      // nulled two lines down. getActiveSession had exactly that
+                      // bug and it threw. Note the failure modes differ: this
+                      // emit sits inside the catch below, which deliberately
+                      // never breaks listWallets, so the same dereference here
+                      // would be SILENT — no event, session left stale — rather
+                      // than loud. If you copy either shape, know which one you
+                      // are inheriting. Covered by
+                      // session-expired-reprobe.test.ts, which fails if `active`
+                      // is swapped back for this.activeSession.
                       await this.removeSession(active.sessionId);
                       this.activeSession = null;
                       this.activeSessionNeedsProbe = false;
