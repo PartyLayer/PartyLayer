@@ -535,6 +535,53 @@ already written, somewhere, in a form nobody has pictured yet — which is the
 argument for handing the enumeration to something that does not have to picture
 it.
 
+#### A run that ends without a verdict is not a pass
+
+Check for the verdict line, not for the absence of red. A command that was
+killed, timed out, or died mid-suite prints no failure — and a log with no
+failures in it looks exactly like a log from a run that passed. `pnpm gate`
+was observed stopping at step 20 of 22, inside `verify-e2e`, having printed no
+`ELIFECYCLE` and no `not ok`. Scrolling it would have read as clean.
+
+So: assert on the thing that only a completed run produces — the exit code, the
+`# pass N / # fail 0` tally, the `Tests N passed` summary, the final gate step.
+If it is absent, the result is UNKNOWN and must be reported as unknown. Do not
+merge on it, and do not report it as green.
+
+This is the same failure as a test that passes for a reason unrelated to its
+name: both produce a signal that reads as success while carrying no evidence.
+The habit that catches both is asking what this output would look like if the
+thing had gone wrong, and checking that it would look different.
+
+#### A test that chooses at runtime whether to assert is not a test
+
+`packages/adapters/console` had 33 tests written as `it.skipIf(!isBrowser)`
+with `isBrowser = typeof window !== 'undefined'`, under `environment: 'node'`.
+The condition was always false. None of the 33 ran, for as long as they had
+existed, and the suite reported `55 tests | 33 skipped` — green, with 60% of the
+adapter's coverage absent. Among the missing were the `detectInstalled` contract
+tests, which pass once run; their absence let an unrelated defect through.
+
+Running them found two that were themselves broken in ways only running could
+reveal: one asserted a `target` value the adapter had deliberately stopped
+sending, and one could never reach the code it named because the shared mock
+always defined the method whose absence it was testing — it "passed" by
+resolving where it claimed to reject. Both had been green for as long as they
+had been skipped.
+
+The weaker form is the same defect: an assertion inside `if (!isBrowser) { ... }`
+runs, but only covers the guard branch, so the path that actually ships has no
+coverage while the test's name says otherwise.
+
+**Declare the environment, do not branch on it.** A test needing a different
+environment puts `// @vitest-environment node` as the first line of its own
+file; vitest honours that over the package config. The environment becomes a
+fixture instead of a runtime branch that can silently decide to assert nothing.
+`gate:test-skips` fails the build on any environment conditional in a test file,
+and prints per-package skip counts on every run so a skip has somewhere to be
+noticed. It enforces the shape rather than policing a number, because policing a
+number invites the 34th `skipIf`.
+
 #### A fix can introduce the defect it removes
 
 When you do make such a field optional, sweep for `String(x)` on it. That pattern
