@@ -27,11 +27,72 @@ getCapabilities(): CapabilityKey[]
 
 #### detectInstalled()
 
-Detects if wallet is installed/available.
+Reports what a wallet's presence actually is.
 
 ```typescript
 detectInstalled(): Promise<AdapterDetectResult>
+
+interface AdapterDetectResult {
+  /** @deprecated read `availability` — see below for why this misleads */
+  installed: boolean;
+  availability?: Availability;
+  reason?: string;
+}
+
+type Availability =
+  | { kind: 'installed' }                     // probed, and present
+  | { kind: 'not-installed'; install?: string } // probed, and absent
+  | { kind: 'no-local-install' }              // QR / popup / relay: nothing to probe
+  | { kind: 'unknown'; reason?: string };     // the probe failed or timed out
 ```
+
+**Read `availability`, not `installed`.** `installed` remains for source
+compatibility and is exactly `availability.kind === 'installed'`.
+
+##### Four of twelve adapters probe anything real
+
+This is the fact the split exists for, and it is easy to forget and then
+rediscover as a surprise. Measured from shipped source:
+
+| Adapter | Evidence it probes | Answers |
+|---|---|---|
+| `console` | postMessage probe to the extension | `installed` / `not-installed` / `unknown` |
+| `nightly` | `window.nightly?.canton` | `installed` / `not-installed` |
+| `send` | `canton:announceProvider` + `window.canton` | `installed` / `not-installed` |
+| `GenericAnnounceAdapter` | presence by construction — it only exists if an announce arrived | `installed` |
+| `loop` | **nothing** — QR + WebSocket | `no-local-install` |
+| `cantor8` | **nothing** — hosted web wallet | `no-local-install` |
+| `bron` | **nothing** — OAuth remote signer | `no-local-install` |
+| `walletconnect` | **nothing** — relay | `no-local-install` |
+| `walley` (vendor) | `typeof window.open === 'function'` — true in any browser | derived, vendor not called |
+| `cauri` (vendor) | `Promise.resolve(true)` | derived, vendor not called |
+| `oneswap` (vendor) | `typeof window !== 'undefined'` | derived, vendor not called |
+| `GenericDiscoveryAdapter` | derives from `discovery-adapter` transport | `no-local-install` |
+
+The eight that probe nothing are not defective adapters — a QR wallet, a hosted
+popup, a relay and an OAuth service have no local artefact to look for. They
+previously answered `installed: true`, meaning "reachable", and the picker read
+it as "installed". Cantor8 is not an extension at all: its tile said installed,
+and clicking it opened a tab.
+
+The three vendor `detect()` implementations are quoted above because they are
+constants. `GenericDiscoveryAdapter` therefore does **not** call them and derives
+the answer from the registry's `discovery-adapter` transport instead — see
+`GenericDiscoveryAdapter.detectInstalled`, which is the single place that rule is
+applied.
+
+##### Known mismatch: Cantor8 classifies as `scan` but opens a tab
+
+Cantor8's registry entry carries `installation.scriptTag`, so
+`classifyWalletTransport` returns `scan` and the picker's subtitle reads "Scan to
+connect". Cantor8 does not present a QR — connecting opens a tab on its hosted
+URL. The subtitle is therefore still wrong for this one wallet, in a smaller way
+than "installed" was.
+
+This is a **registry-data fix, queued with the D5 / D6 registry work** (the
+entries also lack `providerDetection`, and the schema cannot express the
+`transfer`, `ledgerApi`, `popup` or `restore` capabilities). Recorded here so it
+does not fall between pull requests.
 
 #### connect()
 

@@ -199,24 +199,38 @@ export class GenericDiscoveryAdapter implements WalletAdapter {
     return ['connect', 'disconnect', 'signMessage', 'submitTransaction'];
   }
 
-  /** Install/availability probe — delegated to the official adapter (popup-free). */
+  /**
+   * THE SINGLE PLACE THE discovery-adapter RULE IS APPLIED.
+   *
+   * **A `discovery-adapter` transport implies there is no local install.** Every
+   * wallet on that transport is a hosted popup or remote gateway reached with
+   * `window.open` — Walley, Cauri and OneSwap today. There is no extension, no
+   * injected global, nothing on the machine to probe. The honest answer is
+   * `no-local-install`, and it follows from the registry entry alone.
+   *
+   * SO THE VENDOR'S `detect()` IS NOT CALLED, and reinstating that call would be
+   * a regression however much it looks like rigour. Read from their shipped
+   * source, all three are constants:
+   *
+   *     walley:   typeof window < "u" && typeof window.open == "function"
+   *     cauri:    Promise.resolve(true)
+   *     oneswap:  typeof window !== 'undefined'
+   *
+   * Each returns true in any browser. Awaiting them bought a value carrying no
+   * information, at the cost of an async hop on the picker's render path and a
+   * dependency on three third parties independently choosing to answer
+   * honestly. The registry already knows, it is signed, and it cannot drift.
+   *
+   * `installed: false` is deliberate and is NOT "not available": there is no
+   * local install, so the only truthful value for a field that asks about one
+   * is false. A picker must read `availability`, which says why.
+   */
   async detectInstalled(): Promise<AdapterDetectResult> {
-    // Factory form not yet host-resolved (probed before connect/warm-up): a
-    // popup/remote wallet is "available" wherever the official can be built;
-    // treat as installed — the real availability check runs at connect.
-    if (!this.official) {
-      return { installed: true, reason: 'Popup/remote wallet (resolved at connect)' };
-    }
-    try {
-      const installed = await this.official.detect();
-      return {
-        installed,
-        reason: installed ? undefined : 'Wallet reported not available',
-      };
-    } catch {
-      // A failing detect must not crash discovery; treat as not-installed.
-      return { installed: false, reason: 'Detection failed' };
-    }
+    return {
+      installed: false,
+      availability: { kind: 'no-local-install' },
+      reason: 'Hosted popup wallet — opens in a window; nothing is installed locally',
+    };
   }
 
   async connect(ctx: AdapterContext): Promise<AdapterConnectResult> {

@@ -98,8 +98,17 @@ export class BronAdapter implements WalletAdapter {
   detectInstalled(): Promise<AdapterDetectResult> {
     // Bron is an enterprise remote signer - no "installation" required
     // Availability depends on OAuth2 configuration
+    // Bron is an enterprise remote signer: no local install, and unusable
+    // without OAuth credentials the app supplies. `needs-config` lets the picker
+    // hide it rather than show a tile whose click dead-ends at an OAuth error —
+    // which is the behaviour the SDK already had, now stated in the data.
     return Promise.resolve({
-      installed: true,
+      installed: false,
+      // BronAdapterConfig requires `auth`, so an instance cannot exist without
+      // credentials; the unconfigured case is handled a level up by not
+      // registering the adapter, which is why Bron is absent from the picker
+      // rather than present and broken.
+      availability: { kind: 'no-local-install' },
       reason: 'Bron is a remote signer service',
     });
   }

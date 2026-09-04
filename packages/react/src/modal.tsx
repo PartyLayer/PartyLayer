@@ -248,14 +248,25 @@ function getWalletUrl(wallet: WalletInfo): string | null {
   return null;
 }
 
-/** Transport class (from the registry) → the picker's clean subtitle label. */
+/**
+ * Transport class (from the registry) → the picker's clean subtitle label.
+ *
+ * For a wallet with NO LOCAL INSTALL the subtitle is the only thing telling the
+ * user what a click will do, so it says so. Loop and Cantor8 are the two we
+ * measured causing real harm: both sat in the list looking like any other tile,
+ * and clicking them opened a QR overlay and a hosted tab respectively — after a
+ * wait, because nothing said that was coming. The same rule that makes the
+ * adapters answer `no-local-install` (a `scan`/`popup`/`enterprise` transport
+ * has nothing on the machine) is what makes these labels safe to derive here,
+ * with no probe on the render path.
+ */
 const TRANSPORT_LABELS: Record<string, string> = {
   extension: 'Browser Extension',
   extensionMobile: 'Extension + Mobile',
   mobile: 'Mobile wallet',
-  popup: 'Popup / Remote',
-  scan: 'Scan to connect',
-  enterprise: 'Enterprise',
+  popup: 'Opens in a popup — nothing to install',
+  scan: 'Scan to connect — nothing to install',
+  enterprise: 'Enterprise — configured by this app',
 };
 
 function getWalletTransportLabel(wallet: WalletInfo): string {

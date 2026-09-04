@@ -81,14 +81,13 @@ describe('LoopAdapter', () => {
     // the BROWSER path (an unconditional `installed: true`, defect D1) had no
     // coverage at all. The SSR case now lives in loop-adapter.ssr.test.ts with
     // its own pinned environment; this asserts what happens in a real page.
-    it('reports installed in a browser - currently unconditional (see D1)', async () => {
+    it('reports no-local-install: a QR wallet has nothing to install', async () => {
       const result = await adapter.detectInstalled();
       expect(typeof window).not.toBe('undefined'); // the environment is the fixture
-      // NOTE: documents PRESENT behaviour, not desired. Loop is a QR/WebSocket
-      // wallet with nothing local to detect and answers true for any browser.
-      // Changing that is D1's job; this exists so the change is visible when it
-      // happens rather than silently absent, as it was before.
-      expect(result.installed).toBe(true);
+      // Was `installed: true` — the D1 defect, which put a ready-looking tile in
+      // the picker for a wallet reached by scanning a QR with a phone.
+      expect(result.availability?.kind).toBe('no-local-install');
+      expect(result.installed).toBe(false);
     });
   });
 
