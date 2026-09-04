@@ -17,7 +17,6 @@ import {
 import { UnauthorizedError, PaymentRequiredError, RequestTimeoutError } from '@fivenorth/loop-sdk';
 
 // Check if we're in a browser environment
-const isBrowser = typeof window !== 'undefined';
 
 function createMockContext(): AdapterContext {
   return {
@@ -76,12 +75,20 @@ describe('LoopAdapter', () => {
   });
 
   describe('detectInstalled', () => {
-    it('should return false in Node.js environment (no browser)', async () => {
+    // CORRECTED. This was the only detectInstalled test Loop had, and its
+    // assertions sat inside an environment conditional. Under the old node
+    // environment that branch ran, but it only ever covered the SSR guard, so
+    // the BROWSER path (an unconditional `installed: true`, defect D1) had no
+    // coverage at all. The SSR case now lives in loop-adapter.ssr.test.ts with
+    // its own pinned environment; this asserts what happens in a real page.
+    it('reports installed in a browser - currently unconditional (see D1)', async () => {
       const result = await adapter.detectInstalled();
-      if (!isBrowser) {
-        expect(result.installed).toBe(false);
-        expect(result.reason).toBeDefined();
-      }
+      expect(typeof window).not.toBe('undefined'); // the environment is the fixture
+      // NOTE: documents PRESENT behaviour, not desired. Loop is a QR/WebSocket
+      // wallet with nothing local to detect and answers true for any browser.
+      // Changing that is D1's job; this exists so the change is visible when it
+      // happens rather than silently absent, as it was before.
+      expect(result.installed).toBe(true);
     });
   });
 
