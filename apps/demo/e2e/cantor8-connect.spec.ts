@@ -11,7 +11,6 @@ test.describe('Cantor8 Connect Flow', () => {
   // The SDK has no URL-param-based mechanism to inject mock wallet providers
   // for E2E testing. Re-enable when that infrastructure ships (similar in
   // shape to apps/demo/src/lib/canton-demo-adapter.ts but for cantor8/bron/loop).
-  // Tracked: see /tmp/mock-mode-investigation.md
   test.fixme('cantor8 connect with mock transport', async ({ page }) => {
     // Set mock mode
     await page.goto('/?mockWallets=1');

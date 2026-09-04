@@ -131,11 +131,27 @@ export default function RootLayout({
             • Local dev visitors who don't have a real Canton extension
               installed and want to exercise the connect flow
 
-          DEV-ONLY: the script is omitted from production builds so we
-          never inject a synthetic wallet into real users' window.canton
-          namespace. Production visitors see ONLY their installed
-          extensions (or none, with proper Install CTAs). Verified in
-          packages/react/src/native-readiness.test.ts (scenario K).
+          DEV-ONLY: the `process.env.NODE_ENV !== 'production'` guard below
+          omits the script from production builds, so we never inject a
+          synthetic wallet into real users' window.canton namespace.
+          Production visitors see ONLY their installed extensions (or none,
+          with proper Install CTAs).
+
+          NOT UNIT-TESTED, deliberately. This block previously claimed the
+          guard was verified by a named scenario in
+          packages/react/src/native-readiness.test.ts. No such scenario exists,
+          and nothing in that file mentions NODE_ENV. A comment citing a test
+          that does not exist is worse than no comment, because it reads as
+          verified.
+
+          A unit test here would assert `process.env.NODE_ENV !== 'production'`,
+          which tests Next's compile-time substitution rather than anything we
+          wrote — the guard is a static constant the bundler eliminates. The
+          only verification worth having is that the PRODUCTION BUNDLE contains
+          no reference to mock-cip0103-wallet.js, which is a build-output
+          assertion, not a unit test, and does not exist today. If that
+          assurance is wanted, it belongs in the gate beside the other
+          package-contents checks.
 
           A PLAIN synchronous script tag on purpose (not next/script
           beforeInteractive): in App Router dev mode, beforeInteractive is

@@ -172,8 +172,39 @@ module.exports = [
     // Compacting the guard to a single ternary then recovered 8 B on the sdk
     // entry and 10 B here.
     //
-    // Measured 44.04 kB after that compaction. 44.05 kB leaves ~10 B.
-    limit: '44.05 kB',
+    // Measured 44.04 kB after that compaction. 44.05 kB left ~10 B.
+    //
+    // MOVED ONCE FOR TWO CHANGES, DELIBERATELY. This raise covers BOTH the
+    // identity-bridge fix (D5) and the connect/capabilities schema work (D6).
+    //
+    // D5 was finished, green and ready to ship on its own. It was HELD and
+    // folded in here specifically to avoid a fourth isolated move on these
+    // budgets: D6 opens the registry schema and was going to move them anyway,
+    // so one raise with one argument beats two of each in adjacent pull
+    // requests. That restraint is recorded because the record otherwise shows
+    // only that the budget moved again, which is the opposite of what happened.
+    //
+    // What the bytes are, in both cases identity and schema plumbing rather than
+    // features:
+    //   - D5: `matchKnownByIdentity`, a `.find` matching a resolved provider id
+    //     against a wallet id and its declared injection global, so a known
+    //     wallet is not minted a SECOND picker row. Observed twice — Nightly
+    //     against the real extension, and the demo's own wallet, whose twin
+    //     connected to the same provider when clicked.
+    //   - D6: the `connect` field read at the top of the transport classifier,
+    //     and four capabilities (`transfer`, `ledgerApi`, `popup`, `restore`)
+    //     the registry previously could not express at all — which is why
+    //     `requiredCapabilities: ['transfer']` matched zero wallets while every
+    //     adapter implemented it.
+    //
+    // Compactions measured and kept: the D5 helper reduced to one expression
+    // (-5 B), and the four capability branches replaced by a table (-8 B here,
+    // -4 B on the sdk entry). No unrelated hunt: paying for a correctness fix
+    // with an optimisation elsewhere is the trade rejected on the error
+    // classifier, and it stays rejected.
+    //
+    // Measured 44.18 kB. 44.25 kB leaves ~70 B.
+    limit: '44.25 kB',
   },
   {
     name: 'react-native: ui (ConnectButton)',
@@ -249,7 +280,38 @@ module.exports = [
     // Compacting the guard to a single ternary then recovered 8 B on the sdk
     // entry and 10 B here.
     //
-    // Measured 43.82 kB. 43.85 kB leaves ~30 B.
+    // Measured 43.82 kB. 43.85 kB left ~30 B.
+    //
+    // MOVED ONCE FOR TWO CHANGES, DELIBERATELY. This raise covers BOTH the
+    // identity-bridge fix (D5) and the connect/capabilities schema work (D6).
+    //
+    // D5 was finished, green and ready to ship on its own. It was HELD and
+    // folded in here specifically to avoid a fourth isolated move on these
+    // budgets: D6 opens the registry schema and was going to move them anyway,
+    // so one raise with one argument beats two of each in adjacent pull
+    // requests. That restraint is recorded because the record otherwise shows
+    // only that the budget moved again, which is the opposite of what happened.
+    //
+    // What the bytes are, in both cases identity and schema plumbing rather than
+    // features:
+    //   - D5: `matchKnownByIdentity`, a `.find` matching a resolved provider id
+    //     against a wallet id and its declared injection global, so a known
+    //     wallet is not minted a SECOND picker row. Observed twice — Nightly
+    //     against the real extension, and the demo's own wallet, whose twin
+    //     connected to the same provider when clicked.
+    //   - D6: the `connect` field read at the top of the transport classifier,
+    //     and four capabilities (`transfer`, `ledgerApi`, `popup`, `restore`)
+    //     the registry previously could not express at all — which is why
+    //     `requiredCapabilities: ['transfer']` matched zero wallets while every
+    //     adapter implemented it.
+    //
+    // Compactions measured and kept: the D5 helper reduced to one expression
+    // (-5 B), and the four capability branches replaced by a table (-8 B here,
+    // -4 B on the sdk entry). No unrelated hunt: paying for a correctness fix
+    // with an optimisation elsewhere is the trade rejected on the error
+    // classifier, and it stays rejected.
+    //
+    // Measured 43.96 kB. 44 kB leaves ~40 B.
     //
     // MOVED A THIRD TIME, for the error classifier. This one is a correctness
     // fix, not a feature, and that distinction is the whole reason it was
@@ -288,6 +350,6 @@ module.exports = [
     // should be held to a harder standard than this one was.
     //
     // Measured 43.75 kB after the four passes above. 43.8 kB leaves ~50 B.
-    limit: '43.85 kB',
+    limit: '44 kB',
   },
 ];
