@@ -470,6 +470,10 @@ export function registryEntryToWalletInfo(
     },
     docs: entry.homepage ? [entry.homepage] : [],
     minSdkVersion: entry.sdkVersion,
+    // KNOWN OPEN DEFECT — see `docs/open-findings.md` #1. This is populated and
+    // read by nothing: `WalletInfo.networks` has zero consumers across sdk,
+    // react and core, so a mainnet-only wallet is offered on a devnet picker.
+    // Open pending a decision about whether the picker or the app filters.
     networks: entry.supportedNetworks,
     channel,
     // Adapter metadata is exposed to the picker via WalletInfo.metadata

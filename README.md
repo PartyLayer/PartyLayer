@@ -835,6 +835,7 @@ PartyLayer exports typed error classes. Use `try-catch` with `instanceof` checks
 
 ## Documentation
 
+- [Open findings](./docs/open-findings.md) - verified defects that are not fixed and not scheduled
 - [Quick Start Guide](./docs/quick-start.md)
 - [Dev and Staging guide](./docs/dev-and-staging.md) - From zero to a working integration
 - [PartyLayer and Canton Topology](./docs/partylayer-and-canton-topology.md) - Where your DARs go

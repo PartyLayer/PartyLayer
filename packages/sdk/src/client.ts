@@ -701,7 +701,23 @@ export class PartyLayerClient {
             } catch {
               // Registry lookup failed — leave as-is (the base entry still lists it).
             }
-            continue; // known wallet → existing entry; no dynamic dup entry
+            // Known wallet → its existing entry serves it; no dynamic dup entry.
+            //
+            // KNOWN OPEN DEFECT — see `docs/open-findings.md` #4. The resolved
+            // `d.provider` and `d.id` are dropped here, and the registered
+            // adapter re-acquires a provider by its own means. Those means
+            // differ: Send listens for announce itself and re-derives the same
+            // target (a duplicate wait, otherwise correct), while Nightly and
+            // Console read injected globals and never touch the announce
+            // channel. So presence can be proven on one channel while connect is
+            // attempted on another.
+            //
+            // The skip itself is RIGHT — removing it reinstates the duplicate
+            // picker row #330 fixed. The defect is that nothing hands the
+            // resolved provider to the adapter, which needs a contract change.
+            // Trigger to watch for: a wallet that announces without injecting
+            // appears in the picker and fails to connect.
+            continue;
           }
 
           // Unknown announced wallet → dynamic, target-scoped entry + adapter.
