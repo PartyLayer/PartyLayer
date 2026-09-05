@@ -12,16 +12,21 @@ in two shapes:
     connected to the same provider when clicked;
   - an ANNOUNCE carrying a known registry id — the shape reported for Nightly.
 
-The second is SURFACE-DEPENDENT: it needs something to answer
-`canton:requestProvider` with the wallet's id, which an announce-comparison page
-elicited and which the kit demo never does. That is why it appeared on one
-surface and not another, and why "it does not reproduce" was the wrong
-conclusion — it reproduces on a surface that asks for announces.
+The second is SURFACE-DEPENDENT: the trigger is dispatching
+`canton:requestProvider`, which is ordinary announce discovery. Most dApps do it;
+our kit demo happens not to, which is the only reason it showed one row there.
+That is why "it does not reproduce" was the wrong conclusion.
 
-Both shapes are covered by a test that fails without the fix. What is NOT
-established is whether the real Nightly extension is what announced: it speaks a
-non-CIP-0103 callback protocol and should not announce at all, yet something
-answered on that machine. The announce is simulated in the test.
+NIGHTLY ANNOUNCES, observed on a real browser with the extension installed:
+`{ id: 'nightly', name: 'Nightly', target: 'nightly', icon: … }`. It does BOTH —
+speaks its non-CIP-0103 callback protocol AND announces — which is why an earlier
+survey that classified it by protocol concluded it does not.
+
+Console and Send announce too and do NOT duplicate, because their registry
+entries carry `providerDetection`. THAT IS WHAT THIS FALLBACK IS FOR: the other
+seven wallets, whose matchers have not been observed and are therefore absent.
+
+Both shapes are covered by a test that fails without the fix.
 
 The identity guard was not the gap. It drops entries whose identity did NOT
 resolve — an identity-less `window.canton` slot — and correctly lets a resolved

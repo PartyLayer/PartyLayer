@@ -57,7 +57,7 @@ rediscover as a surprise. Measured from shipped source:
 | Adapter | Evidence it probes | Answers |
 |---|---|---|
 | `console` | postMessage probe to the extension | `installed` / `not-installed` / `unknown` |
-| `nightly` | `window.nightly?.canton` | `installed` / `not-installed` |
+| `nightly` | `window.nightly?.canton` — **and it announces**, see below | `installed` / `not-installed` |
 | `send` | `canton:announceProvider` + `window.canton` | `installed` / `not-installed` |
 | `GenericAnnounceAdapter` | presence by construction — it only exists if an announce arrived | `installed` |
 | `loop` | **nothing** — QR + WebSocket | `no-local-install` |
@@ -80,6 +80,38 @@ constants. `GenericDiscoveryAdapter` therefore does **not** call them and derive
 the answer from the registry's `discovery-adapter` transport instead — see
 `GenericDiscoveryAdapter.detectInstalled`, which is the single place that rule is
 applied.
+
+##### Correction: Nightly does BOTH
+
+An earlier survey classified Nightly by its wire protocol — a non-CIP-0103
+callback interface at `window.nightly.canton` — and concluded from that it does
+not participate in `canton:announceProvider` discovery. **That was wrong.**
+
+Observed on a real browser with the extension installed, by dispatching
+`canton:requestProvider` and listening for replies:
+
+```
+{ id: 'nightly', name: 'Nightly', target: 'nightly', icon: 'data:image/svg+xml;base64,…' }
+```
+
+Nightly injects **and** announces. The lesson generalises past this one wallet:
+**how a wallet is DISCOVERED is independent of the protocol it speaks once
+connected**, and inferring one from the other produces confident wrong answers.
+That independence is why `connect` is its own registry field rather than being
+derived from anything else.
+
+The practical consequence is a duplicate picker row. An announce carrying a
+wallet's id is bridged back to its registry entry by `providerDetection` — which
+Console and Send carry, and which is why they announce without duplicating.
+Nightly has none, so nothing mapped its announce back to its entry and a
+`browser:ext:nightly` twin was minted beside it. The identity-bridge fallback in
+`aggregateAnnouncedWallets` covers exactly that gap: the **seven** wallets whose
+`providerDetection` matchers have not been observed and are therefore absent.
+
+It is also surface-dependent, which raises rather than lowers its severity: the
+trigger is dispatching `canton:requestProvider`, which is ordinary announce
+discovery. Most dApps do it. Our kit demo happens not to, which is the only
+reason the duplicate is invisible there.
 
 ##### Known mismatch: Cantor8 classifies as `scan` but opens a tab
 

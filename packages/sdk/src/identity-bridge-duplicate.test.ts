@@ -84,12 +84,27 @@ describe('D5: the identity bridge must not mint a twin', () => {
   });
 
   it('does not add a browser:ext row for a provider ANNOUNCING a known registry id', async () => {
-    // The second observed shape, and the one originally reported as "Nightly
-    // appears twice". It is SURFACE-DEPENDENT: it needs something to announce
-    // on the wallet's id, which the announce-comparison page elicited by
-    // dispatching `canton:requestProvider`, and which kit-demo does not do. The
+    // The second observed shape, and the one reported as "Nightly appears twice".
+    //
+    // NIGHTLY ANNOUNCES. Observed on a real browser with the extension installed:
+    // dispatching `canton:requestProvider` gets back
+    // `{ id: 'nightly', name: 'Nightly', target: 'nightly', icon: … }`. It does
+    // BOTH — speaks its non-CIP-0103 callback protocol AND announces — which is
+    // why an earlier survey that classified it by protocol concluded it does not.
+    //
+    // SURFACE-DEPENDENT: the trigger is dispatching `canton:requestProvider`,
+    // which is ordinary announce discovery. Most dApps do it; our kit demo
+    // happens not to, which is the only reason it showed one row there. The
     // registry row and the announced provider then describe the same wallet and
     // nothing maps one to the other.
+    //
+    // Console and Send announce too and do NOT duplicate, because their registry
+    // entries carry `providerDetection` and `findMatchingWalletInfo` bridges them.
+    // This fallback exists for the other seven, whose matchers have not been
+    // observed and so are absent.
+    //
+    // The announce below is simulated, as a matter of test construction; the
+    // shape it reproduces is attributable to Nightly from that live observation.
     const announce = () =>
       window.dispatchEvent(
         new CustomEvent('canton:announceProvider', {
