@@ -51,7 +51,12 @@ sleep 2
 echo ""
 echo "[2/4] Starting demo app (REAL mode)..."
 cd apps/demo
-unset NEXT_PUBLIC_MOCK_WALLETS
+# REAL mode comes from the PRODUCTION build below, not from any variable. The
+# demo's mock wallet is a provider fixture (public/mock-cip0103-wallet.js) whose
+# script tag is gated on `NODE_ENV !== 'production'`, so `pnpm build && pnpm start`
+# is what removes it. There used to be an `unset NEXT_PUBLIC_MOCK_WALLETS` here;
+# it read as the safety step and was doing nothing, since no product code has ever
+# read that variable.
 pnpm build
 pnpm start > "$ARTIFACTS_DIR/demo-app.log" 2>&1 &
 DEMO_PID=$!
@@ -74,7 +79,10 @@ read -p "Press Enter when you've completed the wallet connections..."
 echo ""
 echo "[4/4] Running E2E tests..."
 cd apps/demo
-unset NEXT_PUBLIC_MOCK_WALLETS
+# Playwright reuses the already-running production server here
+# (`reuseExistingServer: !process.env.CI`), which is what keeps this step in real
+# mode. If that server is not up, Playwright starts `pnpm dev` instead and the
+# fixture comes back — so check the port before trusting a run.
 pnpm test:e2e --reporter=html --output-dir="$ARTIFACTS_DIR/playwright-report" || true
 cd "$ROOT"
 

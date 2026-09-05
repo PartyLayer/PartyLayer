@@ -17,10 +17,12 @@ import { join } from 'path';
 const REGISTRY_DIR = join(process.cwd(), '../../registry');
 
 test.describe('Security Tests', () => {
-  test.beforeEach(async () => {
-    // Ensure we're in mock mode for deterministic tests
-    process.env.NEXT_PUBLIC_MOCK_WALLETS = '1';
-  });
+  // There used to be a beforeEach here setting NEXT_PUBLIC_MOCK_WALLETS='1'
+  // "to ensure we're in mock mode". It did nothing twice over: no product code
+  // reads that variable, and it was assigned in the Playwright process after the
+  // dev server had already started, so it could not have reached the app even if
+  // something read it. Mock mode comes from the provider fixture
+  // (apps/demo/public/mock-cip0103-wallet.js), gated on NODE_ENV.
 
   test.describe('Registry Security', () => {
     test('registry tamper detection -> fallback to cached LKG', async ({ page }) => {
@@ -71,10 +73,22 @@ test.describe('Security Tests', () => {
       // This is tested in unit tests; E2E verifies error displays correctly
     });
 
-    // FIXME: Depends on ?mockWallets=1 SDK switch which is not yet implemented.
-    // The SDK has no URL-param-based mechanism to inject mock wallet providers
-    // for E2E testing. Re-enable when that infrastructure ships (similar in
-    // shape to apps/demo/src/lib/canton-demo-adapter.ts but for cantor8/bron/loop).
+    // DISABLED, and the stated reason was wrong. The old comment here said this
+    // depended on a `?mockWallets=1` SDK switch "not yet implemented", implying
+    // something still to come. What actually happened: adapters accepted a
+    // `useMockTransport` flag, `703a645` (the Cantor8 rebuild on its real SDK)
+    // removed it, and the tests that depended on it were left switched off. Nobody
+    // connected the removal to the tests that needed it, so they read for months as
+    // waiting on future work rather than as casualties of a past change.
+    //
+    // Neither switch exists now: `?mockWallets=1` never did, and
+    // NEXT_PUBLIC_MOCK_WALLETS is read by no product code (it was set in six places
+    // and read in none until that was swept).
+    //
+    // What DOES work is a provider fixture at the boundary:
+    // apps/demo/public/mock-cip0103-wallet.js assigns a real CIP-0103 provider to
+    // window.canton.demoWallet before hydration, and CantonDemoWalletAdapter sits
+    // over it. Rewrite against that shape, not against a flag.
     test.fixme('callback origin spoof -> reject', async ({ page }) => {
       // Test that postMessage from wrong origin is rejected
       await page.goto('/?mockWallets=1');
@@ -115,10 +129,22 @@ test.describe('Security Tests', () => {
   });
 
   test.describe('Token Storage Security', () => {
-    // FIXME: Depends on ?mockWallets=1 SDK switch which is not yet implemented.
-    // The SDK has no URL-param-based mechanism to inject mock wallet providers
-    // for E2E testing. Re-enable when that infrastructure ships (similar in
-    // shape to apps/demo/src/lib/canton-demo-adapter.ts but for cantor8/bron/loop).
+    // DISABLED, and the stated reason was wrong. The old comment here said this
+    // depended on a `?mockWallets=1` SDK switch "not yet implemented", implying
+    // something still to come. What actually happened: adapters accepted a
+    // `useMockTransport` flag, `703a645` (the Cantor8 rebuild on its real SDK)
+    // removed it, and the tests that depended on it were left switched off. Nobody
+    // connected the removal to the tests that needed it, so they read for months as
+    // waiting on future work rather than as casualties of a past change.
+    //
+    // Neither switch exists now: `?mockWallets=1` never did, and
+    // NEXT_PUBLIC_MOCK_WALLETS is read by no product code (it was set in six places
+    // and read in none until that was swept).
+    //
+    // What DOES work is a provider fixture at the boundary:
+    // apps/demo/public/mock-cip0103-wallet.js assigns a real CIP-0103 provider to
+    // window.canton.demoWallet before hydration, and CantonDemoWalletAdapter sits
+    // over it. Rewrite against that shape, not against a flag.
     test.fixme('Bron tokens not persisted by default', async ({ page, context }) => {
       // Test that Bron access tokens are not persisted unless opt-in
       await page.goto('/?mockWallets=1');
