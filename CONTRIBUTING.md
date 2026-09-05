@@ -820,6 +820,47 @@ them apart, and it is cheap.
 
 ---
 
+#### A red signal with no reader is not a signal
+
+Nightly Assurance failed 38 consecutive nights — 2026-07-30 to 2026-09-05 — on a
+single deterministic assertion, and nobody looked. The failure was not subtle;
+the *reporting* was absent. Four independent reasons, each on its own sufficient:
+
+- It is not a required check, and cannot be. Branch protection lists
+  `build-and-test` and `pnpm gate`, and a `schedule` run has no pull request to
+  attach to.
+- Its check-run lands on whatever sha `main` had at 03:17 UTC — a commit nobody
+  revisits. After a merge, "is main green?" asks about the *new* head, where the
+  nightly has not run at all. So the answer was routinely "green" while a job was
+  failing.
+- The legacy combined-status rollup on such a sha reads `success`, because the
+  only contexts writing statuses are the deploy previews. The failure existed
+  solely as a check-run.
+- The workflow had no failure handling of any kind.
+
+The lesson generalises past this one workflow: **any job that can fail where no
+pull request will show it needs somewhere for the failure to land.** A louder red
+X is not that place, because the problem was never brightness — it was that the
+surface is one nobody visits. A durable artefact in a place people already look
+is: an open issue, a tracked alert, a dashboard someone owns.
+
+`.github/workflows/nightly.yml` now ends in a `failure-sink` job that maintains
+exactly one tracking issue, and the reasoning for its shape is worth copying:
+create on first failure (creation notifies), rewrite the body on later failures
+(edits do not, so a long outage cannot spam a channel into being muted), comment
+only when the *set* of failing jobs changes (that is new information), and close
+automatically when a run is green. Its body carries a consecutive-night counter
+on purpose: "nightly is failing" is easy to skim past, and "failing for 38
+nights" is not.
+
+Two things that made it real rather than decorative. The sink's logic lives in a
+checked-in `.cjs` file with unit tests wired into `pnpm gate`, because code that
+only ever executes inside a scheduled Actions job would otherwise first run on
+the night it is needed. And a permissions refusal calls `core.setFailed` with the
+setting to change, rather than returning quietly — the repository's default
+workflow token is read-only, so a sink that swallowed a 403 would reproduce the
+exact bug it was built to end.
+
 ## Documentation
 
 ### Updating Documentation
