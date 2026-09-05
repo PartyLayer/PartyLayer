@@ -256,3 +256,61 @@ jobs:
           echo "multi-tab, sign-and-bridge, theme, and the 4 security tests. The" >> $GITHUB_STEP_SUMMARY
           echo "per-PR gate runs only the fast/stable subset (smoke + connect +" >> $GITHUB_STEP_SUMMARY
           echo "security) — heavier/flakier specs are quarantined to nightly." >> $GITHUB_STEP_SUMMARY
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # FAILURE SINK (institutional note)
+  #
+  # This workflow failed 38 consecutive nights (2026-07-30 .. 2026-09-05) on one
+  # stale assertion, and nobody noticed. Not because the signal was subtle — it
+  # was a hard, deterministic, single-test failure — but because a SCHEDULED
+  # workflow has nowhere to surface:
+  #
+  #   * It is not a required check, and cannot be: branch protection lists
+  #     `build-and-test` and `pnpm gate`, and a `schedule` run has no PR context.
+  #   * Its check-run attaches to whatever sha main happened to have at 03:17 UTC
+  #     — a commit nobody revisits. After a merge, "is main green?" asks about the
+  #     NEW head, where the nightly has not run at all.
+  #   * The legacy combined-status rollup on such a sha reads `success`, because
+  #     the only contexts writing statuses are the deploy previews. The failure
+  #     exists solely as a check-run.
+  #   * The workflow had no failure handling of any kind.
+  #
+  # So the fix is not a louder red X — it is a durable artefact that lives where
+  # people already look: an open issue. One issue, reused. It is opened on the
+  # first failure (which notifies), its body is refreshed every night (which does
+  # not, so a long outage cannot spam), a comment is posted only when the SET of
+  # failing jobs changes (that is new information), and it closes itself when a
+  # run is fully green.
+  #
+  # The body carries a consecutive-night counter on purpose. "Failing" is easy to
+  # skim past; "failing for 38 nights" is not, and that number is precisely the
+  # one whose absence let this sit.
+  # ─────────────────────────────────────────────────────────────────────────────
+  failure-sink:
+    name: Failure sink (tracking issue)
+    needs: [gate-main, npm-consumer-canary, session-persistence-e2e, mock-e2e]
+    # `always()` so the sink runs whether the nightly passed (to close a stale
+    # issue) or failed (to open one). Without it this job would be skipped on the
+    # exact runs it exists for.
+    if: always()
+    runs-on: ubuntu-latest
+    permissions:
+      # Least privilege: the sink only ever touches issues. Scoped to this job so
+      # the build jobs above keep the repository default.
+      issues: write
+    steps:
+      # The sink's logic lives in a checked-in .cjs file rather than inline YAML
+      # so it can be read, linted, and unit-tested like code. That needs the repo
+      # on disk, hence the checkout in an otherwise build-free job.
+      - uses: actions/checkout@v4
+      - name: Open, update, or close the nightly tracking issue
+        uses: actions/github-script@v7
+        env:
+          R_GATE: ${{ needs.gate-main.result }}
+          R_CANARY: ${{ needs.npm-consumer-canary.result }}
+          R_SESSION: ${{ needs.session-persistence-e2e.result }}
+          R_MOCK: ${{ needs.mock-e2e.result }}
+        with:
+          script: |
+            const script = require('.github/scripts/nightly-failure-sink.cjs');
+            await script({ github, context, core });
