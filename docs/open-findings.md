@@ -75,6 +75,51 @@ one of them is fixed.
 **What would close it** is the adapter deriving its capabilities from the same
 source the picker reads, rather than returning a constant.
 
+## 4. Presence is established on one channel, connect is attempted on another
+
+**Reproduces** on `55ff8d1` as a code path; **no failure is observable today**,
+for the reason in the trigger below.
+
+This was tracked all session as "the `continue` discards resolved announce
+targets". That label was wrong, and it is renamed here because the old name
+described the mechanism and hid the consequence. Nothing is lost by discarding
+the target — what is wrong is that the picker and the connect path can be reading
+different channels.
+
+**What happens.** In `listWallets` (`packages/sdk/src/client.ts`), an announced
+provider that matches a KNOWN wallet takes `continue` — correctly, since the
+registry entry already lists it and a second entry would be a duplicate row. The
+resolved `d.provider` and `d.id` are dropped at that point. The registered
+adapter then obtains a provider by its own means, and the means differ:
+
+| Adapter | How it reaches its provider | Effect |
+| --- | --- | --- |
+| **Nightly** | reads `window.nightly.canton`, an injected global | announce proves presence, connect uses a different channel |
+| **Console** | does not listen for announce either | same divergence |
+| **Send** | listens for announce ITSELF (`waitForProvider`) and binds `{ target: match.id }` | unaffected — it re-derives exactly what was discarded, at the cost of a duplicate wait |
+
+So Send pays a latency cost and is otherwise correct. Nightly and Console are the
+two where the evidence and the action come from different places.
+
+**The trigger, for whoever hits this.** A wallet that ANNOUNCES BUT DOES NOT
+INJECT will appear in the picker and then fail to connect. The picker believed it
+because the announce event arrived; the adapter then looked for a window global
+that was never set. If you are debugging a wallet that is visible, clickable, and
+throws "not found" or "not installed" on connect — while you can see its announce
+event in the console — this entry is your defect.
+
+It does not reproduce today only because both extensions currently do inject. That
+is a property of two shipped extensions, not of our code, and it can change
+without us being told.
+
+**What would close it** is handing the already-resolved provider to the
+registered adapter instead of letting it re-acquire one. There is no way to do
+that without changing the adapter contract — adapters have no channel to receive a
+live provider — which makes this the HEAVIEST of the defects found in this batch,
+not the lightest its old name suggested. That is why it is recorded rather than
+fixed: a contract change is not justified by a failure nobody can currently
+produce, but the moment one is produced, this is the shape of the fix.
+
 ---
 
 ## Recently closed, for contrast
