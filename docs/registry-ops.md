@@ -17,6 +17,39 @@ This guide covers how to safely update, promote, and rollback the wallet registr
    pnpm build
    ```
 
+
+## `ERR_ABORTED` on registry.json in the console is not a failed fetch
+
+In development you will see one or two aborted requests for
+`/v1/<channel>/registry.json` in the browser console:
+
+```
+GET .../registry/v1/stable/registry.json   net::ERR_ABORTED
+```
+
+**This is React StrictMode double-mounting**, not a broken registry. StrictMode
+mounts every component twice in dev; the first mount's in-flight fetch is
+aborted when it unmounts, and the second one completes. The registry loads fine —
+the wallet list renders, and the same page served over `curl` returns HTTP 200
+with the full document.
+
+It is called out here because it reads exactly like a failed network request to
+anyone scanning a console, and time has been lost to it. Two checks settle it in
+seconds:
+
+```bash
+curl -s -o /dev/null -w '%{http_code} %{size_download}\n' \
+  http://localhost:3000/registry/v1/stable/registry.json      # expect: 200 10330
+```
+
+and: does the picker actually list wallets? If it does, the registry loaded.
+
+A genuinely broken registry fetch looks different — `RegistryFetchFailedError`
+surfaced through the SDK, an empty or fallback wallet list, and a non-200 status
+on that URL. Production builds do not run StrictMode, so this does not appear
+there at all.
+
+
 ## Common Operations
 
 Wallet logos live in `registry/wallets/`; see [registry/wallets/NOTICE.md](../registry/wallets/NOTICE.md) for the trademark notice that covers those marks.

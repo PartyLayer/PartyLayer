@@ -265,6 +265,15 @@ const TRANSPORT_LABELS: Record<string, string> = {
   extensionMobile: 'Extension + Mobile',
   mobile: 'Mobile wallet',
   popup: 'Opens in a popup — nothing to install',
+  // `relay` is Loop AND WalletConnect: a QR scanned by a phone app, and a
+  // mobile pairing. One label covers both because the axis is WHERE THE
+  // CONNECTION HAPPENS, not what the UI looks like. If a future wallet makes
+  // this read badly, the fix is not a fourth label — it is that the wallet's
+  // `connect` value is wrong.
+  relay: 'Connect from another device — nothing to install',
+  // Retained for registry entries that have not declared `connect` yet. `scan`
+  // was derived from `scriptTag`, which says how the SDK is LOADED, so it
+  // mislabelled Cantor8 — script-loaded, but it opens a popup.
   scan: 'Scan to connect — nothing to install',
   enterprise: 'Enterprise — configured by this app',
 };

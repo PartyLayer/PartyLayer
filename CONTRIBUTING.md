@@ -535,6 +535,38 @@ already written, somewhere, in a form nobody has pictured yet — which is the
 argument for handing the enumeration to something that does not have to picture
 it.
 
+#### A citation that cannot be followed reads as verified
+
+A comment pointing at a file, test or scenario that does not exist is worse than
+no comment: it carries the authority of a reference while proving nothing. One
+was found claiming a dev-only guard was "verified in
+packages/react/src/native-readiness.test.ts (scenario K)". There is no scenario
+K, and nothing in that file mentions the guard.
+
+An audit of 659 source files found **166 in-repo path citations inside comments,
+40 of which pointed at nothing.** Three kinds, handled differently:
+
+- **Dead pointers to scratch files** — four comments cited a `/tmp/` markdown
+  file that existed only on one machine. Removed; the explanations above them
+  stood on their own without the pointer.
+- **Provenance to deleted code** — twelve section dividers cited paths in a
+  marketing app that no longer exists. Reworded to past tense with the paths
+  dropped, plus one note explaining what happened to it. The attribution is
+  worth keeping; the unfollowable path is not.
+- **Near-misses** — roughly two dozen write `core/adapters.ts` for
+  `packages/core/src/adapters.ts`, or `provider/bridge.ts`. **Left alone
+  deliberately.** A reader resolves them in seconds, they are unambiguous in
+  context, and rewriting two dozen paths by hand is churn with a real chance of
+  introducing a path that is wrong rather than merely short.
+
+**On measuring this: the first scanner reported 21, and it could not see the
+case that prompted the audit.** It filtered to lines starting with `//` or `*`,
+which misses JSX `{/* … */}` blocks entirely — continuation lines inside them
+carry no marker, and that is exactly where the phantom citation lived. Rewritten
+with a real block-comment parser, the count went from 21 to 40. If you audit
+comments, parse comments; do not pattern-match the lines you expect them to
+start with.
+
 #### A run that ends without a verdict is not a pass
 
 Check for the verdict line, not for the absence of red. A command that was

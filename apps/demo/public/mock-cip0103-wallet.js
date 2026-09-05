@@ -95,7 +95,20 @@
       case 'status':
         return Promise.resolve({
           provider: {
-            id: 'Canton Demo Wallet',
+            // The wallet's IDENTITY, and it must match the id its adapter
+            // registers under ('canton-demo' in canton-demo-adapter.ts). This
+            // said 'Canton Demo Wallet' — a display NAME — so the fixture
+            // carried two identities and the picker listed it twice: once as
+            // the registered adapter, once as a synthesized unknown wallet
+            // whose click connected to this same provider.
+            //
+            // No real wallet does that. Nightly reports 'nightly'; Console and
+            // Send report ids their registry entries match on. A fixture that
+            // misbehaves in a way reality does not teaches the wrong lesson to
+            // whoever reads it next — here it argued for matching wallets by
+            // display name, which would silently bridge any two wallets that
+            // called themselves the same thing.
+            id: 'canton-demo',
             version: '1.0.0',
             providerType: 'browser-extension',
           },

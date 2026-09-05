@@ -170,6 +170,42 @@ interface ConnectPlan {
  * Two minutes because QR-code and popup wallets need the user to pick up a
  * phone, unlock it and scan.
  */
+/**
+ * Second pass of the identity bridge: match a RESOLVED provider id against the
+ * identity fields a wallet already carries.
+ *
+ * `findMatchingWalletInfo` consults only `providerDetection`, and most wallets
+ * have none — 8 of 10 registry entries lack it, and a registered adapter never
+ * has one at all. So a provider whose identity resolved perfectly well would
+ * fail to match the wallet already in the list, and the caller would mint a
+ * SECOND row for it. Observed twice: Nightly against the real extension, and
+ * the demo's own test wallet, whose twin connected to the same provider when
+ * clicked.
+ *
+ * IDENTITY FIELDS ONLY — the wallet id and the declared injection global.
+ *
+ * NOT the display name, deliberately, however tempting it looks when a fixture
+ * happens to need it: names are localisable, vendor-changeable and collidable,
+ * and two wallets both calling themselves "Canton Wallet" would silently bridge
+ * to each other. Matching identities by their prose is the same mistake that
+ * made every wallet-side refusal look like a user cancelling, removed from the
+ * error classifier in #326; it does not get to come back in here.
+ */
+function matchKnownByIdentity(
+  providerId: string,
+  base: WalletInfo[],
+): WalletInfo | undefined {
+  // `window.nightly` resolves as `nightly`; `window.nightly.canton` as
+  // `nightly.canton` — accept the global and providers nested under it.
+  return base.find((w) => {
+    const k = w.installHints?.injectedKey;
+    return (
+      providerId === String(w.walletId) ||
+      (!!k && (providerId === k || providerId.startsWith(`${k}.`)))
+    );
+  });
+}
+
 export const DEFAULT_CONNECT_TIMEOUT_MS = 120_000;
 
 export class PartyLayerClient {
@@ -591,12 +627,13 @@ export class PartyLayerClient {
           // the status() probe timing.
           if (d.identityResolved === false) continue;
           // Identity bridge: does a known wallet claim this provider id?
-          const known = findMatchingWalletInfo(
-            { provider: { id: d.id } } as unknown as Parameters<
-              typeof findMatchingWalletInfo
-            >[0],
-            base,
-          );
+          const known =
+            findMatchingWalletInfo(
+              { provider: { id: d.id } } as unknown as Parameters<
+                typeof findMatchingWalletInfo
+              >[0],
+              base,
+            ) ?? matchKnownByIdentity(d.id, base);
           if (known) {
             // A bespoke/registered adapter already represents this wallet (e.g.
             // Send) → unchanged: its existing entry + adapter serve it.

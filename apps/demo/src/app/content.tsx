@@ -10,7 +10,16 @@ import { buildDemoAdapters } from '../lib/canton-demo-adapter';
 import { sortByCanonicalOrder, CANONICAL_WALLET_ORDER } from '../lib/wallet-order';
 import { useBreakpoint, responsive } from './hooks/useBreakpoint';
 
-/* ─── Design Tokens (mirrored from apps/marketing/src/design/tokens.ts) ── */
+/*
+ * PROVENANCE. Sections below are marked "ported from the former marketing app".
+ * That app (apps/marketing) was removed when partylayer.xyz became this one, so
+ * the paths its dividers used to cite no longer resolve. The attributions are
+ * kept in past tense because they explain where this markup came from; the
+ * paths are gone because a citation that cannot be followed reads as verified
+ * when it is not.
+ */
+
+/* ─── Design Tokens (ported from the former marketing app) ────────────────── */
 
 const t = {
   bg: '#FFFFFF',
@@ -201,7 +210,7 @@ function GlobalStyles() {
   );
 }
 
-/* ─── Background (from apps/marketing/src/components/Background.tsx) ──── */
+/* ─── Background (ported from the former marketing app) ───────────────────── */
 
 function Background({ children }: { children: ReactNode }) {
   return (
@@ -244,7 +253,7 @@ function Background({ children }: { children: ReactNode }) {
   );
 }
 
-/* ─── Logo (from apps/marketing/src/components/Logo.tsx) ──────────────── */
+/* ─── Logo (ported from the former marketing app) ─────────────────────────── */
 
 function Logo({ size = 'md' }: { size?: 'sm' | 'md' | 'lg' }) {
   const sizeMap = {
@@ -384,7 +393,7 @@ function VerifiedBadge() {
   );
 }
 
-/* ─── Syntax Highlighting (from apps/marketing/src/components/CodeBlock.tsx) */
+/* ─── Syntax Highlighting (ported from the former marketing app) ──────────── */
 
 interface Token { value: string; color?: string }
 
@@ -485,7 +494,7 @@ const badge = {
  * the single source of truth for marks; the real SDK modal falls back to that
  * same registry icon when no `walletIcons` prop is given. */
 
-/* ─── Nav (from apps/marketing/src/components/Nav.tsx) ─────────────────── */
+/* ─── Nav (ported from the former marketing app) ──────────────────────────── */
 
 const navLinks: { label: string; href: string; badge?: string; external?: boolean }[] = [
   { label: 'Docs', href: '/docs' },
@@ -645,7 +654,7 @@ function Nav({ onConnect }: { onConnect: () => void }) {
   );
 }
 
-/* ─── Hero (from apps/marketing/src/components/sections/Hero.tsx) ──────── */
+/* ─── Hero (ported from the former marketing app) ─────────────────────────── */
 
 function Hero({ onConnect }: { onConnect: () => void }) {
   const bp = useBreakpoint();
@@ -1169,7 +1178,7 @@ function ArchitectureShowcase() {
   );
 }
 
-/* ─── ProofBar (from apps/marketing/src/components/sections/ProofBar.tsx) ─ */
+/* ─── ProofBar (ported from the former marketing app) ─────────────────────── */
 
 const proofItems = [
   {
@@ -1289,10 +1298,10 @@ function ProofBar() {
 }
 
 
-/* ─── How It Works (from apps/marketing/src/components/sections/HowItWorks.tsx) */
+/* ─── How It Works (ported from the former marketing app) ─────────────────── */
 
 
-/* ─── Wallet Grid (from apps/marketing/src/components/sections/WalletGrid.tsx) */
+/* ─── Wallet Grid (ported from the former marketing app) ──────────────────── */
 
 function WalletGrid() {
   const bp = useBreakpoint();
@@ -1362,7 +1371,7 @@ function WalletGrid() {
   );
 }
 
-/* ─── Developer Quickstart (from apps/marketing/src/components/sections/DeveloperQuickstart.tsx) */
+/* ─── Developer Quickstart (ported from the former marketing app) ─────────── */
 
 const codeTabs = [
   {
@@ -1611,7 +1620,7 @@ function DemoCTA({ onConnect }: { onConnect: () => void }) {
   );
 }
 
-/* ─── FAQ (from apps/marketing/src/components/sections/FAQ.tsx) ────────── */
+/* ─── FAQ (ported from the former marketing app) ──────────────────────────── */
 
 const faqItems = [
   {
@@ -1722,7 +1731,7 @@ function FAQ() {
   );
 }
 
-/* ─── Footer (from apps/marketing/src/components/sections/Footer.tsx) ──── */
+/* ─── Footer (ported from the former marketing app) ───────────────────────── */
 
 const footerLinks = [
   { label: 'Tokenization demo', href: 'https://tokenization.partylayer.xyz' },

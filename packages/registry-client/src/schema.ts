@@ -70,6 +70,24 @@ export interface RegistryWalletEntry {
      * `transactionStatus`, which previously — and incorrectly — implied events.)
      */
     events?: boolean;
+    /**
+     * Typed transfer intent: the WALLET builds, displays, approves, signs and
+     * executes a transfer and returns a real update id. Declared only by a
+     * wallet that does BOTH halves.
+     *
+     * These four were `CapabilityKey` values the registry had no field for, so
+     * `walletInfo.capabilities` could NEVER contain them, and
+     * `listWallets({ requiredCapabilities: ['transfer'] })` returned zero
+     * wallets for every wallet — while the adapters implemented `requestTransfer`
+     * and reported the capability. Two gates, contradictory sources.
+     */
+    transfer?: boolean;
+    /** Proxies CIP-0103 `ledgerApi` calls. */
+    ledgerApi?: boolean;
+    /** Connecting opens a window the caller must reach from a user gesture. */
+    popup?: boolean;
+    /** Can revive a persisted session without a fresh user approval. */
+    restore?: boolean;
   };
   /** Adapter configuration */
   adapter: {
@@ -101,11 +119,49 @@ export interface RegistryWalletEntry {
      */
     networkHosts?: NetworkHosts;
   };
+  /**
+   * HOW THIS WALLET CONNECTS. Its own axis, deliberately separate from how the
+   * wallet is DISCOVERED (`adapter.transport`) and how its SDK is LOADED
+   * (`installation.scriptTag`).
+   *
+   *   injected — a provider on a window global (send, nightly)
+   *   popup    — `window.open` to the wallet's own origin (cantor8, walley,
+   *              cauri, oneswap, bron)
+   *   relay    — no local window at all; the connection is established on
+   *              ANOTHER DEVICE over a socket or pairing relay (loop,
+   *              walletconnect)
+   *
+   * Those three questions used to share one derived value, which is how
+   * `scriptTag` came to mean "scan": it says how the SDK is loaded, and Loop
+   * scans a QR while Cantor8 opens a popup. Deriving a subtitle from it was
+   * therefore wrong for one of them whichever label was chosen.
+   *
+   * ORDER IS MEANINGFUL. The array is preference order: `connect[0]` is what
+   * the picker tries first, and `preferInstalled: false` — the modal's "Try
+   * mobile" affordance — advances to the next entry. Console is
+   * `['injected', 'relay']`: extension first, QR fallback. That preference is
+   * real and already wired; today it is hardcoded inside Console's adapter
+   * `combined` branch, and this field is where it belongs instead.
+   *
+   * IF YOU ARE READING THIS BECAUSE YOU FOUND MULTI-ENTRY ARRAYS AND NOTHING
+   * HONOURING THE ORDER: the reader was removed, and this field has started
+   * drifting the way `scriptTag` did. Restore a reader or collapse the arrays —
+   * do not leave order undefined and let the next person infer a meaning for it.
+   * A single-entry array is the common case and satisfies ordering trivially.
+   */
+  connect?: ('injected' | 'popup' | 'relay')[];
   /** Installation detection hints */
   installation?: {
     /** Check if wallet is installed via window property */
     windowProperty?: string;
-    /** Check if wallet is installed via script tag */
+    /**
+     * The npm package whose script tag loads this wallet's SDK.
+     *
+     * ANSWERS ONLY "how is the SDK loaded". It does NOT say how the wallet
+     * connects — see `connect` above. It was previously read as a connect
+     * signal (`scriptTag` present ⇒ "scan"), which mislabelled Cantor8, a
+     * script-loaded wallet that opens a popup rather than showing a QR.
+     */
     scriptTag?: string;
     /** Check if wallet is installed via browser extension */
     extensionId?: string;
@@ -305,6 +361,18 @@ export function validateWalletEntry(
  * picker can fall back to a safe generic rather than guessing.
  */
 function classifyWalletTransport(entry: RegistryWalletEntry): string | undefined {
+  // `connect` is authoritative when present: it is the field that answers this
+  // question. Order is preference order, so the FIRST entry is the primary shape
+  // the picker will try (see the `connect` docs on RegistryWalletEntry).
+  const declared = entry.connect?.[0];
+  if (declared === 'relay') return 'relay';
+  if (declared === 'popup') return 'popup';
+  if (declared === 'injected') {
+    return entry.installation?.deeplink || entry.capabilities.mobileConnect
+      ? 'extensionMobile'
+      : 'extension';
+  }
+
   const inst = entry.installation;
   // Popup/remote wallets are bridged through the generic discovery adapter
   // (e.g. Walley), so the adapter transport is the authoritative signal.
@@ -318,7 +386,10 @@ function classifyWalletTransport(entry: RegistryWalletEntry): string | undefined
   // WalletConnect: installation.remote + capabilities.mobileConnect).
   if (inst?.deeplink || entry.capabilities.mobileConnect) return 'mobile';
   // A script-injected SDK wallet connects by opening its own QR/popup flow.
-  if (inst?.scriptTag) return 'scan';
+  // `scriptTag` no longer answers this question — it says how the SDK is LOADED,
+  // and that is why Cantor8 (script-loaded, opens a popup) read as "scan". An
+  // entry that has not yet declared `connect` falls through to the remaining
+  // hints rather than guessing from the loader.
   if (entry.capabilities.remoteSigner) return 'enterprise';
   return undefined;
 }
@@ -342,6 +413,12 @@ export function registryEntryToWalletInfo(
   // provider events — NOT from `transactionStatus` (which only means the wallet
   // can report tx status). A wallet that can await a tx commit but never emits
   // events (e.g. Walley) no longer falsely claims the `events` capability.
+  // The four the registry could not express. A table rather than four branches:
+  // adding the fifth is a word, not a block, and it costs fewer bytes on the two
+  // budgets this conversion sits inside.
+  for (const k of ['transfer', 'ledgerApi', 'popup', 'restore'] as const) {
+    if (entry.capabilities[k]) capabilities.push(k);
+  }
   if (entry.capabilities.events) {
     capabilities.push('events');
   }
@@ -372,7 +449,19 @@ export function registryEntryToWalletInfo(
       ? {
           injectedKey: entry.installation.windowProperty,
           extensionId: entry.installation.extensionId,
-          deepLinkScheme: entry.installation.scriptTag,
+          // `deepLinkScheme` was assigned `installation.scriptTag` — an npm
+          // package name (`@fivenorth/loop-sdk`) in a field documented as a deep
+          // link scheme (`loop://`). Unconditional, so every scriptTag wallet
+          // carried a wrong value here, while `installation.deeplink` — the real
+          // one — was never mapped at all. Nothing in the SDK read the field, so
+          // it was inert: wrong value, right value dropped, and it would have
+          // shipped broken the day something read it.
+          //
+          // Both halves are fixed: scriptTag goes to `scriptTag`, where it
+          // answers the question it actually answers (how the SDK is LOADED),
+          // and the deeplink is mapped through.
+          deepLinkScheme: entry.installation.deeplink,
+          scriptTag: entry.installation.scriptTag,
         }
       : undefined,
     adapter: {

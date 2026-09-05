@@ -75,7 +75,6 @@ test.describe('Security Tests', () => {
     // The SDK has no URL-param-based mechanism to inject mock wallet providers
     // for E2E testing. Re-enable when that infrastructure ships (similar in
     // shape to apps/demo/src/lib/canton-demo-adapter.ts but for cantor8/bron/loop).
-    // Tracked: see /tmp/mock-mode-investigation.md
     test.fixme('callback origin spoof -> reject', async ({ page }) => {
       // Test that postMessage from wrong origin is rejected
       await page.goto('/?mockWallets=1');
@@ -120,7 +119,6 @@ test.describe('Security Tests', () => {
     // The SDK has no URL-param-based mechanism to inject mock wallet providers
     // for E2E testing. Re-enable when that infrastructure ships (similar in
     // shape to apps/demo/src/lib/canton-demo-adapter.ts but for cantor8/bron/loop).
-    // Tracked: see /tmp/mock-mode-investigation.md
     test.fixme('Bron tokens not persisted by default', async ({ page, context }) => {
       // Test that Bron access tokens are not persisted unless opt-in
       await page.goto('/?mockWallets=1');
