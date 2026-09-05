@@ -16,8 +16,9 @@ import { SEND_KERNEL_ID } from '@partylayer/adapter-send';
  *   - A truly foreign provider gets a generic CIP-0103 entry, NOT a
  *     "Send" entry. The kernel.id guard fires only on the connect
  *     attempt; the picker still surfaces every wallet.
- *   - All six registry wallets remain reachable in either NATIVE or
- *     AVAILABLE depending on which one is currently injected.
+ *   - Stubbing Send does not crowd the picker: every OTHER registry wallet is
+ *     still offered. The one exception is asserted as a rule, not a headcount —
+ *     see the block below the first test.
  *
  * Anything that requires a real passkey unlock is verified by the
  * adapter's vitest suite + manual E2E.
@@ -101,12 +102,107 @@ test.describe('Send adapter — DOM-level smoke (registry-driven detection)', ()
       await expect(modal.getByText('Beta', { exact: true })).toHaveCount(0);
     });
 
-    test('all six wallets still visible in picker', async ({ page }) => {
+    /**
+     * This replaces a test that asserted a fixed list of six wallet names.
+     *
+     * It failed for 38 consecutive nights (2026-07-30 .. 2026-09-05), and it was
+     * right to fail: #265 deliberately widened the SDK's visibility rule from
+     * `discovery-adapter` entries to EVERY wallet that needs an app-registered
+     * adapter, and the demo deliberately does not register Bron's — it needs real
+     * OAuth credentials a public demo cannot ship (canton-demo-adapter.ts). The
+     * product changed; the headcount did not.
+     *
+     * A list of names rots exactly this way the next time the picker's contents
+     * change, and it rots silently, because a name disappearing looks the same
+     * whether it was hidden on purpose or lost by accident. So these tests assert
+     * the RULE instead: which wallets the demo can connect, why the one it cannot
+     * is absent, and that "absent" means gated rather than missing.
+     *
+     * The expectation is derived from the registry the demo actually serves, so
+     * adding a wallet does not require editing this file. The single hardcoded
+     * value is the exception itself, with its reason attached.
+     */
+    const REGISTRY_PATH = '/registry/v1/stable/registry.json';
+
+    /**
+     * The one wallet the demo cannot register an adapter for. Not a defect and
+     * not a data problem: `buildDemoAdapters()` omits it on purpose, and the SDK
+     * then hides it because clicking it could only throw.
+     */
+    const UNCONNECTABLE = {
+      id: 'bron',
+      label: /^Bron/i,
+      why: 'needs real OAuth credentials a public demo cannot ship, so the demo registers no adapter for it',
+    };
+
+    /**
+     * Read the registry the demo actually serves, rather than the repo file or a
+     * hand-copied list. This is the same bytes the SDK fetches, so the test and
+     * the product cannot disagree about what a wallet is called.
+     */
+    async function registryWallets(page: Page): Promise<{ id: string; name: string }[]> {
+      const res = await page.request.get(REGISTRY_PATH);
+      expect(res.ok(), `${REGISTRY_PATH} must be served by the demo`).toBe(true);
+      const body = (await res.json()) as { wallets: { id: string; name: string }[] };
+      expect(body.wallets.length, 'registry must not be empty').toBeGreaterThan(1);
+      return body.wallets;
+    }
+
+    /** Escape a display name so a wallet called "OneSwap V2" cannot act as a regex. */
+    function literal(name: string): RegExp {
+      return new RegExp(name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
+    }
+
+    test('every wallet the demo can connect is offered in the picker', async ({ page }) => {
+      const wallets = await registryWallets(page);
+      const connectable = wallets.filter((w) => w.id !== UNCONNECTABLE.id);
+      expect(connectable.length, 'the exception must not be the whole registry').toBeGreaterThan(3);
+
       await openWalletModal(page);
       const modal = page.getByRole('dialog');
-      const expected = [/^Console/i, /^5N Loop/i, /^Cantor8/i, /^Bron/i, /^Nightly/i, /^Send$/];
-      for (const rx of expected) {
-        await expect(modal.getByText(rx).first()).toBeVisible({ timeout: 5000 });
+
+      // Matched on the name the REGISTRY declares, which is what the picker
+      // renders. A rename therefore moves both sides at once instead of reading
+      // as a wallet that vanished.
+      for (const w of connectable) {
+        await expect(
+          modal.locator('button').filter({ hasText: literal(w.name) }).first(),
+          `"${w.name}" (${w.id}) should be offered — the demo registers an adapter for it, or it connects via announce with no app adapter at all`,
+        ).toBeVisible({ timeout: 5000 });
+      }
+    });
+
+    test('Bron is hidden because the demo cannot register it — gated, not lost', async ({ page }) => {
+      // The distinction this test exists to draw. Both halves are required:
+      // present in the registry (so the data is intact) AND absent from the
+      // picker (so the SDK gated it). Assert only the second and a wallet
+      // silently dropped from the registry would read as correct behaviour.
+      const ids = (await registryWallets(page)).map((w) => w.id);
+      expect(ids, `${UNCONNECTABLE.id} must still be IN the registry`).toContain(UNCONNECTABLE.id);
+
+      await openWalletModal(page);
+      const modal = page.getByRole('dialog');
+      await expect(
+        modal.getByText(UNCONNECTABLE.label),
+        `${UNCONNECTABLE.id} must NOT be offered: it ${UNCONNECTABLE.why}`,
+      ).toHaveCount(0);
+    });
+
+    test('the rule is registration, not transport class', async ({ page }) => {
+      // The control that makes the test above a rule rather than a coincidence.
+      // Cantor8 and Nightly sit in the SAME class as Bron — no announce
+      // transport, so they too can only connect through an adapter the app
+      // registers. The demo registers theirs, so they are visible. The only
+      // variable separating them from Bron is registration; without this,
+      // "Bron is hidden" would be equally consistent with the SDK hiding every
+      // adapter-backed wallet, which would be a real defect.
+      await openWalletModal(page);
+      const modal = page.getByRole('dialog');
+      for (const label of [/^Cantor8/i, /^Nightly/i]) {
+        await expect(
+          modal.getByText(label).first(),
+          'a same-class wallet WITH a registered adapter must stay visible',
+        ).toBeVisible({ timeout: 5000 });
       }
     });
   });
