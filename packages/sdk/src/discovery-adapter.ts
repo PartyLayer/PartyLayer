@@ -194,6 +194,17 @@ export class GenericDiscoveryAdapter implements WalletAdapter {
   /**
    * Baseline CIP-0103 capabilities. NEVER includes `'events'`: popup/remote
    * wallets expose the event surface but do not emit (truthfulness doctrine).
+   *
+   * KNOWN OPEN DEFECT — see `docs/open-findings.md` #3. This list is a constant.
+   * It is returned from `connect()` and stored as `session.capabilitiesSnapshot`,
+   * which this codebase's own JSDoc tells consumers to query. A wallet whose SDK
+   * exposes more than these four — Walley documents `ledgerApi` and both
+   * `prepareExecute` verbs — is reported as not having them.
+   *
+   * Adding capabilities to the REGISTRY does not close this. That improves
+   * `WalletInfo.capabilities`, which is what the picker shows; this is what the
+   * session reports. If you arrived here after the registry entries gained
+   * `ledgerApi`, the defect is still open: two surfaces, one fixed.
    */
   getCapabilities(): CapabilityKey[] {
     return ['connect', 'disconnect', 'signMessage', 'submitTransaction'];
