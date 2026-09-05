@@ -82,4 +82,46 @@ describe('D5: the identity bridge must not mint a twin', () => {
 
     delete (window as unknown as Record<string, unknown>).canton;
   });
+
+  it('does not add a browser:ext row for a provider ANNOUNCING a known registry id', async () => {
+    // The second observed shape, and the one originally reported as "Nightly
+    // appears twice". It is SURFACE-DEPENDENT: it needs something to announce
+    // on the wallet's id, which the announce-comparison page elicited by
+    // dispatching `canton:requestProvider`, and which kit-demo does not do. The
+    // registry row and the announced provider then describe the same wallet and
+    // nothing maps one to the other.
+    const announce = () =>
+      window.dispatchEvent(
+        new CustomEvent('canton:announceProvider', {
+          detail: { id: 'nightly', name: 'Nightly', target: 'nightly' },
+        }),
+      );
+    window.addEventListener('canton:requestProvider', announce);
+
+    const client = createPartyLayer({
+      network: 'devnet',
+      app: { name: 'test' },
+      adapters: [] as never,
+    } as never);
+    vi.spyOn(client.registryClient, 'getWallets').mockResolvedValue([
+      {
+        walletId: toWalletId('nightly'), name: 'Nightly', website: '', icons: {},
+        capabilities: ['connect', 'disconnect'],
+        adapter: { packageName: 'x', versionRange: '*' }, docs: [],
+        networks: ['devnet'], channel: 'stable',
+        installHints: { injectedKey: 'nightly' },
+      },
+    ] as never);
+    vi.spyOn(client.registryClient, 'getRegistry').mockResolvedValue({ wallets: [] } as never);
+
+    const ids = (await client.listWallets({ includeExperimental: true })).map((w) =>
+      String(w.walletId),
+    );
+
+    expect(ids).toContain('nightly');
+    expect(ids).not.toContain('browser:ext:nightly');
+    expect(ids.filter((i) => i.includes('nightly'))).toHaveLength(1);
+
+    window.removeEventListener('canton:requestProvider', announce);
+  });
 });

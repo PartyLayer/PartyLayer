@@ -4,10 +4,24 @@
 
 Stop listing a known wallet twice in the picker.
 
-A wallet whose injected provider resolved an identity could be minted a SECOND
-picker row beside its own. Observed twice: Nightly against the real extension,
-and the demo's own test wallet, whose twin connected to the same provider when
-clicked.
+A wallet the picker already knows could be minted a SECOND row beside its own,
+in two shapes:
+
+  - an INJECTED provider that resolves a known identity — observed on the demo
+    surface, where the demo's own test wallet was listed twice and the twin
+    connected to the same provider when clicked;
+  - an ANNOUNCE carrying a known registry id — the shape reported for Nightly.
+
+The second is SURFACE-DEPENDENT: it needs something to answer
+`canton:requestProvider` with the wallet's id, which an announce-comparison page
+elicited and which the kit demo never does. That is why it appeared on one
+surface and not another, and why "it does not reproduce" was the wrong
+conclusion — it reproduces on a surface that asks for announces.
+
+Both shapes are covered by a test that fails without the fix. What is NOT
+established is whether the real Nightly extension is what announced: it speaks a
+non-CIP-0103 callback protocol and should not announce at all, yet something
+answered on that machine. The announce is simulated in the test.
 
 The identity guard was not the gap. It drops entries whose identity did NOT
 resolve — an identity-less `window.canton` slot — and correctly lets a resolved
