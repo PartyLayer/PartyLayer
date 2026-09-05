@@ -949,3 +949,86 @@ describe('LoopAdapter.requestTransfer', () => {
     });
   });
 });
+
+/**
+ * The `events` capability, and the hook behind it.
+ *
+ * Loop's provider has NO subscription surface — no `on`, no `addListener`, in
+ * 0.13.2 or 0.13.4. The adapter declared `events` anyway and contained no
+ * dispatch of any kind, so the claim was unbacked. It is backed now by
+ * `onTransactionUpdate`, the one hook `loop.init()` actually accepts.
+ *
+ * These drive `dispatch` through the public `on()` surface rather than reaching
+ * into the SDK, because what a consumer can observe is the thing under test.
+ */
+describe('LoopAdapter events', () => {
+  /** Reach the private dispatcher the way the SDK hook does. */
+  const fire = (adapter: LoopAdapter, payload: unknown): void => {
+    const a = adapter as unknown as {
+      mapTransactionUpdate: (p: unknown) => unknown;
+      dispatch: (e: string, p: unknown) => void;
+    };
+    a.dispatch('txStatus', a.mapTransactionUpdate(payload));
+  };
+
+  it('declares `events` and provides the surface that makes it true', () => {
+    const adapter = new LoopAdapter();
+    expect(adapter.getCapabilities()).toContain('events');
+    expect(typeof adapter.on).toBe('function');
+  });
+
+  it('maps a successful update to committed, carrying the ledger update id', () => {
+    const adapter = new LoopAdapter();
+    const seen: unknown[] = [];
+    adapter.on('txStatus', (p) => seen.push(p));
+
+    // The vendor's documented success payload: update_id + update_data
+    // (the ledger transaction tree), no `status` field.
+    fire(adapter, {
+      command_id: 'cmd-1',
+      submission_id: 'sub-1',
+      update_id: 'upd-1',
+      update_data: { events: ['tree'] },
+    });
+
+    expect(seen).toHaveLength(1);
+    expect(seen[0]).toMatchObject({
+      status: 'committed',
+      txId: 'upd-1',
+      commandId: 'cmd-1',
+      raw: { events: ['tree'] },
+    });
+  });
+
+  it('maps a failed update to failed, carrying the wallet error message', () => {
+    const adapter = new LoopAdapter();
+    const seen: Array<{ status?: string; error?: string }> = [];
+    adapter.on('txStatus', (p) => seen.push(p as { status?: string; error?: string }));
+
+    // The vendor's documented failure payload.
+    fire(adapter, {
+      command_id: 'cmd-2',
+      status: 'failed',
+      error: { error_message: 'insufficient funds' },
+    });
+
+    expect(seen[0]?.status).toBe('failed');
+    expect(seen[0]?.error).toBe('insufficient funds');
+  });
+
+  it('unsubscribes, and a throwing handler cannot break the wallet callback', () => {
+    const adapter = new LoopAdapter();
+    const seen: unknown[] = [];
+    const off = adapter.on('txStatus', () => {
+      throw new Error('consumer bug');
+    });
+    adapter.on('txStatus', (p) => seen.push(p));
+
+    expect(() => fire(adapter, { update_id: 'u' })).not.toThrow();
+    expect(seen).toHaveLength(1);
+
+    off();
+    fire(adapter, { update_id: 'u2' });
+    expect(seen).toHaveLength(2); // second listener still on, first removed
+  });
+});

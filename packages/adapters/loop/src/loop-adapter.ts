@@ -27,6 +27,7 @@ import type {
   PartyId,
   TransferIntent,
   TransferResult,
+  TransactionStatus,
 } from '@partylayer/core';
 import {
   toWalletId,
@@ -109,11 +110,126 @@ function mapLoopStructuredError(
  * Note: Loop sessions use WebSocket + localStorage for persistence.
  * The SDK's autoConnect() can restore sessions if the auth token is still valid.
  */
+/**
+ * The events this adapter can actually raise. Exactly one.
+ *
+ * Loop's SDK defines four `ProviderHooks` — `onTransactionUpdate`,
+ * `onSessionInvalid`, `onRequestStart`, `onRequestFinish` — but only
+ * `onTransactionUpdate` is reachable by a dApp. Read from the published types
+ * (0.13.2 and 0.13.4 alike): `loop.init()` accepts `onAccept`, `onReject` and
+ * `onTransactionUpdate` and nothing else, while the full `ProviderHooks` is a
+ * `Provider` CONSTRUCTOR parameter stored in a `private hooks` field with no
+ * setter — and the SDK constructs the Provider itself, handing it to `onAccept`
+ * already built.
+ *
+ * So `sessionExpired` and generic `error` are NOT declared here. We could raise
+ * neither, and a name that can never fire is the kind of claim this codebase has
+ * been removing all week.
+ */
+export type LoopAdapterEvent = 'txStatus';
+
 export class LoopAdapter implements WalletAdapter {
   readonly walletId = toWalletId('loop');
   readonly name = '5N Loop';
 
   private currentProvider: LoopProvider | null = null;
+
+  /**
+   * Handlers registered through {@link on}, dispatched by the SDK hooks wired in
+   * `connect()`.
+   *
+   * A registry rather than passing handlers straight to `loop.init` because the
+   * hooks are fixed at init time, inside connect, while a consumer subscribes
+   * whenever it likes — usually before connecting. Same shape as the Console
+   * adapter's `transferWaiters`: one subscription at the SDK, many listeners
+   * above it.
+   */
+  private readonly listeners = new Map<LoopAdapterEvent, Set<(payload: unknown) => void>>();
+
+  /**
+   * Turn Loop's `RunTransactionResponse` into core's transaction vocabulary.
+   *
+   * A method, not a closure inside `connect()`, so it can be tested without
+   * standing up a wallet popup. The mapping follows the vendor's README:
+   * "On success it also includes update_id and update_data (ledger transaction
+   * tree); on failure it includes status: 'failed' and error.error_message."
+   * `status` is only set on the failure path, so a payload carrying an
+   * `update_id` and no status is a committed ledger update.
+   */
+  private mapTransactionUpdate(payload: unknown): {
+    status: TransactionStatus;
+    txId?: string;
+    commandId?: string;
+    submissionId?: string;
+    error?: string;
+    raw?: unknown;
+  } {
+    const p = payload as
+      | {
+          command_id?: string;
+          submission_id?: string;
+          update_id?: string;
+          update_data?: unknown;
+          status?: 'succeeded' | 'failed';
+          error?: { error_message?: string };
+        }
+      | null
+      | undefined;
+
+    const failed = p?.status === 'failed' || !!p?.error;
+    const status: TransactionStatus = failed
+      ? 'failed'
+      : p?.update_id
+        ? 'committed'
+        : 'submitted';
+
+    return {
+      status,
+      txId: p?.update_id,
+      commandId: p?.command_id,
+      submissionId: p?.submission_id,
+      error: p?.error?.error_message,
+      // The ledger transaction tree, passed through untouched: its shape is
+      // Loop's, not ours to reinterpret.
+      raw: p?.update_data ?? p,
+    };
+  }
+
+  /** Fan a hook payload out to whoever subscribed. Never throws into the SDK. */
+  private dispatch(event: LoopAdapterEvent, payload: unknown): void {
+    const set = this.listeners.get(event);
+    if (!set) return;
+    for (const handler of set) {
+      try {
+        handler(payload);
+      } catch {
+        // A consumer's handler must not break the wallet's callback.
+      }
+    }
+  }
+
+  /**
+   * Subscribe to wallet events.
+   *
+   * This is what makes the `events` capability true. Loop's provider has NO
+   * subscription surface of its own — no `on`, no `addListener`, in 0.13.2 or in
+   * 0.13.4 (latest) — only four callbacks fixed at `loop.init()`. Those hooks are
+   * the event source; this method is the surface over them.
+   *
+   * Signature matches the Console adapter's deliberately, so a consumer writes
+   * the same code against either wallet.
+   */
+  on(event: LoopAdapterEvent, handler: (payload: unknown) => void): () => void {
+    let set = this.listeners.get(event);
+    if (!set) {
+      set = new Set();
+      this.listeners.set(event, set);
+    }
+    set.add(handler);
+    return () => {
+      set?.delete(handler);
+    };
+  }
 
   getCapabilities(): CapabilityKey[] {
     return [
@@ -214,8 +330,28 @@ export class LoopAdapter implements WalletAdapter {
         loop.init({
           appName: ctx.appName,
           network: loopNetwork,
+          // THE ONLY SIGNAL CARRYING A TRANSACTION'S OUTCOME.
+          //
+          // From the vendor's own README (identical in 0.13.2 and 0.13.4):
+          //   "submitTransaction is the default async path. It returns the
+          //    submission result first (including command_id and submission_id),
+          //    then the ledger update arrives later via onTransactionUpdate with
+          //    update_id and update_data."
+          //   "On success it also includes update_id and update_data (ledger
+          //    transaction tree); on failure it includes status: 'failed' and
+          //    error.error_message."
+          //
+          // Our submitTransaction() uses that async path, so its receipt is a
+          // submission acknowledgement, not an outcome. This hook used to go to
+          // ctx.logger.debug and nowhere else, which meant a consumer submitting
+          // through Loop could never learn whether the transaction committed.
           onTransactionUpdate: (payload) => {
-            ctx.logger.debug('Loop transaction update', payload);
+            const update = this.mapTransactionUpdate(payload);
+            ctx.logger.debug('Loop transaction update', {
+              status: update.status,
+              updateId: update.txId,
+            });
+            this.dispatch('txStatus', update);
           },
           options: {
             openMode: 'popup',

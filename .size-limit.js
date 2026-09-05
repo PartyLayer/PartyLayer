@@ -204,7 +204,48 @@ module.exports = [
     // classifier, and it stays rejected.
     //
     // Measured 44.18 kB. 44.25 kB leaves ~70 B.
-    limit: '44.25 kB',
+    //
+    // ── FOURTH INCREASE: 44.25 kB -> 44.5 kB (Loop transaction events) ──────
+    //
+    // Same change as the sdk entry's fourth increase below/above, and the same
+    // argument: the Loop adapter declared the `events` capability with no
+    // dispatch of any kind behind it, while its provider exposes no subscription
+    // surface at all (no `on`, no `addListener`, in 0.13.2 or 0.13.4), and
+    // `onTransactionUpdate` — the ONLY signal carrying a transaction's outcome,
+    // per the vendor's own README — went to a debug log and nowhere else. A
+    // false capability claim plus a discarded outcome is not a feature.
+    //
+    // The more expensive of the two honest options was taken deliberately:
+    // building the `on('txStatus', handler)` surface that makes `events` true,
+    // rather than deleting the claim, which would have cost negative bytes.
+    // `commandId` and `submissionId` were NOT dropped to pay for it — they are
+    // how a consumer correlates a transaction with their own records, and
+    // dropping data to save bytes is a smaller version of the defect being
+    // fixed. Rejected on that ground, not on measurement.
+    //
+    // ── TWO BUDGETS, AND HOW THAT WAS FOUND ────────────────────────────────
+    //
+    // This raise and the sdk entry's move TOGETHER for one change, because
+    // packages/sdk/src/builtin-adapters.ts imports LoopAdapter and both bundles
+    // reach it. That pairing has happened before on this file and is recorded as
+    // a fact worth seeing rather than splitting across commits.
+    //
+    // Worth more than the byte count: this file ALREADY carried the warning that
+    // would have caught it — "check EVERY budget the changed code reaches, not
+    // the first one that looked fine" — written after the installGuard incident,
+    // where a change was reported as free having been measured on one bundle.
+    // This time the same author hit the same rule in the OPPOSITE direction: a
+    // cost was measured on one bundle, reported as the whole cost, and the second
+    // budget surfaced only when the gate failed a second time.
+    //
+    // A rule that catches its own author on its second occurrence is not working
+    // as a comment. The check belongs in the gate's OUTPUT — when a change
+    // touches code reachable from more than one budget, say so, rather than
+    // failing on whichever entry happens to be evaluated first. Logged as a
+    // follow-up candidate rather than done here.
+    //
+    // Measured 44.36 kB. 44.5 kB leaves ~140 B, matching the sdk entry's headroom.
+    limit: '44.5 kB',
   },
   {
     name: 'react-native: ui (ConnectButton)',
@@ -350,6 +391,61 @@ module.exports = [
     // should be held to a harder standard than this one was.
     //
     // Measured 43.75 kB after the four passes above. 43.8 kB leaves ~50 B.
-    limit: '44 kB',
+    //
+    // ── FOURTH INCREASE: 44 kB -> 44.25 kB ──────────────────────────────────
+    //
+    // The comment above says a fourth move is held to a higher bar than the
+    // three correctness raises cleared. This is the argument that it clears it,
+    // written here rather than only in the pull request.
+    //
+    // WHAT WAS WRONG. The Loop adapter declared the `events` capability while
+    // containing no dispatch of any kind, and Loop's provider exposes no
+    // subscription surface at all — no `on`, no `addListener`, in 0.13.2 or in
+    // 0.13.4. By this repo's own rule (announce-adapter.ts pushes `events` only
+    // when a provider `on` exists) the claim was false. Separately,
+    // `onTransactionUpdate` went to ctx.logger.debug and nowhere else. Per the
+    // vendor's own README, `submitTransaction` is an ASYNC path whose receipt is
+    // a submission acknowledgement, and the ledger outcome arrives only on that
+    // hook. So a consumer submitting through Loop could never learn whether the
+    // transaction committed, or why it failed.
+    //
+    // A false capability claim plus a discarded transaction outcome is not a
+    // feature. It is the same class as the three raises above — `installed`
+    // lying about presence, the error classifier misreading a wallet refusal as
+    // a user rejection, the registry unable to express `transfer`. This entry
+    // pays because packages/sdk/src/builtin-adapters.ts imports LoopAdapter, so
+    // adapter code lands in this bundle.
+    //
+    // WHY IT COST MORE THAN THE MINIMUM. There were two honest options: delete
+    // the `events` claim, or build the surface that makes it true. The cheaper
+    // one is deletion — it would have cost negative bytes. We took the more
+    // expensive one: a listener registry and an `on('txStatus', handler)`
+    // matching the Console adapter's signature, fed by the one hook a dApp can
+    // actually reach. That choice is the reason this raise exists, and it is
+    // recorded so the next reader sees a deliberate trade rather than drift.
+    //
+    // WHAT WAS NOT DONE TO PAY FOR IT. `commandId` and `submissionId` are passed
+    // through to subscribers and were NOT dropped, though removing them would
+    // have recovered most of the overage. They are how a consumer correlates a
+    // Loop transaction with their own records. Dropping data to save bytes is a
+    // smaller version of the defect this change fixes, and it was rejected on
+    // that ground rather than on measurement.
+    //
+    // Scope kept honest instead: only `txStatus` is declared, because
+    // `loop.init()` accepts only `onAccept`, `onReject` and `onTransactionUpdate`
+    // — the full ProviderHooks is a Provider CONSTRUCTOR parameter in a private
+    // field with no setter, and the SDK builds the Provider itself. Declaring
+    // `sessionExpired` would have cost bytes for an event we could never raise.
+    //
+    // TWO BUDGETS MOVED TOGETHER FOR THIS CHANGE, AGAIN. The react-native
+    // headless entry moved to 44.5 kB for the same Loop change, because
+    // builtin-adapters.ts imports LoopAdapter and both bundles reach it. See
+    // that entry for the fuller note — including that this file's own
+    // "check EVERY budget the changed code reaches" warning, written after the
+    // installGuard incident, caught its own author here in the opposite
+    // direction: a cost measured on one bundle and reported as the whole cost.
+    //
+    // Measured 44.13 kB. 44.25 kB leaves ~120 B.
+    limit: '44.25 kB',
   },
 ];
