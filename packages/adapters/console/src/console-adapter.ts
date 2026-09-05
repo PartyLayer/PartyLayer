@@ -61,6 +61,20 @@ import {
 // The `typeof import(...)` below is a TYPE position only (erased at build) and
 // does not trigger the eager load.
 type ConsoleWalletApi = (typeof import('@console-wallet/dapp-sdk'))['consoleWallet'];
+/**
+ * Our own timer won the race against `status()`.
+ *
+ * A distinct type rather than a plain Error so the caller can tell "we ran out
+ * of time" from "the transport said no". Collapsing those two is the entire
+ * defect this file works around.
+ */
+class ConsoleProbeTimeout extends Error {
+  constructor() {
+    super('Console status() probe exceeded the adapter budget');
+    this.name = 'ConsoleProbeTimeout';
+  }
+}
+
 let consoleWalletPromise: Promise<ConsoleWalletApi> | undefined;
 function getConsoleWallet(): Promise<ConsoleWalletApi> {
   if (!consoleWalletPromise) {
@@ -1021,37 +1035,134 @@ export class ConsoleAdapter implements WalletAdapter {
   }
 
   /**
-   * Check extension availability via the SDK's postMessage probe.
+   * Budget for our own confirming `status()` probe.
+   *
+   * The vendor's `checkExtensionAvailability()` allows 1000ms, which is shorter
+   * than the 5000ms its own underlying `status()` allows, so on a cold MV3
+   * service-worker start the outer budget fires first. 2500ms is the compromise:
+   * long enough that a waking extension answers, short enough that a genuinely
+   * absent one does not stall the picker. Deliberately OUR constant — the
+   * vendor's is not configurable.
+   */
+  private static readonly CONFIRM_PROBE_MS = 2500;
+
+  /**
+   * Check extension availability.
+   *
+   * WHY THIS IS NOT JUST `checkExtensionAvailability()`.
+   *
+   * Read from the vendor's published source (@console-wallet/dapp-sdk,
+   * dist/esm/requests/checkAvailability.js — byte-identical in 2.2.8, 2.2.9 and
+   * 2.2.10-beta.1, so this is current behaviour and not a bug in flight):
+   *
+   *   - On its 1000ms timeout it sets a module-level cache to
+   *     `{ status: 'notInstalled' }` and its outer `catch` RETURNS that value.
+   *     It never throws. A timed-out probe is therefore indistinguishable from
+   *     a genuine absence in its return value.
+   *   - That cache is module-level with no invalidation and no reset export, so
+   *     ONE slow probe marks the extension absent for the life of the page.
+   *   - Its type admits no third state: `AvailabilityStatus = 'installed' |
+   *     'notInstalled'`. The vendor cannot express "did not answer in time", so
+   *     no amount of reading its result will recover the distinction.
+   *
+   * This adapter previously handled the timeout in a `catch`, which the vendor
+   * never triggers, so the `unknown` branch added for exactly this case was
+   * unreachable and the adapter reported a confident "not installed" derived
+   * from a timeout. Its test passed only because it mocked a rejection.
+   *
+   * The recovery is `status()`, which the SDK also exports: it is NOT cached and
+   * it rejects rather than resolving a verdict. So a `notInstalled` answer is
+   * treated as unproven and confirmed with one bounded `status()` probe.
    */
   private async detectExtension(): Promise<AdapterDetectResult> {
+    let sdk: Awaited<ReturnType<typeof getConsoleWallet>>;
     try {
-      const availability =
-        await (await getConsoleWallet()).checkExtensionAvailability();
+      sdk = await getConsoleWallet();
+    } catch {
+      return {
+        installed: false,
+        availability: { kind: 'unknown', reason: 'Console SDK failed to load' },
+        reason: 'Console Wallet SDK could not be loaded.',
+      };
+    }
 
-      if (availability.status === 'installed') {
+    let status: string | undefined;
+    let currentVersion: string | undefined;
+    try {
+      const availability = await sdk.checkExtensionAvailability();
+      status = availability.status;
+      currentVersion = availability.currentVersion;
+    } catch {
+      // Not reachable via the vendor's timeout (it resolves), but the call is
+      // still a promise we do not own. Absence is not established either way.
+      return {
+        installed: false,
+        availability: { kind: 'unknown', reason: 'Availability probe threw' },
+        reason: 'Console Wallet extension not responding.',
+      };
+    }
+
+    if (status === 'installed') {
+      return {
+        installed: true,
+        availability: { kind: 'installed' },
+        reason: `Console Wallet detected${currentVersion ? ` (v${currentVersion})` : ''}`,
+      };
+    }
+
+    // `notInstalled` is not proof — it is also what a 1000ms timeout returns,
+    // and what the poisoned cache returns forever after. Confirm it with an
+    // uncached probe under our own budget. Not memoised on our side, on purpose:
+    // caching a negative is the defect being fixed, and a user can install the
+    // extension without reloading.
+    try {
+      await this.confirmByStatus(sdk);
+      return {
+        installed: true,
+        availability: { kind: 'installed' },
+        reason:
+          'Console Wallet detected on a confirming probe (the SDK availability check timed out first).',
+      };
+    } catch (err) {
+      if (err instanceof ConsoleProbeTimeout) {
         return {
-          installed: true,
-          availability: { kind: 'installed' },
-          reason: `Console Wallet detected${availability.currentVersion ? ` (v${availability.currentVersion})` : ''}`,
+          installed: false,
+          availability: {
+            kind: 'unknown',
+            reason: `Extension did not answer within ${ConsoleAdapter.CONFIRM_PROBE_MS}ms`,
+          },
+          reason: 'Console Wallet extension not responding. Ensure it is installed and enabled.',
         };
       }
-
       return {
         installed: false,
         availability: { kind: 'not-installed', install: 'https://consolewallet.io' },
-        reason:
-          'Console Wallet extension not detected. Install from https://consolewallet.io',
+        reason: 'Console Wallet extension not detected. Install from https://consolewallet.io',
       };
-    } catch {
-      // checkExtensionAvailability may timeout if extension is not present
-      return {
-        installed: false,
-        // A timed-out probe is NOT proof of absence: say so rather than
-        // reporting a confident "not installed" we did not establish.
-        availability: { kind: 'unknown', reason: 'Extension probe timed out' },
-        reason:
-          'Console Wallet extension not responding. Ensure it is installed and enabled.',
-      };
+    }
+  }
+
+  /**
+   * One `status()` call, bounded by our own timer.
+   *
+   * Three outcomes, which is one more than the vendor can express: it resolves
+   * (the extension answered — it is there), it rejects (the extension or the
+   * transport said no — treat as absent), or our timer wins (we know nothing,
+   * and must say so rather than inventing absence).
+   */
+  private async confirmByStatus(
+    sdk: Awaited<ReturnType<typeof getConsoleWallet>>,
+  ): Promise<void> {
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    try {
+      await Promise.race([
+        sdk.status(),
+        new Promise<never>((_resolve, reject) => {
+          timer = setTimeout(() => reject(new ConsoleProbeTimeout()), ConsoleAdapter.CONFIRM_PROBE_MS);
+        }),
+      ]);
+    } finally {
+      if (timer) clearTimeout(timer);
     }
   }
 }
