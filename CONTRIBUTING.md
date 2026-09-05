@@ -713,6 +713,111 @@ class of bug. Both of the cases above also had a fixture returning a receipt fro
 a call the standard defines as returning null, so the mock, not the wallet, was
 supplying the value the assertion relied on.
 
+#### A test can also never reach the code it names
+
+The rule above is about a test that asserts the wrong thing. This one is about a
+test that asserts the right thing and never gets there. Both go green, or go red,
+for reasons unrelated to the behaviour in the title, and neither is visible from
+reading the test.
+
+Three instances turned up in one session, which is what makes it a pattern rather
+than bad luck:
+
+- **Failed for the wrong reason.** A test proving a null dereference in
+  `getActiveSession` died with `TransportError: fetch failed` inside `connect()`,
+  from the registry client reaching a placeholder URL. It never reached the line
+  under test. Reported as "the defect is proven" it would have been evidence of
+  nothing. Fixed by the `vi.mock` stubs the neighbouring test file already had.
+- **Passed for the wrong reason.** Registry signature tests seeded a cache and
+  asserted against it; the SWR path returned that seed before the network call
+  resolved, so two tests never executed the code they named. They only surfaced
+  because they failed *after* the fix, which is the wrong direction to learn it.
+- **Silently unreachable.** A test for the `listWallets` re-probe passed its
+  preconditions, ran the call, and saw zero events. The cause was
+  `announceEnabled` returning false when `typeof window === 'undefined'`, so in a
+  Node runner the entire announce path does not exist. Without
+  `vi.stubGlobal('window', {})` the result reads as "this site never fires"
+  rather than "my harness never got there".
+
+The third is the worst of the three, because absence of a signal looks like a
+finding. A test that cannot reach its subject will happily report that the
+subject does nothing.
+
+**The check that catches all three: break the thing on purpose and watch the test
+notice.** Delete the emit, swap the guarded local for the field it guards
+against, return the wrong value. If the test still passes, it is not testing what
+its name says, and no amount of reading it will reveal that. If it fails, the
+failure message also tells you *which* assertion carries the weight.
+
+That mutation is worth keeping in the commit message rather than only in the
+session, because it is the evidence, not the test's existence. Two examples from
+this codebase: `session-expired-reprobe.test.ts` records that swapping `active`
+for `this.activeSession` makes it fail, which is what makes "this site is
+guarded" a claim rather than an observation about code shape; and the
+`CIP0103_MANDATORY_METHODS` guard records that restoring `Object.values(...)`
+fails two of its five cases.
+
+A useful corollary: prefer a fixture written out independently of the thing it
+checks. A fixture derived from the code under test passes whatever that code
+does.
+
+##### The fourth shape: right observation, wrong machine
+
+The three above are all "the test observed the wrong thing". This one is "the
+test observed the right thing, on this machine, this time", and mutation does not
+catch it, because the code is fine and the harness is not.
+
+It cost a red CI on the very branch that added the rule above. A test drove the
+`listWallets` re-probe and waited for the constructor's fire-and-forget
+`restoreSession()` (`client.ts:283`) with one macrotask tick:
+
+```ts
+await new Promise((r) => setTimeout(r, 0));   // enough here, not on CI
+```
+
+Locally the session was revived in time. On a CI runner it was not, and the test
+failed at its precondition. Reproduced afterwards by delaying `storage.get` by
+120ms, which fails the fixed-sleep version and passes the polled one, so the fix
+was verified against the actual cause rather than against a green run.
+
+**Never gate a test on a fixed sleep for work you did not start.** If you did not
+create the promise, you cannot know when it settles. Poll for the condition with
+a bound:
+
+```ts
+async function waitFor(check: () => boolean, timeoutMs = 5000): Promise<void> {
+  const deadline = Date.now() + timeoutMs;
+  while (Date.now() < deadline) {
+    if (check()) return;
+    await new Promise((r) => setTimeout(r, 5));
+  }
+}
+```
+
+Note what it does NOT do: assert or throw on timeout. It returns either way, so
+the caller's own assertion runs and reports the state actually observed, instead
+of a generic "timed out" that hides it. A longer sleep is not a fix; it is the
+same bug with a better hit rate, and it fails later and on someone else's branch.
+
+**Assert the setup happened before asserting the behaviour.** The failure above
+was legible only because the test checked its own preconditions:
+
+```ts
+expect(internals.activeSession).not.toBeNull();      // setup
+expect(internals.activeSessionNeedsProbe).toBe(true);
+...
+expect(seen.length).toBeGreaterThanOrEqual(1);       // behaviour
+```
+
+Without the first two it would have failed at the last one, reporting zero
+events, which reads as *"the emit site never fires"* rather than *"the session
+was never restored"*. A missing precondition and a missing behaviour are
+indistinguishable at the assertion that matters, and the first is a harness bug
+while the second is a product bug. Checking the setup separately is what tells
+them apart, and it is cheap.
+
+
+
 ---
 
 ## Documentation
