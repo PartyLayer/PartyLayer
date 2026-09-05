@@ -1,0 +1,30 @@
+{
+  "$comment": [
+    "Ledger for specs that CANNOT run in CI and can only be run by hand.",
+    "Checked by scripts/gate/manual-coverage.mjs, which runs in the NIGHTLY, not in",
+    "pnpm gate. That placement is deliberate: a check blocking every PR until",
+    "someone runs an extension test by hand gets cleared by typing a date, and then",
+    "there are two mechanisms lying instead of one. In the nightly a stale record",
+    "opens a tracking issue through the failure sink — visible and dated, and",
+    "nobody's work stops.",
+    "A date alone is not a record. Each entry must name the extension versions it",
+    "ran against and the actual result, so a rubber stamp is at least conspicuous."
+  ],
+  "maxAgeDays": 90,
+  "specs": {
+    "apps/demo/e2e/a2-two-extension-isolation.e2e.spec.ts": {
+      "lastRun": null,
+      "extensions": {},
+      "result": null,
+      "repeatEach": null,
+      "notes": "NEVER RECORDED. The spec was written 2026-06-10 in 27e5b68 and carried `|| !!process.env.CI`, so it has never run in CI and no by-hand run was ever written down. This null entry is the honest starting state, and it fails the check on purpose: the alternative is a ledger that opens by asserting a run nobody can point to."
+    },
+    "apps/demo/e2e/a2-console-only-negative.e2e.spec.ts": {
+      "lastRun": null,
+      "extensions": {},
+      "result": null,
+      "repeatEach": null,
+      "notes": "NEVER RECORDED. Same commit, same CI self-exclusion, same reason."
+    }
+  }
+}

@@ -52,9 +52,15 @@ const clearMonitor = (page: Page) =>
   });
 
 test.describe('A2 real two-extension per-click isolation', () => {
+  // Skips ONLY on a missing precondition — the unpacked extension directories.
+  // It used to also carry `|| !!process.env.CI`, a test deciding for itself never
+  // to run in CI. That is the shape CONTRIBUTING forbids: it cannot fail, so it
+  // reported as a passing suite member for three months while asserting nothing.
+  // The file is now excluded from the default suite by its `.e2e.spec.ts` suffix
+  // instead, so its absence is a fact about the run rather than a hidden opt-out.
   test.skip(
-    !SEND_DIR || !CONSOLE_DIR || !!process.env.CI,
-    'Set A2_EXT_DIR_SEND + A2_EXT_DIR_CONSOLE (unpacked dirs) to run; always skipped in CI.',
+    !SEND_DIR || !CONSOLE_DIR,
+    'Set A2_EXT_DIR_SEND + A2_EXT_DIR_CONSOLE (unpacked dirs) to run.',
   );
 
   let ctx: BrowserContext;

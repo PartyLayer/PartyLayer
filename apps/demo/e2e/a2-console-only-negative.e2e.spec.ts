@@ -20,10 +20,11 @@ const CONSOLE_ID = 'lpnfhpbpmlobjlgkdmnjieeihjmihhjd';
 const CONSOLE_CHANNEL = 'consoleWalletPixelplex';
 
 test.describe('A2 negative — Console-only, a Send click must NOT open Console', () => {
-  test.skip(
-    !CONSOLE_DIR || !!process.env.CI,
-    'Set A2_EXT_DIR_CONSOLE (unpacked dir) to run; always skipped in CI.',
-  );
+  // Skips ONLY on a missing precondition — see the note in
+  // a2-two-extension-isolation.e2e.spec.ts. The `|| !!process.env.CI` clause that
+  // used to sit here made the test structurally unable to run where it was
+  // reported, which is worse than not having it.
+  test.skip(!CONSOLE_DIR, 'Set A2_EXT_DIR_CONSOLE (unpacked dir) to run.');
 
   let ctx: BrowserContext;
   test.afterEach(async () => {

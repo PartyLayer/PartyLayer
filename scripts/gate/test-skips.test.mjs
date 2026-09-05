@@ -50,7 +50,18 @@ import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join, relative } from 'node:path';
 
 const ROOT = new URL('../..', import.meta.url).pathname;
-const SEARCH_ROOTS = ['packages'];
+/**
+ * Extended to `apps` after the e2e suite turned out to be a third inert.
+ *
+ * `packages` was the only root for as long as the guard existed, and
+ * apps/demo/e2e sat outside it holding four permanent `test.fixme`s, a
+ * body-level `test.skip()`, and two specs that had switched themselves off in CI
+ * — 8 of 36 tests, 22%, none of it visible to a check scoped to packages. Two of
+ * those specs guarded the announce/multi-provider misrouting defect, the one
+ * named in client.ts's own A2.1 comment, and had asserted nothing since June
+ * while that code was edited twice.
+ */
+const SEARCH_ROOTS = ['packages', 'apps'];
 
 /** Highest share of a package's tests that may be skipped before this fails. */
 const MAX_SKIP_RATIO = 0.1;
@@ -74,6 +85,52 @@ const ENV_CONDITIONALS = [
   },
 ];
 
+/**
+ * Playwright-shaped ways a test switches itself off. The vitest patterns above
+ * match none of these, which is why widening the root alone would have measured
+ * nothing.
+ *
+ * What is NOT here, deliberately: `test.skip(<condition>, '<reason>')` declared
+ * at describe level. That is an honest precondition — "this needs an unpacked
+ * extension" — checked before the test runs, stated in the reason, and visible in
+ * the report. The forbidden shapes are the ones that decide DURING the run, or
+ * that can never run at all.
+ */
+const PLAYWRIGHT_CONDITIONALS = [
+  {
+    re: /\btest\.fixme\s*\(/,
+    why: 'test.fixme is a permanent off switch with no expiry; delete the test and record the gap, or fix it',
+  },
+  {
+    re: /\btest\.skip\s*\(\s*\)/,
+    why: 'a bare test.skip() inside a body decides at runtime whether to assert, and reports green either way',
+  },
+  {
+    re: /\btest\.skip\s*\(\s*true\b/,
+    why: 'test.skip(true, …) is unconditional: it never runs and never fails',
+  },
+  {
+    re: /\btest\.(skip|fixme)\s*\([^)]*process\.env\.CI/,
+    why: 'a test that excludes itself from CI cannot fail where it is reported; make it a precondition on what it actually needs, and move it out of the suite if CI can never provide that',
+  },
+];
+
+/** One named exemption, with its reason and what would remove it. */
+const EXEMPT = [
+  {
+    file: 'apps/demo/e2e/walletconnect.spec.ts',
+    why:
+      'Runtime-skips when no `wc:` URI appears, i.e. the WalletConnect relay is ' +
+      'unreachable. Unlike every other case here it DOES run and pass in CI, so ' +
+      'forbidding the skip would not recover coverage — it would convert a ' +
+      "third party's outage into a red nightly. It cannot be made declarative " +
+      'either: wcProjectId() always returns a fallback, so there is no ' +
+      'precondition to test up front. Listed rather than silently tolerated. ' +
+      'Removing this entry means deciding that a relay outage SHOULD fail the ' +
+      'nightly, which is defensible now that a failure sink reports it.',
+  },
+];
+
 function walk(dir, out = []) {
   for (const entry of readdirSync(dir)) {
     if (entry === 'node_modules' || entry === 'dist' || entry.startsWith('.')) continue;
@@ -91,16 +148,28 @@ const testFiles = SEARCH_ROOTS.flatMap((r) => {
 test('no test gates its own execution on the runtime environment', () => {
   const offences = [];
   for (const file of testFiles) {
+    const rel = relative(ROOT, file);
+    const exempt = EXEMPT.find((e) => e.file === rel);
     const src = readFileSync(file, 'utf8');
     const lines = src.split('\n');
-    for (const { re, why } of ENV_CONDITIONALS) {
+    for (const { re, why } of [...ENV_CONDITIONALS, ...PLAYWRIGHT_CONDITIONALS]) {
       lines.forEach((line, i) => {
         if (line.trim().startsWith('//') || line.trim().startsWith('*')) return;
         if (re.test(line)) {
-          offences.push(`${relative(ROOT, file)}:${i + 1}  ${line.trim().slice(0, 72)}\n      ${why}`);
+          if (exempt) return;
+          offences.push(`${rel}:${i + 1}  ${line.trim().slice(0, 72)}\n      ${why}`);
         }
       });
     }
+  }
+
+  // Print the exemptions on every run. An exemption nobody sees is the thing it
+  // was supposed to replace.
+  if (EXEMPT.length) {
+    console.log(
+      '\nskip-guard exemptions (' + EXEMPT.length + '):\n' +
+        EXEMPT.map((e) => `  ${e.file}\n    ${e.why}`).join('\n') + '\n',
+    );
   }
   assert.deepEqual(
     offences,
@@ -120,7 +189,16 @@ test(`no package skips more than ${MAX_SKIP_RATIO * 100}% of its own tests`, () 
   const perPackage = new Map();
   for (const file of testFiles) {
     const pkg = relative(ROOT, file).split('/').slice(0, 3).join('/');
-    const src = readFileSync(file, 'utf8');
+    // Comments are stripped before counting. Otherwise writing down WHY a test
+    // was deleted ("it was test.fixme'd from the day it was written") inflates
+    // the very number the rule polices, and the honest record costs you budget.
+    const src = readFileSync(file, 'utf8')
+      .split('\n')
+      .filter((l) => {
+        const t = l.trim();
+        return !t.startsWith('//') && !t.startsWith('*') && !t.startsWith('/*');
+      })
+      .join('\n');
     const total = (src.match(/\b(it|test)\s*(\.\w+)?\s*\(/g) || []).length;
     const skipped = (src.match(/\b(it|test|describe)\s*\.\s*(skip|todo)\b/g) || []).length;
     const prev = perPackage.get(pkg) || { total: 0, skipped: 0 };

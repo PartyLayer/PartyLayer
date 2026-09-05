@@ -77,6 +77,45 @@ describe('createExtensionChannelProvider', () => {
     await expect(p.request({ method: 'status' })).rejects.toThrow(/timed out/i);
   });
 
+  /**
+   * The origin guard, which had no negative test until now.
+   *
+   * `extension-channel.ts` drops any message whose `event.origin` differs from
+   * the page's own. Every case above posts with the correct origin, so the guard
+   * was only ever exercised in the direction that passes — the shape of coverage
+   * that reports green whether or not the check exists.
+   *
+   * This belongs here rather than in an e2e: `window.postMessage` always stamps
+   * the caller's real origin, so a browser test cannot forge a foreign one. A
+   * synthetic MessageEvent can, which is the whole reason the property is
+   * testable at this level and not that one. The demo's e2e asserts the adjacent
+   * property it CAN reach — that unsolicited traffic creates no session.
+   */
+  it('drops a well-formed response that arrives from a foreign origin', async () => {
+    const handler = (event: MessageEvent): void => {
+      const data = event.data as { type?: string; request?: { id: string } };
+      if (data?.type !== 'SPLICE_WALLET_REQUEST' || !data.request) return;
+      // Correct id, correct shape, correct target — everything except the origin.
+      window.dispatchEvent(
+        new MessageEvent('message', {
+          data: {
+            type: 'SPLICE_WALLET_RESPONSE',
+            response: { jsonrpc: '2.0', id: data.request.id, result: { spoofed: true } },
+          },
+          source: window,
+          origin: 'https://evil.example',
+        }),
+      );
+    };
+    window.addEventListener('message', handler as EventListener);
+    stop = () => window.removeEventListener('message', handler as EventListener);
+
+    const p = createExtensionChannelProvider({ target: 't', timeoutMs: 80 });
+    // The ONLY thing preventing resolution is the origin check. If it is removed,
+    // this request resolves with `{ spoofed: true }` instead of timing out.
+    await expect(p.request({ method: 'status' })).rejects.toThrow(/timed out/i);
+  });
+
   it('only resolves its own request ids (concurrent providers do not cross-talk)', async () => {
     stop = mockExtension((req) => ({ result: { id: req.id } }));
     const a = createExtensionChannelProvider({ target: 'a' });

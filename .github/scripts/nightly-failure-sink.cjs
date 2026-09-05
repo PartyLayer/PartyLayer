@@ -105,6 +105,7 @@ module.exports = async function failureSink({ github, context, core }) {
     { key: 'npm-consumer-canary', name: 'npm consumer canary (published packages)', result: process.env.R_CANARY },
     { key: 'session-persistence-e2e', name: 'Session persistence e2e (real browser)', result: process.env.R_SESSION },
     { key: 'mock-e2e', name: 'Mock E2E + security (full demo suite)', result: process.env.R_MOCK },
+    { key: 'manual-coverage', name: 'Manual coverage (by-hand specs still current)', result: process.env.R_MANUAL },
   ];
 
   // A cancelled run tells us nothing about the health of main. Do not open, do

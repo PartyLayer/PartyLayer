@@ -305,6 +305,20 @@ connect by opening a popup (Cauri, OneSwap, Walley) are asserted only as far as
 the picker — that they are offered — and never through a connect. WalletConnect's
 spec self-skips when no relay is reachable, which in practice is always in CI.
 
+Two specs that named parts of this gap were deleted rather than left standing,
+because a disabled test hides a gap behind a filename:
+
+- `cantor8-connect.spec.ts` — Cantor8's deep-link connect. Disabled from birth
+  waiting on a switch that had been removed (`703a645`), and written against a
+  DOM that no longer matches (`page.locator('ul').filter(...)`). Cantor8's
+  presence in the picker is covered by `wallets/send.spec.ts`; its **connect** is
+  not covered by anything.
+- `bron-remote-signer.spec.ts` — Bron's remote-signer connect and sign. Its body
+  ended in a bare `test.skip()` on "Bron not available", which is always: the
+  demo deliberately registers no Bron adapter, since Bron needs OAuth credentials
+  a public demo cannot ship. No e2e in this app can ever cover Bron. The adapter's
+  own unit suite is the only place that can.
+
 This is a real gap, not an oversight to be argued away. It is written down here
 because the alternative is that it stays invisible: the suite reports green, and
 green over an untested transport family reads the same as green over a tested one.

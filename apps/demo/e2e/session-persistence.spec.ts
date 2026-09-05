@@ -6,6 +6,15 @@
  *
  * Uses @partylayer/testing's browser primitives (IndexedDB assertions) and the
  * demo's existing mock-wallet helpers. Nightly + on-demand only (not PR-gated).
+ *
+ * THIS IS THE HOME FOR RELOAD-RESTORE. A second spec, `session-restore.spec.ts`,
+ * claimed the same ground with a test named "session persists after page
+ * refresh". It was `test.fixme`'d from the day it was written, waiting on a
+ * `?mockWallets=1` switch that never existed, and it was the weaker of the two:
+ * fixed `waitForTimeout` sleeps, a `text=/party/i` locator, and an
+ * `if (count > 0) … else test.skip()` body that would have reported green
+ * without asserting. It was deleted rather than repaired, because the coverage
+ * it named already lives here and runs. If you come looking for it, this is it.
  */
 import { test, expect, type Page } from '@playwright/test';
 import { idbEntryCountScript, sessionKeyDbName } from '@partylayer/testing';

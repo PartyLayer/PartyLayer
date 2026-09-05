@@ -263,6 +263,28 @@ jobs:
           echo "per-PR gate runs only the fast/stable subset (smoke + connect +" >> $GITHUB_STEP_SUMMARY
           echo "security) — heavier/flakier specs are quarantined to nightly." >> $GITHUB_STEP_SUMMARY
 
+  manual-coverage:
+    name: Manual coverage (by-hand specs still current)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Manual run ledger is current
+        # Some specs CANNOT run in CI — the a2 pair loads real unpacked
+        # extensions into a headed Chromium, which a hosted runner cannot do. They
+        # used to carry `|| !!process.env.CI`, so they never ran where they were
+        # reported and sat green while asserting nothing for three months.
+        #
+        # This checks a ledger of by-hand runs instead: each entry must name the
+        # extension versions and the actual result, not just a date. It lives in
+        # the nightly rather than `pnpm gate` on purpose — a check that blocks
+        # every PR until someone runs an extension test by hand gets cleared by
+        # typing a date. Here, a stale record opens a tracking issue through the
+        # failure sink, and nobody's work stops.
+        run: node scripts/gate/manual-coverage.mjs
+
   # ─────────────────────────────────────────────────────────────────────────────
   # FAILURE SINK (institutional note)
   #
@@ -294,7 +316,7 @@ jobs:
   # ─────────────────────────────────────────────────────────────────────────────
   failure-sink:
     name: Failure sink (tracking issue)
-    needs: [gate-main, npm-consumer-canary, session-persistence-e2e, mock-e2e]
+    needs: [gate-main, npm-consumer-canary, session-persistence-e2e, mock-e2e, manual-coverage]
     # `always()` so the sink runs whether the nightly passed (to close a stale
     # issue) or failed (to open one). Without it this job would be skipped on the
     # exact runs it exists for.
@@ -316,6 +338,7 @@ jobs:
           R_CANARY: ${{ needs.npm-consumer-canary.result }}
           R_SESSION: ${{ needs.session-persistence-e2e.result }}
           R_MOCK: ${{ needs.mock-e2e.result }}
+          R_MANUAL: ${{ needs.manual-coverage.result }}
         with:
           script: |
             const script = require('.github/scripts/nightly-failure-sink.cjs');
