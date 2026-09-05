@@ -246,6 +246,11 @@ describe('ConsoleAdapter', () => {
         mockConsoleWallet.checkExtensionAvailability.mockResolvedValue({
           status: 'notInstalled',
         });
+        // A `notInstalled` answer is no longer taken as proof on its own — the
+        // vendor returns exactly this on a 1000ms timeout. A real absence is one
+        // the uncached confirming probe ALSO reports, so this test now has to say
+        // so. If it did not, it would be asserting the conflation we just removed.
+        mockConsoleWallet.status.mockRejectedValue(new Error('ResourceUnavailable'));
 
         const adapter = new ConsoleAdapter({ target: 'local' });
         const result = await adapter.detectInstalled();
@@ -254,19 +259,73 @@ describe('ConsoleAdapter', () => {
       },
     );
 
-    it(
-      'local: should handle extension timeout gracefully',
-      async () => {
-        mockConsoleWallet.checkExtensionAvailability.mockRejectedValue(
-          new Error('Timeout'),
-        );
+    /**
+     * These replace a test that mocked `checkExtensionAvailability` REJECTING.
+     * The vendor never rejects: on its 1000ms timeout it resolves
+     * `{ status: 'notInstalled' }` and caches it for the page
+     * (@console-wallet/dapp-sdk dist/esm/requests/checkAvailability.js, identical
+     * in 2.2.8, 2.2.9 and 2.2.10-beta.1). Mocking a rejection meant the old test
+     * exercised a branch the vendor cannot trigger, and the real timeout path —
+     * which reported a confident "not installed" — was never covered.
+     *
+     * Every case below feeds the shape the vendor actually returns.
+     */
+    it('local: a vendor timeout that resolves notInstalled is confirmed, not trusted', async () => {
+      // What a 1000ms timeout looks like coming out of the vendor.
+      mockConsoleWallet.checkExtensionAvailability.mockResolvedValue({
+        status: 'notInstalled',
+        minimalCapableVersion: '1.0.0',
+        isExtensionCapableByVersion: false,
+      });
+      // ...but the extension is there and answers the uncached probe.
+      mockConsoleWallet.status.mockResolvedValue({ isConnected: false });
 
-        const adapter = new ConsoleAdapter({ target: 'local' });
-        const result = await adapter.detectInstalled();
-        expect(result.installed).toBe(false);
-        expect(result.reason).toContain('not responding');
-      },
-    );
+      const adapter = new ConsoleAdapter({ target: 'local' });
+      const result = await adapter.detectInstalled();
+
+      expect(mockConsoleWallet.status).toHaveBeenCalled();
+      expect(result.availability).toEqual({ kind: 'installed' });
+      expect(result.installed).toBe(true);
+    });
+
+    it('local: notInstalled confirmed by a rejecting status() is a real absence', async () => {
+      mockConsoleWallet.checkExtensionAvailability.mockResolvedValue({
+        status: 'notInstalled',
+        minimalCapableVersion: '1.0.0',
+        isExtensionCapableByVersion: false,
+      });
+      mockConsoleWallet.status.mockRejectedValue(new Error('ResourceUnavailable'));
+
+      const adapter = new ConsoleAdapter({ target: 'local' });
+      const result = await adapter.detectInstalled();
+
+      expect(result.availability).toEqual({
+        kind: 'not-installed',
+        install: 'https://consolewallet.io',
+      });
+      expect(result.installed).toBe(false);
+    });
+
+    it('local: a confirming probe that never answers reports unknown, not absence', async () => {
+      mockConsoleWallet.checkExtensionAvailability.mockResolvedValue({
+        status: 'notInstalled',
+        minimalCapableVersion: '1.0.0',
+        isExtensionCapableByVersion: false,
+      });
+      // Never settles: the case the vendor's type cannot express at all.
+      mockConsoleWallet.status.mockReturnValue(new Promise(() => {}));
+
+      vi.useFakeTimers();
+      const adapter = new ConsoleAdapter({ target: 'local' });
+      const promise = adapter.detectInstalled();
+      await vi.advanceTimersByTimeAsync(2600);
+      const result = await promise;
+      vi.useRealTimers();
+
+      expect(result.availability).toMatchObject({ kind: 'unknown' });
+      expect((result.availability as { reason?: string }).reason).toContain('did not answer');
+      expect(result.installed).toBe(false);
+    });
 
     it(
       'remote: should return installed=false (no local install to detect)',
