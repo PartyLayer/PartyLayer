@@ -244,14 +244,20 @@ jobs:
         # sign/bridge, theme, the 4 security tests. The per-PR gate runs only the
         # fast/stable subset (smoke + connect + security via verify:e2e); this
         # nightly job runs the rest so the broader coverage can't silently rot.
-        run: NEXT_PUBLIC_MOCK_WALLETS=1 pnpm --filter partylayer-demo exec playwright test
+        # No mock ENV VAR: there isn't one, and there never was one that worked.
+        # The suite is "mock" because the demo injects a CIP-0103 provider fixture
+        # (apps/demo/public/mock-cip0103-wallet.js) at window.canton.demoWallet
+        # from a sync script tag, gated on NODE_ENV !== 'production'. Playwright's
+        # webServer runs `next dev`, so the fixture is present. This command used
+        # to carry a NEXT_PUBLIC_MOCK_WALLETS=1 prefix that no product code read.
+        run: pnpm --filter partylayer-demo exec playwright test
       - name: Summary
         if: always()
         run: |
           echo "## Nightly — mock E2E + security (full suite)" >> $GITHUB_STEP_SUMMARY
           echo "Status: ${{ job.status }}" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "The full apps/demo mock-fixture e2e suite (NEXT_PUBLIC_MOCK_WALLETS=1):" >> $GITHUB_STEP_SUMMARY
+          echo "The full apps/demo e2e suite, against the CIP-0103 provider fixture:" >> $GITHUB_STEP_SUMMARY
           echo "every transport (injected/announce/remote-signer/walletconnect)," >> $GITHUB_STEP_SUMMARY
           echo "multi-tab, sign-and-bridge, theme, and the 4 security tests. The" >> $GITHUB_STEP_SUMMARY
           echo "per-PR gate runs only the fast/stable subset (smoke + connect +" >> $GITHUB_STEP_SUMMARY

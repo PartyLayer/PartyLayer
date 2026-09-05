@@ -445,7 +445,7 @@ async function main() {
 
     // Step 8: Build demo app
     runStep('Build demo app', () => {
-      exec('cd apps/demo && NEXT_PUBLIC_MOCK_WALLETS=1 pnpm build', ROOT);
+      exec('cd apps/demo && pnpm build', ROOT);
     });
 
     // Step 9: Run E2E tests (mock mode)
@@ -466,7 +466,7 @@ async function main() {
       // mock suite runs nightly (nightly.yml `mock-e2e`). Locally, the full suite.
       const cmd = isCI ? 'test:e2e:pr' : 'test:e2e';
       try {
-        exec(`cd apps/demo && NEXT_PUBLIC_MOCK_WALLETS=1 pnpm ${cmd}`, ROOT);
+        exec(`cd apps/demo && pnpm ${cmd}`, ROOT);
         return [{ name: isCI ? 'pr-subset (smoke + connect)' : 'full-suite', status: 'passed' }];
       } catch (error: any) {
         return [{ name: 'e2e-suite', status: 'failed', error: error.message }];
@@ -483,7 +483,7 @@ async function main() {
         }];
       }
       try {
-        exec('cd apps/demo && NEXT_PUBLIC_MOCK_WALLETS=1 pnpm test:e2e --grep security', ROOT);
+        exec('cd apps/demo && pnpm test:e2e --grep security', ROOT);
         return [{ name: 'security-suite', status: 'passed' }];
       } catch (error: any) {
         return [{ name: 'security-suite', status: 'failed', error: error.message }];
