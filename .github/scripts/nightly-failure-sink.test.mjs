@@ -16,7 +16,7 @@ import { createRequire } from 'node:module';
 const require = createRequire(import.meta.url);
 const failureSink = require('./nightly-failure-sink.cjs');
 
-const ALL = ['R_GATE', 'R_CANARY', 'R_SESSION', 'R_MOCK'];
+const ALL = ['R_GATE', 'R_CANARY', 'R_SESSION', 'R_MOCK', 'R_MANUAL'];
 
 /** A fake Octokit that records every call instead of performing it. */
 function harness({ openIssues = [] } = {}) {
@@ -47,7 +47,7 @@ function setResults(results) {
 }
 
 test('first failure opens one labelled issue with a streak of 1', async () => {
-  setResults(['success', 'success', 'success', 'failure']);
+  setResults(['success', 'success', 'success', 'failure', 'success']);
   const h = harness();
   await failureSink(h);
 
@@ -62,7 +62,7 @@ test('first failure opens one labelled issue with a streak of 1', async () => {
 });
 
 test('a repeat of the SAME failure updates in place and does not comment', async () => {
-  setResults(['success', 'success', 'success', 'failure']);
+  setResults(['success', 'success', 'success', 'failure', 'success']);
   const h = harness({
     openIssues: [{
       number: 5,
@@ -80,7 +80,7 @@ test('a repeat of the SAME failure updates in place and does not comment', async
 });
 
 test('a CHANGE in the failing set posts a comment', async () => {
-  setResults(['failure', 'success', 'success', 'failure']);
+  setResults(['failure', 'success', 'success', 'failure', 'success']);
   const h = harness({
     openIssues: [{
       number: 5,
@@ -95,7 +95,7 @@ test('a CHANGE in the failing set posts a comment', async () => {
 });
 
 test('a fully green run closes the open tracker', async () => {
-  setResults(['success', 'success', 'success', 'success']);
+  setResults(['success', 'success', 'success', 'success', 'success']);
   const h = harness({
     openIssues: [{
       number: 5,
@@ -112,14 +112,14 @@ test('a fully green run closes the open tracker', async () => {
 });
 
 test('a green run with no tracker open does nothing', async () => {
-  setResults(['success', 'success', 'success', 'success']);
+  setResults(['success', 'success', 'success', 'success', 'success']);
   const h = harness();
   await failureSink(h);
   assert.deepEqual([h.calls.create, h.calls.update, h.calls.comment], [[], [], []]);
 });
 
 test('a cancelled run is inconclusive: it neither opens nor closes', async () => {
-  setResults(['cancelled', 'success', 'success', 'failure']);
+  setResults(['cancelled', 'success', 'success', 'failure', 'success']);
   const h = harness({
     openIssues: [{ number: 5, body: '<!-- nightly-assurance-failure-sink -->\n<!-- streak: 2 -->' }],
   });
@@ -128,14 +128,14 @@ test('a cancelled run is inconclusive: it neither opens nor closes', async () =>
 });
 
 test('an unrelated open issue carrying the label is not mistaken for the tracker', async () => {
-  setResults(['success', 'success', 'success', 'failure']);
+  setResults(['success', 'success', 'success', 'failure', 'success']);
   const h = harness({ openIssues: [{ number: 9, body: 'someone filed this by hand' }] });
   await failureSink(h);
   assert.equal(h.calls.create.length, 1, 'the MARKER identifies the tracker, not the label');
 });
 
 test('a permissions refusal fails the job loudly instead of doing nothing', async () => {
-  setResults(['success', 'success', 'success', 'failure']);
+  setResults(['success', 'success', 'success', 'failure', 'success']);
   const h = harness();
   const denied = Object.assign(new Error('Resource not accessible by integration'), { status: 403 });
   h.github.rest.issues.create = async () => { throw denied; };
@@ -150,10 +150,25 @@ test('a permissions refusal fails the job loudly instead of doing nothing', asyn
 });
 
 test('an unexpected API error is not swallowed', async () => {
-  setResults(['success', 'success', 'success', 'failure']);
+  setResults(['success', 'success', 'success', 'failure', 'success']);
   const h = harness();
   h.github.rest.issues.create = async () => {
     throw Object.assign(new Error('boom'), { status: 500 });
   };
   await assert.rejects(() => failureSink(h), /boom/);
+});
+
+test('a stale manual-coverage ledger is reported by name, not folded into another job', async () => {
+  // The a2 specs cannot run in CI, so their only signal is the by-hand ledger
+  // going stale. That has to arrive as its own failing job: routed through
+  // gate-main it would read as dependency drift, which is a different problem
+  // with a different fix.
+  setResults(['success', 'success', 'success', 'success', 'failure']);
+  const h = harness();
+  await failureSink(h);
+
+  assert.equal(h.calls.create.length, 1);
+  const body = h.calls.create[0].body;
+  assert.match(body, /<!-- failing: manual-coverage -->/);
+  assert.match(body, /Manual coverage \(by-hand specs still current\)/);
 });
