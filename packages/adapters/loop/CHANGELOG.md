@@ -1,5 +1,15 @@
 # @partylayer/adapter-loop
 
+## 0.5.1
+
+### Patch Changes
+
+- Require `@fivenorth/loop-sdk` ^0.15.1, so signing opens the wallet on the domain the user
+  connected through (#340). Loop moved its wallet to `wallet.*.looptech.io` in loop-sdk 0.15.0
+  and kept `*.cantonloop.com` as a secondary wallet URL. Under ^0.13.0 a devnet transfer failed in
+  the wallet with "Prepared transaction not found". Released from the 0.5.0 tag with this change
+  only. Nothing else on `main` is in this release.
+
 ## 0.5.0
 
 ### Minor Changes
