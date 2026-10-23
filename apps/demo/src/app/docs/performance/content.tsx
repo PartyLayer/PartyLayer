@@ -59,6 +59,12 @@ export default function PerformancePage() {
       </P>
 
       <H2 id="what-each-import-scenario-costs">What each import scenario costs</H2>
+      <P>The current candidate measures approximately 49.0 kB gzip for the SDK (49.25 kB budget),
+        49.2 kB for React Native headless (49.5 kB budget), and 36.65 kB for the React connection
+        surface (37 kB budget). Approved wallet runtimes remain lazy chunks. Complete transaction
+        evidence, combined-only routing and signature echo checks add about 0.34 kB to the shared
+        client. Server authentication helpers live in the separate core/authentication subpath.
+        Run pnpm gate:size for current results; the comparisons below are dated historical measurements.</P>
       <P>
         Measured with <Code>{'size-limit'}</Code> (esbuild bundler, gzip). Peer dependencies (React, React
         Query, React Native, react-native-svg, AsyncStorage) are treated as external because the consuming app

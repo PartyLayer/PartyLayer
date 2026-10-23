@@ -676,6 +676,7 @@ describe('SendAdapter: submitTransaction', () => {
     });
     expect(receipt.transactionHash).toBe('upd-exec');
     expect(receipt.commandId).toBe('cmd-exec');
+    expect(receipt.completionOffset).toBe(99);
   });
 });
 

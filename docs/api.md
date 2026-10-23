@@ -159,7 +159,13 @@ Get a CIP-0103 compliant Provider that wraps this client.
 asProvider(): CIP0103Provider
 ```
 
-Returns a Provider that routes all `request()` calls through the client's session and adapter. Supports all 10 mandatory CIP-0103 methods. See [CIP-0103 Compliance](../README.md#cip-0103-canton-dapp-standard-compliance) for details.
+Returns a Provider that routes requests through the client's session and actual
+wallet capabilities. Account methods project the active party; the legacy
+`ledgerApi` response remains `{ response: string }`. Combined-only wallets submit
+directly. Signed/executed events require genuine signature or ledger update/offset
+data; acknowledgements and lost responses never become fabricated confirmation.
+See [CIP-0103 alignment and limits](./CIP-0103-ALIGNMENT.md) and
+[Protocol ownership](./protocol-ownership.md).
 
 #### on / off
 

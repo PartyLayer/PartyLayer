@@ -18,7 +18,7 @@
 
 ### Features
 
-- **CIP-0103 Compliant**: All 10 mandatory methods implemented (`connect`, `disconnect`, `isConnected`, `status`, `getActiveNetwork`, `listAccounts`, `getPrimaryAccount`, `signMessage`, `prepareExecute`, `ledgerApi`)
+- **Provider request surface**: Handles the ten method names according to backing wallet capabilities (`connect`, `disconnect`, `isConnected`, `status`, `getActiveNetwork`, `listAccounts`, `getPrimaryAccount`, `signMessage`, `prepareExecute`, `ledgerApi`)
 - **Wallet Discovery**: Automatic scanning for injected CIP-0103 providers at `window.canton.*`
 - **Async Wallet Support**: Handles both synchronous (browser extension) and asynchronous (mobile/QR) wallet flows
 - **Standard Error Model**: `ProviderRpcError` with EIP-1193 / EIP-1474 numeric codes
@@ -58,7 +58,15 @@ const result = await provider.request({ method: 'connect' });
 const account = await provider.request({ method: 'getPrimaryAccount' });
 ```
 
-### Legacy Bridge (with PartyLayerClient)
+### Client compatibility bridge
+
+The bridge projects the active SDK party, retains the legacy `{ response: string }`
+Ledger API result, and emits transaction states only with genuine evidence. It does
+not establish full account/key enumeration or complete native protocol ownership.
+See [alignment and limits](../../docs/CIP-0103-ALIGNMENT.md) before relying on it
+as an exact standard wire implementation.
+
+Existing low-level composition:
 
 ```typescript
 import { createProviderBridge } from '@partylayer/provider';
@@ -67,8 +75,10 @@ import { createPartyLayer } from '@partylayer/sdk';
 const client = createPartyLayer({ network: 'devnet' });
 const provider = createProviderBridge(client);
 
-// Use standard CIP-0103 interface
-await provider.request({ method: 'connect', params: { walletId: 'console' } });
+// Choose a wallet through the SDK's documented application interface.
+await client.connect({ walletId: 'console' });
+// Then use the supported provider requests.
+await provider.request({ method: 'status' });
 ```
 
 ---

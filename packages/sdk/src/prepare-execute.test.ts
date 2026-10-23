@@ -107,6 +107,7 @@ describe('submitViaPrepareExecute', () => {
       const receipt = await submitViaPrepareExecute(provider, PARAMS, opts());
 
       expect(receipt.updateId).toBe('update-1');
+      expect(receipt.completionOffset).toBe(9);
       expect(receipt.commandId).toBe('cmd-1');
       expect(String(receipt.transactionHash)).toBe('update-1');
       expect(receipt.submittedAt).toBeTypeOf('number');
@@ -122,6 +123,11 @@ describe('submitViaPrepareExecute', () => {
         params: PARAMS.signedTx,
       });
     });
+  });
+
+  it.each([-1, 1.5, Number.NaN, Number.POSITIVE_INFINITY, Number.MAX_SAFE_INTEGER + 1, '9'])('omits an invalid ledger completion offset: %j', completionOffset => {
+    const { provider } = makeProvider(() => ({ tx: { payload: { updateId: 'real-update', completionOffset } } }));
+    return expect(submitViaPrepareExecute(provider, PARAMS, opts())).resolves.not.toHaveProperty('completionOffset');
   });
 
   describe('a wallet without the awaited verb', () => {

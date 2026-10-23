@@ -459,7 +459,7 @@ export class WalletConnectAdapter implements WalletAdapter {
     try {
       const wc = await this.ensureOfficial();
       const result = await wc.request<{
-        tx?: { payload?: { updateId?: string }; commandId?: string };
+        tx?: { payload?: { updateId?: string; completionOffset?: number }; commandId?: string };
       }>({ method: 'prepareExecuteAndWait', params: params.signedTx });
       // Was `updateId ?? commandId ?? 'pending'` — a three-level chain ending in
       // the literal string "pending" as a transactionHash. It now reads the real
@@ -477,6 +477,9 @@ export class WalletConnectAdapter implements WalletAdapter {
         transactionHash: toTransactionHash(updateId),
         submittedAt: Date.now(),
         updateId,
+        ...(typeof result?.tx?.payload?.completionOffset === 'number' &&
+          Number.isSafeInteger(result.tx.payload.completionOffset) && result.tx.payload.completionOffset >= 0
+          ? { completionOffset: result.tx.payload.completionOffset } : {}),
         ...(result?.tx?.commandId ? { commandId: result.tx.commandId } : {}),
       };
     } catch (err) {

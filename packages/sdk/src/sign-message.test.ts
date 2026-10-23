@@ -25,4 +25,12 @@ describe('CIP-0103 message response normalization', () => {
     expect(() => normalizeSignedMessage({ signature: 'opaque', partyId: 'bob::wallet' }, session,
       { message: 'hello' })).toThrow(/account changed/);
   });
+
+  it.each([null, 123, {}, 'bob::wallet'])('rejects an explicitly malformed or changed reported party: %j', partyId => {
+    expect(() => normalizeSignedMessage({ signature: 'opaque', partyId }, session, { message: 'hello' })).toThrow(/account changed/);
+  });
+
+  it.each([null, 123, {}, 'different'])('rejects an explicitly malformed or different reported message: %j', message => {
+    expect(() => normalizeSignedMessage({ signature: 'opaque', message }, session, { message: 'hello' })).toThrow(/unexpected message/);
+  });
 });

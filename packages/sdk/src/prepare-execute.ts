@@ -73,12 +73,11 @@ export interface ExecuteVerbState {
 /**
  * The awaited verb's result, per the standard's `PrepareExecuteAndWaitResult`.
  *
- * The response also carries `payload.completionOffset`, which is deliberately
- * dropped: `TxReceipt` has no such field (`@partylayer/core`, `types.ts:301-310`)
- * and widening a published type is not this fix's job.
+ * Preserve actual completion offsets so provider bridges can emit a complete
+ * executed event without manufacturing an offset or using a command as an update id.
  */
 interface ExecutedTxResponse {
-  tx?: { commandId?: unknown; payload?: { updateId?: unknown } };
+  tx?: { commandId?: unknown; payload?: { updateId?: unknown; completionOffset?: unknown } };
 }
 
 /**
@@ -99,6 +98,7 @@ function receiptFromExecutedTx(result: unknown): TxReceipt | null {
     submittedAt: Date.now(),
     commandId: typeof tx?.commandId === 'string' ? tx.commandId : undefined,
     updateId,
+    ...(validOffset(tx?.payload?.completionOffset) ? { completionOffset: tx.payload!.completionOffset as number } : {}),
   };
 }
 
@@ -118,8 +118,13 @@ function normalizeReceipt(result: unknown, request: Record<string, unknown>): Tx
     ...(typeof value.transactionHash === 'string' && value.transactionHash.length > 0
       ? { transactionHash: toTransactionHash(value.transactionHash) } : {}),
     ...(typeof value.updateId === 'string' && value.updateId.length > 0 ? { updateId: value.updateId } : {}),
+    ...(validOffset(value.completionOffset) ? { completionOffset: value.completionOffset as number } : {}),
     ...(commandId ? { commandId } : {}),
   };
+}
+
+function validOffset(value: unknown): value is number {
+  return typeof value === 'number' && Number.isSafeInteger(value) && value >= 0;
 }
 
 function reportOnce(

@@ -19,7 +19,7 @@ function createMockClient(overrides: Partial<BridgeableClient> = {}): Bridgeable
       partyId: 'party-abc' as unknown,
       network: 'devnet',
       expiresAt: Date.now() + 3600000,
-      capabilitiesSnapshot: ['connect', 'signMessage', 'ledgerApi'],
+      capabilitiesSnapshot: ['connect', 'signMessage', 'signTransaction', 'submitTransaction', 'ledgerApi'],
     })),
     disconnect: vi.fn(async () => {}),
     getActiveSession: vi.fn(async () => ({
@@ -28,17 +28,20 @@ function createMockClient(overrides: Partial<BridgeableClient> = {}): Bridgeable
       partyId: 'party-abc' as unknown,
       network: 'devnet',
       expiresAt: Date.now() + 3600000,
-      capabilitiesSnapshot: ['connect', 'signMessage', 'ledgerApi'],
+      capabilitiesSnapshot: ['connect', 'signMessage', 'signTransaction', 'submitTransaction', 'ledgerApi'],
     })),
     signMessage: vi.fn(async () => ({
       signature: 'sig-xyz' as unknown,
     })),
     signTransaction: vi.fn(async () => ({
+      signature: 'actual-signature-fixture',
+      signedBy: 'party-abc',
       transactionHash: 'tx-e2e-1' as unknown,
       signedTx: { data: 'signed' },
       partyId: 'party-abc' as unknown,
     })),
     submitTransaction: vi.fn(async () => ({
+      completionOffset: 37,
       transactionHash: 'tx-e2e-1' as unknown,
       submittedAt: Date.now(),
       commandId: 'cmd-e2e-1',
@@ -178,9 +181,9 @@ describe('CIP-0103 E2E Compliance', () => {
       expect(events.map((e) => e.status)).toEqual(['pending', 'failed']);
     });
 
-    it('submit failure emits pending -> signed -> failed', async () => {
+    it('explicit submit rejection emits pending -> signed -> failed', async () => {
       const client = createMockClient({
-        submitTransaction: vi.fn(async () => { throw new Error('submit failed'); }),
+        submitTransaction: vi.fn(async () => { throw Object.assign(new Error('user rejected'), { code: 4001 }); }),
       });
       const provider = createProviderBridge(client);
       const events: Array<{ status: string }> = [];

@@ -2,6 +2,10 @@
 
 ## 0.20.0
 
+- Preserve actual ledger completion offsets and reject explicitly malformed or
+  mismatched message/party echoes in signature responses. The provider bridge
+  supports combined-only wallets without inventing signature/ledger event data.
+
 - Supply the dApp SDK 0.24.0 peer required by Walley 1.2.0 explicitly, separately
   from WalletConnect's reviewed 1.8.0 runtime. Default consumers do not need to
   install or resolve that compatibility dependency themselves.

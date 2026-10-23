@@ -273,7 +273,10 @@ module.exports = [
     // bundle. Measured 47.22 kB; 47.75 kB leaves about 0.5 kB of headroom.
     // Default wallet catalog: measured 48.42 kB after lazy-loading optional transports.
     // Revision guards and serialized session writes add ~0.45 kB; measured ~48.8 kB.
-    limit: '49.25 kB',
+    // Complete provider transaction evidence, combined-only routing, duplicate
+    // command guards and exact signature echoes add ~0.34 kB to the shared client.
+    // Measured 49.23 kB; retain ~0.27 kB of headroom without dropping these checks.
+    limit: '49.5 kB',
   },
   {
     name: 'react-native: ui (ConnectButton)',
@@ -487,6 +490,11 @@ module.exports = [
     // Default wallet catalog and contract validation add about 1.2 kB gzip.
     // Official SDKs and configured transports remain separate lazy chunks. Measured 48.2 kB.
     // Revision guards and serialized session writes add ~0.45 kB; measured ~48.6 kB.
-    limit: '49 kB',
+    // The bridge previously emitted executed with a command id as updateId and
+    // completionOffset=0, treated a hash as a signature, and called sign-only on
+    // combined-only wallets. Real payload validation and no-retry/session guards
+    // add ~0.34 kB. Provider 249 / SDK 268 tests cover the corrected boundaries.
+    // Measured 49.00 kB after concise error messages; retain ~0.25 kB of headroom.
+    limit: '49.25 kB',
   },
 ];

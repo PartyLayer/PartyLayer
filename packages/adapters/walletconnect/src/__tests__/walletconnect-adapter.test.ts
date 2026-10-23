@@ -115,7 +115,7 @@ function makeMockOfficial(cfg: { onUri?: (u: string) => void }, opts: MockOffici
             session: { userId: 'wc-user', expiresAt: 9_999_999_999_999 },
           };
         case 'prepareExecuteAndWait':
-          return { tx: { commandId: 'cmd-2', payload: { updateId: 'update-2' } } };
+          return { tx: { commandId: 'cmd-2', payload: { updateId: 'update-2', completionOffset: 42 } } };
         case 'signMessage':
           return { signature: 'wc-signature-deadbeef' };
         case 'ledgerApi':
@@ -409,6 +409,7 @@ describe('WalletConnectAdapter — disconnect / restore / submit', () => {
       signedTx: { commands: [] },
     });
     expect(String(receipt.transactionHash)).toBe('update-2');
+    expect(receipt.completionOffset).toBe(42);
   });
 
   it('signMessage() issues canton_signMessage and maps the result to SignedMessage', async () => {

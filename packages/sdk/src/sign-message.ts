@@ -14,8 +14,13 @@ export function normalizeSignedMessage(
   }
   const reportedParty = response && typeof response === 'object'
     ? (response as { partyId?: unknown }).partyId : undefined;
-  if (typeof reportedParty === 'string' && reportedParty !== session.partyId) {
+  if (reportedParty !== undefined && reportedParty !== session.partyId) {
     throw new TransportError('The wallet account changed while signing; reconnect before retrying');
+  }
+  const reportedMessage = response && typeof response === 'object'
+    ? (response as { message?: unknown }).message : undefined;
+  if (reportedMessage !== undefined && reportedMessage !== params.message) {
+    throw new TransportError('Wallet signed an unexpected message');
   }
   return {
     signature: toSignature(signature),

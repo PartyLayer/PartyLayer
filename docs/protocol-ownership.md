@@ -70,7 +70,8 @@ their own API review; upgrading one SDK does not prove all vendor SDKs are curre
    from the currently published storage format.
 4. Route native RPC/actions and genuine provider events through that owner.
    Preserve Console's documented signing encoding and every supported vendor
-   envelope. Expose actual primary/account information; do not synthesize unknown
+   envelope. Migrate the legacy Ledger API response wrapper and add standard
+   path/query/header forwarding with versioned compatibility guidance. Expose actual primary/account information; do not synthesize unknown
    public keys or a selectable account list from one cached party.
 5. Keep existing proprietary integrations in a clearly marked compatibility
    boundary. Require verified native equivalents before removing them, or use an

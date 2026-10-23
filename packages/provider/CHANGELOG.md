@@ -4,6 +4,13 @@
 
 ### Patch Changes
 
+- Route combined-only transaction wallets directly to submission. Keep separate
+  signing for wallets that advertise it, bind submission to the same session and
+  reject duplicate pending command ids. Emit signed/executed events only from
+  actual signature metadata and ledger update/offset evidence. Lost submit
+  responses remain unknown; never retry or manufacture failed/completed events.
+  A disconnected bridge no longer invents an active Devnet network.
+
 - Updated dependencies [817d357]
 - Updated dependencies [2e07185]
 - Updated dependencies [882752f]

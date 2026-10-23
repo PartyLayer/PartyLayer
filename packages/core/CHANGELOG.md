@@ -4,6 +4,9 @@
 
 ### Minor Changes
 
+- Add optional ledger-reported `TxReceipt.completionOffset`, allowing complete
+  transaction events without synthesizing an offset or relabeling command ids.
+
 - Add the server-safe `@partylayer/core/amounts` helper for exact decimal token
   sums, and centralize the shared Holding/Lock/reference types without changing
   their existing React API shapes. Ordinary wallet client bundles do not import

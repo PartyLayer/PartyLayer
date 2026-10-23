@@ -37,7 +37,7 @@ function makeOfficial(
     getPrimaryAccount: { partyId: 'party::demo-1', networkId: 'canton:da-devnet' },
     status: { connection: { isConnected: true }, network: { networkId: 'canton:da-devnet' } },
     disconnect: null,
-    signMessage: { signature: 'sig', message: 'm' },
+    signMessage: { signature: 'sig' },
     // Was: `prepareExecute: { transactionHash: '0xabc' }` — a mock more generous
     // than the standard, which types prepareExecute as returning Null. The
     // adapter now prefers the awaited verb, so the fixture models what a real

@@ -4,6 +4,8 @@
 
 ### Patch Changes
 
+- Preserve valid wallet-reported ledger completion offsets in transaction receipts.
+
 - 0ebd598: Stop reporting wallets as installed when nothing was installed.
 
   `detectInstalled()` could only answer yes or no, and eight of twelve adapters had

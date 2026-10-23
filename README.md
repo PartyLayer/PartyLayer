@@ -503,13 +503,13 @@ enabled in production**: verification runs only when a consumer configures
 
 ## CIP-0103 (Canton dApp Standard) Compliance
 
-PartyLayer implements [CIP-0103](https://www.canton.network/cip-0103), the Canton dApp Standard for wallet-dApp communication. The `@partylayer/provider` package provides a spec-compliant Provider interface.
+PartyLayer uses [CIP-0103](https://github.com/canton-foundation/cips/blob/main/cip-0103/cip-0103.md), the Canton dApp Standard for wallet-dApp communication. The `@partylayer/provider` package exposes the provider interface; actual wallet capabilities and the documented compatibility limits determine available behavior.
 
 ### Provider Model
 
-PartyLayer offers two paths to CIP-0103 compliance:
+PartyLayer exposes two lower-level provider compositions alongside the recommended React kit:
 
-**Native Provider** (`PartyLayerProvider`), wraps any CIP-0103-compliant wallet provider (e.g. `window.canton.*`). This is the recommended path for new integrations.
+**Native Provider** (`PartyLayerProvider` from `@partylayer/provider`) wraps an attached CIP-0103 wallet provider. This is distinct from the React context provider.
 
 ```typescript
 import { PartyLayerProvider, discoverInjectedProviders } from '@partylayer/provider';
@@ -518,7 +518,7 @@ import { PartyLayerProvider, discoverInjectedProviders } from '@partylayer/provi
 const wallets = discoverInjectedProviders();
 
 // Create a Provider backed by a native wallet
-const provider = new PartyLayerProvider({ wallet: wallets[0].provider });
+const provider = new PartyLayerProvider({ walletProvider: wallets[0] });
 ```
 
 **Legacy Bridge** (`createProviderBridge`), wraps an existing `PartyLayerClient` instance as a CIP-0103 Provider. Use this for backward compatibility with the adapter-based SDK.
@@ -534,7 +534,9 @@ const provider = client.asProvider();
 
 The provider interfaces expose the following methods. Availability depends on the
 backing wallet and its capabilities. The client bridge currently projects the active
-party; it does not provide a complete selectable account list or unknown public keys:
+party; it does not provide a complete selectable account list or authoritative public
+keys. Its Ledger API result retains the legacy `{ response: string }` shape; see
+[alignment and compatibility limits](./docs/CIP-0103-ALIGNMENT.md):
 
 | Method | Description |
 |--------|-------------|
@@ -554,7 +556,7 @@ party; it does not provide a complete selectable account list or unknown public 
 ```typescript
 import { PartyLayerProvider } from '@partylayer/provider';
 
-const provider = new PartyLayerProvider({ wallet: nativeWallet });
+const provider = new PartyLayerProvider({ walletProvider: nativeWallet });
 
 // Connect
 const result = await provider.request({ method: 'connect' });
