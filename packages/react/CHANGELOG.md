@@ -11,6 +11,12 @@
 
 ### Minor Changes
 
+- Add optional application-backend authentication to PartyLayerKit and ConnectButton,
+  with explicit sign-in/sign-out, restored backend session checks, and invalidation
+  on observed wallet/party/network changes. Reject stale approvals and revoke late
+  verification after disconnect/unmount. Pair with the core single-use challenge
+  helpers and an application-owned signature/key-authorization verifier.
+
 - Add English/Turkish connection and operation UI, a `locale`/`direction` setting
   on `PartyLayerKit`, and `PartyLayerLocaleProvider` for advanced compositions.
   Locale changes preserve the client and wallet session, use deterministic SSR

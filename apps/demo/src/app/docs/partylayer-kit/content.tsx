@@ -31,6 +31,7 @@ function App() {
         { prop: 'appName', type: 'string', description: 'Your application name, shown to wallets during connection requests.' },
         { prop: 'locale', type: 'string', default: '"en"', description: 'Connection UI language: English/Turkish language tags; unsupported tags fall back to English.' },
         { prop: 'direction', type: '"ltr" | "rtl"', default: '"ltr"', description: 'Text and layout direction for PartyLayer UI.' },
+        { prop: 'authentication', type: 'PartyLayerAuthenticationAdapter', description: 'Application backend integration for server-verified sign-in. Omitted means wallet connection only.' },
         { prop: 'children', type: 'ReactNode', description: 'Your application component tree.' },
         { prop: 'registryUrl', type: 'string', default: '"https://registry.partylayer.xyz"', description: 'Override the wallet registry URL. Useful for self-hosted registries.' },
         { prop: 'channel', type: '"stable" | "beta"', default: '"stable"', description: 'Registry channel. Use "beta" to include wallets in beta testing.' },

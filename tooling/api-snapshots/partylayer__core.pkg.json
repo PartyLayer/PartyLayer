@@ -4,6 +4,11 @@
       "import": "./dist/index.mjs",
       "require": "./dist/index.js",
       "types": "./dist/index.d.ts"
+    },
+    "./authentication": {
+      "import": "./dist/authentication.mjs",
+      "require": "./dist/authentication.js",
+      "types": "./dist/authentication.d.ts"
     }
   },
   "main": "./dist/index.js",

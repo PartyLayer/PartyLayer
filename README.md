@@ -796,6 +796,12 @@ Every React starter uses that component; the modal shows **Powered by PartyLayer
 default. Framework-specific starters carry the same attribution. Custom UI and attribution
 configuration remain available for advanced integrations.
 
+Optional [application authentication](./docs/authentication.md) adds sign-in to the
+same button through your backend. Server-issued challenges bind origin, party,
+network, nonce and expiry in the signed bytes; the backend independently verifies
+signature/key authority and manages its own session. Wallet connection alone is
+not application authentication.
+
 Release acceptance for the default wallet platform:
 
 - One installation supplies the reviewed wallet runtimes, with no per-wallet developer wiring.

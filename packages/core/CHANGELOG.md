@@ -4,6 +4,11 @@
 
 ### Minor Changes
 
+- Add server-safe Canton application authentication challenge/message helpers and
+  verification orchestration with exact origin/identity/time binding and atomic
+  nonce consumption. Require application-owned signature AND party-key authorization;
+  do not infer an algorithm or trust a client-submitted public key.
+
 - 817d357: Stop deriving what we require of other people's wallets from what this SDK speaks.
 
   `CIP0103_MANDATORY_METHODS` was `Object.values(CIP0103_METHODS)`. That coupled two

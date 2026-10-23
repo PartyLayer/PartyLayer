@@ -16,6 +16,7 @@ import { useTheme } from './theme';
 import { useLocale } from './localization';
 import { WalletModal } from './modal';
 import { useWalletIcons, resolveWalletIcon } from './kit';
+import { useOptionalAuthentication } from './authentication';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -246,6 +247,7 @@ export function ConnectButton({
   const walletIcons = useWalletIcons();
   const theme = useTheme();
   const { t, locale, direction } = useLocale();
+  const authentication = useOptionalAuthentication();
 
   // Match the connected session's wallet to its registry entry (name + icon),
   // the same source the modal uses. Falls back gracefully when the wallet has no
@@ -363,6 +365,10 @@ export function ConnectButton({
   const brandYellow = theme.colors.primary;      // #FFCC00
   const brandHover = theme.colors.primaryHover;   // #E6B800
   const textOnBrand = theme.colors.primaryForeground ?? '#0B0F1A';
+  const authenticationError = authentication?.error && <span role="alert" style={{ display: 'block', maxWidth: '320px',
+    color: theme.colors.error, fontFamily: theme.fontFamily, fontSize: '12px', overflowWrap: 'anywhere' }}>
+    <bdi dir="auto">{t('authenticationFailed', { reason: authentication.error.message })}</bdi>
+  </span>;
 
   // ─── Disconnected State ───────────────────────────────────────────
 
@@ -416,6 +422,7 @@ export function ConnectButton({
           <WalletIcon size={16} color={textOnBrand} />
           <bdi dir="auto">{label ?? t('connectWallet')}</bdi>
         </button>
+        {authenticationError}
         <WalletModal
           isOpen={modalOpen}
           onClose={() => setModalOpen(false)}
@@ -493,7 +500,7 @@ export function ConnectButton({
   return (
     <div lang={locale} dir={direction} ref={dropdownRef} onBlur={(event) => {
       if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setDropdownOpen(false);
-    }} style={{ position: 'relative', display: 'inline-block' }}>
+    }} style={{ position: 'relative', display: 'inline-flex', flexWrap: 'wrap', gap: '8px' }}>
       <button
         type="button"
         ref={triggerRef}
@@ -588,6 +595,19 @@ export function ConnectButton({
           </span>
         )}
       </button>
+
+      {authentication && authentication.status !== 'authenticated' && (
+        <button type="button"
+          disabled={authentication.status === 'loading' || authentication.isPending}
+          aria-busy={authentication.isPending}
+          onClick={() => { void authentication.signIn().catch(() => {}); }}
+          style={{ border: 'none', borderRadius: theme.borderRadius, padding: '8px 14px',
+            backgroundColor: brandYellow, color: textOnBrand, fontFamily: theme.fontFamily,
+            fontSize: '13px', fontWeight: 600, cursor: authentication.isPending ? 'wait' : 'pointer' }}>
+          <bdi dir="auto">{t(authentication.status === 'loading' ? 'checkingSession' : authentication.isPending ? 'signingIn' : 'signIn')}</bdi>
+        </button>
+      )}
+      {authenticationError && <div style={{ flexBasis: '100%' }}>{authenticationError}</div>}
 
       {/* Dropdown Menu */}
       {dropdownOpen && showDisconnect && (
@@ -689,6 +709,15 @@ export function ConnectButton({
 
           {/* Action rows: icon-led, aligned, comfortable spacing. */}
           <div style={{ padding: '6px' }}>
+            {authentication?.status === 'authenticated' && (
+              <button type="button" role="menuitem" tabIndex={-1}
+                onClick={() => { setDropdownOpen(false); triggerRef.current?.focus(); void authentication.signOut().catch(() => {}); }}
+                style={{ display: 'block', width: '100%', border: 'none', borderRadius: theme.borderRadius,
+                  padding: '10px 12px', background: 'transparent', color: theme.colors.text,
+                  textAlign: 'start', fontSize: '13px', fontFamily: theme.fontFamily, cursor: 'pointer' }}>
+                <bdi dir="auto">{t('signOut')}</bdi>
+              </button>
+            )}
             {/* Copy address (the FULL party id; brief "Copied" feedback) */}
             <button
               type="button"

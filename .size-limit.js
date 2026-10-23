@@ -47,8 +47,10 @@ module.exports = [
     gzip: true,
     // Keyboard focus containment/restore and account menu navigation add ~0.9 kB.
     // English/Turkish UI dictionaries and SSR-safe locale/direction context add ~2.8 kB.
-    // Measured 33.43 kB gzip; keep ~0.32 kB of headroom for the localized surface.
-    limit: '33.75 kB',
+    // Optional authentication actions add ~0.42 kB. Backend challenge helpers
+    // live in a separate core subpath so ordinary SDK/RN consumers do not pay for them.
+    // Measured 33.85 kB gzip; keep ~0.4 kB of headroom.
+    limit: '34.25 kB',
   },
   {
     name: 'react/query: useTokenHoldings',

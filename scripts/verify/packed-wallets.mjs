@@ -91,9 +91,14 @@ import { readFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { createPartyLayer } from '@partylayer/sdk';
 import { registryEntryToWalletInfo } from '@partylayer/registry-client';
+import { createAuthenticationChallenge, formatAuthenticationMessage } from '@partylayer/core/authentication';
 const require = createRequire(import.meta.url);
 assert.equal(typeof require('@partylayer/sdk').createPartyLayer, 'function');
 assert.equal(typeof require('@partylayer/react').PartyLayerKit, 'function');
+assert.equal(typeof require('@partylayer/core/authentication').verifyAuthenticationProof, 'function');
+const challenge = createAuthenticationChallenge({ origin: 'https://app.example', partyId: 'party::packed',
+  networkId: 'canton:da-devnet', nonce: 'packed-consumer-nonce-1234567890abcdef' });
+assert.ok(formatAuthenticationMessage(challenge).includes('Party: party::packed'));
 const registry = JSON.parse(readFileSync(new URL('./registry.json', import.meta.url)));
 const client = createPartyLayer({ network: 'devnet', channel: 'beta', app: { name: 'Packed consumer' }, discovery: { announce: false } });
 client.registryClient.getRegistry = async () => registry;

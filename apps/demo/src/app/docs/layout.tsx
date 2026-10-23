@@ -88,6 +88,7 @@ const SIDEBAR_NAV = [
       { label: 'Dev & Staging', href: '/docs/dev-and-staging' },
       { label: 'Canton Topology', href: '/docs/partylayer-and-canton-topology' },
       { label: 'Error Handling', href: '/docs/error-handling' },
+      { label: 'Authentication', href: '/docs/authentication' },
       { label: 'TypeScript Types', href: '/docs/typescript' },
       { label: 'Wallet Balances', href: '/docs/wallet-balances' },
       { label: 'Token Transfers', href: '/docs/token-transfers' },
@@ -133,6 +134,7 @@ const SEARCH_INDEX: SearchEntry[] = [
 
   // Components
   { title: 'PartyLayerKit', href: '/docs/partylayer-kit', keywords: ['kit', 'provider', 'wrapper', 'zero-config', 'component'] },
+  { title: 'Authentication', href: '/docs/authentication', keywords: ['login', 'sign in', 'nonce', 'session', 'signature', 'replay', 'logout'] },
   { title: 'Props', section: 'PartyLayerKit', href: '/docs/partylayer-kit#props', keywords: ['network', 'appName', 'adapters', 'theme', 'walletIcons'] },
   { title: 'ConnectButton', href: '/docs/connect-button', keywords: ['button', 'connect', 'wallet', 'component', 'UI'] },
   { title: 'Button States', section: 'ConnectButton', href: '/docs/connect-button#states', keywords: ['disconnected', 'connecting', 'connected', 'dropdown'] },

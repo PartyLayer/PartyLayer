@@ -10,6 +10,9 @@ export * from './modal';
 // PartyLayerKit: zero-config wrapper
 export { PartyLayerKit, useWalletIcons, resolveWalletIcon } from './kit';
 export type { PartyLayerKitProps, WalletIconMap } from './kit';
+export { PartyLayerAuthenticationProvider, useAuthentication } from './authentication';
+export type { PartyLayerAuthenticationProviderProps, PartyLayerAuthenticationAdapter, UseAuthenticationReturn } from './authentication';
+export type { AuthenticationIdentity, AuthenticationChallenge } from '@partylayer/core';
 
 // ConnectButton: RainbowKit-style connection button
 export { ConnectButton, truncatePartyId, PartyAvatar } from './connect-button';

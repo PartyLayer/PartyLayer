@@ -17,6 +17,7 @@ import type { SessionStoreOptions } from '@partylayer/session';
 import { PartyLayerProvider } from './context';
 import { ThemeProvider } from './theme';
 import { PartyLayerLocaleProvider, type PartyLayerDirection } from './localization';
+import { PartyLayerAuthenticationProvider, type PartyLayerAuthenticationAdapter } from './authentication';
 import type { ThemeInput } from './theme';
 
 // ─── Wallet Icons Context ─────────────────────────────────────────────────────
@@ -91,6 +92,8 @@ export interface PartyLayerKitProps {
   locale?: string;
   /** UI layout direction. Defaults to ltr. */
   direction?: PartyLayerDirection;
+  /** Optional application-backend authentication; wallet connection alone is not sign-in. */
+  authentication?: PartyLayerAuthenticationAdapter;
 
   /** Registry URL override (default: https://registry.partylayer.xyz) */
   registryUrl?: string;
@@ -156,6 +159,7 @@ export function PartyLayerKit({
   theme = 'light',
   locale,
   direction,
+  authentication,
   walletIcons = {},
   walletOrder,
   sessionOptions,
@@ -206,7 +210,7 @@ export function PartyLayerKit({
         <AttributionContext.Provider value={attribution}>
           <ThemeProvider theme={themeValue}>
             <PartyLayerProvider client={client} network={network} sessionOptions={sessionOptions}>
-              {children}
+              {authentication ? <PartyLayerAuthenticationProvider adapter={authentication}>{children}</PartyLayerAuthenticationProvider> : children}
             </PartyLayerProvider>
           </ThemeProvider>
         </AttributionContext.Provider>

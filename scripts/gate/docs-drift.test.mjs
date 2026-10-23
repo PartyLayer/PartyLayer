@@ -79,6 +79,7 @@ test('generated apps retain the branded default connection experience', () => {
  */
 const CLASSIFICATION = {
   'generic-bridge': { mode: 'enforce' },
+  'authentication': { mode: 'enforce' },
   'partylayer-and-canton-topology': { mode: 'enforce' },
   'dev-and-staging': { mode: 'enforce' },
   'production-checklist': { mode: 'enforce' },

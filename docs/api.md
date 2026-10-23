@@ -222,6 +222,19 @@ import { PartyLayerKit } from '@partylayer/react';
 | `adapters` | `(WalletAdapter \| AdapterClass)[]` | Built-in adapters | Custom adapters |
 | `theme` | `'light' \| 'dark' \| 'auto' \| PartyLayerTheme` | `'light'` | Theme preset or custom theme |
 | `walletIcons` | `Record<string, string>` | `{}` | Custom wallet icon URLs by walletId |
+| `authentication` | `PartyLayerAuthenticationAdapter` | Omitted | Application backend challenge/verify/session/logout integration |
+
+With `authentication` configured, `ConnectButton` adds explicit sign-in and app
+sign-out. `useAuthentication()` exposes `status`, `identity`, `isPending`, `error`,
+`signIn()`, `signOut()` and `refresh()`. For advanced compositions, nest
+`PartyLayerAuthenticationProvider` inside `PartyLayerProvider`.
+
+The server-safe `@partylayer/core/authentication` subpath exports `createAuthenticationChallenge`,
+`formatAuthenticationMessage`, `validateAuthenticationChallenge` and
+`verifyAuthenticationProof`. The application supplies atomic, browser-bound
+challenge consumption and a verifier that checks both signature bytes and party
+authority. See [Application authentication](./authentication.md) for the complete
+backend contract and session/cookie requirements.
 
 ### ConnectButton
 

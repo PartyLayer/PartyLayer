@@ -716,3 +716,11 @@ The recommended UI is PartyLayer's `ConnectButton`. Its connection modal include
 “Powered by PartyLayer” by default, as do the generated starters. Custom UI remains
 available for advanced use. For authentication challenges, include nonce and domain in
 the message being signed; separate nonce/domain metadata is not a cryptographic binding.
+
+For application sign-in, pass a stable `authentication` backend integration to
+`PartyLayerKit`. The same `ConnectButton` then offers explicit sign-in and app
+sign-out. `useAuthentication()` exposes backend session status, pending/error state
+and refresh. Implement server challenge storage, CSRF/browser binding, exact message
+signature verification and independent party-key authorization before enabling it.
+See the [authentication guide](../../docs/authentication.md); a wallet connection
+or client-side status does not authorize backend requests.
