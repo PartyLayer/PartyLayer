@@ -2,6 +2,15 @@
 
 ## 0.20.0
 
+- Reject restoration when the live primary party or recognized network differs
+  from the saved session, including official-provider and legacy/custom paths.
+  Respect explicit disconnected status instead of reviving a cached account.
+
+- Coalesce restoration and invalidate stale restore/connection results when a
+  newer connection, disconnect or destroy supersedes them. Serialize persistence
+  so an old async save/logout cannot overwrite a new session. Keep popup opening
+  synchronous on pre-warmed connections.
+
 - Complete generic message-signature results, reject invalid signatures/account changes,
   unwrap the SDK transaction envelope into CIP-0103 command parameters, and normalize
   receipts without inventing ledger identifiers.

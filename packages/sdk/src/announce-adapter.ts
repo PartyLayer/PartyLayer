@@ -46,7 +46,7 @@ import type {
   WalletAdapter,
   WalletId,
 } from '@partylayer/core';
-import { toPartyId, toWalletId, normalizeLedgerMethodLower, ledgerApiBodyToObject, isRecognizedNetwork } from '@partylayer/core';
+import { toPartyId, toWalletId, normalizeLedgerMethodLower, ledgerApiBodyToObject, isRecognizedNetwork, detectNetworkMismatch } from '@partylayer/core';
 import { submitViaPrepareExecute, type ExecuteVerbState } from './prepare-execute';
 import { normalizeSignedMessage } from './sign-message';
 
@@ -387,6 +387,11 @@ export class GenericAnnounceAdapter implements WalletAdapter {
           method: 'getPrimaryAccount',
         });
         if (account.partyId !== persisted.partyId) return null;
+
+        const network = [status?.network?.networkId, account.networkId].find(
+          (value): value is string => typeof value === 'string' && isRecognizedNetwork(value),
+        );
+        if (network && detectNetworkMismatch(persisted.network, network)) return null;
 
         return {
           ...persisted,

@@ -225,6 +225,10 @@ export class PartyLayerClient {
   private readonly warmPlans = new Map<WalletId, ConnectPlan>();
   private eventHandlers = new Map<string, Set<EventHandler>>();
   private activeSession: Session | null = null;
+  private sessionRevision = 0;
+  private connectionAttempt = 0;
+  private restoreTask: Promise<Session | null> | null = null;
+  private sessionStorageQueue: Promise<void> = Promise.resolve();
   /**
    * True when `activeSession` was revived AS-IS (no live `status()` probe) because
    * its adapter wasn't registered yet at restore time (the lazy configured-announce
@@ -707,15 +711,18 @@ export class PartyLayerClient {
                 // exactly once (flag cleared); guarded so it can't break listing.
                 const active = this.activeSession;
                 if (active && this.activeSessionNeedsProbe && active.walletId === configured.walletId && configured.restore) {
+                  const revision = this.sessionRevision;
                   try {
                     const reprobed = await configured.restore(this.createAdapterContext(), {
                       ...active,
                       encrypted: '',
                     });
+                    if (this.destroyed || revision !== this.sessionRevision || this.activeSession !== active) continue;
                     if (reprobed) {
                       this.activeSession = reprobed;
                       this.activeSessionNeedsProbe = false;
                       await this.persistSession(reprobed);
+                      if (this.destroyed || revision !== this.sessionRevision || this.activeSession !== reprobed) continue;
                       this.emit('session:connected', { type: 'session:connected', session: reprobed });
                     } else {
                       // Wallet disconnected between reloads — clear the stale as-is session.
@@ -731,6 +738,7 @@ export class PartyLayerClient {
                       // session-expired-reprobe.test.ts, which fails if `active`
                       // is swapped back for this.activeSession.
                       await this.removeSession(active.sessionId);
+                      if (this.destroyed || revision !== this.sessionRevision || this.activeSession !== active) continue;
                       this.activeSession = null;
                       this.activeSessionNeedsProbe = false;
                       this.emit('session:expired', { type: 'session:expired', sessionId: active.sessionId });
@@ -830,6 +838,8 @@ export class PartyLayerClient {
    * Connect to a wallet
    */
   async connect(options?: ConnectOptions): Promise<Session> {
+    const attempt = ++this.connectionAttempt;
+    ++this.sessionRevision;
     // Track connect attempt
     this.telemetry?.increment?.(METRICS.WALLET_CONNECT_ATTEMPTS);
     // One correlation id for the whole connect operation, threaded through its logs
@@ -843,14 +853,14 @@ export class PartyLayerClient {
       // ZERO awaits, so the wallet's window.open survives the user gesture.
       // `tryFastConnect` is SYNCHRONOUS — when it returns a promise,
       // completeConnect has already invoked adapter.connect() in this call stack.
-      const fast = this.tryFastConnect(options, correlationId);
+      const fast = this.tryFastConnect(options, correlationId, attempt);
       if (fast) return await fast;
 
       // Normal path (every existing wallet — injected/announce — comes here):
       // resolve the plan (the awaited guards) then connect. Behavior-identical
       // to the pre-fast-path connect.
       const plan = await this.resolveConnectPlan(options);
-      return await this.completeConnect(plan, options, correlationId);
+      return await this.completeConnect(plan, options, correlationId, attempt);
     } catch (err) {
       const timeoutMs = options?.timeoutMs || DEFAULT_CONNECT_TIMEOUT_MS;
       const error = mapUnknownErrorToPartyLayerError(err, {
@@ -1007,8 +1017,12 @@ export class PartyLayerClient {
   private async completeConnect(
     plan: ConnectPlan,
     options?: ConnectOptions,
-    correlationId: string = newCorrelationId()
+    correlationId: string = newCorrelationId(),
+    attempt?: number,
   ): Promise<Session> {
+    const currentAttempt = attempt ?? ++this.connectionAttempt;
+    if (attempt === undefined) ++this.sessionRevision;
+    if (this.destroyed || currentAttempt !== this.connectionAttempt) throw new Error('Wallet connection was superseded');
     const { selectedWallet, adapter, ctx } = plan;
 
     // Connect
@@ -1044,6 +1058,7 @@ export class PartyLayerClient {
       // later and abort a live session's adapter.
       if (timeoutHandle !== undefined) clearTimeout(timeoutHandle);
     }
+    if (this.destroyed || currentAttempt !== this.connectionAttempt) throw new Error('Wallet connection was superseded');
 
     // Create session
     const session: Session = {
@@ -1084,12 +1099,15 @@ export class PartyLayerClient {
       }
     }
 
-    // Persist session
-    await this.persistSession(session);
-
-    // Set active session
+    // Publish the live identity before persistence, so another read cannot start
+    // restoring the old disk snapshot while this connection is being saved.
+    ++this.sessionRevision;
     this.activeSession = session;
     this.activeSessionNeedsProbe = false; // fresh connect — no restore re-probe needed
+    await this.persistSession(session);
+    if (this.destroyed || currentAttempt !== this.connectionAttempt || this.activeSession !== session) {
+      throw new Error('Wallet connection was superseded');
+    }
 
     // Update registry status (may have changed during fetch)
     this.updateRegistryStatus();
@@ -1149,7 +1167,7 @@ export class PartyLayerClient {
    * Returns the in-flight Session promise, or null to fall back to the normal
    * path (e.g. cold cache, or a non-discovery wallet).
    */
-  private tryFastConnect(options?: ConnectOptions, correlationId?: string): Promise<Session> | null {
+  private tryFastConnect(options?: ConnectOptions, correlationId?: string, attempt?: number): Promise<Session> | null {
     const walletId = options?.walletId;
     if (!walletId) return null;
     // Plan-affecting options must re-resolve (guards) → no fast-path.
@@ -1157,27 +1175,32 @@ export class PartyLayerClient {
     const plan = this.warmPlans.get(walletId);
     if (!plan) return null;
     this.warmPlans.delete(walletId); // one-shot; re-warmed on the next listWallets
-    return this.completeConnect(plan, options, correlationId);
+    return this.completeConnect(plan, options, correlationId, attempt);
   }
 
   /**
    * Disconnect from wallet
    */
   async disconnect(): Promise<void> {
-    if (!this.activeSession) {
+    const revision = ++this.sessionRevision;
+    ++this.connectionAttempt;
+    const session = this.activeSession;
+    if (!session) {
+      await this.removeSession();
       return;
     }
 
     try {
-      const adapter = this.adapters.get(this.activeSession.walletId);
+      const adapter = this.adapters.get(session.walletId);
       if (adapter) {
         const ctx = this.createAdapterContext();
-        await adapter.disconnect(ctx, this.activeSession);
+        await adapter.disconnect(ctx, session);
       }
 
-      const sessionId = this.activeSession.sessionId;
+      if (revision !== this.sessionRevision || this.activeSession !== session) return;
+      const sessionId = session.sessionId;
       await this.removeSession(sessionId);
-
+      if (revision !== this.sessionRevision || this.activeSession !== session) return;
       this.activeSession = null;
       // Drop any pre-warmed connect plans; they re-warm on the next listWallets.
       this.warmPlans.clear();
@@ -1199,6 +1222,7 @@ export class PartyLayerClient {
    * Get active session
    */
   async getActiveSession(): Promise<Session | null> {
+    if (this.destroyed) return null;
     if (this.activeSession) {
       // Check expiration
       if (this.activeSession.expiresAt && Date.now() >= this.activeSession.expiresAt) {
@@ -1488,6 +1512,8 @@ export class PartyLayerClient {
    * Destroy client and cleanup
    */
   destroy(): void {
+    ++this.sessionRevision;
+    ++this.connectionAttempt;
     this.destroyed = true;
     // Flush and destroy telemetry if it supports it
     if (this.telemetry && 'destroy' in this.telemetry && typeof this.telemetry.destroy === 'function') {
@@ -1540,10 +1566,15 @@ export class PartyLayerClient {
    * Persist session to storage
    */
   private async persistSession(session: Session): Promise<void> {
+    const revision = this.sessionRevision;
     try {
       const data = JSON.stringify(session);
       const encrypted = await this.crypto.encrypt(data, this.origin);
-      await this.storage.set(SESSION_STORAGE_KEY, encrypted);
+      const write = this.sessionStorageQueue.then(async () => {
+        if (!this.destroyed && revision === this.sessionRevision) await this.storage.set(SESSION_STORAGE_KEY, encrypted);
+      });
+      this.sessionStorageQueue = write.catch(() => {});
+      await write;
     } catch (err) {
       this.log('warn', 'session:persist_failed', 'Failed to persist session', {
         error: err instanceof Error ? err.message : String(err),
@@ -1557,9 +1588,14 @@ export class PartyLayerClient {
    * Accepts a sessionId for call-site symmetry, but since the SDK tracks one
    * active session we always remove the single SESSION_STORAGE_KEY.
    */
-  private async removeSession(_sessionId: SessionId): Promise<void> {
+  private async removeSession(_sessionId?: SessionId): Promise<void> {
+    const revision = this.sessionRevision;
     try {
-      await this.storage.remove(SESSION_STORAGE_KEY);
+      const remove = this.sessionStorageQueue.then(async () => {
+        if (!this.destroyed && revision === this.sessionRevision) await this.storage.remove(SESSION_STORAGE_KEY);
+      });
+      this.sessionStorageQueue = remove.catch(() => {});
+      await remove;
     } catch (err) {
       this.log('warn', 'session:remove_failed', 'Failed to remove session', {
         error: err instanceof Error ? err.message : String(err),
@@ -1570,7 +1606,19 @@ export class PartyLayerClient {
   /**
    * Restore session from storage
    */
-  private async restoreSession(): Promise<Session | null> {
+  private restoreSession(): Promise<Session | null> {
+    if (this.destroyed) return Promise.resolve(null);
+    if (this.restoreTask) return this.restoreTask;
+    const task = this.restoreSessionOnce();
+    this.restoreTask = task;
+    const clear = () => { if (this.restoreTask === task) this.restoreTask = null; };
+    void task.then(clear, clear);
+    return task;
+  }
+
+  private async restoreSessionOnce(): Promise<Session | null> {
+    const revision = this.sessionRevision;
+    const current = () => !this.destroyed && revision === this.sessionRevision;
     // Track restore attempt
     this.telemetry?.increment?.(METRICS.RESTORE_ATTEMPTS);
     const correlationId = newCorrelationId();
@@ -1578,11 +1626,13 @@ export class PartyLayerClient {
 
     try {
       const encrypted = await this.storage.get(SESSION_STORAGE_KEY);
+      if (!current()) return this.activeSession;
       if (!encrypted) {
         return null;
       }
 
       const decrypted = await this.crypto.decrypt(encrypted, this.origin);
+      if (!current()) return this.activeSession;
       const session = JSON.parse(decrypted) as Session;
 
       // Check expiration
@@ -1632,6 +1682,7 @@ export class PartyLayerClient {
 
       // Load the same default catalog on reload, before looking up the persisted wallet.
       await this.ensureDefaultWallets();
+      if (!current()) return this.activeSession;
 
       // Try to restore with adapter
       const adapter = this.adapters.get(session.walletId);
@@ -1669,12 +1720,16 @@ export class PartyLayerClient {
           ...session,
           encrypted,
         });
+        if (!current()) return this.activeSession;
 
-        if (restored) {
+        // A restore may refresh metadata, but must not silently change identity
+        // or switch networks behind a persisted application session.
+        if (restored && restored.partyId === session.partyId && !detectNetworkMismatch(session.network, restored.network)) {
           this.activeSession = restored;
           this.activeSessionNeedsProbe = false; // adapter.restore already live-probed
           // Persist restored session (may have updated metadata)
           await this.persistSession(restored);
+          if (!current()) return this.activeSession;
           
           // Track successful restore
           this.telemetry?.increment?.(METRICS.SESSIONS_RESTORED);

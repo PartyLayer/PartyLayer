@@ -118,6 +118,14 @@ describe('GenericAnnounceAdapter — opt-in config', () => {
     expect(r).toEqual({ response: '{"ok":true}' });
   });
 
+  it('does not revive the same party on a different live network', async () => {
+    const { adapter } = make({ restore: true }, {
+      status: { connection: { isConnected: true }, network: { networkId: 'canton:da-mainnet' } },
+      getPrimaryAccount: { ...ACCOUNT, networkId: 'canton:da-mainnet' },
+    });
+    expect(await adapter.restore!(ctx, { partyId: ACCOUNT.partyId, network: 'devnet' } as never)).toBeNull();
+  });
+
   it('(e) metadata: populated when configured + provider returns it; minimal otherwise', async () => {
     const withMeta = await make({ metadata: true }).adapter.connect(ctx);
     expect(withMeta.session.metadata).toMatchObject({

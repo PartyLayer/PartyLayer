@@ -53,7 +53,7 @@ import type {
   WalletAdapter,
   WalletId,
 } from '@partylayer/core';
-import { toPartyId, toWalletId, isRecognizedNetwork, normalizeLedgerMethodLower, ledgerApiBodyToObject } from '@partylayer/core';
+import { toPartyId, toWalletId, isRecognizedNetwork, normalizeLedgerMethodLower, ledgerApiBodyToObject, detectNetworkMismatch } from '@partylayer/core';
 import { submitViaPrepareExecute, type ExecuteVerbState } from './prepare-execute';
 import { normalizeSignedMessage } from './sign-message';
 
@@ -309,6 +309,7 @@ export class GenericDiscoveryAdapter implements WalletAdapter {
   /** Restore silently and validate the live party before exposing a connected session. */
   async restore(ctx: AdapterContext, persisted: PersistedSession): Promise<Session | null> {
     try {
+      if (persisted.expiresAt && Date.now() >= persisted.expiresAt) return null;
       this.resolveOfficial(ctx.network);
       if (this.official?.restore) {
         const restored = await this.official.restore();
@@ -319,6 +320,13 @@ export class GenericDiscoveryAdapter implements WalletAdapter {
       // A silent account probe distinguishes that case from an expired session.
       const account = await this.provider.request<CIP0103Account>({ method: 'getPrimaryAccount' });
       if (account.partyId !== persisted.partyId) return null;
+      let status: { connection?: { isConnected?: boolean }; network?: { networkId?: string } } | undefined;
+      try { status = await this.provider.request({ method: 'status' }); } catch { /* Use the account network if status is unavailable. */ }
+      if (status?.connection?.isConnected === false) return null;
+      const network = [status?.network?.networkId, account.networkId].find(
+        (value): value is string => typeof value === 'string' && isRecognizedNetwork(value),
+      );
+      if (network && detectNetworkMismatch(persisted.network, network)) return null;
       return { ...persisted, walletId: this.walletId, capabilitiesSnapshot: this.getCapabilities() } as Session;
     } catch {
       return null;

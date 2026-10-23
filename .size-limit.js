@@ -272,7 +272,8 @@ module.exports = [
     // is not lazy-loaded (LAZY_WALLET_SDKS names Cantor8 only), so it is in this
     // bundle. Measured 47.22 kB; 47.75 kB leaves about 0.5 kB of headroom.
     // Default wallet catalog: measured 48.42 kB after lazy-loading optional transports.
-    limit: '48.75 kB',
+    // Revision guards and serialized session writes add ~0.45 kB; measured ~48.8 kB.
+    limit: '49.25 kB',
   },
   {
     name: 'react-native: ui (ConnectButton)',
@@ -485,6 +486,7 @@ module.exports = [
     // bundle. Measured 47.00 kB; 47.5 kB leaves about 0.5 kB of headroom.
     // Default wallet catalog and contract validation add about 1.2 kB gzip.
     // Official SDKs and configured transports remain separate lazy chunks. Measured 48.2 kB.
-    limit: '48.5 kB',
+    // Revision guards and serialized session writes add ~0.45 kB; measured ~48.6 kB.
+    limit: '49 kB',
   },
 ];

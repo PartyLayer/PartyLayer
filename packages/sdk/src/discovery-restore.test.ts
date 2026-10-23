@@ -253,4 +253,17 @@ describe('discovery-adapter session survives reload (through the SDK reload path
     expect(restoreSpy).not.toHaveBeenCalled(); // gate runs before any adapter handoff
     await b.destroy();
   });
+
+  it('refuses a restored wallet that moved networks even when the persisted party is unchanged', async () => {
+    const storage = makeStorage();
+    const { official: first } = makeOfficial({ withRestore: true, network: 'devnet' });
+    await seed(storage, first, 'devnet');
+    const { official: moved, restoreSpy } = makeOfficial({ withRestore: true, network: 'mainnet' });
+    const client = createPartyLayer({ network: 'devnet', app: { name: 'network-move', origin: ORIGIN },
+      registryUrl: 'https://unused.invalid', adapters: [moved as never], storage });
+    await new Promise(resolve => setTimeout(resolve, 60));
+    expect(await client.getActiveSession()).toBeNull();
+    expect(restoreSpy).toHaveBeenCalled();
+    client.destroy();
+  });
 });
