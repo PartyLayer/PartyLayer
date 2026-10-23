@@ -177,6 +177,19 @@ describe('backend authentication lifecycle', () => {
     expect(view.result.current.status).toBe('unauthenticated');
   });
 
+  it('revokes a possibly-created backend session when verification loses its response', async () => {
+    const view = setup();
+    await waitFor(() => expect(view.result.current.status).toBe('unauthenticated'));
+    vi.mocked(view.adapter.verify).mockRejectedValueOnce(new Error('Response lost'));
+    await act(async () => { await expect(view.result.current.signIn()).rejects.toThrow('Response lost'); });
+    expect(view.adapter.signOut).toHaveBeenCalledTimes(1);
+    expect(view.result.current.status).toBe('unauthenticated');
+    vi.mocked(view.adapter.verify).mockRejectedValueOnce(new Error('Response lost'));
+    vi.mocked(view.adapter.signOut).mockRejectedValueOnce(new Error('Offline'));
+    await act(async () => { await expect(view.result.current.signIn()).rejects.toThrow(/could not be cleared/); });
+    expect(view.result.current.error?.message).toContain('could not be cleared');
+  });
+
   it('waits for wallet restoration before checking or revoking the backend session', async () => {
     state.isLoading = true;
     const view = setup();

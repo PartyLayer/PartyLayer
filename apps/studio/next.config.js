@@ -25,9 +25,9 @@ const nextConfig = {
     // Resolve workspace packages
     config.resolve.alias = {
       ...config.resolve.alias,
-      '@partylayer/react': path.resolve(__dirname, '../../packages/react'),
+      '@partylayer/react$': path.resolve(__dirname, '../../packages/react'),
       '@partylayer/sdk': path.resolve(__dirname, '../../packages/sdk'),
-      '@partylayer/core': path.resolve(__dirname, '../../packages/core'),
+      '@partylayer/core$': path.resolve(__dirname, '../../packages/core'),
       '@partylayer/registry-client': path.resolve(__dirname, '../../packages/registry-client'),
       '@partylayer/provider': path.resolve(__dirname, '../../packages/provider'),
       '@partylayer/session': path.resolve(__dirname, '../../packages/session'),

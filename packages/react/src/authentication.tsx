@@ -165,7 +165,16 @@ export function PartyLayerAuthenticationProvider({ adapter, children }: PartyLay
       validateAuthenticationChallenge(challenge, { ...captured.identity, origin: window.location.origin });
       const verified = await runBackend(async () => {
         assertCurrent();
-        const result = await captured.adapter.verify({ nonce: challenge.nonce, signature: String(signed.signature) });
+        let result: AuthenticationIdentity | null;
+        try {
+          result = await captured.adapter.verify({ nonce: challenge.nonce, signature: String(signed.signature) });
+        } catch (reason) {
+          // A transport/response-parsing error does not prove the server failed
+          // to create a session. Revoke it before another login can start.
+          try { await captured.adapter.signOut(); }
+          catch { throw new Error('Authentication verification failed and the server session could not be cleared'); }
+          throw reason;
+        }
         if (!mounted.current || current.current.key !== captured.key || operation.current !== id) {
           // A verification that already reached the server must be explicitly
           // revoked even if the provider unmounts or the user disconnects.
