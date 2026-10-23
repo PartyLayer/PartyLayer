@@ -69,6 +69,14 @@ function make(config?: AnnounceAdapterConfig, handlers?: Handlers) {
 }
 
 describe('GenericAnnounceAdapter — opt-in config', () => {
+  it.each([false, { isConnected: false }])('rejects a negative handshake before reading a cached primary account: %j', async connect => {
+    const { adapter } = make(undefined, { connect });
+    await expect(adapter.connect(ctx)).rejects.toThrow(/did not establish a connection/);
+  });
+  it('rejects an empty primary party instead of reporting a connected session', async () => {
+    const { adapter } = make(undefined, { getPrimaryAccount: { ...ACCOUNT, partyId: '' } });
+    await expect(adapter.connect(ctx)).rejects.toThrow(/primary party/);
+  });
   it('(a) NO config → byte-identical baseline (3 caps, minimal session, no optional methods)', async () => {
     const { adapter } = make();
     expect(adapter.getCapabilities()).toEqual(['connect', 'signMessage', 'submitTransaction']);

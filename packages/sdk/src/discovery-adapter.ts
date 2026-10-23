@@ -56,6 +56,7 @@ import type {
 import { toPartyId, toWalletId, isRecognizedNetwork, normalizeLedgerMethodLower, ledgerApiBodyToObject, detectNetworkMismatch } from '@partylayer/core';
 import { submitViaPrepareExecute, type ExecuteVerbState } from './prepare-execute';
 import { normalizeSignedMessage } from './sign-message';
+import { assertConnectionAccepted, assertPrimaryParty } from './connection-result';
 
 export interface GenericDiscoveryAdapterArgs {
   /**
@@ -270,10 +271,11 @@ export class GenericDiscoveryAdapter implements WalletAdapter {
     // CIP-0103 connect handshake over the official provider. For popup wallets
     // this opens the wallet's popup; it must be reached SYNCHRONOUSLY from the
     // user gesture (see the SDK's popup-safe connect fast-path).
-    await this.provider.request({ method: 'connect' });
+    assertConnectionAccepted(await this.provider.request({ method: 'connect' }));
     const account = await this.provider.request<CIP0103Account>({
       method: 'getPrimaryAccount',
     });
+    assertPrimaryParty(account);
 
     // Wallet-reported network (truthful) → fall back to account, then dApp config.
     let reportedNetwork: string | undefined;

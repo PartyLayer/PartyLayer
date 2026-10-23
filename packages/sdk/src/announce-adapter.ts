@@ -49,6 +49,7 @@ import type {
 import { toPartyId, toWalletId, normalizeLedgerMethodLower, ledgerApiBodyToObject, isRecognizedNetwork, detectNetworkMismatch } from '@partylayer/core';
 import { submitViaPrepareExecute, type ExecuteVerbState } from './prepare-execute';
 import { normalizeSignedMessage } from './sign-message';
+import { assertConnectionAccepted, assertPrimaryParty } from './connection-result';
 
 /** Capabilities of the generic announce bridge, including before installation. */
 export function getAnnounceCapabilities(config: AnnounceAdapterConfig = {}): CapabilityKey[] {
@@ -257,10 +258,11 @@ export class GenericAnnounceAdapter implements WalletAdapter {
   async connect(ctx: AdapterContext): Promise<AdapterConnectResult> {
     return this.guarded(async () => {
       // CIP-0103 connect handshake over the target-scoped channel.
-      await this.provider.request({ method: 'connect' });
+      assertConnectionAccepted(await this.provider.request({ method: 'connect' }));
       const account = await this.provider.request<CIP0103Account>({
         method: 'getPrimaryAccount',
       });
+      assertPrimaryParty(account);
 
       // Wallet-reported network (truthful), per A1b — fall back to dApp config.
       let status: AnnounceStatus | undefined;

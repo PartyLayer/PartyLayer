@@ -63,6 +63,17 @@ const ctx = { network: 'canton:da-devnet' } as unknown as AdapterContext;
 const session = {} as Session;
 
 describe('GenericDiscoveryAdapter', () => {
+  it.each([false, { isConnected: false }])('rejects an explicit failed handshake even when a cached account exists: %j', async result => {
+    const { official, providerFactory } = makeOfficial({}, { connect: result });
+    const adapter = new GenericDiscoveryAdapter({ official });
+    await expect(adapter.connect(ctx)).rejects.toThrow(/did not establish a connection/);
+    const provider = providerFactory.mock.results[0].value;
+    expect(vi.mocked(provider.request).mock.calls.map(call => call[0].method)).toEqual(['connect']);
+  });
+  it.each([undefined, { partyId: '' }, { partyId: ' ' }])('does not publish a missing/empty primary party: %j', async account => {
+    const { official } = makeOfficial({}, { getPrimaryAccount: account });
+    await expect(new GenericDiscoveryAdapter({ official }).connect(ctx)).rejects.toThrow(/primary party/);
+  });
   it('derives walletId from the provider id by default', () => {
     const { official } = makeOfficial();
     const a = new GenericDiscoveryAdapter({ official });

@@ -2,6 +2,9 @@
 
 ## 0.20.0
 
+- Reject explicit negative CIP-0103 connection responses and empty primary-party
+  results, even when the wallet still has cached account metadata.
+
 - Reject restoration when the live primary party or recognized network differs
   from the saved session, including official-provider and legacy/custom paths.
   Respect explicit disconnected status instead of reviving a cached account.
