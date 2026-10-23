@@ -423,6 +423,13 @@ import { ConnectButton } from '@partylayer/react';
 | `showDisconnect` | `boolean` | No | Show the dropdown with copy and disconnect (default `true`) |
 | `className` / `style` | `string` / `CSSProperties` | No | Styling overrides |
 
+**Keyboard behavior:** The wallet dialog moves focus inside on open, wraps Tab and
+Shift+Tab, and restores the opener after closing. The connected account menu
+supports Enter/Space, Arrow Up/Down, Home/End and Escape; Tab leaves the menu.
+Avatar-only buttons have an accessible account name. Actions use `type="button"`
+so embedding the component in a form does not submit the form. Vendor approval
+surfaces keep their own keyboard handling.
+
 ### `PartyAvatar`
 
 A small deterministic avatar generated from a Canton party id (the same id always yields the same avatar). Reused inside `ConnectButton`, and exported so you can render the same identity mark elsewhere.

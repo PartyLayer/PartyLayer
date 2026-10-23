@@ -248,6 +248,11 @@ import { ConnectButton } from '@partylayer/react';
 - **Connecting**: Disabled with spinner animation
 - **Connected**: Compact button showing truncated party ID, dropdown with disconnect
 
+The account dropdown exposes menu semantics and keyboard navigation: Arrow Up/Down,
+Home/End, Escape to close and restore the trigger, and Tab to leave. The wallet
+dialog moves focus inside, contains Tab navigation and restores the opener on close.
+These controls do not submit an enclosing application form.
+
 ### WalletModal
 
 Multi-state wallet selection modal with CIP-0103 native wallet priority.

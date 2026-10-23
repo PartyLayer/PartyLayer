@@ -66,6 +66,19 @@ function Navbar() {
         <LI><Strong>Disconnect button</Strong>: cleanly ends the session</LI>
       </UL>
 
+      <H2 id="keyboard">Keyboard Navigation</H2>
+      <P>
+        Opening the wallet dialog moves focus inside. Tab and Shift+Tab stay within
+        the dialog; Escape closes it and returns focus to the opener. Wallet-owned
+        approval windows keep their own keyboard handling.
+      </P>
+      <P>
+        The connected account menu supports Enter/Space, Arrow Up/Down, Home/End,
+        Escape to close and return to the account button, and Tab to leave the menu.
+        Avatar-only buttons include an accessible account name. The component's
+        buttons do not submit an enclosing application form.
+      </P>
+
       <H2 id="connected-label">Connected Label Formats</H2>
       <CodeBlock language="tsx">{`// Show truncated party ID (default)
 <ConnectButton connectedLabel="address" />

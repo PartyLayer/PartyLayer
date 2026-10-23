@@ -17,6 +17,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useWallets, useConnect } from './hooks';
 import { useTheme } from './theme';
+import { useDialogFocus } from './dialog-focus';
 import { useWalletIcons, useWalletOrder, useAttribution, resolveWalletIcon } from './kit';
 import type { WalletInfo } from '@partylayer/sdk';
 import { isCip0103Native } from '@partylayer/sdk';
@@ -681,16 +682,6 @@ export function WalletModal({
   // Cleanup on unmount
   useEffect(() => cleanupConnectResources, [cleanupConnectResources]);
 
-  // Handle ESC key
-  useEffect(() => {
-    if (!isOpen) return;
-    const handler = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') handleClose();
-    };
-    document.addEventListener('keydown', handler);
-    return () => document.removeEventListener('keydown', handler);
-  }, [isOpen]);
-
   // Transition to error/not-installed view when connect fails
   useEffect(() => {
     if (error && view === 'connecting') {
@@ -734,6 +725,8 @@ export function WalletModal({
       onClose();
     }, 150);
   }, [onClose, resetConnect, cleanupConnectResources]);
+
+  useDialogFocus(modalRef, isOpen || closing, displayedView, handleClose);
 
   /**
    * Start a MutationObserver that watches for the Console SDK's QR code
@@ -1045,6 +1038,7 @@ export function WalletModal({
   const renderSubHeader = (backAction: () => void) => (
     <div style={headerStyle}>
       <button
+        type="button"
         onClick={backAction}
         style={{ ...closeBtnBase, width: 'auto', padding: '0 10px', gap: '4px' }}
         onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = hoverBg; }}
@@ -1054,6 +1048,7 @@ export function WalletModal({
         <span style={{ fontSize: '12px', color: theme.colors.textSecondary, fontWeight: 500 }}>Back</span>
       </button>
       <button
+        type="button"
         onClick={handleClose}
         style={closeBtnStyle}
         onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = hoverBg; }}
@@ -1076,6 +1071,7 @@ export function WalletModal({
 
     return (
       <button
+        type="button"
         key={wallet.walletId}
         className="pl-wallet-row pl-stagger-item"
         onClick={() => handleWalletClick(wallet)}
@@ -1264,6 +1260,7 @@ export function WalletModal({
           Connect Wallet
         </h2>
         <button
+          type="button"
           onClick={handleClose}
           style={closeBtnStyle}
           onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = hoverBg; }}
@@ -1396,6 +1393,7 @@ export function WalletModal({
                 while searching so it never competes with results. */}
             {showWalletGuide && !query && (
               <button
+                type="button"
                 onClick={() => setView('wallet-guide')}
                 style={{
                   marginTop: '4px',
@@ -1528,6 +1526,7 @@ export function WalletModal({
           keys, so only you can sign, and this app never sees them.
         </p>
         <button
+          type="button"
           onClick={handleBackToList}
           style={{
             display: 'inline-flex',
@@ -1639,6 +1638,7 @@ export function WalletModal({
           </div>
 
           <button
+            type="button"
             onClick={handleBackToList}
             style={ghostBtnStyle}
             onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = theme.colors.surface; }}
@@ -1727,6 +1727,7 @@ export function WalletModal({
           </div>
 
           <button
+            type="button"
             onClick={handleBackToList}
             style={ghostBtnStyle}
             onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = theme.colors.surface; }}
@@ -1738,6 +1739,7 @@ export function WalletModal({
           {/* Mobile fallback link */}
           <div style={{ marginTop: '20px' }}>
             <button
+              type="button"
               onClick={handleSwitchToMobile}
               style={linkStyle}
               onMouseEnter={(e) => { e.currentTarget.style.color = theme.colors.text; }}
@@ -1812,6 +1814,7 @@ export function WalletModal({
 
           <div style={{ display: 'flex', gap: '10px', justifyContent: 'center' }}>
             <button
+              type="button"
               onClick={handleRetry}
               style={primaryBtnStyle}
               onMouseEnter={(e) => {
@@ -1828,6 +1831,7 @@ export function WalletModal({
             </button>
 
             <button
+              type="button"
               onClick={handleSwitchToMobile}
               style={ghostBtnStyle}
               onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = theme.colors.surface; }}
@@ -1982,7 +1986,7 @@ export function WalletModal({
       <>
         <div style={headerStyle}>
           <div />
-          <button onClick={handleClose} style={closeBtnStyle} aria-label="Close">
+          <button type="button" onClick={handleClose} style={closeBtnStyle} aria-label="Close">
             <CloseIcon size={16} color={theme.colors.textSecondary} />
           </button>
         </div>
@@ -2152,6 +2156,7 @@ export function WalletModal({
 
           <div style={{ display: 'flex', gap: '10px', justifyContent: 'center', flexWrap: 'wrap' }}>
             <button
+              type="button"
               onClick={handleRetry}
               style={primaryBtnStyle}
               onMouseEnter={(e) => {
@@ -2178,6 +2183,7 @@ export function WalletModal({
               </a>
             )}
             <button
+              type="button"
               onClick={handleBackToList}
               style={ghostBtnStyle}
               onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = theme.colors.surface; }}
@@ -2216,6 +2222,7 @@ export function WalletModal({
           </div>
           <div style={{ display: 'flex', gap: '10px', justifyContent: 'center', flexWrap: 'wrap' }}>
             <button
+              type="button"
               onClick={handleRetry}
               style={primaryBtnStyle}
               onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = theme.colors.primaryHover; e.currentTarget.style.transform = 'translateY(-1px)'; }}
@@ -2224,6 +2231,7 @@ export function WalletModal({
               Reconnect
             </button>
             <button
+              type="button"
               onClick={handleBackToList}
               style={ghostBtnStyle}
               onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = theme.colors.surface; }}
@@ -2330,6 +2338,7 @@ export function WalletModal({
               </a>
             )}
             <button
+              type="button"
               onClick={handleBackToList}
               style={{ ...ghostBtnStyle, fontSize: '13px' }}
               onMouseEnter={(e) => {
@@ -2448,6 +2457,7 @@ export function WalletModal({
 
             <div style={{ display: 'flex', gap: '10px' }}>
               <button
+                type="button"
                 onClick={handleRetry}
                 style={{ ...ghostBtnStyle, fontSize: '13px' }}
                 onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = theme.colors.surface; }}
@@ -2456,6 +2466,7 @@ export function WalletModal({
                 Try Again
               </button>
               <button
+                type="button"
                 onClick={handleBackToList}
                 style={{ ...ghostBtnStyle, fontSize: '13px' }}
                 onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = theme.colors.surface; }}
@@ -2483,6 +2494,7 @@ export function WalletModal({
     >
       <div
         ref={modalRef}
+        tabIndex={-1}
         className="pl-panel"
         style={panelStyle}
         onClick={(e) => e.stopPropagation()}

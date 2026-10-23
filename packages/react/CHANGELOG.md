@@ -5,6 +5,10 @@
 - Preserve the live client during React StrictMode effect replay while still disposing
   replaced/unmounted clients. This keeps asynchronously loaded wallets available in development.
 
+- Add wallet dialog focus containment/restore and account menu keyboard navigation,
+  accessible avatar-only account names, and form-safe buttons. Keep vendor approval
+  surfaces independent. Cover the behavior with unit and real Chromium keyboard tests.
+
 ### Minor Changes
 
 - Include the reviewed, pinned Walley, Cauri, OneSwap and Vala official SDKs in the existing SDK with lazy loading through the generic CIP-0103 bridge. React and generated projects use the same default catalog without wallet-specific imports or installation. WalletConnect and Bron use shared application configuration; custom adapters can replace or extend defaults.

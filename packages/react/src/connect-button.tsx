@@ -10,7 +10,7 @@
  * and polished across light/dark themes.
  */
 
-import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
+import { useState, useRef, useEffect, useCallback, useMemo, useId } from 'react';
 import { useClientSession, useConnect, useDisconnect, useWallets } from './hooks';
 import { useTheme } from './theme';
 import { WalletModal } from './modal';
@@ -259,6 +259,45 @@ export function ConnectButton({
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [copied, setCopied] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
+  const menuId = useId();
+  const openAtEndRef = useRef(false);
+  const disconnectFocusRef = useRef(false);
+
+  useEffect(() => {
+    if (dropdownOpen && showDisconnect) {
+      const items = menuRef.current?.querySelectorAll<HTMLButtonElement>('[role="menuitem"]');
+      const index = openAtEndRef.current && items ? items.length - 1 : 0;
+      items?.[index]?.focus();
+      openAtEndRef.current = false;
+    }
+  }, [dropdownOpen, showDisconnect]);
+
+  useEffect(() => {
+    if (disconnectFocusRef.current && !session && !isConnecting) {
+      disconnectFocusRef.current = false;
+      triggerRef.current?.focus();
+    }
+  }, [session, isConnecting]);
+
+  const handleMenuKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
+    const items = Array.from(menuRef.current?.querySelectorAll<HTMLButtonElement>('[role="menuitem"]') ?? []);
+    const index = items.indexOf(document.activeElement as HTMLButtonElement);
+    if (event.key === 'Escape' || event.key === 'Tab') {
+      setDropdownOpen(false);
+      triggerRef.current?.focus();
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        event.stopPropagation();
+      }
+    } else if (['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(event.key)) {
+      event.preventDefault();
+      const target = event.key === 'Home' ? 0 : event.key === 'End' ? items.length - 1
+        : (index + (event.key === 'ArrowDown' ? 1 : -1) + items.length) % items.length;
+      items[target]?.focus();
+    }
+  };
   const copiedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Clear the copied-feedback timer on unmount.
@@ -280,6 +319,8 @@ export function ConnectButton({
 
   const handleDisconnect = useCallback(async () => {
     setDropdownOpen(false);
+    triggerRef.current?.focus();
+    disconnectFocusRef.current = true;
     try {
       await disconnect();
     } catch {
@@ -327,6 +368,9 @@ export function ConnectButton({
     return (
       <>
         <button
+          type="button"
+          ref={triggerRef}
+          aria-haspopup="dialog"
           onClick={() => setModalOpen(true)}
           className={className}
           style={{
@@ -383,6 +427,7 @@ export function ConnectButton({
   if (isConnecting) {
     return (
       <button
+        type="button"
         disabled
         className={className}
         style={{
@@ -440,9 +485,24 @@ export function ConnectButton({
   );
 
   return (
-    <div ref={dropdownRef} style={{ position: 'relative', display: 'inline-block' }}>
+    <div ref={dropdownRef} onBlur={(event) => {
+      if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setDropdownOpen(false);
+    }} style={{ position: 'relative', display: 'inline-block' }}>
       <button
-        onClick={() => setDropdownOpen(!dropdownOpen)}
+        type="button"
+        ref={triggerRef}
+        aria-label={accountStatus === 'avatar' ? `Account ${connectedPartyId}` : undefined}
+        aria-haspopup={showDisconnect ? 'menu' : undefined}
+        aria-expanded={showDisconnect ? dropdownOpen : undefined}
+        aria-controls={dropdownOpen && showDisconnect ? menuId : undefined}
+        onKeyDown={(event) => {
+          if (showDisconnect && (event.key === 'ArrowDown' || event.key === 'ArrowUp')) {
+            event.preventDefault();
+            openAtEndRef.current = event.key === 'ArrowUp';
+            setDropdownOpen(true);
+          }
+        }}
+        onClick={() => { if (showDisconnect) setDropdownOpen(!dropdownOpen); }}
         className={className}
         style={{
           display: 'inline-flex',
@@ -526,6 +586,11 @@ export function ConnectButton({
       {/* Dropdown Menu */}
       {dropdownOpen && showDisconnect && (
         <div
+          ref={menuRef}
+          id={menuId}
+          role="menu"
+          aria-label="Wallet account"
+          onKeyDown={handleMenuKeyDown}
           className="pl-account-menu"
           style={{
             position: 'absolute',
@@ -619,6 +684,9 @@ export function ConnectButton({
           <div style={{ padding: '6px' }}>
             {/* Copy address (the FULL party id; brief "Copied" feedback) */}
             <button
+              type="button"
+              role="menuitem"
+              tabIndex={-1}
               className="pl-account-row"
               onClick={() => handleCopy(connectedPartyId)}
               style={{
@@ -658,6 +726,9 @@ export function ConnectButton({
 
             {/* Disconnect: the terminal action, in the danger color. */}
             <button
+              type="button"
+              role="menuitem"
+              tabIndex={-1}
               className="pl-account-row"
               onClick={handleDisconnect}
               style={{

@@ -45,7 +45,9 @@ module.exports = [
     ignore: REACT_PEERS,
     modifyEsbuildConfig: assetsAsEmpty,
     gzip: true,
-    limit: '30 kB',
+    // Keyboard focus containment/restore and account menu navigation add ~0.9 kB.
+    // Measured 30.52 kB gzip; keep ~0.23 kB of headroom for this connection surface.
+    limit: '30.75 kB',
   },
   {
     name: 'react/query: useTokenHoldings',

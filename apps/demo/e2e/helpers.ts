@@ -86,7 +86,8 @@ export async function disconnectWallet(page: Page): Promise<void> {
   }
 
   // Wait for the dropdown with "Disconnect" button
-  const disconnectBtn = page.getByRole('button', { name: 'Disconnect' });
+  const disconnectBtn = page.getByRole('menuitem', { name: 'Disconnect' })
+    .or(page.getByRole('button', { name: 'Disconnect' }));
   await expect(disconnectBtn).toBeVisible({ timeout: 3000 });
   await disconnectBtn.click();
 
