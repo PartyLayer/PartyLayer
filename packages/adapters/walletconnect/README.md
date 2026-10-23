@@ -12,7 +12,17 @@ the `canton_` method mapping, `session_event` handling, and restore all come
 from the official adapter — this package only adapts it to PartyLayer's
 `WalletAdapter` contract.
 
-## Install (opt-in)
+## Recommended integration
+
+The default PartyLayer installation already includes this runtime lazily. Existing
+React apps install `@partylayer/react @tanstack/react-query`, render `PartyLayerKit`
+and `ConnectButton`, and pass a WalletConnect Cloud project ID through the shared
+`walletConnect` setting. No extra PartyLayer wallet package registration is needed.
+See the [quick start](https://partylayer.xyz/docs/quick-start).
+
+## Existing explicit integrations
+
+The following low-level setup remains available for compatibility:
 
 ```sh
 pnpm add @partylayer/adapter-walletconnect
@@ -44,14 +54,17 @@ const pl = createPartyLayer({ adapters: [...getBuiltinAdapters(), wc] });
 static import would eagerly pull `@walletconnect/sign-client` and break
 webpack/Next consumers that haven't installed it. So this adapter imports the
 barrel **only via dynamic `import()`** inside `connect()`/`restore()` — never at
-module load. `detectInstalled()` is pure (a `projectId` check), so rendering the
+module load. `detectInstalled()` is pure and reports no local installation, so rendering the
 picker never pulls dapp-sdk either. Apps that don't opt in never reference this
 package, so they never bundle dapp-sdk or sign-client.
 
 ## Notes
 
-- `chainId` is left **unset** by default (per the Canton WC spec: request the
-  `canton` namespace and use whatever network the wallet provides).
+- The requested chain is derived from the configured PartyLayer network unless
+  explicitly overridden with `chainId`. The connected session reports the wallet's
+  actual network; incompatible restored networks require reconnection.
+- The official SDK is pinned to reviewed version **1.8.0**. A matching persisted
+  party, live recognized network and active, unexpired session are required for restore.
 - Capabilities: `connect, disconnect, restore, signMessage, submitTransaction,
   ledgerApi, events, remoteSigner, deeplink`. `signTransaction` is unsupported
   (Canton WC fuses sign-and-submit via `prepareExecute`).

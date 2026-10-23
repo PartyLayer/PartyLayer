@@ -2,6 +2,10 @@
 
 ## 0.20.0
 
+- Supply the dApp SDK 0.24.0 peer required by Walley 1.2.0 explicitly, separately
+  from WalletConnect's reviewed 1.8.0 runtime. Default consumers do not need to
+  install or resolve that compatibility dependency themselves.
+
 - Reject explicit negative CIP-0103 connection responses and empty primary-party
   results, even when the wallet still has cached account metadata.
 

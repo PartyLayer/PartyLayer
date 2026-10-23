@@ -42,7 +42,7 @@
   },
   "dependencies": {
     "@partylayer/core": "workspace:^",
-    "@canton-network/dapp-sdk": "^1.2.0"
+    "@canton-network/dapp-sdk": "1.8.0"
   },
   "peerDependencies": {
     "@walletconnect/sign-client": "^2.23.8",

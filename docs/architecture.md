@@ -1,369 +1,120 @@
-# PartyLayer Architecture
+# PartyLayer architecture
 
-## Overview
+## Current application entry point
 
-PartyLayer provides a unified SDK for dApps to connect to multiple Canton Network wallets through a single integration. The architecture supports two integration paths:
+Existing React applications install `@partylayer/react @tanstack/react-query`,
+configure `PartyLayerKit`, and render `ConnectButton`. The kit creates the public
+`PartyLayerClient`; its default catalog loads reviewed wallet runtimes through
+shared bridges. No additional PartyLayer package is required per wallet.
+WalletConnect project IDs, enterprise credentials and beta/network selection
+remain application configuration. See [Quick start](./quick-start.md).
 
-1. **CIP-0103 Provider path** (recommended): Uses `@partylayer/provider` to wrap native CIP-0103 wallet providers directly
-2. **Adapter-based SDK path** (legacy): Uses `@partylayer/sdk` with wallet adapters for wallet-specific integrations
-
-The architecture is designed to be:
-
-- **Modular**: Separate packages for core, SDK, provider, adapters, and React bindings
-- **CIP-0103 compliant**: Native implementation of the Canton dApp Standard
-- **Extensible**: Easy to add new wallet adapters or CIP-0103 wallet providers
-- **Type-safe**: Full TypeScript support with strict mode
-- **Future-proof**: Versioned registry with migration support
-
-## Architecture Diagram
-
-PartyLayer supports two integration paths. dApps can use either or both:
-
-```
-┌──────────────────────────────────────────────────────────────────────────────┐
-│                            dApp Application                                  │
-│   ┌────────────────────────────────────────────────────────────────────┐     │
-│   │              @partylayer/react (Hooks/UI)                         │     │
-│   └────────────────────────────────────────────────────────────────────┘     │
-└──────────────────────────────────────────────────────────────────────────────┘
-           │                                          │
-           ▼                                          ▼
-┌──────────────────────────┐           ┌──────────────────────────────┐
-│  CIP-0103 Provider Path  │           │   Adapter-based SDK Path     │
-│  (recommended)           │           │   (legacy)                   │
-│                          │           │                              │
-│  @partylayer/provider    │           │  @partylayer/sdk             │
-│  ┌────────────────────┐  │  bridge   │  ┌────────────────────────┐  │
-│  │ PartyLayerProvider  │  │<─────────│  │ client.asProvider()    │  │
-│  │ MethodRouter        │  │           │  │ Session Management     │  │
-│  │ EventBus            │  │           │  │ Event System           │  │
-│  │ Discovery           │  │           │  │ Storage                │  │
-│  │ Error Model         │  │           │  └────────────────────────┘  │
-│  └────────────────────┘  │           │             │                │
-└──────────────────────────┘           └──────────────────────────────┘
-           │                                          │
-           ▼                                          ▼
-┌──────────────────────────┐           ┌──────────────────────────────┐
-│  Native CIP-0103 Wallets │           │  Wallet Adapters                    │
-│  (window.canton.*)       │           │  Console, Loop, Cantor8, Nightly, Bron│
-└──────────────────────────┘           └──────────────────────────────┘
-                                                      │
-                    ┌────────────────┐                 │
-                    │ @partylayer    │                 │
-                    │ /core          │<────────────────┘
-                    │                │
-                    │ Types          │
-                    │ Errors         │
-                    │ CIP-0103 Types │
-                    │ Transport      │
-                    └────────────────┘
+```mermaid
+flowchart TD
+  App[Application: PartyLayerKit and ConnectButton] --> Client[PartyLayerClient]
+  Client --> Registry[Registry metadata and capability/network filters]
+  Client --> Generic[Generic CIP-0103 bridges]
+  Client --> Compatibility[Existing compatibility integrations]
+  Generic --> Native[Announced or injected providers]
+  Generic --> Official[Reviewed official wallet runtimes]
+  Compatibility --> Vendors[Wallet SDKs and transports]
+  Client --> View[Reactive account/session view]
+  View --> UI[Connection, authentication and activity UI]
+  Client --> Bridge[Optional client.asProvider bridge]
 ```
 
-## Package Structure
+The diagram describes the candidate implementation. Moving protocol ownership to
+one official Canton client remains a separate migration; see
+[Protocol ownership](./protocol-ownership.md). The existence of a provider bridge
+or generic wrapper does not mean that migration has already happened.
 
-### `@partylayer/core`
+## Package responsibilities
 
-Core types, errors, and abstractions used across all packages.
+| Package | Responsibility |
+| --- | --- |
+| `@partylayer/core` | Shared contracts, capabilities, errors, CAIP-2 network helpers and token types |
+| `@partylayer/core/authentication` | Server-safe challenge formatting and verification orchestration; application supplies authorized signature verification and atomic nonce storage |
+| `@partylayer/core/amounts` | Server-safe exact decimal summation |
+| `@partylayer/registry-client` | Fetch, validate and cache wallet metadata; never import executable code from registry-provided URLs |
+| `@partylayer/sdk` | Default runtime loaders, wallet orchestration, validated persisted sessions and public wallet actions |
+| `@partylayer/provider` | Direct provider wrapper, CIP-0103 error/event helpers and `createProviderBridge`; `client.asProvider()` exposes the existing client |
+| `@partylayer/session` | Reactive connection/account state for the bindings; this view is not an application authentication session |
+| `@partylayer/react` | Kit, default branded UI, themes, locale, authentication and transaction/activity/holdings views |
+| `@partylayer/react/query` | Read queries and ledger-write mutations; write retries are disabled to avoid duplicate submissions |
+| `@partylayer/vue`, `@partylayer/react-native` | Platform bindings with their documented feature sets; React additions do not imply full cross-platform parity |
+| Existing `@partylayer/adapter-*` packages | Compatibility with existing integrations; closed to new per-wallet PartyLayer packages |
 
-**Key Exports:**
-- `types.ts`: Core TypeScript types (PartyId, Session, WalletMetadata, etc.)
-- `errors.ts`: Error classes for different failure scenarios
-- `adapter.ts`: WalletAdapter interface contract
-- `transport.ts`: Transport abstractions for wallet communication
-- `session.ts`: Session management utilities
-- `cip0103-types.ts`: CIP-0103 type definitions (Provider, events, methods, accounts, networks)
+New wallets use the [generic integration paths](./generic-bridge.md). The registry
+advertises metadata, network/channel availability and supported capabilities.
+A capability must also have a real implementation; no universal sign-only,
+network-switching or event support is inferred from a wallet appearing in the picker.
 
-### `@partylayer/registry-client`
+## Connection and restored identity
 
-Client for fetching and caching the wallet registry.
+The SDK warms approved lazy loaders before an explicit connection click. Bridges
+preserve the synchronous hosted-wallet opening path. Explicitly declined
+handshakes and empty primary parties cannot create an active connection.
 
-**Features:**
-- Fetches registry from remote URL
-- Validates registry schema
-- Caches registry with TTL
-- Converts registry entries to WalletMetadata
+A saved PartyLayer session is a restoration hint. Supported transports must validate
+it with the live provider, including primary party, recognized network and expiry.
+A provider change requires reconnection rather than silently relabeling cached
+identity. OneSwap currently requires a fresh explicit connection.
 
-### `@partylayer/sdk`
+Connection revisions prevent old approvals or restores from overwriting a newer
+connection. Session storage writes/removals are serialized and revision-checked;
+a late logout cannot erase a subsequently connected session. Destroyed clients
+cannot revive a connection. Session metadata storage is not a secret vault or
+backend authorization mechanism. Do not persist private keys or recovery phrases.
 
-Main SDK implementation that orchestrates wallet connections.
+Some popup wallets do not emit account/network events. The UI must not imply
+instant change detection in those wallets; refresh/reconnect and validate the
+active identity before sensitive operations. Selecting a party or switching a
+network requires the wallet's documented interface; there is no invented
+universal CIP-0103 setter.
 
-**Features:**
-- Wallet adapter registration
-- Session management with encrypted storage
-- Event system for connect/disconnect/transaction updates
-- Connection, signing, and transaction submission flows
+## Authentication boundary
 
-### `@partylayer/provider`
+Wallet connection establishes a wallet session. Application login additionally
+requires a single-use server challenge and independently authorized signature
+verification. `PartyLayerKit.authentication` integrates those backend endpoints;
+`ConnectButton` supplies explicit sign-in and sign-out actions.
 
-CIP-0103 native Provider implementation.
+Challenges are prepared before a click to preserve hosted-wallet popup activation.
+Signatures are never requested automatically on mount. The backend binds and
+atomically consumes the nonce for the same browser, verifies origin/party/network
+and exact message bytes, and independently checks the signing key's authority.
+It enforces CSRF protection, session expiry and authorization on every sensitive
+request. Origin-bound local wallet metadata does not provide CSRF protection.
+See [Application authentication](./authentication.md).
 
-**Key Exports:**
-- `PartyLayerProvider`: CIP-0103-compliant Provider class wrapping native wallet providers
-- `createProviderBridge()`: Backward-compatibility bridge from `PartyLayerClient` to CIP-0103 Provider
-- `ProviderRpcError`: Error class with EIP-1193/EIP-1474 numeric codes
-- `discoverInjectedProviders()`: Scans `window.canton.*` for injected CIP-0103 wallets
-- `waitForProvider()`: Waits for a wallet provider to become available
-- `MethodRouter`: Dispatches CIP-0103 method calls to handler functions
-- `CIP0103EventBus`: Event emitter implementing CIP-0103 event semantics
-- `toCAIP2Network()` / `fromCAIP2Network()`: CAIP-2 network identifier utilities
+## Transactions and holdings
 
-**Integration Paths:**
-- **Native**: `new PartyLayerProvider({ wallet })` wraps any CIP-0103 wallet directly
-- **Bridge**: `client.asProvider()` wraps the legacy `PartyLayerClient` as a CIP-0103 Provider
+The application constructs valid Canton commands for transfers or protocol-specific
+swaps. PartyLayer routes supported signing/submission calls; a message signature
+alone does not establish that either ledger operation works.
 
-### `@partylayer/conformance-runner`
+`useTransactionFlow` performs one wallet write, then optionally reconciles through
+an independent read-only ledger/backend callback. Submission acknowledgement,
+ledger confirmation, rejection, failure and an unknown outcome remain distinct.
+A timeout or lost response never authorizes an automatic second write.
+Recent activity is in-memory and scoped by wallet, party and CAIP-2 network;
+it is not a complete ledger history. See [Transaction lifecycle](./transaction-lifecycle.md).
 
-CLI and library for testing adapter and CIP-0103 conformance.
+Holdings come from the application's authorized, complete snapshot. The UI checks
+party/network scope, separates instrument issuers, uses exact decimal strings,
+and keeps reported locks separate. Incomplete or malformed reads cannot become a
+zero balance. See [Wallet balances](./wallet-balances.md).
 
-**Key Exports:**
-- `runCIP0103ConformanceTests()`: Validates a Provider against CIP-0103 (interface, methods, events, errors)
-- `formatCIP0103Report()`: Formats conformance results for terminal output
+## Validation and remaining acceptance
 
-### `@partylayer/adapters/*`
+`pnpm gate` covers workspace builds, tests, public API/packaging snapshots, native
+provider conformance, registry/template/docs drift, packed npm consumers and
+browser checks. Browser-required compatibility suites are explicitly skipped in
+CI; mocked transports and local cryptographic test keys do not establish live
+wallet compatibility or vendor-specific signature verification.
 
-Wallet-specific adapter implementations.
-
-Each adapter implements the `WalletAdapter` interface:
-- `connect()`: Establish connection to wallet
-- `disconnect()`: Close connection
-- `signMessage()`: Sign arbitrary messages
-- `signTransaction()`: Sign DAML transactions
-- `submitTransaction()`: Submit signed transactions
-- `restoreSession()`: Restore existing session (if supported)
-
-**Default wallet catalog:** the SDK includes reviewed official SDKs (Walley, Cauri, OneSwap, and Devnet-beta Vala), loaded lazily through the generic discovery bridge. Console and Send use the generic CIP-0103 path. WalletConnect and Bron are enabled with `walletConnect` and `bron` application configuration. Registry network/channel declarations determine availability.
-
-**Existing adapter classes (advanced API):**
-- `ConsoleAdapter`: Browser extension, PostMessage transport
-- `LoopAdapter`: Mobile/Web, QR code/popup transport
-- `Cantor8Adapter`: Browser extension, deep link transport
-- `NightlyAdapter`: Multichain wallet, injected transport (`window.nightly.canton`). Uses callback-based signing wrapped in Promises. Combined sign+submit via `submitTransactionCommand()`
-
-**Enterprise adapter (requires config):**
-- `BronAdapter`: OAuth2/API transport, requires explicit authentication configuration
-
-### `@partylayer/react`
-
-React hooks, components, and theming for easy integration.
-
-**Components:**
-- `PartyLayerKit`: Zero-config wrapper (creates client, registers adapters, discovers wallets, provides theme)
-- `ConnectButton`: Polished connect button with wallet modal and connected dropdown
-- `WalletModal`: Multi-state wallet selection modal (list, connecting, success, error, not-installed views)
-- `PartyLayerProvider`: Lower-level context provider for advanced use cases
-- `ThemeProvider`: Theme context provider (light/dark/auto)
-
-**Hooks:**
-- `usePartyLayer()`: Access SDK client instance
-- `useSession()`: Reactive session state + actions (`UseSessionReturn`); legacy getter preserved as `useClientSession()` (deprecated)
-- `useAccount()`: Reactive `{ party, account, status, networkId, isConnected, … }`
-- `useWallets()`: Get available wallets (registry + native CIP-0103)
-- `useConnect()`: Connect hook with loading/error state
-- `useDisconnect()`: Disconnect hook
-- `useSignMessage()`: Sign message hook
-- `useSignTransaction()`: Sign transaction hook
-- `useSubmitTransaction()`: Submit transaction hook
-- `useRegistryStatus()`: Registry health status
-- `useWalletIcons()`: Access wallet icon overrides from PartyLayerKit
-- `useTheme()`: Access current theme
-
-**Native CIP-0103 Adapter:**
-- `NativeCIP0103Adapter`: Wraps discovered CIP-0103 providers as `WalletAdapter`
-- `createNativeAdapter()`: Factory for native adapters
-- `createSyntheticWalletInfo()`: Creates `WalletInfo` from discovered provider
-- `enrichProviderInfo()`: Fetches provider name/status info
-
-## Sequence Diagrams
-
-### Connect Flow
-
-```
-dApp                    SDK                  Adapter              Wallet
- │                      │                     │                    │
- │  connect(walletId)   │                     │                    │
- ├─────────────────────>│                     │                    │
- │                      │  connect(options)   │                    │
- │                      ├─────────────────────>│                    │
- │                      │                     │  connect()         │
- │                      │                     ├───────────────────>│
- │                      │                     │  [User Approval]   │
- │                      │                     │<───────────────────│
- │                      │  {session, wallet}  │                    │
- │                      │<─────────────────────│                    │
- │  {session, wallet}   │                     │                    │
- │<─────────────────────│                     │                    │
- │                      │  storeSession()     │                    │
- │                      ├─────────────────────>│                    │
- │                      │  emit('connect')     │                    │
- │                      ├─────────────────────>│                    │
-```
-
-### Sign Transaction Flow
-
-```
-dApp                    SDK                  Adapter              Wallet
- │                      │                     │                    │
- │  signTransaction()   │                     │                    │
- ├─────────────────────>│                     │                    │
- │                      │  signTransaction()  │                    │
- │                      ├─────────────────────>│                    │
- │                      │                     │  signTransaction() │
- │                      │                     ├───────────────────>│
- │                      │                     │  [User Approval]   │
- │                      │                     │<───────────────────│
- │                      │  {signedTx, hash}   │                    │
- │                      │<─────────────────────│                    │
- │  {signedTx, hash}    │                     │                    │
- │<─────────────────────│                     │                    │
-```
-
-### Session Restore Flow
-
-```
-SDK                    Storage              Adapter
- │                      │                     │
- │  getAllSessions()    │                     │
- ├─────────────────────>│                     │
- │  [sessions]          │                     │
- │<─────────────────────│                     │
- │                      │                     │
- │  restoreSession()    │                     │
- ├───────────────────────────────────────────>│
- │                      │  validateSession()  │
- │                      │<────────────────────│
- │  true/false          │                     │
- │<───────────────────────────────────────────│
- │                      │                     │
- │  if (!restored)      │                     │
- │    removeSession()   │                     │
- ├─────────────────────>│                     │
-```
-
-## Security Considerations
-
-### Origin Binding
-
-Sessions are bound to the origin (domain) that created them. This prevents:
-- Session hijacking across domains
-- Cross-site request forgery (CSRF)
-
-### Encrypted Storage
-
-Session metadata is encrypted using Web Crypto API before storage:
-- Uses AES-GCM encryption
-- Key derived from origin (deterministic)
-- Fallback to base64 encoding if Web Crypto unavailable
-
-### Explicit Consent
-
-All wallet operations require explicit user consent:
-- Connection requests show app name and requested permissions
-- Signing operations display the payload to be signed
-- Transaction submissions show transaction details
-
-### Safe Payload Display
-
-The SDK provides utilities for safely displaying:
-- Party IDs
-- Transaction hashes
-- Signing payloads (with truncation for long content)
-
-## Registry Schema
-
-The wallet registry is a versioned JSON document:
-
-```json
-{
-  "metadata": {
-    "version": "1.0.0",
-    "schemaVersion": "1.0.0",
-    "timestamp": 1234567890,
-    "publisher": "PartyLayer",
-    "previousVersion": "0.9.0"
-  },
-  "wallets": [
-    {
-      "id": "console",
-      "name": "Console Wallet",
-      "description": "Official Console Wallet",
-      "homepage": "https://consolewallet.io",
-      "icon": "https://...",
-      "supportedNetworks": ["mainnet", "devnet", "local"],
-      "capabilities": {
-        "signMessage": true,
-        "signTransaction": true,
-        "submitTransaction": true,
-        "transactionStatus": true,
-        "switchNetwork": true,
-        "multiParty": false
-      },
-      "adapter": {
-        "type": "console",
-        "config": {}
-      },
-      "installation": {
-        "windowProperty": "consoleWallet"
-      }
-    }
-  ],
-  "signature": {
-    "algorithm": "ed25519",
-    "signature": "...",
-    "publicKey": "..."
-  }
-}
-```
-
-## Error Handling
-
-### SDK Error Classes (adapter-based path)
-
-- `WalletNotFoundError`: Wallet not in registry
-- `WalletNotInstalledError`: Wallet not installed in browser
-- `UserRejectedError`: User rejected the connection or signing operation
-- `SessionExpiredError`: Session has expired
-- `TransportError`: Communication error with wallet
-- `TimeoutError`: Operation timed out
-
-### CIP-0103 Provider Errors (Provider path)
-
-The CIP-0103 Provider uses `ProviderRpcError` with standard numeric codes:
-
-- **EIP-1193 codes** (4001 to 4901): User Rejected, Unauthorized, Unsupported Method, Disconnected, Chain Disconnected
-- **EIP-1474 codes** (-32700 to -32005): Parse Error, Invalid Request, Method Not Found, Invalid Params, Internal Error, and more
-
-All SDK error classes are bidirectionally mapped to `ProviderRpcError` codes via `toProviderRpcError()` and `toPartyLayerError()` in `@partylayer/provider`.
-
-## Event System
-
-### SDK Events (adapter-based path)
-
-- `session:connected`: New wallet connection
-- `session:disconnected`: Wallet disconnected
-- `session:expired`: Session expired
-- `tx:status`: Transaction status update
-- `registry:status`: Registry status change
-- `error`: Error occurred
-
-### CIP-0103 Events (Provider path)
-
-- `statusChanged`: Provider status changed (connection, network, session)
-- `accountsChanged`: Account list changed
-- `txChanged`: Transaction lifecycle update (pending → signed → executed / failed)
-- `connected`: Wallet connected (used in async connect flows)
-
-## Recent Additions
-
-- **Native CIP-0103 wallet discovery** via `window.canton.*` with delayed re-discovery for late-injecting extensions
-- **PartyLayerKit** zero-config React wrapper with theme support
-- **ConnectButton** and enhanced **WalletModal** with multi-state flow
-- **Nightly wallet adapter** with callback-based signing
-- **Registry resilience**: `listWallets()` falls back to adapter-generated WalletInfo
-- **Opt-in telemetry** with privacy-safe metrics (SHA-256 hashed identifiers, PII validation)
-- **Theme system** with light/dark/auto presets and full token customization
-
-## Future Enhancements
-
-- Multi-party support (multiple parties per session)
-- Transaction batching
-- Offline transaction preparation
+See [Release process](./releasing.md#default-wallet-release-validation) for actual
+wallet evidence and [Platform roadmap](./platform-roadmap.md) for open work.
+Loop's key-unlock failure, valid Vala Devnet transactions, full live transfer/swap
+acceptance, the official-client ownership migration and the full accessibility
+review remain separate completion criteria.

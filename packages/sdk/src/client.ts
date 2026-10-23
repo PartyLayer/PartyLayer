@@ -1489,10 +1489,10 @@ export class PartyLayerClient {
    * This bridge routes all request() calls through the existing
    * PartyLayerClient methods and maps events to CIP-0103 format.
    *
-   * The bridge implements the full CIP-0103 specification:
-   * - All 10 mandatory methods including `ledgerApi` (when adapter supports it)
-   * - Full transaction lifecycle: pending -> signed -> executed/failed
-   * - All CIP-0103 events: statusChanged, accountsChanged, txChanged, connected
+   * The bridge exposes the CIP-0103 request/event surface, subject to the backing
+   * adapter's actual capabilities. Account methods currently project the active
+   * session party; they do not enumerate a full wallet account list or establish
+   * unknown public keys. Transaction events require real adapter events.
    *
    * **Note:** Async wallets (userUrl pattern) are not supported through the
    * bridge. For async wallet support, use `PartyLayerProvider` directly.

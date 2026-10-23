@@ -16,7 +16,6 @@
     "typecheck": "tsc --noEmit -p tsconfig.typecheck.json"
   },
   "dependencies": {
-    "@canton-network/dapp-sdk": "^0.24.0",
     "@partylayer/adapter-console": "workspace:^",
     "@partylayer/adapter-loop": "workspace:^",
     "@partylayer/core": "workspace:^",

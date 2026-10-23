@@ -368,56 +368,23 @@ try {
 ## Architecture
 
 ```mermaid
-graph TD
-    subgraph dApp[dApp Application]
-        A[Your App]
-        B["@partylayer/react"]
-    end
-
-    subgraph SDK[PartyLayer SDK]
-        C["@partylayer/sdk"]
-        D[Session Manager]
-        E[Event System]
-        F[Storage]
-    end
-
-    subgraph Adapters[Wallet Adapters]
-        G[Console]
-        H[Loop]
-        I[Cantor8]
-        J[Bron]
-        O[Nightly]
-    end
-
-    subgraph Wallets[Canton Wallets]
-        K[Console Wallet]
-        L[5N Loop]
-        M[Cantor8 Wallet]
-        N[Bron Wallet]
-        P[Nightly Wallet]
-    end
-
-    subgraph Native[CIP-0103 Native]
-        Q[window.canton.*]
-    end
-
-    A --> B
-    B --> C
-    C --> D
-    C --> E
-    C --> F
-    C --> G
-    C --> H
-    C --> I
-    C --> J
-    C --> O
-    G --> K
-    H --> L
-    I --> M
-    J --> N
-    O --> P
-    B -.->|auto-discovery| Q
+flowchart TD
+    App[Application: PartyLayerKit and ConnectButton] --> SDK[PartyLayerClient]
+    SDK --> Registry[Registry policy and capabilities]
+    SDK --> Generic[Generic CIP-0103 bridges]
+    SDK --> Legacy[Existing compatibility integrations]
+    Generic --> Native[Announced and injected providers]
+    Generic --> Official[Reviewed lazy official wallet runtimes]
+    Legacy --> Vendors[Existing wallet SDKs and transports]
+    SDK --> UI[Reactive account, authentication and activity UI]
+    SDK --> Bridge[Optional client.asProvider bridge]
 ```
+
+The default catalog uses shared bridges and includes supported runtimes; applications
+install no additional PartyLayer package per wallet. The official Canton protocol-owner
+migration remains open. See [Architecture](./docs/architecture.md) and
+[Protocol ownership](./docs/protocol-ownership.md) for current responsibilities,
+reviewed public APIs and migration gates.
 
 ### Package Structure
 
@@ -565,7 +532,9 @@ const provider = client.asProvider();
 
 ### CIP-0103 Methods
 
-All 10 mandatory methods are implemented on both paths:
+The provider interfaces expose the following methods. Availability depends on the
+backing wallet and its capabilities. The client bridge currently projects the active
+party; it does not provide a complete selectable account list or unknown public keys:
 
 | Method | Description |
 |--------|-------------|
@@ -574,11 +543,11 @@ All 10 mandatory methods are implemented on both paths:
 | `isConnected` | Check connection status |
 | `status` | Get full provider status (connection, identity, network, session) |
 | `getActiveNetwork` | Get active network as a CAIP-2 identifier |
-| `listAccounts` | List available accounts |
+| `listAccounts` | Direct provider: wallet-authorized accounts; client bridge: active-party projection |
 | `getPrimaryAccount` | Get the primary account |
 | `signMessage` | Sign an arbitrary message |
 | `prepareExecute` | Prepare and submit a transaction |
-| `ledgerApi` | Proxy Ledger API requests (native path only) |
+| `ledgerApi` | Proxy authorized Ledger API requests when the backing wallet implements them |
 
 ### Usage Example
 
@@ -890,6 +859,7 @@ PartyLayer exports typed error classes. Use `try-catch` with `instanceof` checks
 - [Observability](./docs/observability.md): telemetry adapters, privacy, and instrumenting your reads
 - [API Reference](./docs/api.md)
 - [Architecture](./docs/architecture.md)
+- [Protocol ownership and migration](./docs/protocol-ownership.md)
 - [CIP-0103 Compliance](#cip-0103-canton-dapp-standard-compliance) - Provider model, methods, error codes
 - [CIP-0103 Alignment (detailed)](./docs/CIP-0103-ALIGNMENT.md) - For Foundation reviewers and wallet providers
 - [Error Handling](./docs/errors.md)

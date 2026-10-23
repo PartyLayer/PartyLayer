@@ -175,8 +175,8 @@ clean npm consumer, checks ESM/CommonJS/SSR, and builds packed CLI-generated
 Next.js and Vite apps. These are automated integration checks, not proof of a
 successful live wallet approval or ledger commit.
 
-Live observations in this review (2026-10-23, production `33898ef`; candidate
-implementation `2e435af` has separate automated coverage):
+Live observations in this review (2026-10-23, production `33898ef`; the candidate
+in PR #343 has separate automated coverage and has not inherited these live results):
 
 | Wallet | Live result in this review | Live ledger submission |
 | --- | --- | --- |
@@ -218,6 +218,13 @@ These PRs use the same build, unit, conformance, packed-consumer and browser gat
 as product changes. Review changed public APIs, approved loader pins, registry
 metadata and release changesets before merging. A newly published vendor version
 is an update candidate; a compatible, tested version is what PartyLayer ships.
+
+The candidate uses reviewed Canton dApp SDK **1.8.0** for WalletConnect. Walley's
+1.2.0 runtime still requires its **^0.24.0** peer, explicitly supplied as 0.24.0
+by the default SDK. Keep that compatibility path isolated until the vendor changes
+its contract; a blanket upgrade would introduce a peer mismatch. See
+[Protocol ownership](./protocol-ownership.md) for the reviewed public APIs and
+remaining migration gates. Neither version pin establishes live relay acceptance.
 See the [Dependabot configuration reference](https://docs.github.com/en/code-security/reference/supply-chain-security/dependabot-options-reference).
 
 ## Pre-Release Checklist

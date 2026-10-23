@@ -56,7 +56,8 @@
     "@k2flabs/walley-dapp-sdk": "1.2.0",
     "@lithiumdigital/cauri-dapp-sdk": "0.2.0",
     "@oneswap/wallet-cip0103-adapter": "0.2.0",
-    "@vala-wallet/dapp-sdk": "0.1.0"
+    "@vala-wallet/dapp-sdk": "0.1.0",
+    "@canton-network/dapp-sdk": "0.24.0"
   },
   "devDependencies": {
     "@types/node": "^20.11.0",

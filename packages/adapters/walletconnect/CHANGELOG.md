@@ -4,6 +4,11 @@
 
 ### Minor Changes
 
+- Use the reviewed official Canton dApp SDK 1.8.0. Reject explicitly declined
+  connections, empty primary accounts and mismatched signature responses. Recheck
+  the live primary party, recognized network, connection state and expiry before
+  adopting a restored relay session. Real wallet/relay acceptance remains separate.
+
 - 0ebd598: Stop reporting wallets as installed when nothing was installed.
 
   `detectInstalled()` could only answer yes or no, and eight of twelve adapters had
