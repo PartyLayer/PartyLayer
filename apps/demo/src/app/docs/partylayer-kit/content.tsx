@@ -29,6 +29,8 @@ function App() {
       <PropsTable data={[
         { prop: 'network', type: '"devnet" | "testnet" | "mainnet"', description: 'Canton network to connect to. Determines which wallets and registry entries are available.' },
         { prop: 'appName', type: 'string', description: 'Your application name, shown to wallets during connection requests.' },
+        { prop: 'locale', type: 'string', default: '"en"', description: 'Connection UI language: English/Turkish language tags; unsupported tags fall back to English.' },
+        { prop: 'direction', type: '"ltr" | "rtl"', default: '"ltr"', description: 'Text and layout direction for PartyLayer UI.' },
         { prop: 'children', type: 'ReactNode', description: 'Your application component tree.' },
         { prop: 'registryUrl', type: 'string', default: '"https://registry.partylayer.xyz"', description: 'Override the wallet registry URL. Useful for self-hosted registries.' },
         { prop: 'channel', type: '"stable" | "beta"', default: '"stable"', description: 'Registry channel. Use "beta" to include wallets in beta testing.' },
@@ -41,6 +43,24 @@ function App() {
         { prop: 'walletOrder', type: 'readonly string[]', description: 'Wallet ids in display order for the connect modal. Unlisted wallets fall to the end; sorting applies within the CIP-0103 Native and Available sections.' },
         { prop: 'sessionOptions', type: 'Partial<SessionStoreOptions>', description: 'Session-store options forwarded to PartyLayerProvider (reconnect, expiry, broadcast, persistSnapshot, storage, onInvalidate) for encrypted persistence, auto-reconnect, and multi-tab sync.' },
       ]} />
+
+      <H2 id="localization">UI Language and Direction</H2>
+      <CodeBlock language="tsx">{`<PartyLayerKit network="devnet" appName="My dApp" locale="tr-TR" direction="rtl">
+  <ConnectButton />
+</PartyLayerKit>`}</CodeBlock>
+      <P>
+        English is the default; Turkish tags such as <Code>tr</Code> and <Code>tr-TR</Code>
+        select Turkish. Unsupported language tags fall back to English. Changing language
+        or direction preserves the client and wallet connection. The explicit setting is
+        shared by server and client; browser language is not guessed automatically.
+      </P>
+      <P>
+        This translates PartyLayer connection, account, cost and transaction UI, including
+        accessible labels. Your application content, custom labels, wallet names, identifiers,
+        provider error details and vendor approval screens retain their own language settings.
+        Advanced provider compositions can use <Code>PartyLayerLocaleProvider</Code> with
+        the same <Code>locale</Code> and <Code>direction</Code> props.
+      </P>
 
       <H2 id="network-config">Network Configuration</H2>
       <P>

@@ -29,6 +29,7 @@
  */
 
 import { useTheme } from './theme';
+import { useLocale } from './localization';
 import type { TxReceipt } from '@partylayer/core';
 
 export type TransactionToastStatus = 'idle' | 'pending' | 'success' | 'error';
@@ -62,6 +63,7 @@ export function TransactionToast({
   style,
 }: TransactionToastProps) {
   const theme = useTheme();
+  const { t, locale, direction } = useLocale();
 
   // Render nothing when idle (mirrors CostPreview's empty state).
   if (status === 'idle') {
@@ -90,10 +92,10 @@ export function TransactionToast({
   // The status line text: a custom message overrides the default.
   const defaultText =
     status === 'pending'
-      ? 'Submitting transaction...'
+      ? t('submitting')
       : status === 'success'
-        ? 'Transaction submitted'
-        : `Transaction failed: ${error?.message ?? 'unknown error'}`;
+        ? t('submitted')
+        : t('txFailed', { reason: error?.message ?? t('unknownError') });
 
   const detail =
     status === 'success' && receipt
@@ -106,11 +108,13 @@ export function TransactionToast({
 
   return (
     <div
+      lang={locale}
+      dir={direction}
       className={className}
       role={status === 'error' ? 'alert' : 'status'}
       data-status={status}
       style={{
-        borderLeft: `3px solid ${accent}`,
+        borderInlineStart: `3px solid ${accent}`,
         borderRadius: theme.borderRadius,
         padding: '10px 12px',
         fontSize: '13px',
@@ -121,11 +125,11 @@ export function TransactionToast({
       }}
     >
       <div aria-live={status === 'error' ? 'assertive' : 'polite'} style={{ fontWeight: 600 }}>
-        {message ?? defaultText}
+        <bdi dir="auto">{message ?? defaultText}</bdi>
       </div>
 
       {detail != null && (
-        <div
+        <div dir="ltr"
           style={{
             marginTop: '4px',
             fontSize: '12px',

@@ -732,6 +732,8 @@ export default function KitDemoPage() {
   const [family, setFamily] = useState<'default' | 'midnight' | 'slate' | 'teal' | 'gold' | 'warm'>('default');
   const [accent, setAccent] = useState<'default' | 'blue' | 'green' | 'purple' | 'orange' | 'pink' | 'red'>('default');
   const [showAttr, setShowAttr] = useState(true);
+  const [locale, setLocale] = useState<'en' | 'tr'>('en');
+  const [direction, setDirection] = useState<'ltr' | 'rtl'>('ltr');
   const [accountStatus, setAccountStatus] = useState<'full' | 'avatar' | 'address'>('full');
   const [systemDark, setSystemDark] = useState(false);
 
@@ -814,7 +816,7 @@ export default function KitDemoPage() {
         fontFamily: font,
         transition: 'background-color 200ms, color 200ms',
       }}>
-        <PartyLayerKit network="devnet" channel="beta" appName="PartyLayer Kit Demo" theme={kitTheme} showAttribution={showAttr} walletOrder={CANONICAL_WALLET_ORDER} walletIcons={DEMO_WALLET_ICONS} additionalAdapters={DEMO_ADDITIONAL_ADAPTERS} walletConnect={DEMO_WALLET_CONNECT} registryUrl="/registry">
+        <PartyLayerKit locale={locale} direction={direction} network="devnet" channel="beta" appName="PartyLayer Kit Demo" theme={kitTheme} showAttribution={showAttr} walletOrder={CANONICAL_WALLET_ORDER} walletIcons={DEMO_WALLET_ICONS} additionalAdapters={DEMO_ADDITIONAL_ADAPTERS} walletConnect={DEMO_WALLET_CONNECT} registryUrl="/registry">
           <div style={{ maxWidth: '880px', margin: '0 auto', padding: '0 24px' }}>
 
             {/* Navbar */}
@@ -838,13 +840,14 @@ export default function KitDemoPage() {
                 />
               </div>
 
-              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
                 {/* Theme toggle */}
                 <div style={{
                   display: 'flex',
                   borderRadius: '10px',
                   border: `1px solid ${c.border}`,
                   overflow: 'hidden',
+                  flexShrink: 0,
                 }}>
                   {(['light', 'dark', 'auto'] as const).map((t) => (
                     <button
@@ -924,6 +927,16 @@ export default function KitDemoPage() {
                 showAttribution
               </button>
 
+                <label style={{ fontSize: '12px', color: c.slate500 }}>
+                  Language{' '}
+                  <select aria-label="Wallet UI language" value={locale} onChange={event => setLocale(event.target.value as 'en' | 'tr')}>
+                    <option value="en">English</option>
+                    <option value="tr">Türkçe</option>
+                  </select>
+                </label>
+                <label style={{ fontSize: '12px', color: c.slate500 }}>
+                  <input type="checkbox" checked={direction === 'rtl'} onChange={event => setDirection(event.target.checked ? 'rtl' : 'ltr')} /> RTL
+                </label>
               <span style={{ fontSize: '12px', color: c.slate500, marginLeft: 'auto' }}>
                 {accent === 'default'
                   ? `<PartyLayerKit showAttribution={${showAttr}}>`

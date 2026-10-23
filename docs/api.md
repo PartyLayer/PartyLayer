@@ -253,6 +253,15 @@ Home/End, Escape to close and restore the trigger, and Tab to leave. The wallet
 dialog moves focus inside, contains Tab navigation and restores the opener on close.
 These controls do not submit an enclosing application form.
 
+### PartyLayerLocaleProvider
+
+Use `PartyLayerKit locale="tr-TR" direction="rtl"` for localized wallet UI.
+Advanced compositions can wrap `PartyLayerProvider` with `PartyLayerLocaleProvider`.
+Both accept `locale?: string` (English/Turkish tags, otherwise English fallback) and
+`direction?: 'ltr' | 'rtl'` (default `ltr`). Locale changes preserve the SDK client
+and active wallet. Application content and vendor approval screens retain their own
+language settings.
+
 ### WalletModal
 
 Multi-state wallet selection modal with CIP-0103 native wallet priority.

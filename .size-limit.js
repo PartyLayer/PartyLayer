@@ -46,8 +46,9 @@ module.exports = [
     modifyEsbuildConfig: assetsAsEmpty,
     gzip: true,
     // Keyboard focus containment/restore and account menu navigation add ~0.9 kB.
-    // Measured 30.52 kB gzip; keep ~0.23 kB of headroom for this connection surface.
-    limit: '30.75 kB',
+    // English/Turkish UI dictionaries and SSR-safe locale/direction context add ~2.8 kB.
+    // Measured 33.43 kB gzip; keep ~0.32 kB of headroom for the localized surface.
+    limit: '33.75 kB',
   },
   {
     name: 'react/query: useTokenHoldings',

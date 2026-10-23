@@ -11,6 +11,7 @@ vi.mock('@partylayer/sdk', () => ({ createPartyLayer: () => {
 } }));
 vi.mock('./context', () => ({ PartyLayerProvider: ({ children }: { children: React.ReactNode }) => children }));
 import { PartyLayerKit } from './kit';
+import { useLocale } from './localization';
 
 afterEach(() => { cleanup(); clients.created.length = 0; });
 
@@ -32,4 +33,20 @@ it('destroys the previous client when network changes and preserves the replacem
   expect(replacement.destroy).not.toHaveBeenCalled();
   view.unmount();
   await waitFor(() => expect(replacement.destroy).toHaveBeenCalledTimes(1));
+});
+
+function LocaleProbe() {
+  const { t, locale, direction } = useLocale();
+  return <span lang={locale} dir={direction}>{t('connectWallet')}</span>;
+}
+
+it('changes UI language/direction without rebuilding or disconnecting the client', () => {
+  const view = render(<PartyLayerKit network="devnet" appName="Localized"><LocaleProbe /></PartyLayerKit>);
+  expect(view.container.textContent).toBe('Connect Wallet');
+  const client = clients.created[0];
+  view.rerender(<PartyLayerKit network="devnet" appName="Localized" locale="tr-TR" direction="rtl"><LocaleProbe /></PartyLayerKit>);
+  expect(view.container.textContent).toBe('Cüzdan Bağla');
+  expect(view.container.querySelector('span')?.dir).toBe('rtl');
+  expect(clients.created).toHaveLength(1);
+  expect(client.destroy).not.toHaveBeenCalled();
 });

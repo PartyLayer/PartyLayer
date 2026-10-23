@@ -430,6 +430,30 @@ Avatar-only buttons have an accessible account name. Actions use `type="button"`
 so embedding the component in a form does not submit the form. Vendor approval
 surfaces keep their own keyboard handling.
 
+### UI language and direction
+
+`PartyLayerKit` supports English (default) and Turkish. Set `locale="tr"` or
+`locale="tr-TR"`; unsupported language tags fall back to English. Set
+`direction="rtl"` when embedding the wallet UI in a right-to-left layout.
+
+```tsx
+<PartyLayerKit network="devnet" appName="My dApp" locale="tr-TR" direction="ltr">
+  <ConnectButton />
+</PartyLayerKit>
+```
+
+The setting covers PartyLayer's connection dialog, account menu, accessible labels,
+`CostPreview`, `TransactionToast` and `SynchronizerSwitcher`. Changing language or
+direction does not recreate the SDK client or disconnect the wallet. The server and
+client use the same explicit setting; PartyLayer does not guess the browser language
+or mutate the application's document language.
+
+Advanced `PartyLayerProvider` compositions can wrap their UI with
+`PartyLayerLocaleProvider`, which accepts the same `locale` and `direction` props.
+Application copy, custom button labels, wallet names, identifiers, provider error
+details and wallet-owned approval screens remain under their respective owners.
+Your app controls cost/number formatting through the existing formatting props.
+
 ### `PartyAvatar`
 
 A small deterministic avatar generated from a Canton party id (the same id always yields the same avatar). Reused inside `ConnectButton`, and exported so you can render the same identity mark elsewhere.

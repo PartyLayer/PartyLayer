@@ -16,6 +16,7 @@ import type { PartyLayerClient, WalletAdapter, AdapterClass, OfficialProviderAda
 import type { SessionStoreOptions } from '@partylayer/session';
 import { PartyLayerProvider } from './context';
 import { ThemeProvider } from './theme';
+import { PartyLayerLocaleProvider, type PartyLayerDirection } from './localization';
 import type { ThemeInput } from './theme';
 
 // ─── Wallet Icons Context ─────────────────────────────────────────────────────
@@ -86,6 +87,10 @@ export interface PartyLayerKitProps {
   /** Application name shown to wallets during connection */
   appName: string;
   children: React.ReactNode;
+  /** Connection UI language (en/tr tags); unsupported languages fall back to English. */
+  locale?: string;
+  /** UI layout direction. Defaults to ltr. */
+  direction?: PartyLayerDirection;
 
   /** Registry URL override (default: https://registry.partylayer.xyz) */
   registryUrl?: string;
@@ -149,6 +154,8 @@ export function PartyLayerKit({
   walletConnect,
   bron,
   theme = 'light',
+  locale,
+  direction,
   walletIcons = {},
   walletOrder,
   sessionOptions,
@@ -193,6 +200,7 @@ export function PartyLayerKit({
   const attribution = useMemo<AttributionConfig>(() => ({ showAttribution, disclaimer }), [showAttribution, disclaimer]);
 
   return (
+    <PartyLayerLocaleProvider locale={locale} direction={direction}>
     <WalletIconsContext.Provider value={walletIcons}>
       <WalletOrderContext.Provider value={walletOrder}>
         <AttributionContext.Provider value={attribution}>
@@ -204,5 +212,6 @@ export function PartyLayerKit({
         </AttributionContext.Provider>
       </WalletOrderContext.Provider>
     </WalletIconsContext.Provider>
+    </PartyLayerLocaleProvider>
   );
 }

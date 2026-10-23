@@ -91,3 +91,7 @@ export { usePartyLayer as useCantonConnect } from './hooks';
 
 // Re-export registry status type
 export type { RegistryStatus } from '@partylayer/registry-client';
+
+// UI localization for PartyLayerKit and advanced provider compositions.
+export { PartyLayerLocaleProvider } from './localization';
+export type { PartyLayerLocale, PartyLayerDirection, PartyLayerLocaleProviderProps } from './localization';

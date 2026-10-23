@@ -13,6 +13,7 @@
 import { useState, useRef, useEffect, useCallback, useMemo, useId } from 'react';
 import { useClientSession, useConnect, useDisconnect, useWallets } from './hooks';
 import { useTheme } from './theme';
+import { useLocale } from './localization';
 import { WalletModal } from './modal';
 import { useWalletIcons, resolveWalletIcon } from './kit';
 
@@ -230,7 +231,7 @@ function ConnectedWalletIcon({
 // ─── Component ───────────────────────────────────────────────────────────────
 
 export function ConnectButton({
-  label = 'Connect Wallet',
+  label,
   connectedLabel = 'address',
   accountStatus = 'full',
   formatAddress,
@@ -244,6 +245,7 @@ export function ConnectButton({
   const { wallets } = useWallets();
   const walletIcons = useWalletIcons();
   const theme = useTheme();
+  const { t, locale, direction } = useLocale();
 
   // Match the connected session's wallet to its registry entry (name + icon),
   // the same source the modal uses. Falls back gracefully when the wallet has no
@@ -369,6 +371,8 @@ export function ConnectButton({
       <>
         <button
           type="button"
+          lang={locale}
+          dir={direction}
           ref={triggerRef}
           aria-haspopup="dialog"
           onClick={() => setModalOpen(true)}
@@ -410,7 +414,7 @@ export function ConnectButton({
           }}
         >
           <WalletIcon size={16} color={textOnBrand} />
-          {label}
+          <bdi dir="auto">{label ?? t('connectWallet')}</bdi>
         </button>
         <WalletModal
           isOpen={modalOpen}
@@ -428,6 +432,8 @@ export function ConnectButton({
     return (
       <button
         type="button"
+        lang={locale}
+        dir={direction}
         disabled
         className={className}
         style={{
@@ -461,7 +467,7 @@ export function ConnectButton({
             flexShrink: 0,
           }}
         />
-        Connecting...
+        <bdi dir="auto">{t('connecting')}</bdi>
         <style>{`
           @keyframes partylayer-spin { to { transform: rotate(360deg); } }
           @keyframes partylayer-btn-pulse {
@@ -485,13 +491,13 @@ export function ConnectButton({
   );
 
   return (
-    <div ref={dropdownRef} onBlur={(event) => {
+    <div lang={locale} dir={direction} ref={dropdownRef} onBlur={(event) => {
       if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setDropdownOpen(false);
     }} style={{ position: 'relative', display: 'inline-block' }}>
       <button
         type="button"
         ref={triggerRef}
-        aria-label={accountStatus === 'avatar' ? `Account ${connectedPartyId}` : undefined}
+        aria-label={accountStatus === 'avatar' ? t('account', { party: connectedPartyId }) : undefined}
         aria-haspopup={showDisconnect ? 'menu' : undefined}
         aria-expanded={showDisconnect ? dropdownOpen : undefined}
         aria-controls={dropdownOpen && showDisconnect ? menuId : undefined}
@@ -565,7 +571,7 @@ export function ConnectButton({
             fontSize: '13px',
             color: theme.colors.text,
           }}>
-            {getConnectedText()}
+            <bdi dir={connectedLabel === 'address' ? 'ltr' : 'auto'}>{getConnectedText()}</bdi>
           </span>
         )}
 
@@ -589,13 +595,13 @@ export function ConnectButton({
           ref={menuRef}
           id={menuId}
           role="menu"
-          aria-label="Wallet account"
+          aria-label={t('walletAccount')}
           onKeyDown={handleMenuKeyDown}
           className="pl-account-menu"
           style={{
             position: 'absolute',
             top: 'calc(100% + 8px)',
-            right: 0,
+            insetInlineEnd: 0,
             backgroundColor: theme.colors.background,
             border: `1px solid ${theme.colors.border}`,
             borderRadius: theme.borderRadius,
@@ -605,7 +611,7 @@ export function ConnectButton({
             minWidth: '250px',
             zIndex: 1000,
             overflow: 'hidden',
-            transformOrigin: 'top right',
+            transformOrigin: direction === 'rtl' ? 'top left' : 'top right',
           }}
         >
           {/* Identity header: the party avatar (identity) with the connected
@@ -649,10 +655,11 @@ export function ConnectButton({
                   textTransform: 'uppercase',
                   letterSpacing: '0.6px',
                 }}>
-                  Connected
+                  <bdi dir="auto">{t('connected')}</bdi>
                 </span>
               </div>
               <div
+                dir="ltr"
                 title={connectedPartyId}
                 style={{
                   fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace',
@@ -700,7 +707,7 @@ export function ConnectButton({
                 backgroundColor: 'transparent',
                 color: copied ? theme.colors.success : theme.colors.text,
                 cursor: 'pointer',
-                textAlign: 'left',
+                textAlign: 'start',
                 fontSize: '13px',
                 fontWeight: 500,
                 fontFamily: theme.fontFamily,
@@ -718,7 +725,7 @@ export function ConnectButton({
                   ? <CheckSmallIcon size={15} color={theme.colors.success} />
                   : <CopyIcon size={15} color={theme.colors.textSecondary} />}
               </span>
-              {copied ? 'Copied' : 'Copy address'}
+              <bdi dir="auto">{copied ? t('copied') : t('copyAddress')}</bdi>
             </button>
 
             {/* Divider before the terminal action. */}
@@ -742,7 +749,7 @@ export function ConnectButton({
                 backgroundColor: 'transparent',
                 color: theme.colors.error,
                 cursor: 'pointer',
-                textAlign: 'left',
+                textAlign: 'start',
                 fontSize: '13px',
                 fontWeight: 500,
                 fontFamily: theme.fontFamily,
@@ -758,7 +765,7 @@ export function ConnectButton({
               <span style={{ display: 'inline-flex', width: '16px', justifyContent: 'center', flexShrink: 0 }}>
                 <PowerIcon size={15} color={theme.colors.error} />
               </span>
-              Disconnect
+              <bdi dir="auto">{t('disconnect')}</bdi>
             </button>
           </div>
         </div>

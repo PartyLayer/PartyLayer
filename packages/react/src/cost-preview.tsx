@@ -16,6 +16,7 @@
  */
 
 import { useTheme } from './theme';
+import { useLocale } from './localization';
 import type { CostEstimation, PaidTrafficCost, TrafficCost } from '@partylayer/core';
 
 export interface CostPreviewProps {
@@ -50,6 +51,7 @@ export function CostPreview({
   style,
 }: CostPreviewProps) {
   const theme = useTheme();
+  const { t, locale, direction } = useLocale();
 
   const hasEstimate = estimate != null;
   const hasPaid = paid != null;
@@ -86,6 +88,8 @@ export function CostPreview({
 
   return (
     <div
+      lang={locale}
+      dir={direction}
       className={className}
       style={{
         backgroundColor: theme.colors.surface,
@@ -100,7 +104,7 @@ export function CostPreview({
     >
       {loading && (
         <div aria-live="polite" style={{ color: theme.colors.textSecondary, padding: '2px 0' }}>
-          Estimating cost…
+          <bdi dir="auto">{t('estimatingCost')}</bdi>
         </div>
       )}
 
@@ -114,7 +118,7 @@ export function CostPreview({
             padding: '8px 10px',
           }}
         >
-          Couldn’t load the cost: {error.message}
+          <bdi dir="auto">{t('costError')}</bdi> {error.message}
         </div>
       )}
 
@@ -123,13 +127,13 @@ export function CostPreview({
           {hasEstimate && (
             <>
               <div style={rowStyle}>
-                <dt style={labelStyle}>Confirmation request</dt>
+                <dt style={labelStyle}><bdi dir="auto">{t('confirmationRequest')}</bdi></dt>
                 <dd style={valueStyle}>
                   {renderCost(estimate!.confirmationRequestTrafficCostEstimation)}
                 </dd>
               </div>
               <div style={rowStyle}>
-                <dt style={labelStyle}>Confirmation response</dt>
+                <dt style={labelStyle}><bdi dir="auto">{t('confirmationResponse')}</bdi></dt>
                 <dd style={valueStyle}>
                   {renderCost(estimate!.confirmationResponseTrafficCostEstimation)}
                 </dd>
@@ -156,7 +160,7 @@ export function CostPreview({
                       display: 'inline-block',
                     }}
                   />
-                  Total
+                  <bdi dir="auto">{t('total')}</bdi>
                 </dt>
                 <dd style={{ ...valueStyle, fontWeight: 700 }}>
                   {renderCost(estimate!.totalTrafficCostEstimation)}
@@ -167,7 +171,7 @@ export function CostPreview({
 
           {hasPaid && (
             <div style={hasEstimate ? dividerRow : rowStyle}>
-              <dt style={labelStyle}>Actual paid</dt>
+              <dt style={labelStyle}><bdi dir="auto">{t('paid')}</bdi></dt>
               <dd style={{ ...valueStyle, color: theme.colors.success, fontWeight: 600 }}>
                 {renderCost(paid!)}
               </dd>

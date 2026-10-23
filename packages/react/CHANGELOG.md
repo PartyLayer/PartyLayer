@@ -11,6 +11,12 @@
 
 ### Minor Changes
 
+- Add English/Turkish connection and operation UI, a `locale`/`direction` setting
+  on `PartyLayerKit`, and `PartyLayerLocaleProvider` for advanced compositions.
+  Locale changes preserve the client and wallet session, use deterministic SSR
+  fallback, and translate accessible labels. Use logical layout properties for RTL;
+  application content and vendor approval screens retain their own language settings.
+
 - Include the reviewed, pinned Walley, Cauri, OneSwap and Vala official SDKs in the existing SDK with lazy loading through the generic CIP-0103 bridge. React and generated projects use the same default catalog without wallet-specific imports or installation. WalletConnect and Bron use shared application configuration; custom adapters can replace or extend defaults.
 
   Filter wallets by the configured network and channel, align discovery capabilities with implemented methods, warm popup connections before returning the picker list, and validate restored official providers instead of reviving expired sessions. Vala remains Devnet beta.
