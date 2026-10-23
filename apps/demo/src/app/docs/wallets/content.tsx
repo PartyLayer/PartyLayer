@@ -116,7 +116,7 @@ export default function WalletsPage() {
         <LI><Strong>Loop, ledgerApi (limited):</Strong> Supports <Code>{'POST /v2/state/acs'}</Code>,{' '}
           <Code>{'GET /v2/state/acs/active-contracts'}</Code>, <Code>{'POST /v2/commands/submit'}</Code>,{' '}
           and <Code>{'POST /v2/commands/submit-and-wait'}</Code>. Other endpoints are not available,
-          for full Ledger API access, use Console, Nightly, or Bron.</LI>
+          for broader Ledger API access, check the active capabilities of Nightly or Bron.</LI>
         <LI><Strong>Cantor8:</Strong> hosted popup integration. Use <Code>{'submitTransaction'}</Code>
           for its combined sign-and-execute flow. Separate message signing, transaction signing and
           Ledger API access are not exposed by this integration.</LI>

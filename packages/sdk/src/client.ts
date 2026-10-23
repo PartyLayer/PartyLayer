@@ -454,7 +454,7 @@ export class PartyLayerClient {
     return registryWallets;
   }
 
-  /** Resolve only reviewed default SDKs present in the active signed registry. */
+  /** Resolve only reviewed default SDKs present in the active registry. */
   private async ensureDefaultWallets(): Promise<void> {
     if (this.config.adapters !== undefined) return;
     let registry;

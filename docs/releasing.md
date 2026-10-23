@@ -161,6 +161,45 @@ pnpm run web-smoke
 It must exit 0 (wallet list opens, react-native-svg and Image renderers both work, no
 uncaught page error). If it fails, the module loading regressed; do not publish.
 
+## Default wallet release validation
+
+The public catalog is tested across stable/beta and devnet/testnet/mainnet. Its
+network filters and capability filters must agree with the active integration.
+`pnpm gate` also packs all public packages, installs the packed React entry in a
+clean npm consumer, checks ESM/CommonJS/SSR, and builds packed CLI-generated
+Next.js and Vite apps. These are automated integration checks, not proof of a
+successful live wallet approval or ledger commit.
+
+Live observations in this review (2026-10-23, production `33898ef`; candidate
+implementation `2e435af` has separate automated coverage):
+
+| Wallet | Live result in this review | Live ledger submission |
+| --- | --- | --- |
+| Vala | Devnet connect, message signature returned, reload/restore and disconnect passed | Pending valid vendor-provided Devnet transaction/test dApp |
+| Console | Devnet connection timed out after Chrome restart; unlock/readiness check pending | Not tested |
+| Cauri | Devnet approval popup opened; user completion pending because browser automation access was denied | Not tested |
+| Send | Test account available; Mainnet test pending | Not tested |
+| 5N Loop | Test account available; live test pending | Not tested |
+| Walley | Test account available; live test pending | Not tested |
+| OneSwap | Test account available; live test pending | Not tested |
+| Cantor8 | Live test access not established in this review | Not tested |
+| Nightly | Live test access not established in this review | Not tested |
+| Bron | Enterprise test access not established in this review | Not tested |
+| WalletConnect | Paired wallet/relay live test not established in this review | Not tested |
+
+Vala's post-sign requests page reported `DAPP_API_ENABLED` disabled even though the
+message signature returned to PartyLayer. This warning does not establish that
+message signing failed, or that transaction submission works. Returned signature
+bytes alone are not an independent cryptographic verification against the wallet's
+public key. Keep Vala on Devnet beta and update these results after the remaining
+tests; do not describe the full wallet matrix as live-verified.
+
+The verification runner deliberately skips four browser-required adapter
+conformance suites in CI. The native provider conformance gate and mocked browser
+tests do not replace those live/extension checks. The separate extension-isolation
+record remains in `apps/demo/e2e/manual-runs.json`; do not mark it passed without
+running the named specs against recorded extension versions.
+
 ## Pre-Release Checklist
 
 - [ ] All tests pass (`pnpm test`)
