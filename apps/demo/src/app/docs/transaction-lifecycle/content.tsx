@@ -69,7 +69,7 @@ await flow.reconcile(result.id);`}</CodeBlock>
       CIP-0103 does not define universal set-primary-account or switch-network methods; reconnect
       a wallet that does not notify the application of its changes.</P>
     <P><Code>useRecentTransactions()</Code> reads the shared current-account journal.
-      <Code>RecentTransactions transactions={'{records}'}</Code> renders a custom view. The panel
+      <Code>{'RecentTransactions transactions={records}'}</Code> renders a custom view. The panel
       shows five entries, the store retains at most 100 and the account view returns twenty.
       Each flow also maintains its own twenty-entry history. Reconcile using that flow&apos;s id.</P>
     <P>The journal is in memory and is not sent to storage or telemetry. Reloading loses it; it
