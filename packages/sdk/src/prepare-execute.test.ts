@@ -7,8 +7,8 @@
  *   1. It never submits twice. A fallback fires a second submit, so it may only
  *      happen when the wallet rejected the METHOD and nothing reached the ledger.
  *   2. A wallet with the awaited verb gets a receipt carrying a real update id.
- *   3. A wallet without it keeps exactly today's behaviour, degraded not broken,
- *      and says so once.
+ *   3. A wallet without it gets a normalized acknowledgement with no invented
+ *      ledger identifiers, and the reduced confirmation signal is reported once.
  */
 import { describe, it, expect, vi } from 'vitest';
 import type { CIP0103Provider, LoggerAdapter } from '@partylayer/core';
@@ -96,7 +96,7 @@ describe('submitViaPrepareExecute', () => {
       const receipt = await submitViaPrepareExecute(provider, PARAMS, opts());
 
       expect(calls).toEqual(['prepareExecuteAndWait']);
-      expect(receipt).toEqual({ tx: { commandId: 'c' } });
+      expect(receipt).toEqual({ commandId: 'c', submittedAt: expect.any(Number) });
     });
   });
 
@@ -112,22 +112,22 @@ describe('submitViaPrepareExecute', () => {
       expect(receipt.submittedAt).toBeTypeOf('number');
     });
 
-    it('forwards the caller params unchanged to the wallet', async () => {
+    it('forwards the inner CIP-0103 command payload without the SDK envelope', async () => {
       const { provider, request } = makeProvider(() => EXECUTED);
 
       await submitViaPrepareExecute(provider, PARAMS, opts());
 
       expect(request).toHaveBeenCalledWith({
         method: 'prepareExecuteAndWait',
-        params: PARAMS,
+        params: PARAMS.signedTx,
       });
     });
   });
 
   describe('a wallet without the awaited verb', () => {
-    it('falls back and returns exactly what the plain verb returned', async () => {
-      // The OneSwap shape: its prepareExecute returns a usable object, and this
-      // is the pre-fix behaviour that must not change.
+    it('normalizes a plain receipt without changing its ledger identifiers', async () => {
+      // The OneSwap shape returns an ISO timestamp; normalize its type while
+      // preserving the wallet-reported identifiers.
       const plain = { transactionHash: '0xabc', updateId: 'oneswap-1', submittedAt: '2026-01-01' };
       const { provider, calls } = makeProvider((m) => {
         if (m === 'prepareExecuteAndWait') throw unsupported(4200);
@@ -137,7 +137,7 @@ describe('submitViaPrepareExecute', () => {
       const receipt = await submitViaPrepareExecute(provider, PARAMS, opts());
 
       expect(calls).toEqual(['prepareExecuteAndWait', 'prepareExecute']);
-      expect(receipt).toEqual(plain);
+      expect(receipt).toEqual({ ...plain, submittedAt: Date.parse(plain.submittedAt) });
     });
 
     it('also falls back on JSON-RPC method-not-found', async () => {
@@ -151,16 +151,32 @@ describe('submitViaPrepareExecute', () => {
       expect(calls).toEqual(['prepareExecuteAndWait', 'prepareExecute']);
     });
 
-    it('returns null unchanged when the wallet is spec-conformant', async () => {
-      // A conformant prepareExecute returns Null. This is the case the fix cannot
-      // improve, and deliberately does not turn into an outage.
+    it('normalizes a null acknowledgement without inventing a ledger identifier', async () => {
+      // A conformant prepareExecute returns Null. Return an acknowledgement
+      // with a timestamp and no hash/update id; do not invent confirmation.
       const { provider } = makeProvider((m) => {
         if (m === 'prepareExecuteAndWait') throw unsupported();
         return null;
       });
 
-      await expect(submitViaPrepareExecute(provider, PARAMS, opts())).resolves.toBeNull();
+      await expect(submitViaPrepareExecute(provider, PARAMS, opts())).resolves.toEqual({ submittedAt: expect.any(Number) });
     });
+  });
+
+  it('passes the same complete command payload to the plain fallback exactly once', async () => {
+    const payload = { commandId: 'send-1', commands: [{ ExerciseCommand: { contractId: 'contract-1' } }],
+      actAs: ['alice'], readAs: ['bob'], disclosedContracts: [{ contractId: 'contract-2' }], synchronizerId: 'sync' };
+    const { provider, request } = makeProvider(method => {
+      if (method === 'prepareExecuteAndWait') throw unsupported();
+      return { updateId: 'ledger-update', submittedAt: '2026-01-01T00:00:00Z' };
+    });
+    const receipt = await submitViaPrepareExecute(provider, { signedTx: payload }, opts());
+    expect(request.mock.calls.map(([args]) => args)).toEqual([
+      { method: 'prepareExecuteAndWait', params: payload }, { method: 'prepareExecute', params: payload },
+    ]);
+    expect(receipt.updateId).toBe('ledger-update');
+    expect(receipt.transactionHash).toBeUndefined();
+    expect(receipt.submittedAt).toBeTypeOf('number');
   });
 
   describe('it asks, and says so, once', () => {
@@ -212,7 +228,7 @@ describe('submitViaPrepareExecute', () => {
       });
 
       await expect(submitViaPrepareExecute(provider, PARAMS, opts())).resolves.toEqual({
-        transactionHash: '0xabc',
+        transactionHash: '0xabc', submittedAt: expect.any(Number),
       });
     });
   });

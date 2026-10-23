@@ -174,10 +174,18 @@ export function PartyLayerKit({
   // Keep configuration objects stable; changing them rebuilds the client.
   }, [network, appName, registryUrl, channel, additionalAdapters, walletConnect, bron]);
 
-  // Cleanup on unmount or when client is re-created
+  // StrictMode replays effects with the same client in development. Defer
+  // disposal by one microtask so that replay does not destroy the live client
+  // while its official wallet SDKs are still loading. A replaced client and a
+  // real unmount still dispose normally.
+  const mountedClientRef = useRef<PartyLayerClient | null>(null);
   useEffect(() => {
+    mountedClientRef.current = client;
     return () => {
-      client.destroy();
+      mountedClientRef.current = null;
+      queueMicrotask(() => {
+        if (mountedClientRef.current !== client) client.destroy();
+      });
     };
   }, [client]);
 

@@ -224,8 +224,8 @@ describe('GenericDiscoveryAdapter', () => {
 
     expect(req).toHaveBeenCalledWith(expect.objectContaining({ method: 'prepareExecuteAndWait' }));
     expect(req).toHaveBeenCalledWith(expect.objectContaining({ method: 'prepareExecute' }));
-    // Byte-for-byte what today's code returns for this wallet.
-    expect(receipt).toEqual({ transactionHash: '0xabc', updateId: 'oneswap-update' });
+    // Preserve identifiers and complete the public receipt contract.
+    expect(receipt).toEqual({ transactionHash: '0xabc', updateId: 'oneswap-update', submittedAt: expect.any(Number) });
   });
 
   it('asks the wallet for the awaited verb only once', async () => {

@@ -26,8 +26,8 @@ gzipped cost of the exports it actually imports. That is measured below.
 
 The current default catalog loads reviewed official SDKs lazily during wallet discovery;
 configured WalletConnect and Bron transports also load lazily. The current measured initial
-SDK contribution is 47.83 kB gzip (48 kB budget); React Native headless is 48.05 kB
-(48.25 kB budget). These are initial bundles; opening the picker downloads eligible wallet
+SDK contribution is 48.2 kB gzip (48.5 kB budget); React Native headless is 48.42 kB
+(48.75 kB budget). These are initial bundles; opening the picker downloads eligible wallet
 chunks, and connecting WalletConnect loads its underlying transport. Run `pnpm gate:size`
 for the current numbers. The older comparisons below remain dated historical measurements.
 

@@ -57,6 +57,20 @@ test('public React entry guides share the one-command wallet installation contra
   }
 });
 
+test('generated apps retain the branded default connection experience', () => {
+  for (const template of ['react-vite', 'next-ssr', 'react-tokenization', 'react-dvp']) {
+    const entry = template === 'next-ssr' ? 'components/ConnectButton.tsx' : 'src/App.tsx';
+    const source = readFileSync(join(ROOT, 'packages/create-partylayer-app/templates', template, entry), 'utf8');
+    assert.ok(source.includes('ConnectButton'), `${template} must use the PartyLayer button`);
+    assert.doesNotMatch(source, /showAttribution\s*=\s*\{false\}/);
+  }
+  for (const [template, entry] of [['vanilla', 'src/main.ts'], ['vue-nuxt-pinia', 'app.vue']]) {
+    const source = readFileSync(join(ROOT, 'packages/create-partylayer-app/templates', template, entry), 'utf8');
+    assert.ok(source.includes('Powered by PartyLayer'), template);
+    assert.ok(source.includes('https://partylayer.xyz'), template);
+  }
+});
+
 /**
  * How each shared-slug pair is treated. `enforce` pairs must have identical heading
  * sets. A `known-divergence` pair is two different documents that share a slug; its

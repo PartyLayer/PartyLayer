@@ -2,6 +2,10 @@
 
 ## 0.20.0
 
+- Complete generic message-signature results, reject invalid signatures/account changes,
+  unwrap the SDK transaction envelope into CIP-0103 command parameters, and normalize
+  receipts without inventing ledger identifiers.
+
 ### Minor Changes
 
 - Include the reviewed, pinned Walley, Cauri, OneSwap and Vala official SDKs in the existing SDK with lazy loading through the generic CIP-0103 bridge. React and generated projects use the same default catalog without wallet-specific imports or installation. WalletConnect and Bron use shared application configuration; custom adapters can replace or extend defaults.

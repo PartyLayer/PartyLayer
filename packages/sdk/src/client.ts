@@ -49,7 +49,7 @@ import {
   type DiscoveredProvider,
 } from '@partylayer/provider';
 import { findMatchingWalletInfo } from '@partylayer/core';
-import { GenericAnnounceAdapter, type AnnounceAdapterConfig } from './announce-adapter';
+import { GenericAnnounceAdapter, getAnnounceCapabilities, type AnnounceAdapterConfig } from './announce-adapter';
 import { GenericDiscoveryAdapter } from './discovery-adapter';
 import {
   DEFAULT_REGISTRY_URL,
@@ -436,10 +436,10 @@ export class PartyLayerClient {
     // dynamic, target-scoped entries. No-op (byte-identical) with zero announcers.
     registryWallets = await this.aggregateAnnouncedWallets(registryWallets);
 
-    // Picker and session expose the same implemented discovery capabilities.
+    // Picker and session expose the same capabilities implemented by the active adapter.
     registryWallets = registryWallets.map((wallet) => {
       const adapter = this.adapters.get(wallet.walletId);
-      return adapter instanceof GenericDiscoveryAdapter
+      return adapter
         ? { ...wallet, capabilities: adapter.getCapabilities() }
         : wallet;
     }).filter((wallet) =>
@@ -516,12 +516,16 @@ export class PartyLayerClient {
    */
   private async gateUnconnectableEntries(wallets: WalletInfo[]): Promise<WalletInfo[]> {
     let hidden: Set<string> | null = null;
+    const announceCapabilities = new Map<string, CapabilityKey[]>();
     try {
       const registry = await this.registryClient.getRegistry();
       for (const entry of registry.wallets) {
         // Announce wallets stay visible with no app adapter: the SDK drives them
         // from the registry entry, so installing the extension is enough.
-        if (entry.adapter?.transport === 'announce') continue;
+        if (entry.adapter?.transport === 'announce') {
+          announceCapabilities.set(entry.id, getAnnounceCapabilities(deriveAnnounceConfig(entry)));
+          continue;
+        }
         const walletId = toWalletId(entry.id);
         if (!this.adapters.has(walletId)) {
           (hidden ??= new Set<string>()).add(String(walletId));
@@ -531,8 +535,10 @@ export class PartyLayerClient {
       // Registry unavailable — nothing registry-sourced to gate.
       return wallets;
     }
-    if (!hidden || hidden.size === 0) return wallets;
-    return wallets.filter((w) => !hidden!.has(String(w.walletId)));
+    return wallets.filter((w) => !hidden?.has(String(w.walletId))).map((w) => {
+      const capabilities = announceCapabilities.get(String(w.walletId));
+      return capabilities ? { ...w, capabilities } : w;
+    });
   }
 
   /**

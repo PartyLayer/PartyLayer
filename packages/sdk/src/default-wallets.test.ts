@@ -52,6 +52,38 @@ function client(options: Partial<Parameters<typeof createPartyLayer>[0]> = {}) {
 }
 
 describe('public default wallet catalog', () => {
+  it.each(['stable', 'beta'] as const)('checks every %s registry wallet across all three networks', async (channel) => {
+    for (const network of ['devnet', 'testnet', 'mainnet'] as const) {
+      const { c, r } = client({ channel, network, walletConnect: { projectId: 'catalog-test' }, bron: {
+        auth: { authorizationUrl: 'https://auth.example/authorize', tokenUrl: 'https://auth.example/token',
+          clientId: 'catalog-test', redirectUri: 'https://dapp.example/callback' },
+        api: { baseUrl: 'https://signer.example' },
+      } });
+      const wallets = await c.listWallets();
+      expect(wallets.map(w => String(w.walletId)).sort()).toEqual(
+        r.wallets.filter(w => w.supportedNetworks.includes(network)).map(w => w.id).sort(),
+      );
+      for (const wallet of wallets) {
+        expect(wallet.networks).toContain(network);
+        expect(wallet.channel).toBe(channel);
+        const adapter = c.getAdapter(wallet.walletId);
+        if (adapter) expect(wallet.capabilities).toEqual(adapter.getCapabilities());
+      }
+      expect(wallets.find(w => String(w.walletId) === 'console')?.capabilities).not.toContain('signTransaction');
+      for (const capability of ['signMessage', 'signTransaction', 'submitTransaction', 'events', 'transfer'] as const) {
+        const filtered = await c.listWallets({ requiredCapabilities: [capability] });
+        expect(filtered.map(w => w.walletId).sort()).toEqual(
+          wallets.filter(w => w.capabilities.includes(capability)).map(w => w.walletId).sort(),
+        );
+      }
+    }
+  });
+
+  it('omits both transports that require developer credentials by default', async () => {
+    const { c } = client();
+    expect((await c.listWallets()).some(w => ['walletconnect', 'bron'].includes(String(w.walletId)))).toBe(false);
+  });
+
   it('includes every registry official SDK without app imports and warms the popup synchronously', async () => {
     const { c, r } = client();
     const wallets = await c.listWallets();

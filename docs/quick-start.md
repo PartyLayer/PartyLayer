@@ -244,3 +244,8 @@ function App() {
 - [Architecture](./architecture.md)
 - [Error Codes](./errors.md)
 - [Adapter Guide](./adapters.md)
+
+The recommended UI is PartyLayer's `ConnectButton`. Its connection modal includes
+“Powered by PartyLayer” by default, as do the generated starters. Custom UI remains
+available for advanced use. For authentication challenges, include nonce and domain in
+the message being signed; separate nonce/domain metadata is not a cryptographic binding.

@@ -2,6 +2,9 @@
 
 ## 3.1.0
 
+- Preserve the live client during React StrictMode effect replay while still disposing
+  replaced/unmounted clients. This keeps asynchronously loaded wallets available in development.
+
 ### Minor Changes
 
 - Include the reviewed, pinned Walley, Cauri, OneSwap and Vala official SDKs in the existing SDK with lazy loading through the generic CIP-0103 bridge. React and generated projects use the same default catalog without wallet-specific imports or installation. WalletConnect and Bron use shared application configuration; custom adapters can replace or extend defaults.

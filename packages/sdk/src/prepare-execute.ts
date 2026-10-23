@@ -36,7 +36,7 @@ import type {
   SubmitTransactionParams,
   TxReceipt,
 } from '@partylayer/core';
-import { toTransactionHash } from '@partylayer/core';
+import { toTransactionHash, TransportError } from '@partylayer/core';
 
 /**
  * The two codes that mean "this wallet does not have that method": CIP-0103's
@@ -102,6 +102,26 @@ function receiptFromExecutedTx(result: unknown): TxReceipt | null {
   };
 }
 
+/** Acknowledgement is not confirmation: missing identifiers remain absent. */
+function normalizeReceipt(result: unknown, request: Record<string, unknown>): TxReceipt {
+  const executed = receiptFromExecutedTx(result);
+  if (executed) return executed;
+  const value = result && typeof result === 'object' ? result as Record<string, unknown> : {};
+  const timestamp = typeof value.submittedAt === 'number'
+    ? value.submittedAt : typeof value.submittedAt === 'string' ? Date.parse(value.submittedAt) : NaN;
+  const tx = value.tx && typeof value.tx === 'object' ? value.tx as Record<string, unknown> : {};
+  const commandId = typeof value.commandId === 'string' ? value.commandId
+    : typeof tx.commandId === 'string' ? tx.commandId
+    : typeof request.commandId === 'string' ? request.commandId : undefined;
+  return {
+    submittedAt: Number.isFinite(timestamp) ? timestamp : Date.now(),
+    ...(typeof value.transactionHash === 'string' && value.transactionHash.length > 0
+      ? { transactionHash: toTransactionHash(value.transactionHash) } : {}),
+    ...(typeof value.updateId === 'string' && value.updateId.length > 0 ? { updateId: value.updateId } : {}),
+    ...(commandId ? { commandId } : {}),
+  };
+}
+
 function reportOnce(
   state: ExecuteVerbState,
   walletId: string,
@@ -111,7 +131,7 @@ function reportOnce(
   if (state.logged) return;
   state.logged = true;
   logger?.warn(
-    `[PartyLayer] ${walletId}: ${detail} Receipts from it carry no real updateId.`,
+    `[PartyLayer] ${walletId}: ${detail} Confirm ledger completion only when the receipt contains a real updateId.`,
   );
 }
 
@@ -120,18 +140,23 @@ function reportOnce(
  * result.
  *
  * Returns a populated receipt when the wallet supports `prepareExecuteAndWait`.
- * Otherwise returns exactly what today's code returns — the plain verb's
- * response, cast — so a wallet that works now keeps working, degraded rather
- * than broken, with the reason logged once.
+ * Every response is normalized to the public receipt contract. A plain null
+ * acknowledgement carries no ledger identifier and must not be treated as a
+ * confirmed commit. No accepted submission is retried to obtain a better receipt.
  */
 export async function submitViaPrepareExecute(
   provider: CIP0103Provider,
   params: SubmitTransactionParams,
   opts: { walletId: string; state: ExecuteVerbState; logger?: LoggerAdapter },
 ): Promise<TxReceipt> {
-  // Params are forwarded UNCHANGED, exactly as before: the caller owns the shape
-  // and both verbs take the same `PrepareExecuteParams`.
-  const rpcParams = params as unknown as Record<string, unknown>;
+  // PartyLayer owns the outer signedTx envelope; CIP-0103 receives the inner
+  // PrepareExecuteParams (commands, commandId, actAs, disclosedContracts, ...).
+  // Accept a direct payload from legacy untyped callers as well.
+  const payload = Object.prototype.hasOwnProperty.call(params, 'signedTx') ? params.signedTx : params;
+  if (!payload || typeof payload !== 'object' || Array.isArray(payload)) {
+    throw new TransportError('CIP-0103 submission requires a command payload object as signedTx');
+  }
+  const rpcParams = payload as Record<string, unknown>;
   const { walletId, state, logger } = opts;
 
   if (state.verb !== 'plain') {
@@ -154,7 +179,7 @@ export async function submitViaPrepareExecute(
         'prepareExecuteAndWait returned no updateId.',
         logger,
       );
-      return result as TxReceipt;
+      return normalizeReceipt(result, rpcParams);
     } catch (err) {
       if (!isUnsupportedMethod(err)) throw err;
       // The wallet rejected the METHOD, so nothing was submitted and falling
@@ -169,8 +194,8 @@ export async function submitViaPrepareExecute(
     }
   }
 
-  // Unchanged from the pre-fix behaviour, deliberately. For a wallet without the
-  // awaited verb this is the best available answer, and turning a degraded
-  // result into an outage would break wallets that work today.
-  return provider.request<TxReceipt>({ method: 'prepareExecute', params: rpcParams });
+  // A wallet without the awaited verb still gets one submission, followed by
+  // a truthful receipt; an acknowledgement never invents a ledger identifier.
+  const result = await provider.request<unknown>({ method: 'prepareExecute', params: rpcParams });
+  return normalizeReceipt(result, rpcParams);
 }

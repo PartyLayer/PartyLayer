@@ -46,8 +46,20 @@ import type {
   WalletAdapter,
   WalletId,
 } from '@partylayer/core';
-import { toPartyId, toWalletId, toSignature, normalizeLedgerMethodLower, ledgerApiBodyToObject, isRecognizedNetwork } from '@partylayer/core';
+import { toPartyId, toWalletId, normalizeLedgerMethodLower, ledgerApiBodyToObject, isRecognizedNetwork } from '@partylayer/core';
 import { submitViaPrepareExecute, type ExecuteVerbState } from './prepare-execute';
+import { normalizeSignedMessage } from './sign-message';
+
+/** Capabilities of the generic announce bridge, including before installation. */
+export function getAnnounceCapabilities(config: AnnounceAdapterConfig = {}): CapabilityKey[] {
+  const caps: CapabilityKey[] = ['connect'];
+  if (config.signMessage !== false) caps.push('signMessage');
+  caps.push('submitTransaction');
+  if (config.restore) caps.push('restore');
+  if (config.ledgerApi) caps.push('ledgerApi');
+  if (config.events) caps.push('events');
+  return caps;
+}
 
 /** Canonical providerId prefix for an announced extension (provider.md: `browser:ext:<id>`). */
 export const ANNOUNCED_WALLET_ID_PREFIX = 'browser:ext:';
@@ -222,13 +234,8 @@ export class GenericAnnounceAdapter implements WalletAdapter {
    * beyond what the adapter can do.
    */
   getCapabilities(): CapabilityKey[] {
-    const caps: CapabilityKey[] = ['connect'];
-    if (this.signMessage) caps.push('signMessage');
-    caps.push('submitTransaction');
-    if (this.restore) caps.push('restore');
-    if (this.ledgerApi) caps.push('ledgerApi');
-    if (this.on) caps.push('events');
-    return caps;
+    return getAnnounceCapabilities({ signMessage: !!this.signMessage, restore: !!this.restore,
+      ledgerApi: !!this.ledgerApi, events: !!this.on });
   }
 
   /**
@@ -319,19 +326,7 @@ export class GenericAnnounceAdapter implements WalletAdapter {
 
       const res = await this.provider.request<unknown>({ method: 'signMessage', params: rpcParams });
 
-      // Response normalization (universal): the provider may return a bare
-      // signature string OR `{ signature }`; synthesize the full SignedMessage
-      // from session + params (matches ConsoleAdapter and SendAdapter). Additive
-      // for Send — adds partyId/message, removes nothing.
-      const sig =
-        typeof res === 'string' ? res : (res as { signature?: unknown } | null)?.signature ?? '';
-      return {
-        signature: toSignature(String(sig)),
-        partyId: session.partyId,
-        message: params.message,
-        nonce: params.nonce,
-        domain: params.domain,
-      };
+      return normalizeSignedMessage(res, session, params);
     });
   }
 

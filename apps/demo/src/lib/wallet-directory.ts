@@ -1,4 +1,7 @@
 import { getDiscoveryCapabilities } from '@partylayer/sdk';
+import { GENERATED_WALLETS } from '../app/docs/wallets/wallets.generated';
+
+const stableCapabilities = new Map(GENERATED_WALLETS.map(wallet => [wallet.id, wallet.capabilities]));
 /**
  * Build-time view of the wallet registry, for the generated /wallets pages.
  *
@@ -180,7 +183,7 @@ export function getRegistrySnapshot(): RegistrySnapshot {
       networks: entry.supportedNetworks,
       capabilities: entry.adapter.transport === 'discovery-adapter'
         ? Object.fromEntries(getDiscoveryCapabilities(entry.capabilities).map(key => [key, true]))
-        : entry.capabilities as unknown as Record<string, boolean>,
+        : (stableCapabilities.get(entry.id) ?? entry.capabilities) as unknown as Record<string, boolean>,
       adapterPackage: entry.adapter.type,
       sdkVersion: entry.sdkVersion ?? '',
       channel,

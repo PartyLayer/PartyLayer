@@ -59,7 +59,7 @@ export default function WalletsPage() {
 
       <H2 id="capability-matrix">Capability Matrix</H2>
       <P>
-        Not every wallet supports every operation. Check this matrix before building features
+        Not every wallet supports every operation. This matrix is generated from the active SDK integrations. Check it before building features
         that depend on specific capabilities.
       </P>
 
@@ -77,16 +77,7 @@ export default function WalletsPage() {
             </tr>
           </thead>
           <tbody>
-            {[
-              { name: 'Console', connect: true, signMessage: true, signTransaction: true, submitTransaction: true, ledgerApi: 'full', restore: true },
-              { name: '5N Loop', connect: true, signMessage: true, signTransaction: false, submitTransaction: true, ledgerApi: 'limited', restore: true },
-              { name: 'Cantor8', connect: true, signMessage: true, signTransaction: true, submitTransaction: false, ledgerApi: 'none', restore: true },
-              { name: 'Nightly', connect: true, signMessage: true, signTransaction: false, submitTransaction: true, ledgerApi: 'full', restore: true },
-              { name: 'Bron', connect: true, signMessage: true, signTransaction: true, submitTransaction: false, ledgerApi: 'full', restore: true },
-              { name: 'Send', connect: true, signMessage: true, signTransaction: false, submitTransaction: true, ledgerApi: 'full', restore: true },
-              { name: 'Walley', connect: true, signMessage: true, signTransaction: false, submitTransaction: true, ledgerApi: 'none', restore: true },
-              { name: 'WalletConnect', connect: true, signMessage: true, signTransaction: false, submitTransaction: true, ledgerApi: 'full', restore: true },
-            ].map(w => (
+            {GENERATED_WALLETS.map(entry => ({ name: entry.name, connect: true, ...entry.capabilities })).map(w => (
               <tr key={w.name} style={{ borderBottom: '1px solid rgba(15,23,42,0.10)' }}>
                 <td style={{ padding: '10px 14px', fontWeight: 500, color: '#0B0F1A' }}>{w.name}</td>
                 {['connect', 'signMessage', 'signTransaction', 'submitTransaction'].map(cap => {
@@ -98,9 +89,7 @@ export default function WalletsPage() {
                   );
                 })}
                 <td style={{ padding: '10px 14px', textAlign: 'center' }}>
-                  {w.ledgerApi === 'full' && <span style={{ color: '#166534' }}>{'full'}</span>}
-                  {w.ledgerApi === 'limited' && <span style={{ color: '#92400E' }}>{'limited'}</span>}
-                  {w.ledgerApi === 'none' && <span style={{ color: '#991B1B' }}>{'none'}</span>}
+                  {w.ledgerApi ? <span style={{ color: '#166534' }}>supported</span> : <span style={{ color: '#991B1B' }}>none</span>}
                 </td>
                 <td style={{ padding: '10px 14px', textAlign: 'center' }}>
                   {w.restore ? <span style={{ color: '#166534' }}>{'supported'}</span> : <span style={{ color: '#991B1B' }}>{'none'}</span>}
@@ -128,22 +117,20 @@ export default function WalletsPage() {
           <Code>{'GET /v2/state/acs/active-contracts'}</Code>, <Code>{'POST /v2/commands/submit'}</Code>,{' '}
           and <Code>{'POST /v2/commands/submit-and-wait'}</Code>. Other endpoints are not available,
           for full Ledger API access, use Console, Nightly, or Bron.</LI>
-        <LI><Strong>Cantor8:</Strong> Mobile-only deep link transport. Supports <Code>{'signMessage'}</Code>{' '}
-          and <Code>{'signTransaction'}</Code> via the deep link flow, but does not expose{' '}
-          <Code>{'submitTransaction'}</Code> or <Code>{'ledgerApi'}</Code>.</LI>
+        <LI><Strong>Cantor8:</Strong> hosted popup integration. Use <Code>{'submitTransaction'}</Code>
+          for its combined sign-and-execute flow. Separate message signing, transaction signing and
+          Ledger API access are not exposed by this integration.</LI>
         <LI><Strong>Bron, submitTransaction:</Strong> Bron is a remote signer (OAuth), it signs commands
           but does not submit them directly to the ledger. Pair{' '}
           <Code>{'signTransaction'}</Code> with your own participant submission, or call{' '}
           <Code>{'ledgerApi'}</Code> against <Code>{'/v2/commands/submit-and-wait'}</Code> and let Bron sign
-          the pre-built command. Requires explicit OAuth configuration via{' '}
-          <Code>{'BronAdapter'}</Code> with <Code>{'auth'}</Code> and <Code>{'api'}</Code> config.</LI>
-        <LI><Strong>Session restore (all five wallets):</Strong> every adapter declares the{' '}
-          <Code>{'restore'}</Code> capability and implements a matching{' '}
-          <Code>{'restore()'}</Code> method. On page reload, the SDK decrypts the persisted
-          session and hands it to the adapter, which re-establishes the provider if it can.
+          the pre-built command. Requires the <Code>{'bron'}</Code> configuration with <Code>{'auth'}</Code> and <Code>{'api'}</Code>.</LI>
+        <LI><Strong>Session restore:</Strong> support depends on the wallet and its live authentication.
+          A stored PartyLayer session alone does not establish a wallet connection. Official popup
+          providers are probed before restoration; OneSwap requires a fresh explicit connection.
           See <a href="/docs/advanced#session-persistence" style={{ color: '#E6B800' }}>
             Advanced → Session Persistence
-          </a> for per-wallet behavior and edge cases.</LI>
+          </a> for per-wallet behavior.</LI>
       </UL>
 
       <H2 id="adding-bron">Adding Bron (Enterprise)</H2>

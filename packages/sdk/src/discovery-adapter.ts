@@ -55,6 +55,7 @@ import type {
 } from '@partylayer/core';
 import { toPartyId, toWalletId, isRecognizedNetwork, normalizeLedgerMethodLower, ledgerApiBodyToObject } from '@partylayer/core';
 import { submitViaPrepareExecute, type ExecuteVerbState } from './prepare-execute';
+import { normalizeSignedMessage } from './sign-message';
 
 export interface GenericDiscoveryAdapterArgs {
   /**
@@ -334,13 +335,14 @@ export class GenericDiscoveryAdapter implements WalletAdapter {
 
   async signMessage(
     _ctx: AdapterContext,
-    _session: Session,
+    session: Session,
     params: SignMessageParams,
   ): Promise<SignedMessage> {
-    return this.provider.request<SignedMessage>({
+    const response = await this.provider.request<unknown>({
       method: 'signMessage',
       params: { message: params.message },
     });
+    return normalizeSignedMessage(response, session, params);
   }
 
   async submitTransaction(
