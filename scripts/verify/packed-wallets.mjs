@@ -114,11 +114,17 @@ console.log('Single npm command: ESM, CommonJS, SSR initialization and all offic
   console.log(probe.stdout.trim());
 
   const cliVersion = packages.get('create-partylayer-app').pkg.version;
-  const outcomes = await Promise.allSettled(['react-vite', 'next-ssr'].map(async template => {
+  const templates = ['react-vite', 'next-ssr'];
+  // npm exec uses the same _npx directory for an identical package spec. Do not
+  // let two first-time invocations extract the CLI into that directory at once.
+  for (const template of templates) {
     const target = join(staging, template);
     console.log(`Checking packed CLI and clean ${template} consumer…`);
     await run('npm', ['exec', '--yes', `--registry=${registry}`, `--package=create-partylayer-app@${cliVersion}`,
       '--', 'create-partylayer-app', target, '--template', template, '--pm', 'npm', '--no-install', '--no-git'], staging);
+  }
+  const outcomes = await Promise.allSettled(templates.map(async template => {
+    const target = join(staging, template);
     console.log(`Installing ${template} dependencies…`);
     await run('npm', ['install', ...npmFlags], target);
     console.log(`Building ${template}…`);
