@@ -3,7 +3,7 @@
 import { useDocs } from '../layout';
 
 export default function WalletBalancesContent() {
-  const { H1, H2, P, Code, CodeBlock, Callout, A } = useDocs();
+  const { H1, H2, P, CodeBlock, Callout, A } = useDocs();
   return <>
     <H1>Wallet balances</H1>
     <P>Canton holdings are private contracts. Read them through your authorized application backend
