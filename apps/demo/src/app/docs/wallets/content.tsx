@@ -52,9 +52,9 @@ export default function WalletsPage() {
 
       <Callout type="note">
         Wallets marked <Strong>Opt-in</Strong> (<Strong>Bron</Strong>, <Strong>WalletConnect</Strong>) require explicit
-        configuration, register them via <Code>{'config.adapters'}</Code> (Bron needs an OAuth client ID;
-        WalletConnect needs the optional <Code>{'@walletconnect/*'}</Code> peers). The rest are auto-registered
-        when using <Code>{'PartyLayerKit'}</Code>.
+        configuration: pass <Code>{'bron'}</Code> for OAuth/API access and <Code>{'walletConnect'}</Code>
+        with your Cloud project id. Their runtime dependencies are included. The default catalog
+        supplies the other supported wallets for the configured network and channel.
       </Callout>
 
       <H2 id="capability-matrix">Capability Matrix</H2>
@@ -147,29 +147,22 @@ export default function WalletsPage() {
       </UL>
 
       <H2 id="adding-bron">Adding Bron (Enterprise)</H2>
-      <CodeBlock language="tsx">{`import { PartyLayerKit } from '@partylayer/react';
-import { getBuiltinAdapters } from '@partylayer/sdk';
-import { BronAdapter } from '@partylayer/adapter-bron';
+      <CodeBlock language="tsx">{`import { PartyLayerKit, ConnectButton } from '@partylayer/react';
 
-<PartyLayerKit
-  network="mainnet"
-  appName="My dApp"
-  adapters={[
-    ...getBuiltinAdapters(),
-    new BronAdapter({
-      auth: {
-        clientId: 'your-oauth-client-id',
-        redirectUri: 'https://my-app.com/callback',
-        authorizationUrl: 'https://auth.bron.example/authorize',
-        tokenUrl: 'https://auth.bron.example/token',
-      },
-      api: {
-        baseUrl: 'https://api.bron.example',
-        getAccessToken: async () => getStoredAccessToken(),
-      },
-    }),
-  ]}
->`}</CodeBlock>
+const walletConnect = { projectId: 'your-walletconnect-project-id' };
+const bron = {
+  auth: {
+    clientId: 'your-client-id',
+    redirectUri: 'https://your-app.com/auth/callback',
+    authorizationUrl: 'https://auth.bron.example/authorize',
+    tokenUrl: 'https://auth.bron.example/token',
+  },
+  api: { baseUrl: 'https://api.bron.example' },
+};
+
+<PartyLayerKit network="mainnet" appName="My dApp" walletConnect={walletConnect} bron={bron}>
+  <ConnectButton />
+</PartyLayerKit>`}</CodeBlock>
 
       <H2 id="discovery">Wallet Discovery</H2>
       <P>
@@ -201,16 +194,18 @@ const providers = discoverInjectedProviders();
 
       <H2 id="builtin-adapters-function">getBuiltinAdapters</H2>
       <P>
-        Returns all auto-registered adapters (Console, Loop, Cantor8, Nightly):
+        Returns the synchronous legacy subset (Loop, Cantor8, Nightly), not the complete default catalog:
       </P>
       <CodeBlock language="typescript">{`import { getBuiltinAdapters } from '@partylayer/sdk';
 
 const adapters = getBuiltinAdapters();
-// → [ConsoleAdapter, LoopAdapter, Cantor8Adapter, NightlyAdapter]`}</CodeBlock>
+// → [LoopAdapter, Cantor8Adapter, NightlyAdapter]`}</CodeBlock>
 
       <H2 id="custom-adapter">Creating a Custom Adapter</H2>
       <P>
-        To support a new wallet, implement the <Code>{'WalletAdapter'}</Code> interface:
+        New wallets should follow <A href="/docs/generic-bridge">CIP-0103 Path A or B</A>.
+        The following advanced example documents the existing <Code>{'WalletAdapter'}</Code> contract
+        for application-owned integrations and test fixtures:
       </P>
       <CodeBlock language="typescript">{`import type {
   WalletAdapter, AdapterContext, AdapterDetectResult,

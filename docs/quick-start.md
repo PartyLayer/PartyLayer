@@ -8,10 +8,10 @@
 ## Installation
 
 ```bash
-npm install @partylayer/sdk @partylayer/react
+npm install @partylayer/react @tanstack/react-query
 ```
 
-**No need to install wallet adapters separately**, Console, Loop, Cantor8, and Nightly are all bundled in the SDK!
+**All supported wallet SDKs are included.** The picker uses the selected network and registry channel. Vala is available on Devnet with `channel="beta"`. WalletConnect needs your project id; Bron needs your OAuth/API configuration.
 
 ## React: Zero Config (Recommended)
 
@@ -32,7 +32,7 @@ function App() {
 
 `PartyLayerKit` handles everything:
 - Creates and manages the SDK client
-- Registers all built-in wallet adapters
+- Loads the supported default wallet catalog for the selected network and channel
 - Auto-discovers native CIP-0103 wallets (`window.canton.*`)
 - Provides theming (light/dark/auto)
 

@@ -2,7 +2,7 @@
  * Demo WalletConnect configuration.
  *
  * The adapter itself is constructed by the shared set in
- * `@partylayer/demo-adapters`; this module supplies the two values that are
+ * the public SDK; this module supplies the two values that are
  * specific to this app. It cannot live in the shared module: Next inlines
  * `process.env.NEXT_PUBLIC_*` at build time and Vite inlines
  * `import.meta.env.VITE_*`, so neither expression survives the other bundler.
@@ -18,7 +18,8 @@
  * sign-client into the demo's main bundle.
  */
 
-import type { WalletConnectMetadata } from '@partylayer/demo-adapters';
+import type { WalletConnectAdapterConfig } from '@partylayer/sdk';
+type WalletConnectMetadata = NonNullable<WalletConnectAdapterConfig['metadata']>;
 
 /** Local-dev fallback projectId (override with NEXT_PUBLIC_WC_PROJECT_ID). */
 const FALLBACK_PROJECT_ID = '577414f6b46f09a7383d3c306c013a57';

@@ -24,6 +24,13 @@ consumer bundles.
 Package size is not what a dApp ships. What a dApp ships is the tree shaken, minified, and
 gzipped cost of the exports it actually imports. That is measured below.
 
+The current default catalog loads reviewed official SDKs lazily during wallet discovery;
+configured WalletConnect and Bron transports also load lazily. The current measured initial
+SDK contribution is 47.83 kB gzip (48 kB budget); React Native headless is 48.05 kB
+(48.25 kB budget). These are initial bundles; opening the picker downloads eligible wallet
+chunks, and connecting WalletConnect loads its underlying transport. Run `pnpm gate:size`
+for the current numbers. The older comparisons below remain dated historical measurements.
+
 ## What each import scenario costs
 
 Measured with `size-limit` (esbuild bundler, gzip). Peer dependencies (React, React Query,

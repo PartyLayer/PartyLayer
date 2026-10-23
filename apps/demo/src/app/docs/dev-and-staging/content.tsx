@@ -88,7 +88,7 @@ export default function DevAndStagingContent() {
         binding for your framework and wrap your app:
       </P>
       <CodeBlock language="bash">{`# React
-npm install @partylayer/react
+npm install @partylayer/react @tanstack/react-query
 # Vue
 npm install @partylayer/vue
 # Vanilla / custom

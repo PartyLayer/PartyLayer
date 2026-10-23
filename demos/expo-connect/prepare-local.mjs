@@ -33,6 +33,7 @@ const PACKAGES = [
   ['@partylayer/adapter-bron', 'packages/adapters/bron'],
   ['@partylayer/adapter-nightly', 'packages/adapters/nightly'],
   ['@partylayer/adapter-send', 'packages/adapters/send'],
+  ['@partylayer/adapter-walletconnect', 'packages/adapters/walletconnect'],
   ['@partylayer/sdk', 'packages/sdk'],
   ['@partylayer/react-native', 'packages/react-native'],
 ];

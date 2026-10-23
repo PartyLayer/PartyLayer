@@ -25,7 +25,16 @@ const RN_PEERS = ['react', 'react-native', 'react-native-svg', '@react-native-as
 // INITIAL-bundle contribution (the same reason assets and peers are excluded above).
 // @cantor8/wallet-connect-sdk is lazily imported by the Cantor8 adapter, loaded only
 // when a user selects Cantor8.
-const LAZY_WALLET_SDKS = ['@cantor8/wallet-connect-sdk'];
+const LAZY_WALLET_SDKS = [
+  '@cantor8/wallet-connect-sdk',
+  '@k2flabs/walley-dapp-sdk',
+  '@lithiumdigital/cauri-dapp-sdk',
+  '@oneswap/wallet-cip0103-adapter',
+  '@vala-wallet/dapp-sdk',
+  '@canton-network/dapp-sdk',
+  '@partylayer/adapter-walletconnect',
+  '@partylayer/adapter-bron',
+];
 
 // Numbers are minified plus gzipped, the size a dApp downloads over the wire.
 module.exports = [
@@ -255,7 +264,8 @@ module.exports = [
     // QR built as SVG through DOM APIs (fivenorth-io/loop-sdk#91). The Loop SDK
     // is not lazy-loaded (LAZY_WALLET_SDKS names Cantor8 only), so it is in this
     // bundle. Measured 47.22 kB; 47.75 kB leaves about 0.5 kB of headroom.
-    limit: '47.75 kB',
+    // Default wallet catalog: measured 48.05 kB after lazy-loading optional transports.
+    limit: '48.25 kB',
   },
   {
     name: 'react-native: ui (ConnectButton)',
@@ -466,6 +476,8 @@ module.exports = [
     // QR built as SVG through DOM APIs (fivenorth-io/loop-sdk#91). The Loop SDK
     // is not lazy-loaded (LAZY_WALLET_SDKS names Cantor8 only), so it is in this
     // bundle. Measured 47.00 kB; 47.5 kB leaves about 0.5 kB of headroom.
-    limit: '47.5 kB',
+    // Default wallet catalog and network/capability guards add ~0.83 kB gzip.
+    // Official SDKs and configured transports remain separate lazy chunks. Measured 47.83 kB.
+    limit: '48 kB',
   },
 ];

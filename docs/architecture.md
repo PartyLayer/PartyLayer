@@ -131,7 +131,9 @@ Each adapter implements the `WalletAdapter` interface:
 - `submitTransaction()`: Submit signed transactions
 - `restoreSession()`: Restore existing session (if supported)
 
-**Built-in adapters (auto-registered):**
+**Default wallet catalog:** the SDK includes reviewed official SDKs (Walley, Cauri, OneSwap, and Devnet-beta Vala), loaded lazily through the generic discovery bridge. Console and Send use the generic CIP-0103 path. WalletConnect and Bron are enabled with `walletConnect` and `bron` application configuration. Registry network/channel declarations determine availability.
+
+**Existing adapter classes (advanced API):**
 - `ConsoleAdapter`: Browser extension, PostMessage transport
 - `LoopAdapter`: Mobile/Web, QR code/popup transport
 - `Cantor8Adapter`: Browser extension, deep link transport

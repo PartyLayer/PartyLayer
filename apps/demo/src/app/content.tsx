@@ -7,10 +7,15 @@ import Link from 'next/link';
 import { PartyLayerKit, WalletModal, useClientSession, ConnectButton, truncatePartyId, useAccount, usePartyLayer } from '@partylayer/react';
 import { DEFAULT_RETRY_POLICY, type SessionStoreOptions } from '@partylayer/session';
 import { buildDemoAdapters } from '../lib/canton-demo-adapter';
+import { WC_METADATA, wcProjectId } from '../lib/walletconnect-demo';
+
 import { sortByCanonicalOrder, CANONICAL_WALLET_ORDER } from '../lib/wallet-order';
 import { DEMO_WALLET_ICONS } from '../lib/demo-registry';
 import { registryIconUrl } from '../lib/registry-icon';
 import { useBreakpoint, responsive } from './hooks/useBreakpoint';
+const DEMO_ADDITIONAL_ADAPTERS = buildDemoAdapters();
+const DEMO_WALLET_CONNECT = { projectId: wcProjectId(), metadata: WC_METADATA };
+
 
 /*
  * PROVENANCE. Sections below are marked "ported from the former marketing app".
@@ -1903,7 +1908,7 @@ export default function Home() {
       walletIcons={DEMO_WALLET_ICONS}
       appName="PartyLayer"
       walletOrder={CANONICAL_WALLET_ORDER}
-      adapters={buildDemoAdapters()}
+      additionalAdapters={DEMO_ADDITIONAL_ADAPTERS} walletConnect={DEMO_WALLET_CONNECT}
       registryUrl="/registry"
       sessionOptions={APEX_SESSION_OPTIONS}
     >

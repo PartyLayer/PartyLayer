@@ -18,7 +18,8 @@ import { SendAdapter } from '@partylayer/adapter-send';
 /**
  * Get all built-in adapters
  *
- * This function returns instances of all supported wallet adapters.
+ * This synchronous function returns the legacy, configuration-free adapters.
+ * The full default catalog also includes official SDKs loaded during discovery.
  * Called automatically by createPartyLayer() unless custom adapters are provided.
  *
  * Included adapters (returned by this function):
@@ -33,7 +34,7 @@ import { SendAdapter } from '@partylayer/adapter-send';
  * - SendAdapter: Send Canton Wallet (passkey / WebAuthn-PRF).
  *
  * Note: BronAdapter is NOT included by default because it requires OAuth configuration.
- * To use Bron, install @partylayer/adapter-bron and register it manually.
+ * To use Bron with the full default catalog, set config.bron; no separate install is needed.
  */
 export function getBuiltinAdapters(): WalletAdapter[] {
   return [

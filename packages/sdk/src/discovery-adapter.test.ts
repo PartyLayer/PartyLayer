@@ -90,6 +90,20 @@ describe('GenericDiscoveryAdapter', () => {
     expect(caps).toEqual(['connect', 'disconnect', 'signMessage', 'submitTransaction']);
   });
 
+  it('reports only implemented declared capabilities and normalizes ledgerApi requests', async () => {
+    const { official, providerFactory } = makeOfficial({}, { ledgerApi: { response: '{"ok":true}' } });
+    const adapter = new GenericDiscoveryAdapter({ official, capabilities: {
+      signMessage: false, submitTransaction: false, ledgerApi: true, events: true,
+    } });
+    expect(adapter.getCapabilities()).toEqual(['connect', 'disconnect', 'ledgerApi']);
+    expect(await adapter.ledgerApi!(ctx, session, {
+      requestMethod: 'GET', resource: '/v2/version', body: '{"test":1}',
+    })).toEqual({ response: '{"ok":true}' });
+    expect(providerFactory.mock.results[0].value.request).toHaveBeenCalledWith({
+      method: 'ledgerApi', params: { requestMethod: 'get', resource: '/v2/version', body: { test: 1 } },
+    });
+  });
+
   it('does NOT call official.provider() at construction (SSR-safe / lazy)', () => {
     const { official, providerFactory } = makeOfficial();
     new GenericDiscoveryAdapter({ official });

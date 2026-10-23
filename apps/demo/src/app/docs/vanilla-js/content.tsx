@@ -63,8 +63,9 @@ const signingWallets = await client.listWallets({
       <HR />
 
       <H3>registerAdapter</H3>
-      <P>Register a custom wallet adapter at runtime.</P>
-      <CodeBlock language="typescript">{`import { BronAdapter } from '@partylayer/adapter-bron';
+      <P>Advanced: register an application-owned adapter at runtime. For Bron, prefer
+        <Code>{'createPartyLayer({ ..., bron: config })'}</Code>; its dependencies are included.</P>
+      <CodeBlock language="typescript">{`import { BronAdapter } from '@partylayer/sdk';
 
 client.registerAdapter(
   new BronAdapter({

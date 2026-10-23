@@ -12,7 +12,7 @@
 
 import { useMemo, useEffect, useRef, createContext, useContext } from 'react';
 import { createPartyLayer } from '@partylayer/sdk';
-import type { PartyLayerClient, WalletAdapter, AdapterClass, OfficialProviderAdapter, OfficialAdapterFactory, NetworkId } from '@partylayer/sdk';
+import type { PartyLayerClient, WalletAdapter, AdapterClass, OfficialProviderAdapter, OfficialAdapterFactory, PartyLayerConfig, NetworkId } from '@partylayer/sdk';
 import type { SessionStoreOptions } from '@partylayer/session';
 import { PartyLayerProvider } from './context';
 import { ThemeProvider } from './theme';
@@ -91,27 +91,19 @@ export interface PartyLayerKitProps {
   registryUrl?: string;
   /** Registry channel (default: 'stable') */
   channel?: 'stable' | 'beta';
-  /**
-   * Custom wallet adapters. If not provided, uses the no-config built-in
-   * adapters: 5N Loop, Cantor8, and Nightly. Console and Send are CIP-0103
-   * native and appear through the announce path.
-   *
-   * For Bron (enterprise OAuth), pass explicitly:
-   *   adapters={[...getBuiltinAdapters(), new BronAdapter(config)]}
-   *
-   * Also accepts an official @canton-network ProviderAdapter
-   * (`OfficialProviderAdapter`, e.g. `new WalleyAdapter({ host })`), the SDK
-   * auto-bridges it via GenericDiscoveryAdapter (popup/remote wallets), or an
-   * `OfficialAdapterFactory` (`{ providerId, create(host) }`), whose host the SDK
-   * resolves from the registry entry's `networkHosts[network]` so you set
-   * `network="…"` and never hardcode a wallet URL.
-   */
+  /** Replace the default wallet catalog. Omit to enable all supported wallets. */
   adapters?: (
     | WalletAdapter
     | AdapterClass
     | OfficialProviderAdapter
     | OfficialAdapterFactory
   )[];
+  /** Extend the default catalog without replacing it. */
+  additionalAdapters?: PartyLayerConfig['additionalAdapters'];
+  /** WalletConnect Cloud project id and optional pairing metadata. */
+  walletConnect?: PartyLayerConfig['walletConnect'];
+  /** Bron OAuth/API configuration; omitted means Bron is hidden. */
+  bron?: PartyLayerConfig['bron'];
   /**
    * Theme: a preset ('light' | 'dark' | 'auto'), a custom `PartyLayerTheme` object,
    * a callable theme result (`darkTheme({ accentColor, borderRadius, ... })`), or a
@@ -153,6 +145,9 @@ export function PartyLayerKit({
   registryUrl,
   channel,
   adapters,
+  additionalAdapters,
+  walletConnect,
+  bron,
   theme = 'light',
   walletIcons = {},
   walletOrder,
@@ -174,9 +169,10 @@ export function PartyLayerKit({
       registryUrl,
       channel,
       adapters: adaptersRef.current,
+      additionalAdapters, walletConnect, bron,
     });
-  // Only re-create client when these primitive values change
-  }, [network, appName, registryUrl, channel]);
+  // Keep configuration objects stable; changing them rebuilds the client.
+  }, [network, appName, registryUrl, channel, additionalAdapters, walletConnect, bron]);
 
   // Cleanup on unmount or when client is re-created
   useEffect(() => {

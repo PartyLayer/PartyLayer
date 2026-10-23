@@ -1,5 +1,209 @@
 # @partylayer/sdk
 
+## 0.20.0
+
+### Minor Changes
+
+- Include the reviewed, pinned Walley, Cauri, OneSwap and Vala official SDKs in the existing SDK with lazy loading through the generic CIP-0103 bridge. React and generated projects use the same default catalog without wallet-specific imports or installation. WalletConnect and Bron use shared application configuration; custom adapters can replace or extend defaults.
+
+  Filter wallets by the configured network and channel, align discovery capabilities with implemented methods, warm popup connections before returning the picker list, and validate restored official providers instead of reviving expired sessions. Vala remains Devnet beta.
+
+- 0ebd598: Stop reporting wallets as installed when nothing was installed.
+
+  `detectInstalled()` could only answer yes or no, and eight of twelve adapters had
+  no honest way to answer it — a QR wallet, a hosted popup, a relay and an OAuth
+  service have no local artefact to probe. They answered `true`, meaning
+  "reachable", and the picker read it as "installed". Cantor8 is not an extension
+  at all: its tile said installed, and clicking it opened a tab.
+
+  `AdapterDetectResult` gains `availability`, which says what presence actually is:
+  `installed`, `not-installed` (probed and absent, with an install URL),
+  `no-local-install` (QR / popup / relay — nothing to probe), or `unknown` (the
+  probe failed or timed out, which is not proof of absence). `installed` is
+  deprecated in its JSDoc, still populated, and exactly
+  `availability.kind === 'installed'`, so no consumer breaks.
+
+  **The false `true` was load-bearing.** `installGuard` read `installed` and threw
+  `WalletNotInstalledError` on false — so returning the truth would have blocked
+  connect for every wallet that has nothing to install. Making the adapters honest
+  broke connect for all of them until the guard was changed to ask its real
+  question: not "is it installed" but "do we already know this cannot work", which
+  only `not-installed` answers yes to. That coupling is why this is one contract
+  change rather than eight independent bug fixes.
+
+  Vendor `detect()` is no longer called for `discovery-adapter` wallets. All three
+  implementations are constants (`walley`: `window.open` exists; `cauri`:
+  `Promise.resolve(true)`; `oneswap`: `typeof window !== 'undefined'`), so awaiting
+  them bought no information while adding an async hop to the picker's render path
+  and a dependency on three third parties answering honestly. A `discovery-adapter`
+  transport IS the answer; the rule is applied in exactly one place.
+
+  The picker's subtitles for the two wallets measured causing real harm now say
+  what a click will do: "Scan to connect — nothing to install" and "Opens in a
+  popup — nothing to install".
+
+  `docs/adapters.md` records which adapters probe what, and one mismatch still
+  outstanding: Cantor8 classifies as `scan` but opens a tab, a registry-data fix
+  queued with the D5/D6 registry work.
+
+- 8cb0f09: Report what the wallet actually said, and hold the connect deadline you set.
+
+  Two defects in one place. `mapUnknownErrorToPartyLayerError` classified errors by
+  scanning their prose, and both the refusal branch and the timeout branch drew the
+  wrong conclusion from it.
+
+  **A wallet refusing is no longer reported as the user cancelling.** Any message
+  containing `rejected`, `denied`, `cancelled` or `canceled` collapsed into
+  `USER_REJECTED`. Nightly declining because the tab was unfocused — "Connect
+  request rejected - tab is not active" — told the dApp the user had clicked
+  cancel, when no prompt had been shown at all. Classification now prefers
+  structured signals (EIP-1193 `4001`, `err.name`), then phrasing that names the
+  user; anything else that reads as a refusal becomes the new `WALLET_REFUSED`
+  code, carrying the wallet's own words in `message` and `details.originalMessage`.
+
+  **A timeout now reports the deadline that actually elapsed.** `context.timeoutMs`
+  took precedence over the figure already present in the message, so a connect that
+  ran the full two minutes was reported as "timed out after 30000ms" — the SDK held
+  two independent defaults, `120000` at the race and `30000` in the catch block that
+  formatted the error. There is now one exported `DEFAULT_CONNECT_TIMEOUT_MS`, the
+  message's own number wins over context, and an unknown deadline says "timed out"
+  rather than inventing "after 0ms".
+
+  **A timeout now cancels.** `Promise.race` never stopped the loser, so a connect
+  that had timed out kept its popup, QR overlay or socket live and could still
+  complete against a caller that had given up. `connect()` receives an
+  `AbortSignal` that fires when the deadline does. Adapters that ignore it behave
+  exactly as before.
+
+  The Nightly adapter had the same shape internally: its protocol names the
+  outcome (`sign_request_rejected`) and it degraded that to prose for the mapper to
+  recognise, with a comment noting the word "rejected" was load-bearing. All three
+  sites now throw the typed error where the type is known, so a Nightly decline no
+  longer depends on string matching to be classified correctly.
+
+  `WALLET_REFUSED` is additive. Code branching on `USER_REJECTED` for a genuine
+  cancellation is unaffected; code that was relying on `USER_REJECTED` to catch
+  wallet-side refusals should now also handle `WALLET_REFUSED`.
+
+### Patch Changes
+
+- 2e07185: Give the registry a field for how a wallet connects, and four capabilities it could not express.
+
+  One overloaded signal was answering three independent questions: how a wallet is
+  DISCOVERED, how its SDK is LOADED, and how it CONNECTS. `installation.scriptTag`
+  says how the SDK is loaded, and it was read as "scan" — which is right for Loop
+  and wrong for Cantor8, script-loaded but opening a popup.
+
+  `connect: ('injected' | 'popup' | 'relay')[]` is now its own field. The shapes
+  came from surveying all ten wallets rather than from the one that prompted it,
+  and that ordering paid: Loop and WalletConnect are BOTH `relay` — a QR scanned by
+  a phone app and a mobile pairing — so a popup-versus-scan flag would have been
+  wrong for two wallets on day one. Their shared subtitle reads "Connect from
+  another device", because the axis is where the connection happens, not what the
+  UI looks like.
+
+  ORDER IS PREFERENCE ORDER, and it has a reader: `connect[0]` is what the picker
+  tries first, and `preferInstalled: false` — the modal's "Try mobile" affordance —
+  advances to the next entry. Console is `['injected', 'relay']`. That preference
+  already exists; it is hardcoded in Console's adapter today, and this is where it
+  belongs instead.
+
+  `transfer`, `ledgerApi`, `popup` and `restore` are now expressible.
+  `walletInfo.capabilities` could never contain them, so
+  `listWallets({ requiredCapabilities: ['transfer'] })` matched zero wallets while
+  every adapter implemented `requestTransfer` — two capability gates reading
+  contradictory sources.
+
+  Also fixed: `installHints.deepLinkScheme` was populated from
+  `installation.scriptTag`, putting an npm package name in a field meaning
+  `loop://`, while `installation.deeplink` was never mapped at all. Both halves
+  corrected. Nothing read the field, so it was inert — wrong value, right value
+  dropped, and it would have shipped broken the day something read it.
+
+  No registry entries change here. The data follows once this is published, so no
+  client sees entries declaring a schema it does not understand.
+
+- 2e07185: Stop listing a known wallet twice in the picker.
+
+  A wallet the picker already knows could be minted a SECOND row beside its own,
+  in two shapes:
+  - an INJECTED provider that resolves a known identity — observed on the demo
+    surface, where the demo's own test wallet was listed twice and the twin
+    connected to the same provider when clicked;
+  - an ANNOUNCE carrying a known registry id — the shape reported for Nightly.
+
+  The second is SURFACE-DEPENDENT: the trigger is dispatching
+  `canton:requestProvider`, which is ordinary announce discovery. Most dApps do it;
+  our kit demo happens not to, which is the only reason it showed one row there.
+  That is why "it does not reproduce" was the wrong conclusion.
+
+  NIGHTLY ANNOUNCES, observed on a real browser with the extension installed:
+  `{ id: 'nightly', name: 'Nightly', target: 'nightly', icon: … }`. It does BOTH —
+  speaks its non-CIP-0103 callback protocol AND announces — which is why an earlier
+  survey that classified it by protocol concluded it does not.
+
+  Console and Send announce too and do NOT duplicate, because their registry
+  entries carry `providerDetection`. THAT IS WHAT THIS FALLBACK IS FOR: the other
+  seven wallets, whose matchers have not been observed and are therefore absent.
+
+  Both shapes are covered by a test that fails without the fix.
+
+  The identity guard was not the gap. It drops entries whose identity did NOT
+  resolve — an identity-less `window.canton` slot — and correctly lets a resolved
+  one through. The gap is the identity bridge immediately after:
+  `findMatchingWalletInfo` consults ONLY `providerDetection`, which 8 of 10
+  registry entries do not carry and a registered adapter never has. Nothing mapped
+  the provider back to the wallet already in the list, so the unknown branch minted
+  a twin.
+
+  The fallback matches a resolved provider id against the wallet id and the
+  declared injection global — IDENTITY FIELDS ONLY. Not the display name: names
+  are localisable, vendor-changeable and collidable, and two wallets both calling
+  themselves "Canton Wallet" would silently bridge to each other. That is the same
+  prose-matching removed from the error classifier, and it does not belong in the
+  identity bridge either.
+
+- 86f1a7d: Fix a TypeError in `getActiveSession()` when an in-memory session has expired.
+
+  `getActiveSession()` called `await this.disconnect()` and then read
+  `this.activeSession.sessionId` to populate the `session:expired` event.
+  `disconnect()` sets `this.activeSession` to null on success, so that read threw:
+
+  ```
+  TypeError: Cannot read properties of null (reading 'sessionId')
+    at PartyLayerClient.getActiveSession src/client.ts:1064:41
+  ```
+
+  Every caller of `getActiveSession()` inherited the throw, which includes
+  `signMessage()` and `submitTransaction()`. The session id is now captured before
+  `disconnect()` runs.
+
+  The other three `session:expired` emit sites were checked rather than assumed.
+  Two are covered by new tests and are unaffected, because each reads a local
+  variable captured before the session is cleared. The fourth, the re-probe inside
+  `listWallets`, is not driven by a test; the test file records why and what would
+  be needed to drive it.
+
+- Updated dependencies [817d357]
+- Updated dependencies [2e07185]
+- Updated dependencies [5a13fea]
+- Updated dependencies [882752f]
+- Updated dependencies [0ebd598]
+- Updated dependencies [8cb0f09]
+- Updated dependencies [b4961d2]
+- Updated dependencies [55ff8d1]
+- Updated dependencies [8e08da9]
+  - @partylayer/core@0.15.0
+  - @partylayer/registry-client@0.7.0
+  - @partylayer/adapter-console@0.4.1
+  - @partylayer/adapter-loop@0.6.0
+  - @partylayer/adapter-cantor8@0.5.0
+  - @partylayer/adapter-bron@0.6.0
+  - @partylayer/adapter-walletconnect@0.5.0
+  - @partylayer/adapter-nightly@0.3.1
+  - @partylayer/adapter-send@1.2.9
+  - @partylayer/provider@0.6.1
+
 ## 0.19.0
 
 ### Minor Changes

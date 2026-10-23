@@ -21,17 +21,17 @@ export default function InstallationPage() {
 
       <H2 id="install-packages">Install Packages</H2>
       <P>
-        Install the core SDK, the React bindings, and the TanStack Query peer:
+        Install the React bindings and the TanStack Query peer. The SDK and supported wallet SDKs are included:
       </P>
 
       <TabGroup tabs={[
-        { label: 'npm', content: 'npm install @partylayer/sdk @partylayer/react @tanstack/react-query', language: 'bash' },
-        { label: 'pnpm', content: 'pnpm add @partylayer/sdk @partylayer/react @tanstack/react-query', language: 'bash' },
-        { label: 'yarn', content: 'yarn add @partylayer/sdk @partylayer/react @tanstack/react-query', language: 'bash' },
+        { label: 'npm', content: 'npm install @partylayer/react @tanstack/react-query', language: 'bash' },
+        { label: 'pnpm', content: 'pnpm add @partylayer/react @tanstack/react-query', language: 'bash' },
+        { label: 'yarn', content: 'yarn add @partylayer/react @tanstack/react-query', language: 'bash' },
       ]} />
 
       <Callout type="note" title="Why @tanstack/react-query">
-        It is a required peer dependency of <Code>{'@partylayer/react'}</Code> v2. The data
+        It is a required peer dependency of <Code>{'@partylayer/react'}</Code>. The data
         hooks in the <Code>{'@partylayer/react/query'}</Code> entrypoint (DAML reads/writes,
         cost estimation) are built on TanStack Query, and you supply the <Code>{'QueryClient'}</Code> via
         {' '}<Code>{'QueryClientProvider'}</Code>. The base session and connect surface works without
@@ -72,29 +72,21 @@ export default function InstallationPage() {
       <P>
         The Bron adapter requires explicit configuration and is not auto-registered:
       </P>
-      <CodeBlock language="tsx">{`import { BronAdapter } from '@partylayer/adapter-bron';
-import { getBuiltinAdapters } from '@partylayer/sdk';
+      <CodeBlock language="tsx">{`import { PartyLayerKit, ConnectButton } from '@partylayer/react';
 
-<PartyLayerKit
-  network="mainnet"
-  appName="My dApp"
-  adapters={[
-    ...getBuiltinAdapters(),
-    new BronAdapter({
-      auth: {
-        clientId: '...',
-        redirectUri: 'https://your-app.com/auth/callback',
-        authorizationUrl: 'https://auth.bron.example/authorize',
-        tokenUrl: 'https://auth.bron.example/token',
-      },
-      api: {
-        baseUrl: 'https://api.bron.example',
-        getAccessToken: async () => getStoredAccessToken(),
-      },
-    }),
-  ]}
->
-  {/* ... */}
+const walletConnect = { projectId: 'your-walletconnect-project-id' };
+const bron = {
+  auth: {
+    clientId: 'your-client-id',
+    redirectUri: 'https://your-app.com/auth/callback',
+    authorizationUrl: 'https://auth.bron.example/authorize',
+    tokenUrl: 'https://auth.bron.example/token',
+  },
+  api: { baseUrl: 'https://api.bron.example' },
+};
+
+<PartyLayerKit network="mainnet" appName="My dApp" walletConnect={walletConnect} bron={bron}>
+  <ConnectButton />
 </PartyLayerKit>`}</CodeBlock>
 
       <H2 id="verify">Verify Installation</H2>

@@ -15,7 +15,6 @@ import {
   themes,
   type SynchronizerOption,
 } from '@partylayer/react';
-import { ConsoleAdapter } from '@partylayer/adapter-console';
 import { DemoProvider } from './context/DemoContext';
 import { demoBackend } from './lib/backend';
 import { PARTIES, PARTY_ORDER } from './lib/fixtures';
@@ -27,10 +26,7 @@ import { Issuer } from './sections/Issuer';
 import { Allocations } from './sections/Allocations';
 import './App.css';
 
-// The dev wallet adapter apps/demo uses, so the connect surface works in a demo
-// context. The demo-party switcher, not this connection, drives the section data.
-const ADAPTERS = [new ConsoleAdapter()];
-
+// PartyLayerKit uses the public SDK default wallet catalog.
 const SYNCHRONIZERS: SynchronizerOption[] = [
   { networkId: 'canton:da-devnet', label: 'DevNet' },
   { networkId: 'canton:da-testnet', label: 'TestNet' },
@@ -44,7 +40,7 @@ export default function App() {
   const theme = mode === 'dark' ? themes.teal.dark : themes.teal.light;
 
   return (
-    <PartyLayerKit network="devnet" appName="PartyLayer Tokenization" theme={theme} adapters={ADAPTERS}>
+    <PartyLayerKit network="devnet" appName="PartyLayer Tokenization" theme={theme}>
       <DemoProvider value={{ party, setParty, backend: demoBackend, mode }}>
         <div className={'app app-' + mode}>
           <header className="topbar">

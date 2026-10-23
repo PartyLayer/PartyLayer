@@ -62,7 +62,7 @@ export default function GenericBridgeContent() {
         </LI>
         <LI>
           <Strong>Remote or gateway service</Strong> (Path B): it is out of the page, so it ships an
-          official adapter and the dApp supplies it. Its <Code>{'detect()'}</Code> returns{' '}
+          official adapter that PartyLayer includes after review. Its <Code>{'detect()'}</Code> returns{' '}
           <Code>{'true'}</Code> because a gateway is always reachable.
         </LI>
         <LI>
@@ -365,7 +365,13 @@ export const walletXAdapter: ProviderAdapter = {
 
       <H3 id="how-the-dapp-wires-it">How the dApp wires it</H3>
       <P>
-        The dApp passes your adapter instance in the SDK config. The SDK detects the official shape and
+        Supported official SDKs are included in the default catalog. Ordinary dApps choose a network
+        and channel without per-wallet imports. New Path B SDKs require a reviewed, pinned dependency
+        and lazy loader in PartyLayer. The custom wiring below is advanced: adapters replaces defaults;
+        additionalAdapters extends them.
+      </P>
+      <P>
+        For an advanced custom integration, the dApp passes your adapter instance in the SDK config. The SDK detects the official shape and
         wraps it through the generic discovery bridge automatically:
       </P>
       <CodeBlock language="typescript">{`import { createPartyLayer } from '@partylayer/sdk';
@@ -450,9 +456,10 @@ const pl = createPartyLayer({
         interaction to reconnect, it falls back to a fresh connect.
       </P>
       <P>
-        A wallet whose official adapter has no <Code>{'restore'}</Code> revives as-is: the app shows it as
-        connected, but the first real request throws until the user reconnects. Implementing{' '}
-        <Code>{'restore'}</Code> is what closes that gap.
+        The bridge silently probes the primary account and compares it with the saved party.
+        An expired restore, unavailable provider, or different account requires reconnection.
+        Providers without an adapter restore can survive reload only when their own persistence
+        passes that same live probe.
       </P>
 
       <H3 id="popup-policy">Popup policy</H3>

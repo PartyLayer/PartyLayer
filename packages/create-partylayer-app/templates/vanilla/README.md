@@ -34,3 +34,5 @@ npm run build && npm run preview
 
 - [PartyLayer docs](https://partylayer.xyz/docs)
 - [@partylayer/sdk](https://www.npmjs.com/package/@partylayer/sdk)
+
+Wallet SDKs are included. Vala requires Devnet with `channel="beta"`. WalletConnect requires your project id through `walletConnect`; Bron requires OAuth/API configuration through `bron`. No separate wallet SDK installation or registration is needed.

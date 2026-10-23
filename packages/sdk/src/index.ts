@@ -25,6 +25,7 @@ export {
 // ProviderAdapter (e.g. Walley) — popup/remote wallets, no wallet-specific package.
 export {
   GenericDiscoveryAdapter,
+  getDiscoveryCapabilities,
   type GenericDiscoveryAdapterArgs,
 } from './discovery-adapter';
 // Backward compatibility aliases
@@ -194,3 +195,5 @@ export type {
   DiscoveredProvider,
   PartyLayerProviderOptions,
 } from '@partylayer/provider';
+
+export type { WalletConnectAdapterConfig } from '@partylayer/adapter-walletconnect';

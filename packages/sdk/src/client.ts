@@ -1,3 +1,4 @@
+import { loadDefaultWallet } from './default-wallets';
 /**
  * PartyLayer Client - Public API Implementation
  * 
@@ -211,6 +212,9 @@ export const DEFAULT_CONNECT_TIMEOUT_MS = 120_000;
 export class PartyLayerClient {
   private config: PartyLayerConfig;
   private adapters = new Map<WalletId, WalletAdapter>();
+  private destroyed = false;
+  private readonly defaultLoads = new Map<string, Promise<void>>();
+  private readonly registryDefaultIds = new Set<WalletId>();
   /**
    * Pre-resolved connect plans for popup/remote (GenericDiscoveryAdapter)
    * wallets, warmed on `listWallets()` (which the modal calls on open) so a
@@ -271,7 +275,8 @@ export class PartyLayerClient {
     // Register wallet adapters
     // If no adapters provided, use the no-config built-in adapters
     // (getBuiltinAdapters() = Loop, Cantor8, Nightly; Console/Send arrive via announce)
-    const adaptersToRegister = config.adapters ?? getBuiltinAdapters();
+    const defaults = config.adapters ?? getBuiltinAdapters();
+    const adaptersToRegister = [...defaults, ...(config.additionalAdapters ?? [])];
     
     for (const adapterOrClass of adaptersToRegister) {
       let adapter: import('@partylayer/core').WalletAdapter;
@@ -394,11 +399,13 @@ export class PartyLayerClient {
       registryWallets = [];
     }
 
+    await this.ensureDefaultWallets();
+
     // Merge: include registered adapters that are NOT in the registry
     // (e.g. NightlyAdapter is builtin but may not have a registry entry yet)
     const registryIds = new Set(registryWallets.map((w) => String(w.walletId)));
     for (const [, adapter] of this.adapters) {
-      if (registryIds.has(String(adapter.walletId))) continue;
+      if (registryIds.has(String(adapter.walletId)) || this.registryDefaultIds.has(adapter.walletId)) continue;
 
       registryWallets.push({
         walletId: adapter.walletId,
@@ -409,7 +416,7 @@ export class PartyLayerClient {
         adapter: { packageName: 'builtin', versionRange: '*' },
         docs: [],
         networks: [this.config.network || 'devnet'],
-        channel: 'stable',
+        channel: this.config.channel || 'stable',
       } as WalletInfo);
     }
 
@@ -429,31 +436,62 @@ export class PartyLayerClient {
     // dynamic, target-scoped entries. No-op (byte-identical) with zero announcers.
     registryWallets = await this.aggregateAnnouncedWallets(registryWallets);
 
-    // Popup-safe warm-up: pre-resolve connect plans for popup/remote
-    // (GenericDiscoveryAdapter) wallets in the background so a later click can
-    // reach adapter.connect() gesture-synchronously. Fire-and-forget; never
-    // blocks listing. No-op when there are no such adapters (e.g. today).
-    void this.warmDiscoveryPlans(registryWallets);
+    // Picker and session expose the same implemented discovery capabilities.
+    registryWallets = registryWallets.map((wallet) => {
+      const adapter = this.adapters.get(wallet.walletId);
+      return adapter instanceof GenericDiscoveryAdapter
+        ? { ...wallet, capabilities: adapter.getCapabilities() }
+        : wallet;
+    }).filter((wallet) =>
+      wallet.networks.includes(this.config.network) &&
+      (filter?.includeExperimental || wallet.channel === (this.config.channel || 'stable')) &&
+      (!filter?.requiredCapabilities || filter.requiredCapabilities.every((cap) =>
+        wallet.capabilities.includes(cap as CapabilityKey)))
+    );
 
-    // Filter by capabilities
-    if (filter?.requiredCapabilities) {
-      return registryWallets.filter((walletInfo) =>
-        filter.requiredCapabilities!.every((cap) =>
-          walletInfo.capabilities.includes(cap as CapabilityKey)
-        )
-      );
-    }
-
-    // Filter to the client's configured channel (the same resolution the registry
-    // client uses at construction, see channel: config.channel || 'stable' above),
-    // defaulting to stable when unset. A client on stable is unchanged; a client on
-    // beta lists beta entries. includeExperimental still returns everything.
-    if (!filter?.includeExperimental) {
-      const channel = this.config.channel || 'stable';
-      return registryWallets.filter((walletInfo) => walletInfo.channel === channel);
-    }
-
+    // Complete popup-plan warm-up before enabling the wallet's connect button.
+    await this.warmDiscoveryPlans(registryWallets);
     return registryWallets;
+  }
+
+  /** Resolve only reviewed default SDKs present in the active signed registry. */
+  private async ensureDefaultWallets(): Promise<void> {
+    if (this.config.adapters !== undefined) return;
+    let registry;
+    try { registry = await this.registryClient.getRegistry(); } catch { return; }
+    await Promise.all(registry.wallets.map(async (entry) => {
+      const id = toWalletId(entry.id);
+      if (this.adapters.has(id) || !entry.supportedNetworks.includes(this.config.network) ||
+          (entry.adapter?.transport === 'discovery-adapter' &&
+           !entry.adapter.networkHosts?.[this.config.network])) return;
+      let pending = this.defaultLoads.get(entry.id);
+      if (!pending) {
+        pending = (async () => {
+          try {
+            const entryAdapter = await loadDefaultWallet(entry.id, this.config, this.origin);
+            if (!entryAdapter || this.destroyed) return;
+            const adapter = isOfficialAdapterFactory(entryAdapter)
+              ? new GenericDiscoveryAdapter({
+                factory: entryAdapter, name: entry.name, networkHosts: entry.adapter?.networkHosts,
+                capabilities: entry.capabilities,
+              }) : entryAdapter;
+            // Construct before listing; create(host) remains synchronous on click.
+            if (typeof window !== 'undefined' && adapter instanceof GenericDiscoveryAdapter) {
+              adapter.resolveOfficial(this.config.network);
+            }
+            this.adapters.set(id, adapter);
+            this.registryDefaultIds.add(id);
+          } catch (error) {
+            this.defaultLoads.delete(entry.id);
+            this.log('warn', 'wallet:load_failed', 'Official wallet SDK could not load', {
+              walletId: entry.id, error: String(error),
+            });
+          }
+        })();
+        this.defaultLoads.set(entry.id, pending);
+      }
+      await pending;
+    }));
   }
 
   /**
@@ -857,6 +895,10 @@ export class PartyLayerClient {
         // Fallback: check if a native CIP-0103 adapter is registered
         const nativeAdapter = this.adapters.get(options.walletId);
         if (nativeAdapter) {
+          const entry = await this.registryClient.getWalletEntry(String(options.walletId)).catch(() => null);
+          if (entry?.supportedNetworks?.length && !entry.supportedNetworks.includes(this.config.network)) {
+            throw new WalletNotFoundError(`${String(options.walletId)} is unavailable on ${this.config.network}`);
+          }
           isNativeWallet = true;
           selectedWallet = {
             walletId: options.walletId,
@@ -1439,6 +1481,7 @@ export class PartyLayerClient {
    * Destroy client and cleanup
    */
   destroy(): void {
+    this.destroyed = true;
     // Flush and destroy telemetry if it supports it
     if (this.telemetry && 'destroy' in this.telemetry && typeof this.telemetry.destroy === 'function') {
       (this.telemetry as { destroy: () => void }).destroy();
@@ -1579,6 +1622,9 @@ export class PartyLayerClient {
         // 'off': proceed with restore but flag the mismatch on the session.
         session.networkMismatch = mismatch;
       }
+
+      // Load the same default catalog on reload, before looking up the persisted wallet.
+      await this.ensureDefaultWallets();
 
       // Try to restore with adapter
       const adapter = this.adapters.get(session.walletId);

@@ -106,7 +106,7 @@ function consoleWalletInfo(): WalletInfo {
     capabilities: ['connect', 'signMessage', 'submitTransaction'],
     adapter: { packageName: '@partylayer/adapter-console', versionRange: '*' },
     docs: [],
-    networks: ['devnet'],
+    networks: ['devnet', 'mainnet'],
     channel: 'stable',
     providerDetection: {
       transport: 'window.canton',
@@ -156,7 +156,7 @@ function walleyWalletInfo(): WalletInfo {
     capabilities: ['connect', 'signMessage', 'submitTransaction'],
     adapter: { packageName: '@k2flabs/walley-dapp-sdk', versionRange: '*' },
     docs: [],
-    networks: ['devnet'],
+    networks: ['devnet', 'mainnet'],
     channel: 'stable',
   } as unknown as WalletInfo;
 }
@@ -220,7 +220,7 @@ function makeClientWithRegistry(
   opts: RegistryOpts = {},
 ) {
   const client = createPartyLayer({
-    network: 'devnet',
+    network: opts.wallets?.some(w => w.walletId === 'send') ? 'mainnet' : 'devnet',
     app: { name: 'console-regression', origin: 'https://test.example.com' },
     discovery: { announceTimeoutMs: 0 },
     adapters,

@@ -22,5 +22,6 @@ export default defineConfig({
     '@partylayer/adapter-bron',
     '@partylayer/adapter-nightly',
     '@partylayer/adapter-send',
+    '@partylayer/adapter-walletconnect',
   ],
 });

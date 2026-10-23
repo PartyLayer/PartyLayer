@@ -1,5 +1,89 @@
 # @partylayer/adapter-console
 
+## 0.4.1
+
+### Patch Changes
+
+- 5a13fea: Stop reporting a timed-out extension probe as a confident "not installed".
+
+  Read from the vendor's published source rather than assumed:
+  `@console-wallet/dapp-sdk`'s `checkExtensionAvailability()`
+  (`dist/esm/requests/checkAvailability.js`, byte-identical in 2.2.8, 2.2.9 and
+  2.2.10-beta.1) resolves `{ status: 'notInstalled' }` on its 1000ms timeout and
+  its outer `catch` returns that value — it never throws. It also writes that
+  verdict to a module-level cache with no invalidation and no reset export, and its
+  type admits only `'installed' | 'notInstalled'`, so the vendor cannot express
+  "did not answer in time" at all.
+
+  This adapter handled the timeout in a `catch`, which the vendor never triggers.
+  The `{ kind: 'unknown' }` branch added for exactly this case was unreachable, and
+  one slow probe made the picker claim the extension was absent for the life of the
+  page — with an Install link, for an extension the user already has. Reloading was
+  the only recovery.
+
+  A `notInstalled` answer is now treated as unproven and confirmed with one
+  `status()` call, which the SDK also exports, which is not cached, and which
+  rejects rather than resolving a verdict. Three outcomes instead of two: it
+  answers (installed), it rejects (absent), or our own 2500ms budget expires
+  (`unknown`, saying so). The budget is ours because the vendor's is not
+  configurable, and 1000ms is shorter than the 5000ms its own `status()` allows —
+  which is why a cold MV3 service-worker start loses the race.
+
+  The confirming probe is not cached on our side, deliberately: caching a negative
+  is the defect, and a user can install the extension without reloading the page.
+  The cost is one bounded probe per detect when the vendor says `notInstalled`.
+
+  The test that covered this mocked `checkExtensionAvailability` REJECTING —
+  a shape the vendor never produces — so it passed while the real path was
+  unreachable. It is replaced by three cases fed the shape the vendor actually
+  returns; all three fail against the previous code.
+
+- 0ebd598: Stop reporting wallets as installed when nothing was installed.
+
+  `detectInstalled()` could only answer yes or no, and eight of twelve adapters had
+  no honest way to answer it — a QR wallet, a hosted popup, a relay and an OAuth
+  service have no local artefact to probe. They answered `true`, meaning
+  "reachable", and the picker read it as "installed". Cantor8 is not an extension
+  at all: its tile said installed, and clicking it opened a tab.
+
+  `AdapterDetectResult` gains `availability`, which says what presence actually is:
+  `installed`, `not-installed` (probed and absent, with an install URL),
+  `no-local-install` (QR / popup / relay — nothing to probe), or `unknown` (the
+  probe failed or timed out, which is not proof of absence). `installed` is
+  deprecated in its JSDoc, still populated, and exactly
+  `availability.kind === 'installed'`, so no consumer breaks.
+
+  **The false `true` was load-bearing.** `installGuard` read `installed` and threw
+  `WalletNotInstalledError` on false — so returning the truth would have blocked
+  connect for every wallet that has nothing to install. Making the adapters honest
+  broke connect for all of them until the guard was changed to ask its real
+  question: not "is it installed" but "do we already know this cannot work", which
+  only `not-installed` answers yes to. That coupling is why this is one contract
+  change rather than eight independent bug fixes.
+
+  Vendor `detect()` is no longer called for `discovery-adapter` wallets. All three
+  implementations are constants (`walley`: `window.open` exists; `cauri`:
+  `Promise.resolve(true)`; `oneswap`: `typeof window !== 'undefined'`), so awaiting
+  them bought no information while adding an async hop to the picker's render path
+  and a dependency on three third parties answering honestly. A `discovery-adapter`
+  transport IS the answer; the rule is applied in exactly one place.
+
+  The picker's subtitles for the two wallets measured causing real harm now say
+  what a click will do: "Scan to connect — nothing to install" and "Opens in a
+  popup — nothing to install".
+
+  `docs/adapters.md` records which adapters probe what, and one mismatch still
+  outstanding: Cantor8 classifies as `scan` but opens a tab, a registry-data fix
+  queued with the D5/D6 registry work.
+
+- Updated dependencies [817d357]
+- Updated dependencies [2e07185]
+- Updated dependencies [882752f]
+- Updated dependencies [0ebd598]
+- Updated dependencies [8cb0f09]
+- Updated dependencies [8e08da9]
+  - @partylayer/core@0.15.0
+
 ## 0.4.0
 
 ### Minor Changes

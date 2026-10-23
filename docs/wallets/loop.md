@@ -1,5 +1,7 @@
 # Loop Wallet Integration
 
+For ordinary dApps, Loop is included in the PartyLayer default catalog. Install `@partylayer/react @tanstack/react-query` and use `PartyLayerKit`; no separate Loop SDK import is required. The direct vendor SDK examples below are reference material for advanced integration and legacy adapter maintenance.
+
 **References:**
 - [Loop SDK](https://github.com/fivenorth-io/loop-sdk)
 - [Wallet Integration Guide](https://docs.digitalasset.com/integrate/devnet/index.html)

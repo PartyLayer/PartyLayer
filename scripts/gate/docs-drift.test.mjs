@@ -46,6 +46,17 @@ const PAGES_DIR = join(ROOT, 'apps', 'demo', 'src', 'app', 'docs');
 const mdPath = (slug) => join(DOCS_DIR, `${slug}.md`);
 const pagePath = (slug) => join(PAGES_DIR, slug, 'content.tsx');
 
+test('public React entry guides share the one-command wallet installation contract', () => {
+  for (const file of ['README.md', 'packages/sdk/README.md', 'packages/react/README.md',
+    'docs/quick-start.md', 'apps/demo/src/app/docs/installation/content.tsx',
+    'apps/demo/src/app/docs/quick-start/content.tsx']) {
+    const source = readFileSync(join(ROOT, file), 'utf8');
+    assert.ok(source.includes('npm install @partylayer/react @tanstack/react-query'), file);
+    assert.ok(!source.includes('@tanstack/react-query @tanstack/react-query'), file);
+    assert.ok(!source.includes('npm install @partylayer/sdk @partylayer/react'), file);
+  }
+});
+
 /**
  * How each shared-slug pair is treated. `enforce` pairs must have identical heading
  * sets. A `known-divergence` pair is two different documents that share a slug; its

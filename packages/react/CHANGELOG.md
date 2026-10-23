@@ -1,5 +1,103 @@
 # @partylayer/react
 
+## 3.1.0
+
+### Minor Changes
+
+- Include the reviewed, pinned Walley, Cauri, OneSwap and Vala official SDKs in the existing SDK with lazy loading through the generic CIP-0103 bridge. React and generated projects use the same default catalog without wallet-specific imports or installation. WalletConnect and Bron use shared application configuration; custom adapters can replace or extend defaults.
+
+  Filter wallets by the configured network and channel, align discovery capabilities with implemented methods, warm popup connections before returning the picker list, and validate restored official providers instead of reviving expired sessions. Vala remains Devnet beta.
+
+- 0ebd598: Stop reporting wallets as installed when nothing was installed.
+
+  `detectInstalled()` could only answer yes or no, and eight of twelve adapters had
+  no honest way to answer it — a QR wallet, a hosted popup, a relay and an OAuth
+  service have no local artefact to probe. They answered `true`, meaning
+  "reachable", and the picker read it as "installed". Cantor8 is not an extension
+  at all: its tile said installed, and clicking it opened a tab.
+
+  `AdapterDetectResult` gains `availability`, which says what presence actually is:
+  `installed`, `not-installed` (probed and absent, with an install URL),
+  `no-local-install` (QR / popup / relay — nothing to probe), or `unknown` (the
+  probe failed or timed out, which is not proof of absence). `installed` is
+  deprecated in its JSDoc, still populated, and exactly
+  `availability.kind === 'installed'`, so no consumer breaks.
+
+  **The false `true` was load-bearing.** `installGuard` read `installed` and threw
+  `WalletNotInstalledError` on false — so returning the truth would have blocked
+  connect for every wallet that has nothing to install. Making the adapters honest
+  broke connect for all of them until the guard was changed to ask its real
+  question: not "is it installed" but "do we already know this cannot work", which
+  only `not-installed` answers yes to. That coupling is why this is one contract
+  change rather than eight independent bug fixes.
+
+  Vendor `detect()` is no longer called for `discovery-adapter` wallets. All three
+  implementations are constants (`walley`: `window.open` exists; `cauri`:
+  `Promise.resolve(true)`; `oneswap`: `typeof window !== 'undefined'`), so awaiting
+  them bought no information while adding an async hop to the picker's render path
+  and a dependency on three third parties answering honestly. A `discovery-adapter`
+  transport IS the answer; the rule is applied in exactly one place.
+
+  The picker's subtitles for the two wallets measured causing real harm now say
+  what a click will do: "Scan to connect — nothing to install" and "Opens in a
+  popup — nothing to install".
+
+  `docs/adapters.md` records which adapters probe what, and one mismatch still
+  outstanding: Cantor8 classifies as `scan` but opens a tab, a registry-data fix
+  queued with the D5/D6 registry work.
+
+### Patch Changes
+
+- 2e07185: Give the registry a field for how a wallet connects, and four capabilities it could not express.
+
+  One overloaded signal was answering three independent questions: how a wallet is
+  DISCOVERED, how its SDK is LOADED, and how it CONNECTS. `installation.scriptTag`
+  says how the SDK is loaded, and it was read as "scan" — which is right for Loop
+  and wrong for Cantor8, script-loaded but opening a popup.
+
+  `connect: ('injected' | 'popup' | 'relay')[]` is now its own field. The shapes
+  came from surveying all ten wallets rather than from the one that prompted it,
+  and that ordering paid: Loop and WalletConnect are BOTH `relay` — a QR scanned by
+  a phone app and a mobile pairing — so a popup-versus-scan flag would have been
+  wrong for two wallets on day one. Their shared subtitle reads "Connect from
+  another device", because the axis is where the connection happens, not what the
+  UI looks like.
+
+  ORDER IS PREFERENCE ORDER, and it has a reader: `connect[0]` is what the picker
+  tries first, and `preferInstalled: false` — the modal's "Try mobile" affordance —
+  advances to the next entry. Console is `['injected', 'relay']`. That preference
+  already exists; it is hardcoded in Console's adapter today, and this is where it
+  belongs instead.
+
+  `transfer`, `ledgerApi`, `popup` and `restore` are now expressible.
+  `walletInfo.capabilities` could never contain them, so
+  `listWallets({ requiredCapabilities: ['transfer'] })` matched zero wallets while
+  every adapter implemented `requestTransfer` — two capability gates reading
+  contradictory sources.
+
+  Also fixed: `installHints.deepLinkScheme` was populated from
+  `installation.scriptTag`, putting an npm package name in a field meaning
+  `loop://`, while `installation.deeplink` was never mapped at all. Both halves
+  corrected. Nothing read the field, so it was inert — wrong value, right value
+  dropped, and it would have shipped broken the day something read it.
+
+  No registry entries change here. The data follows once this is published, so no
+  client sees entries declaring a schema it does not understand.
+
+- Updated dependencies [817d357]
+- Updated dependencies [2e07185]
+- Updated dependencies
+- Updated dependencies [882752f]
+- Updated dependencies [0ebd598]
+- Updated dependencies [8cb0f09]
+- Updated dependencies [2e07185]
+- Updated dependencies [8e08da9]
+- Updated dependencies [86f1a7d]
+  - @partylayer/core@0.15.0
+  - @partylayer/registry-client@0.7.0
+  - @partylayer/sdk@0.20.0
+  - @partylayer/session@1.1.9
+
 ## 3.0.0
 
 ### Major Changes

@@ -1,5 +1,227 @@
 # @partylayer/core
 
+## 0.15.0
+
+### Minor Changes
+
+- 817d357: Stop deriving what we require of other people's wallets from what this SDK speaks.
+
+  `CIP0103_MANDATORY_METHODS` was `Object.values(CIP0103_METHODS)`. That coupled two
+  things which are not the same: the CIP-0103 surface this SDK speaks, and the
+  surface we hold other people's wallets to.
+
+  The distinction started mattering the moment the SDK learned a method the
+  standard does not define. `prepareExecuteAndWait` is declared in the RpcTypes map
+  published by `@canton-network/core-wallet-dapp-rpc-client` (read at 1.11.0) and is
+  absent from the specification's synchronous method table. Two adapters here call
+  it, because one call returning the executed transaction is easier to build a UI
+  around than a void call plus an event subscription.
+
+  So `CIP0103_METHODS` now declares it, with a comment naming its upstream source
+  and its absence from the spec so nobody removes it to "match the standard".
+
+  `CIP0103_MANDATORY_METHODS` is now an explicit list of the specification's ten,
+  written out rather than derived. It is the yardstick: the conformance suite we
+  publish iterates it, and a wallet vendor reads the resulting report as a list of
+  their obligations. Deriving it would have put our extension into that report as
+  their requirement, which is us telling another team the standard demands
+  something it does not. That is the same class of error as the wallet-support
+  claim retracted in CONTRIBUTING.md, and it travels further because it arrives as
+  a test result rather than as prose.
+
+  `cip0103-mandatory-methods.test.ts` fails if the two are recoupled. Its fixture
+  of the spec's ten is written out independently of both constants, so it can
+  actually disagree with them; a fixture derived from what it checks would pass
+  whatever the code did.
+
+  **Observable to importers.** `CIP0103_MANDATORY_METHODS` goes from eleven entries
+  to ten, and `CIP0103_METHODS` gains one. Nothing in this repository depended on
+  the two being equal, but anyone importing either sees the shape change.
+
+- 0ebd598: Stop reporting wallets as installed when nothing was installed.
+
+  `detectInstalled()` could only answer yes or no, and eight of twelve adapters had
+  no honest way to answer it — a QR wallet, a hosted popup, a relay and an OAuth
+  service have no local artefact to probe. They answered `true`, meaning
+  "reachable", and the picker read it as "installed". Cantor8 is not an extension
+  at all: its tile said installed, and clicking it opened a tab.
+
+  `AdapterDetectResult` gains `availability`, which says what presence actually is:
+  `installed`, `not-installed` (probed and absent, with an install URL),
+  `no-local-install` (QR / popup / relay — nothing to probe), or `unknown` (the
+  probe failed or timed out, which is not proof of absence). `installed` is
+  deprecated in its JSDoc, still populated, and exactly
+  `availability.kind === 'installed'`, so no consumer breaks.
+
+  **The false `true` was load-bearing.** `installGuard` read `installed` and threw
+  `WalletNotInstalledError` on false — so returning the truth would have blocked
+  connect for every wallet that has nothing to install. Making the adapters honest
+  broke connect for all of them until the guard was changed to ask its real
+  question: not "is it installed" but "do we already know this cannot work", which
+  only `not-installed` answers yes to. That coupling is why this is one contract
+  change rather than eight independent bug fixes.
+
+  Vendor `detect()` is no longer called for `discovery-adapter` wallets. All three
+  implementations are constants (`walley`: `window.open` exists; `cauri`:
+  `Promise.resolve(true)`; `oneswap`: `typeof window !== 'undefined'`), so awaiting
+  them bought no information while adding an async hop to the picker's render path
+  and a dependency on three third parties answering honestly. A `discovery-adapter`
+  transport IS the answer; the rule is applied in exactly one place.
+
+  The picker's subtitles for the two wallets measured causing real harm now say
+  what a click will do: "Scan to connect — nothing to install" and "Opens in a
+  popup — nothing to install".
+
+  `docs/adapters.md` records which adapters probe what, and one mismatch still
+  outstanding: Cantor8 classifies as `scan` but opens a tab, a registry-data fix
+  queued with the D5/D6 registry work.
+
+- 8cb0f09: Report what the wallet actually said, and hold the connect deadline you set.
+
+  Two defects in one place. `mapUnknownErrorToPartyLayerError` classified errors by
+  scanning their prose, and both the refusal branch and the timeout branch drew the
+  wrong conclusion from it.
+
+  **A wallet refusing is no longer reported as the user cancelling.** Any message
+  containing `rejected`, `denied`, `cancelled` or `canceled` collapsed into
+  `USER_REJECTED`. Nightly declining because the tab was unfocused — "Connect
+  request rejected - tab is not active" — told the dApp the user had clicked
+  cancel, when no prompt had been shown at all. Classification now prefers
+  structured signals (EIP-1193 `4001`, `err.name`), then phrasing that names the
+  user; anything else that reads as a refusal becomes the new `WALLET_REFUSED`
+  code, carrying the wallet's own words in `message` and `details.originalMessage`.
+
+  **A timeout now reports the deadline that actually elapsed.** `context.timeoutMs`
+  took precedence over the figure already present in the message, so a connect that
+  ran the full two minutes was reported as "timed out after 30000ms" — the SDK held
+  two independent defaults, `120000` at the race and `30000` in the catch block that
+  formatted the error. There is now one exported `DEFAULT_CONNECT_TIMEOUT_MS`, the
+  message's own number wins over context, and an unknown deadline says "timed out"
+  rather than inventing "after 0ms".
+
+  **A timeout now cancels.** `Promise.race` never stopped the loser, so a connect
+  that had timed out kept its popup, QR overlay or socket live and could still
+  complete against a caller that had given up. `connect()` receives an
+  `AbortSignal` that fires when the deadline does. Adapters that ignore it behave
+  exactly as before.
+
+  The Nightly adapter had the same shape internally: its protocol names the
+  outcome (`sign_request_rejected`) and it degraded that to prose for the mapper to
+  recognise, with a comment noting the word "rejected" was load-bearing. All three
+  sites now throw the typed error where the type is known, so a Nightly decline no
+  longer depends on string matching to be classified correctly.
+
+  `WALLET_REFUSED` is additive. Code branching on `USER_REJECTED` for a genuine
+  cancellation is unaffected; code that was relying on `USER_REJECTED` to catch
+  wallet-side refusals should now also handle `WALLET_REFUSED`.
+
+- 8e08da9: Stop reporting registry verification that did not happen.
+
+  Four defects in the signature path, all currently inert because nothing
+  configures `registryPublicKeys`, and all of which would have shipped broken on
+  the day signing is enabled.
+
+  **A 304 bypassed verification entirely.** On `304 Not Modified` the client
+  returned the cached registry without checking anything, and when the signature
+  fetch failed it fabricated `{ algorithm: 'ed25519', signature: '',
+keyFingerprint: '' }` and returned it as though all was well. Once keys are
+  configured most requests are 304s, so the unverified path would have been the
+  common one rather than an edge case.
+
+  A 304 now means only what it says: the served bytes are the ones our ETag names.
+  That is enough to reuse a cache entry we already verified, and not enough to
+  call an unverified entry verified. The client only offers `If-None-Match` when
+  the entry it would revalidate is one it could legitimately reuse, so an
+  unverified entry causes a full body to be fetched and checked.
+
+  **`verified: true` was hardcoded.** Both the cache write and the status update
+  set it unconditionally, so `RegistryStatus.verified` reported true even in dev
+  mode where no key is configured and the signature is never requested. It is a
+  public field the docs tell people to read. It now reflects what actually
+  happened, including `false` in dev mode.
+
+  **A missing signature was indistinguishable from an outage.** Both produced the
+  fabricated empty signature above. They are now separate outcomes: a `404` or
+  `410` raises the new `RegistrySignatureMissingError` (a deployment state:
+  signing not published for this channel), while an unreachable or failing
+  endpoint raises `RegistryFetchFailedError` (an outage). Either way, a client
+  holding a previously verified entry keeps serving it rather than going dark, so
+  the first CDN blip after enabling signing cannot take wallet discovery down.
+
+  **A failed verification was silently swallowed.** The refresh error handler fell
+  back to the last known good entry for every error, including
+  `RegistryVerificationFailedError`. That is the one case signature checking
+  exists to catch, and swallowing it left the app working and the operator
+  uninformed, which is the same as not checking. It now propagates.
+
+  The manifest and its signature are also fetched as a unit and verified against
+  the bytes that call received, rather than fetched independently. The two were
+  served with different `max-age` values, so a client could pair a fresh manifest
+  with a stale signature and fail verification on a pair that is valid at the
+  origin. The CDN header is corrected too, but fetching them together is what
+  stops the class of bug returning if a header drifts again.
+
+  `SignatureOutcome` is exported: a discriminated union whose verified variants
+  are not constructible without having run the check, so no path can express
+  success it did not earn.
+
+### Patch Changes
+
+- 2e07185: Give the registry a field for how a wallet connects, and four capabilities it could not express.
+
+  One overloaded signal was answering three independent questions: how a wallet is
+  DISCOVERED, how its SDK is LOADED, and how it CONNECTS. `installation.scriptTag`
+  says how the SDK is loaded, and it was read as "scan" — which is right for Loop
+  and wrong for Cantor8, script-loaded but opening a popup.
+
+  `connect: ('injected' | 'popup' | 'relay')[]` is now its own field. The shapes
+  came from surveying all ten wallets rather than from the one that prompted it,
+  and that ordering paid: Loop and WalletConnect are BOTH `relay` — a QR scanned by
+  a phone app and a mobile pairing — so a popup-versus-scan flag would have been
+  wrong for two wallets on day one. Their shared subtitle reads "Connect from
+  another device", because the axis is where the connection happens, not what the
+  UI looks like.
+
+  ORDER IS PREFERENCE ORDER, and it has a reader: `connect[0]` is what the picker
+  tries first, and `preferInstalled: false` — the modal's "Try mobile" affordance —
+  advances to the next entry. Console is `['injected', 'relay']`. That preference
+  already exists; it is hardcoded in Console's adapter today, and this is where it
+  belongs instead.
+
+  `transfer`, `ledgerApi`, `popup` and `restore` are now expressible.
+  `walletInfo.capabilities` could never contain them, so
+  `listWallets({ requiredCapabilities: ['transfer'] })` matched zero wallets while
+  every adapter implemented `requestTransfer` — two capability gates reading
+  contradictory sources.
+
+  Also fixed: `installHints.deepLinkScheme` was populated from
+  `installation.scriptTag`, putting an npm package name in a field meaning
+  `loop://`, while `installation.deeplink` was never mapped at all. Both halves
+  corrected. Nothing read the field, so it was inert — wrong value, right value
+  dropped, and it would have shipped broken the day something read it.
+
+  No registry entries change here. The data follows once this is published, so no
+  client sees entries declaring a schema it does not understand.
+
+- 882752f: Mark `MockTransport` `@deprecated`, and say why it is being kept.
+
+  Adapters used to accept a `useMockTransport` flag that swapped this class in
+  beneath them. That flag was removed in `703a645` (the Cantor8 rebuild on its real
+  SDK); the class outlived its only caller and now has no consumers in this
+  repository outside its own test. `docs/transports.md` went on instructing
+  consumers to pass the removed option, which is corrected in the same change.
+
+  The deprecation is a signpost, not a scheduled removal. `MockTransport`
+  implements `openConnectRequest`, `openSignRequest` and `pollJobStatus` — the
+  popup and deep-link surface, which is exactly the transport family no end-to-end
+  test currently reaches, since the demo's `window.canton` provider fixture cannot
+  get there by construction. If that gap is closed, this is the building block.
+
+  The JSDoc states all three facts — entry point removed, no consumers today,
+  retained deliberately — because a deprecation that does not say why something is
+  still there becomes the next thing someone deletes without checking. No runtime
+  behaviour changes and the type signature is unchanged.
+
 ## 0.14.0
 
 ### Minor Changes

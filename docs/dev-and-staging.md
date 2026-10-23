@@ -69,7 +69,7 @@ binding for your framework and wrap your app:
 
 ```bash
 # React
-npm install @partylayer/react
+npm install @partylayer/react @tanstack/react-query
 # Vue
 npm install @partylayer/vue
 # Vanilla / custom

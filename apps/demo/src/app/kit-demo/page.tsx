@@ -17,9 +17,14 @@ import { useBreakpoint, responsive } from '../hooks/useBreakpoint';
 // Devnet showcases opt into beta so newly integrated wallets are usable before
 // stable promotion. The shared adapter set supplies their official factories.
 import { buildDemoAdapters } from '../../lib/canton-demo-adapter';
+import { WC_METADATA, wcProjectId } from '../../lib/walletconnect-demo';
+
 import { sortByCanonicalOrder, CANONICAL_WALLET_ORDER } from '../../lib/wallet-order';
 import { DEMO_WALLET_ICONS } from '../../lib/demo-registry';
 import { registryIconUrl } from '../../lib/registry-icon';
+const DEMO_ADDITIONAL_ADAPTERS = buildDemoAdapters();
+const DEMO_WALLET_CONNECT = { projectId: wcProjectId(), metadata: WC_METADATA };
+
 
 // ─── Design Tokens (light + dark, matching marketing/landing page) ──────────
 
@@ -213,6 +218,7 @@ function DemoContent() {
                       <WalletCard
                         key={w.walletId}
                         name={w.name}
+                        beta={w.metadata?.beta === 'true'}
                         capabilities={w.capabilities}
                         iconUrl={w.icons?.sm}
                         isNative
@@ -231,6 +237,7 @@ function DemoContent() {
                       <WalletCard
                         key={w.walletId}
                         name={w.name}
+                        beta={w.metadata?.beta === 'true'}
                         capabilities={w.capabilities}
                         iconUrl={w.icons?.sm}
                         website={w.website}
@@ -482,7 +489,9 @@ function WalletCard({
   isNative,
   website,
   iconUrl,
+  beta,
 }: {
+  beta?: boolean;
   name: string;
   capabilities: string[];
   isNative?: boolean;
@@ -561,10 +570,10 @@ function WalletCard({
               borderRadius: '6px',
               fontWeight: 600,
             }}>
-              <svg width="10" height="10" fill={c.brand600} viewBox="0 0 20 20">
+              {!beta && <svg width="10" height="10" fill={c.brand600} viewBox="0 0 20 20">
                 <path fillRule="evenodd" d="M16.403 12.652a3 3 0 000-5.304 3 3 0 00-3.75-3.751 3 3 0 00-5.305 0 3 3 0 00-3.751 3.75 3 3 0 000 5.305 3 3 0 003.75 3.751 3 3 0 005.305 0 3 3 0 003.751-3.75zm-2.546-4.46a.75.75 0 00-1.214-.883l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z" clipRule="evenodd" />
-              </svg>
-              Verified
+              </svg>}
+              {beta ? 'Beta' : 'Verified'}
             </span>
 
             {/* CIP-0103 badge for native */}
@@ -805,7 +814,7 @@ export default function KitDemoPage() {
         fontFamily: font,
         transition: 'background-color 200ms, color 200ms',
       }}>
-        <PartyLayerKit network="devnet" channel="beta" appName="PartyLayer Kit Demo" theme={kitTheme} showAttribution={showAttr} walletOrder={CANONICAL_WALLET_ORDER} walletIcons={DEMO_WALLET_ICONS} adapters={buildDemoAdapters()} registryUrl="/registry">
+        <PartyLayerKit network="devnet" channel="beta" appName="PartyLayer Kit Demo" theme={kitTheme} showAttribution={showAttr} walletOrder={CANONICAL_WALLET_ORDER} walletIcons={DEMO_WALLET_ICONS} additionalAdapters={DEMO_ADDITIONAL_ADAPTERS} walletConnect={DEMO_WALLET_CONNECT} registryUrl="/registry">
           <div style={{ maxWidth: '880px', margin: '0 auto', padding: '0 24px' }}>
 
             {/* Navbar */}
