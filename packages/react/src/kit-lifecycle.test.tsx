@@ -3,9 +3,9 @@ import React, { StrictMode } from 'react';
 import { afterEach, expect, it, vi } from 'vitest';
 import { cleanup, render, waitFor } from '@testing-library/react';
 
-const clients = vi.hoisted(() => ({ created: [] as Array<{ destroy: ReturnType<typeof vi.fn> }> }));
+const clients = vi.hoisted(() => ({ created: [] as Array<{ initialize: ReturnType<typeof vi.fn>; destroy: ReturnType<typeof vi.fn> }> }));
 vi.mock('@partylayer/sdk', () => ({ createPartyLayer: () => {
-  const client = { destroy: vi.fn() };
+  const client = { initialize: vi.fn(), destroy: vi.fn() };
   clients.created.push(client);
   return client;
 } }));
@@ -20,6 +20,8 @@ it('keeps the committed client alive across StrictMode effect replay and destroy
   const committed = clients.created[clients.created.length - 1];
   await Promise.resolve();
   expect(committed.destroy).not.toHaveBeenCalled();
+  expect(committed.initialize).toHaveBeenCalled();
+  for (const discarded of clients.created.slice(0, -1)) expect(discarded.initialize).not.toHaveBeenCalled();
   view.unmount();
   await waitFor(() => expect(committed.destroy).toHaveBeenCalledTimes(1));
 });

@@ -50,6 +50,7 @@ import { toPartyId, toWalletId, normalizeLedgerMethodLower, ledgerApiBodyToObjec
 import { submitViaPrepareExecute, type ExecuteVerbState } from './prepare-execute';
 import { normalizeSignedMessage } from './sign-message';
 import { assertConnectionAccepted, assertPrimaryParty } from './connection-result';
+import { nativeOwnerBindings } from './native-owner';
 
 /** Capabilities of the generic announce bridge, including before installation. */
 export function getAnnounceCapabilities(config: AnnounceAdapterConfig = {}): CapabilityKey[] {
@@ -185,7 +186,7 @@ export class GenericAnnounceAdapter implements WalletAdapter {
   readonly name: string;
   /** Icon surfaced to the picker (announce detail). */
   readonly icon?: string;
-  private readonly provider: CIP0103Provider;
+  private readonly rawProvider: CIP0103Provider;
   private readonly metadataEnabled: boolean;
   private readonly staticMetadata?: Record<string, string>;
   private readonly mapError?: (err: unknown) => Error | undefined;
@@ -213,7 +214,7 @@ export class GenericAnnounceAdapter implements WalletAdapter {
         ? args.name
         : `Canton Wallet (${args.announceId.slice(0, 6)}…)`;
     this.icon = args.icon;
-    this.provider = args.provider;
+    this.rawProvider = args.provider;
 
     const config = args.config;
     this.metadataEnabled = config?.metadata === true;
@@ -226,6 +227,20 @@ export class GenericAnnounceAdapter implements WalletAdapter {
     // signMessage defaults ON (the CIP-0103 baseline); omitted only on an
     // explicit false, so behavior is unchanged unless an entry declares it.
     if (config?.signMessage !== false) this.signMessage = this.signMessageImpl.bind(this);
+  }
+
+  private get provider(): CIP0103Provider {
+    return nativeOwnerBindings.get(this)?.getProvider(String(this.walletId)) ?? this.rawProvider;
+  }
+
+  /** @internal Register the discovered transport with the one official owner. */
+  async prepareNativeConnection(network: NetworkId): Promise<void> {
+    const owner = nativeOwnerBindings.get(this);
+    if (!owner) return;
+    await owner.prepare(String(this.walletId), {
+      providerId: String(this.walletId), name: this.name, type: 'browser', icon: this.icon,
+      provider: () => this.rawProvider, detect: async () => true,
+    }, network);
   }
 
   /**
@@ -255,11 +270,13 @@ export class GenericAnnounceAdapter implements WalletAdapter {
     };
   }
 
-  async connect(ctx: AdapterContext): Promise<AdapterConnectResult> {
+  async connect(ctx: AdapterContext, options?: { signal?: AbortSignal }): Promise<AdapterConnectResult> {
     return this.guarded(async () => {
       // CIP-0103 connect handshake over the target-scoped channel.
-      assertConnectionAccepted(await this.provider.request({ method: 'connect' }));
-      const account = await this.provider.request<CIP0103Account>({
+      const owner = nativeOwnerBindings.get(this);
+      const native = owner ? await owner.connect(String(this.walletId), options?.signal) : undefined;
+      if (!owner) assertConnectionAccepted(await this.provider.request({ method: 'connect' }));
+      const account = native?.account ?? await this.provider.request<CIP0103Account>({
         method: 'getPrimaryAccount',
       });
       assertPrimaryParty(account);
@@ -267,7 +284,7 @@ export class GenericAnnounceAdapter implements WalletAdapter {
       // Wallet-reported network (truthful), per A1b — fall back to dApp config.
       let status: AnnounceStatus | undefined;
       try {
-        status = await this.provider.request<AnnounceStatus>({ method: 'status' });
+        status = native?.status ?? await this.provider.request<AnnounceStatus>({ method: 'status' });
       } catch {
         // status is optional for some wallets — fall through to account/config.
       }
@@ -301,6 +318,8 @@ export class GenericAnnounceAdapter implements WalletAdapter {
   }
 
   async disconnect(): Promise<void> {
+    const owner = nativeOwnerBindings.get(this);
+    if (owner) { await owner.disconnect(); return; }
     try {
       await this.provider.request({ method: 'disconnect' });
     } catch {
@@ -373,6 +392,12 @@ export class GenericAnnounceAdapter implements WalletAdapter {
   private makeRestore(): WalletAdapter['restore'] {
     return (_ctx: AdapterContext, persisted: PersistedSession): Promise<Session | null> =>
       this.guarded(async () => {
+        const owner = nativeOwnerBindings.get(this);
+        if (owner) {
+          await this.prepareNativeConnection(_ctx.network);
+          const restored = await owner.restore({ id: String(this.walletId), partyId: persisted.partyId, network: persisted.network });
+          return restored?.id === String(this.walletId) ? { ...persisted, capabilitiesSnapshot: this.getCapabilities() } as Session : null;
+        }
         if (persisted.expiresAt && Date.now() >= persisted.expiresAt) return null;
         let status: AnnounceStatus | undefined;
         try {

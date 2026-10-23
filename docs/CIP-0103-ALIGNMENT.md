@@ -24,12 +24,21 @@ The direct `@partylayer/provider` wrapper forwards an attached provider's reques
 and events, including its supported asynchronous user-URL flows. It cannot create
 capabilities the underlying wallet or deployment has disabled.
 
-`client.asProvider()` / `createProviderBridge(client)` exposes the existing SDK
-through a provider-shaped compatibility surface. It is not a complete native
-protocol-owner migration and must not be described as full wallet-independent
-conformance. The limits below remain relevant even when local tests pass.
+`client.asProvider()` is a stable facade over the official browser-native owner
+for native connections, with real account metadata, raw Ledger API forwarding and
+genuine provider events. Existing proprietary integrations use the compatibility
+bridge. `createProviderBridge(client)` explicitly retains that legacy bridge for
+all clients. Neither surface certifies full wallet-independent conformance.
 
 ## Method behavior
+
+For native browser connections, `client.asProvider()` forwards the wallet
+account, network, status, execution and Ledger API methods directly. Message
+signing keeps the reviewed SDK encoding/normalization policy. Lifecycle calls
+use the one official connection owner. The table describes the explicit legacy
+`createProviderBridge` and compatibility integrations; its limits do not apply
+to raw native account/ledger passthrough.
+
 
 | Method | Direct provider | Client compatibility bridge |
 | --- | --- | --- |
@@ -43,9 +52,10 @@ conformance. The limits below remain relevant even when local tests pass.
 
 The current legacy Ledger API response wrapper is different from the standard's
 raw JSON Ledger API response. Its shared request type also does not yet model all
-standard path/query/header fields. Preserve the published compatibility API until
-a versioned migration is implemented; do not present the wrapper as an exact
-normative wire response. See [Wallet balances](./wallet-balances.md) for supported
+standard path/query/header fields. The SDK 0.20 native `asProvider()` facade returns raw JSON and forwards path,
+query and headers. Consumers migrating native reads must stop parsing
+`result.response`; `client.ledgerApi()` and `createProviderBridge` retain the
+existing wrapper. See [Storage and API migration](./protocol-ownership.md#storage-and-api-migration). See [Wallet balances](./wallet-balances.md) for supported
 SDK reads and the node-version-specific complete-snapshot requirements.
 
 ## Transaction evidence
@@ -75,7 +85,9 @@ swap; those require ledger acceptance with valid commands and authorized funding
 
 ## Events, accounts and asynchronous flows
 
-The direct wrapper forwards supported wallet events. The client bridge derives
+The direct wrapper and native facade forward supported wallet events. Native
+account/status changes revalidate the SDK identity; writes are blocked during
+refresh. The explicit compatibility bridge derives
 status/account events from SDK sessions, while transaction events depend on
 actual available evidence. Its single account projection cannot establish a
 verified public key or complete wallet account list. It is not a substitute for
@@ -107,7 +119,7 @@ certify every wallet or deployment against the external normative specification.
 
 The native conformance runner currently exercises an in-repository reference
 provider. Browser-dependent compatibility suites and live wallet/ledger tests are
-separate. Full native protocol ownership, authoritative account/key projections,
-standard Ledger API shape migration, complete account-change handling and live
-acceptance remain open. Track them in [Platform roadmap](./platform-roadmap.md),
+separate. The candidate native owner/account/ledger migration has controlled integration
+coverage. Final packed/runtime/browser release checks, complete live account-change
+acceptance, accessibility and wallet/ledger acceptance remain open. Track them in [Platform roadmap](./platform-roadmap.md),
 [Protocol ownership](./protocol-ownership.md) and [Release process](./releasing.md).

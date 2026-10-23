@@ -2,6 +2,10 @@
 
 ## 0.6.1
 
+- Forward same-window, same-origin, target-scoped wallet notifications through
+  extension channels. Attach listeners lazily, release idle listeners, pool SDK
+  channels per target and support explicit teardown of pending RPCs.
+
 ### Patch Changes
 
 - Route combined-only transaction wallets directly to submission. Keep separate

@@ -172,6 +172,7 @@ export function PartyLayerKit({
 
   const client = useMemo((): PartyLayerClient => {
     return createPartyLayer({
+      deferInitialization: true,
       network: network as NetworkId,
       app: {
         name: appName,
@@ -192,6 +193,7 @@ export function PartyLayerKit({
   const mountedClientRef = useRef<PartyLayerClient | null>(null);
   useEffect(() => {
     mountedClientRef.current = client;
+    client.initialize();
     return () => {
       mountedClientRef.current = null;
       queueMicrotask(() => {

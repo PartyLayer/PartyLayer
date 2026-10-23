@@ -13,20 +13,21 @@ remain application configuration. See [Quick start](./quick-start.md).
 flowchart TD
   App[Application: PartyLayerKit and ConnectButton] --> Client[PartyLayerClient]
   Client --> Registry[Registry metadata and capability/network filters]
-  Client --> Generic[Generic CIP-0103 bridges]
+  Client --> Owner[Official Canton DiscoveryClient: native owner]
+  Owner --> Generic[Generic CIP-0103 registrations]
   Client --> Compatibility[Existing compatibility integrations]
   Generic --> Native[Announced or injected providers]
   Generic --> Official[Reviewed official wallet runtimes]
   Compatibility --> Vendors[Wallet SDKs and transports]
   Client --> View[Reactive account/session view]
   View --> UI[Connection, authentication and activity UI]
-  Client --> Bridge[Optional client.asProvider bridge]
+  Client --> Bridge[Stable native provider facade and compatibility bridge]
 ```
 
-The diagram describes the candidate implementation. Moving protocol ownership to
-one official Canton client remains a separate migration; see
-[Protocol ownership](./protocol-ownership.md). The existence of a provider bridge
-or generic wrapper does not mean that migration has already happened.
+The unpublished candidate uses official discovery 1.15.0 as the browser-native
+connection owner. Existing proprietary/custom adapters and the existing WalletConnect
+wrapper retain their compatibility boundary. See [Protocol ownership](./protocol-ownership.md)
+for the reviewed public APIs, protected extension transport and release gates.
 
 ## Package responsibilities
 
@@ -36,9 +37,9 @@ or generic wrapper does not mean that migration has already happened.
 | `@partylayer/core/authentication` | Server-safe challenge formatting and verification orchestration; application supplies authorized signature verification and atomic nonce storage |
 | `@partylayer/core/amounts` | Server-safe exact decimal summation |
 | `@partylayer/registry-client` | Fetch, validate and cache wallet metadata; never import executable code from registry-provided URLs |
-| `@partylayer/sdk` | Default runtime loaders, wallet orchestration, validated persisted sessions and public wallet actions |
+| `@partylayer/sdk` | Default runtime loaders, one official browser-native owner, constrained session projections and public wallet actions |
 | `@partylayer/provider` | Direct provider wrapper, CIP-0103 error/event helpers and `createProviderBridge`; `client.asProvider()` exposes the existing client |
-| `@partylayer/session` | Reactive connection/account state for the bindings; this view is not an application authentication session |
+| `@partylayer/session` | Reactive connection/account views; the React default is an in-memory projection of the SDK provider |
 | `@partylayer/react` | Kit, default branded UI, themes, locale, authentication and transaction/activity/holdings views |
 | `@partylayer/react/query` | Read queries and ledger-write mutations; write retries are disabled to avoid duplicate submissions |
 | `@partylayer/vue`, `@partylayer/react-native` | Platform bindings with their documented feature sets; React additions do not imply full cross-platform parity |
@@ -55,8 +56,9 @@ The SDK warms approved lazy loaders before an explicit connection click. Bridges
 preserve the synchronous hosted-wallet opening path. Explicitly declined
 handshakes and empty primary parties cannot create an active connection.
 
-A saved PartyLayer session is a restoration hint. Supported transports must validate
-it with the live provider, including primary party, recognized network and expiry.
+A saved PartyLayer native session is only a constrained projection. Restoration
+requires the official provider hint and live identity validation, including primary
+party, network policy and expiry. Old native caches need one explicit reconnect.
 A provider change requires reconnection rather than silently relabeling cached
 identity. OneSwap currently requires a fresh explicit connection.
 
@@ -116,5 +118,5 @@ wallet compatibility or vendor-specific signature verification.
 See [Release process](./releasing.md#default-wallet-release-validation) for actual
 wallet evidence and [Platform roadmap](./platform-roadmap.md) for open work.
 Loop's key-unlock failure, valid Vala Devnet transactions, full live transfer/swap
-acceptance, the official-client ownership migration and the full accessibility
+acceptance, final native-owner release validation and the full accessibility
 review remain separate completion criteria.

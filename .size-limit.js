@@ -32,6 +32,7 @@ const LAZY_WALLET_SDKS = [
   '@oneswap/wallet-cip0103-adapter',
   '@vala-wallet/dapp-sdk',
   '@canton-network/dapp-sdk',
+  '@canton-network/core-wallet-discovery',
   '@partylayer/adapter-walletconnect',
   '@partylayer/adapter-bron',
 ];
@@ -276,7 +277,9 @@ module.exports = [
     // Complete provider transaction evidence, combined-only routing, duplicate
     // command guards and exact signature echoes add ~0.34 kB to the shared client.
     // Measured 49.23 kB; retain ~0.27 kB of headroom without dropping these checks.
-    limit: '49.5 kB',
+    // Official native ownership, abort/identity guards and the stable provider
+    // facade add ~3.5 kB. Discovery runtime stays a separately loaded chunk.
+    limit: '53 kB',
   },
   {
     name: 'react-native: ui (ConnectButton)',
@@ -495,6 +498,8 @@ module.exports = [
     // combined-only wallets. Real payload validation and no-retry/session guards
     // add ~0.34 kB. Provider 249 / SDK 268 tests cover the corrected boundaries.
     // Measured 49.00 kB after concise error messages; retain ~0.25 kB of headroom.
-    limit: '49.25 kB',
+    // Official native ownership, abort/identity guards and the stable provider
+    // facade add ~3.5 kB. Discovery runtime stays a separately loaded chunk.
+    limit: '52.75 kB',
   },
 ];

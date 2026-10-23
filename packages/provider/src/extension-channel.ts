@@ -23,7 +23,7 @@ import type {
   CIP0103RequestPayload,
 } from '@partylayer/core';
 import { CIP0103EventBus } from './event-bus';
-import { ProviderRpcError, JSON_RPC_ERRORS } from './errors';
+import { ProviderRpcError, JSON_RPC_ERRORS, RPC_ERRORS } from './errors';
 
 // ─── Splice wallet postMessage protocol (mirrors @canton-network/core-types) ──
 
@@ -47,6 +47,11 @@ export interface ExtensionChannelOptions {
   timeoutMs?: number;
 }
 
+export interface ExtensionChannelProvider extends CIP0103Provider {
+  /** Remove the channel listener, reject pending RPCs and release subscriptions. */
+  destroy(): void;
+}
+
 let channelSeq = 0;
 
 /**
@@ -55,7 +60,7 @@ let channelSeq = 0;
  */
 export function createExtensionChannelProvider(
   options: ExtensionChannelOptions = {},
-): CIP0103Provider {
+): ExtensionChannelProvider {
   const target = options.target;
   const timeoutMs = options.timeoutMs ?? 30_000;
   const eventBus = new CIP0103EventBus();
@@ -63,6 +68,22 @@ export function createExtensionChannelProvider(
   // responses on the shared window message bus.
   const channelId = `pl-${++channelSeq}-${target ?? 'ext'}`;
   let requestSeq = 0;
+  let listening = false;
+  let destroyed = false;
+  const subscribedEvents = new Set<string>();
+
+  function listen(): void {
+    if (!listening && typeof window !== 'undefined') {
+      window.addEventListener('message', onMessage as EventListener);
+      listening = true;
+    }
+  }
+
+  function detachIfIdle(): void {
+    if (pending.size > 0 || [...subscribedEvents].some(name => eventBus.listenerCount(name) > 0)) return;
+    if (listening && typeof window !== 'undefined') window.removeEventListener('message', onMessage as EventListener);
+    listening = false;
+  }
 
   const pending = new Map<
     string,
@@ -81,6 +102,15 @@ export function createExtensionChannelProvider(
       typeof window !== 'undefined' ? window.location?.origin : undefined;
     if (selfOrigin && selfOrigin !== 'null' && event.origin !== selfOrigin) return;
 
+    const notification = event.data as { type?: string; target?: string; request?: { id?: unknown; jsonrpc?: string; method?: string; params?: unknown } } | undefined;
+    if (notification?.type === SPLICE_WALLET_REQUEST && notification.request?.jsonrpc === '2.0' &&
+        notification.request.id == null && (!target || notification.target === target)) {
+      const method = notification.request.method;
+      if (method && ['statusChanged', 'accountsChanged', 'txChanged', 'connected'].includes(method)) {
+        eventBus.emit(method, notification.request.params);
+      }
+      return;
+    }
     const data = event.data as Partial<SpliceResponseMessage> | undefined;
     if (!data || data.type !== SPLICE_WALLET_RESPONSE || !data.response) return;
     const { id, result, error } = data.response;
@@ -89,6 +119,7 @@ export function createExtensionChannelProvider(
     if (!entry) return; // not ours (different provider / stale)
     pending.delete(String(id));
     clearTimeout(entry.timer);
+    detachIfIdle();
     if (error) {
       entry.reject(
         new ProviderRpcError(
@@ -102,26 +133,25 @@ export function createExtensionChannelProvider(
     }
   }
 
-  if (typeof window !== 'undefined') {
-    window.addEventListener('message', onMessage as EventListener);
-  }
-
   function postTargetOrigin(): string {
     const origin = typeof window !== 'undefined' ? window.location?.origin : undefined;
     return origin && origin !== 'null' ? origin : '*';
   }
 
-  const provider: CIP0103Provider = {
+  const provider: ExtensionChannelProvider = {
     request<T>(args: CIP0103RequestPayload): Promise<T> {
+      if (destroyed) return Promise.reject(new ProviderRpcError('Extension channel was destroyed', RPC_ERRORS.DISCONNECTED));
       if (typeof window === 'undefined') {
         return Promise.reject(
           new ProviderRpcError('No window: extension channel unavailable', JSON_RPC_ERRORS.INTERNAL_ERROR),
         );
       }
+      listen();
       const id = `${channelId}-${++requestSeq}`;
       return new Promise<T>((resolve, reject) => {
         const timer = setTimeout(() => {
           pending.delete(id);
+          detachIfIdle();
           reject(
             new ProviderRpcError(
               `Wallet request "${args.method}" timed out after ${timeoutMs}ms`,
@@ -141,11 +171,17 @@ export function createExtensionChannelProvider(
           },
           ...(target ? { target } : {}),
         };
-        window.postMessage(message, postTargetOrigin());
+        try { window.postMessage(message, postTargetOrigin()); }
+        catch (error) {
+          pending.delete(id); clearTimeout(timer); detachIfIdle(); reject(error);
+        }
       });
     },
     on(event, listener) {
+      if (destroyed) return provider;
       eventBus.on(event, listener);
+      subscribedEvents.add(event);
+      listen();
       return provider;
     },
     emit(event, ...args) {
@@ -153,7 +189,20 @@ export function createExtensionChannelProvider(
     },
     removeListener(event, listener) {
       eventBus.removeListener(event, listener);
+      detachIfIdle();
       return provider;
+    },
+    destroy() {
+      if (destroyed) return;
+      destroyed = true;
+      eventBus.removeAllListeners();
+      subscribedEvents.clear();
+      for (const entry of pending.values()) {
+        clearTimeout(entry.timer);
+        entry.reject(new ProviderRpcError('Extension channel was destroyed', RPC_ERRORS.DISCONNECTED));
+      }
+      pending.clear();
+      detachIfIdle();
     },
   };
 

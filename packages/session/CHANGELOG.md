@@ -2,6 +2,9 @@
 
 ## 1.1.9
 
+- Allow frameworks to defer provider/BroadcastChannel subscriptions until init.
+  Prevent a destroyed store from persisting late restores or starting queued writes.
+
 ### Patch Changes
 
 - Updated dependencies [817d357]

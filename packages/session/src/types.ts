@@ -60,6 +60,8 @@ export interface SessionState {
 }
 
 export interface SessionStoreOptions {
+  /** Defer provider subscriptions and BroadcastChannel creation until init/connect. */
+  deferInitialization?: boolean;
   /**
    * Pluggable persistence. Defaults to in-memory storage (no DOM access).
    * Inject a `localStorage`-backed adapter from the browser framework layer.

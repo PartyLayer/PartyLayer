@@ -184,7 +184,7 @@ export default function CIP0103Page() {
       </P>
       <P>
         The standard remains authoritative. Some differences are optional extensions; others are
-        compatibility limits that require a versioned migration. A passing local fixture does not
+        compatibility limits and versioned migration requirements. A passing local fixture does not
         certify every wallet or deployment.
       </P>
 
@@ -206,11 +206,12 @@ export default function CIP0103Page() {
       </P>
 
       <H3>Client bridge account, Ledger API and transaction limits</H3>
-      <P>The direct wrapper forwards its attached provider. The client.asProvider compatibility
-        bridge instead projects one SDK party and retains the legacy Ledger API response shape
-        {' '}<Code>{'{ response: string }'}</Code>; it does not yet model the full standard
-        path/query/header request fields. Its account projection supplies no authoritative public
-        key or complete wallet account list. These require the versioned native-owner migration.</P>
+      <P>The direct wrapper forwards its attached provider. In the SDK 0.20 candidate,
+        client.asProvider uses one official discovery owner for browser-native connections,
+        exposes real account/key metadata and forwards raw Ledger API JSON plus path/query/header
+        fields. Existing compatibility integrations and explicit createProviderBridge keep the
+        older one-party and response-string wrapper. Native callers migrating from that wrapper
+        must consume raw JSON directly. See the <a href="https://github.com/PartyLayer/PartyLayer/blob/main/docs/protocol-ownership.md#storage-and-api-migration">storage and API migration guide</a>.</P>
       <P>Combined-only wallets submit directly. A transaction hash is never a signature, a command
         ID is never a ledger update ID, and missing completion offsets are never filled with zero.
         Signed/executed events require actual complete evidence; lost submit responses remain

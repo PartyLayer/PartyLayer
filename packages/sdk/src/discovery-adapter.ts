@@ -57,6 +57,7 @@ import { toPartyId, toWalletId, isRecognizedNetwork, normalizeLedgerMethodLower,
 import { submitViaPrepareExecute, type ExecuteVerbState } from './prepare-execute';
 import { normalizeSignedMessage } from './sign-message';
 import { assertConnectionAccepted, assertPrimaryParty } from './connection-result';
+import { nativeOwnerBindings } from './native-owner';
 
 export interface GenericDiscoveryAdapterArgs {
   /**
@@ -205,11 +206,21 @@ export class GenericDiscoveryAdapter implements WalletAdapter {
     this.official = this.factory.create(host);
   }
 
+  /** @internal Prepare the official owner before a popup-opening click. */
+  async prepareNativeConnection(network: NetworkId): Promise<void> {
+    const owner = nativeOwnerBindings.get(this);
+    if (!owner) return;
+    this.resolveOfficial(network);
+    await owner.prepare(String(this.walletId), this.official!, network);
+  }
+
   /** Lazily obtain (and cache) the official provider — deferred off the init/SSR path.
    *  `official.provider()` is typed `OfficialProvider` (loose `request` so real
    *  official adapters are assignable); it is call-compatible with CIP0103Provider
    *  (the bridge only ever calls `request({ method, params })`). */
   private get provider(): CIP0103Provider {
+    const owner = nativeOwnerBindings.get(this);
+    if (owner) return owner.getProvider(String(this.walletId));
     if (this.providerInstance === null) {
       if (!this.official) {
         throw new Error(
@@ -261,7 +272,7 @@ export class GenericDiscoveryAdapter implements WalletAdapter {
     };
   }
 
-  async connect(ctx: AdapterContext): Promise<AdapterConnectResult> {
+  async connect(ctx: AdapterContext, options?: { signal?: AbortSignal }): Promise<AdapterConnectResult> {
     // Resolve the official adapter for the active network FIRST and
     // SYNCHRONOUSLY (no await precedes it) — for the factory form this builds
     // the official with the network-resolved host; for the instance form it is a
@@ -271,8 +282,10 @@ export class GenericDiscoveryAdapter implements WalletAdapter {
     // CIP-0103 connect handshake over the official provider. For popup wallets
     // this opens the wallet's popup; it must be reached SYNCHRONOUSLY from the
     // user gesture (see the SDK's popup-safe connect fast-path).
-    assertConnectionAccepted(await this.provider.request({ method: 'connect' }));
-    const account = await this.provider.request<CIP0103Account>({
+    const owner = nativeOwnerBindings.get(this);
+    const native = owner ? await owner.connect(String(this.walletId), options?.signal) : undefined;
+    if (!owner) assertConnectionAccepted(await this.provider.request({ method: 'connect' }));
+    const account = native?.account ?? await this.provider.request<CIP0103Account>({
       method: 'getPrimaryAccount',
     });
     assertPrimaryParty(account);
@@ -280,7 +293,7 @@ export class GenericDiscoveryAdapter implements WalletAdapter {
     // Wallet-reported network (truthful) → fall back to account, then dApp config.
     let reportedNetwork: string | undefined;
     try {
-      const status = await this.provider.request<{ network?: { networkId?: string } }>({
+      const status = native?.status ?? await this.provider.request<{ network?: { networkId?: string } }>({
         method: 'status',
       });
       reportedNetwork = status?.network?.networkId;
@@ -313,6 +326,15 @@ export class GenericDiscoveryAdapter implements WalletAdapter {
     try {
       if (persisted.expiresAt && Date.now() >= persisted.expiresAt) return null;
       this.resolveOfficial(ctx.network);
+      const owner = nativeOwnerBindings.get(this);
+      if (owner) {
+        await this.prepareNativeConnection(ctx.network);
+        const restored = await owner.restore({
+          id: String(this.walletId), partyId: persisted.partyId, network: persisted.network,
+        });
+        return restored?.id === String(this.walletId)
+          ? { ...persisted, walletId: this.walletId, capabilitiesSnapshot: this.getCapabilities() } as Session : null;
+      }
       if (this.official?.restore) {
         const restored = await this.official.restore();
         if (!restored) return null;
@@ -336,6 +358,8 @@ export class GenericDiscoveryAdapter implements WalletAdapter {
   }
 
   async disconnect(): Promise<void> {
+    const owner = nativeOwnerBindings.get(this);
+    if (owner) { await owner.disconnect(); return; }
     try {
       await this.provider.request({ method: 'disconnect' });
     } catch {

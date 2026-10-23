@@ -2,6 +2,10 @@
 
 ## 3.1.0
 
+- Keep the shared session store as an in-memory live provider projection by
+  default. Defer external subscriptions until committed effects, preserve them
+  across StrictMode replay and reject late initial snapshots after a new connection.
+
 - Preserve the live client during React StrictMode effect replay while still disposing
   replaced/unmounted clients. This keeps asynchronously loaded wallets available in development.
 

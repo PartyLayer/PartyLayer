@@ -26,17 +26,22 @@ gzipped cost of the exports it actually imports. That is measured below.
 
 The current default catalog loads reviewed official SDKs lazily during wallet discovery;
 configured WalletConnect and Bron transports also load lazily. The current measured initial
-SDK contribution is about 49.0 kB gzip (49.25 kB budget); React Native headless is about 49.2 kB
-(49.5 kB budget). These are initial bundles; opening the picker downloads eligible wallet
-chunks, and connecting WalletConnect loads its underlying transport. Run `pnpm gate:size`
-for the current numbers. The React connection surface measures about 36.65 kB gzip with
+SDK contribution is about 52.5 kB gzip (52.75 kB budget); React Native headless is about 52.8 kB
+(53 kB budget). These budgets exclude asynchronous chunks. The kit lists wallets on mount, so
+eligible wallet/discovery chunks can start loading before the picker opens;
+these numbers are not total first-load bytes. Connecting WalletConnect loads
+its underlying transport. Run `pnpm gate:size`
+for the current numbers. The React connection surface measures about 36.85 kB gzip with
 a 37 kB budget after adding keyboard behavior, English/Turkish UI, optional
 authentication actions, scoped recent activity, network guidance and exact-decimal
 holdings UI. Server challenge/verification helpers use a separate
 `@partylayer/core/authentication` subpath; ordinary wallet clients do not import them.
 Session revision guards and serialized persistence add about 0.45 kB to the SDK/RN
 headless bundles. Complete transaction-event evidence, combined-only routing and
-signature echo checks add a further ~0.34 kB. The older comparisons below remain dated historical measurements.
+signature echo checks add a further ~0.34 kB. Official native ownership, abort/identity guards and the stable provider facade
+add approximately 3.5 kB; the dynamically imported official discovery runtime
+is excluded from the initial-bundle scenario and downloaded during preparation.
+The older comparisons below remain dated historical measurements.
 
 ## What each import scenario costs
 

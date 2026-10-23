@@ -23,7 +23,7 @@ PartyLayer is a production-grade SDK that enables decentralized applications (dA
 
 ### Why PartyLayer?
 
-- **CIP-0103 Compliant**: Implements the Canton dApp Standard for wallet-dApp communication
+- **CIP-0103 integration**: Canton provider methods with explicit capability and compatibility limits
 - **Single Integration**: Connect to all Canton wallets with one SDK
 - **Type-Safe**: Full TypeScript support with strict mode
 - **React Ready**: First-class React hooks and components
@@ -371,18 +371,20 @@ try {
 flowchart TD
     App[Application: PartyLayerKit and ConnectButton] --> SDK[PartyLayerClient]
     SDK --> Registry[Registry policy and capabilities]
-    SDK --> Generic[Generic CIP-0103 bridges]
+    SDK --> Owner[Official Canton DiscoveryClient: native owner]
+    Owner --> Generic[Generic CIP-0103 registrations]
     SDK --> Legacy[Existing compatibility integrations]
     Generic --> Native[Announced and injected providers]
     Generic --> Official[Reviewed lazy official wallet runtimes]
     Legacy --> Vendors[Existing wallet SDKs and transports]
     SDK --> UI[Reactive account, authentication and activity UI]
-    SDK --> Bridge[Optional client.asProvider bridge]
+    SDK --> Bridge[Stable native provider facade and compatibility bridge]
 ```
 
 The default catalog uses shared bridges and includes supported runtimes; applications
-install no additional PartyLayer package per wallet. The official Canton protocol-owner
-migration remains open. See [Architecture](./docs/architecture.md) and
+install no additional PartyLayer package per wallet. The unpublished candidate uses
+official discovery 1.15.0 for browser-native connections; existing compatibility
+integrations retain their contracts. Final release/live acceptance remains open. See [Architecture](./docs/architecture.md) and
 [Protocol ownership](./docs/protocol-ownership.md) for current responsibilities,
 reviewed public APIs and migration gates.
 
@@ -441,7 +443,7 @@ const client = createPartyLayer(config: PartyLayerConfig);
 | `signTransaction(params)` | Sign a transaction |
 | `submitTransaction(params)` | Submit a signed transaction |
 | `registerAdapter(adapter)` | Register a custom wallet adapter at runtime |
-| `asProvider()` | Get a CIP-0103 compliant Provider bridge |
+| `asProvider()` | Get a stable native provider facade or the backing integration’s compatibility bridge |
 | `on(event, handler)` | Subscribe to events |
 | `off(event, handler)` | Unsubscribe from events |
 | `destroy()` | Clean up client resources |
@@ -521,7 +523,11 @@ const wallets = discoverInjectedProviders();
 const provider = new PartyLayerProvider({ walletProvider: wallets[0] });
 ```
 
-**Legacy Bridge** (`createProviderBridge`), wraps an existing `PartyLayerClient` instance as a CIP-0103 Provider. Use this for backward compatibility with the adapter-based SDK.
+**Client facade** (`client.asProvider()`): one stable provider over the native
+connection owner, exposing actual native accounts, events and raw Ledger API
+responses. Existing compatibility integrations retain their bridge behavior.
+`createProviderBridge(client)` explicitly preserves the legacy bridge API. See the
+[SDK 0.20 storage/API migration](./docs/protocol-ownership.md#storage-and-api-migration).
 
 ```typescript
 import { createPartyLayer } from '@partylayer/sdk';
@@ -597,7 +603,7 @@ The native `PartyLayerProvider` supports both synchronous and asynchronous walle
 - **Sync wallets** return results immediately from `connect()` and `prepareExecute()`.
 - **Async wallets** (e.g. mobile wallets with QR codes) return a `userUrl` from `connect()`. The Provider handles the async flow automatically: it opens the URL, waits for the `connected` event, and resolves the Promise when the wallet confirms.
 
-> **Note**: The legacy bridge (`client.asProvider()`) only supports synchronous wallets. For async wallet flows, use the native `PartyLayerProvider` directly.
+> **Note**: Full asynchronous server user-URL orchestration requires a verified direct provider path. The explicit compatibility bridge does not implement that deployment model.
 
 ### Error Model
 
@@ -799,7 +805,7 @@ Release acceptance for the default wallet platform:
 - [ ] Multi-party support (multiple parties per session)
 - [ ] Transaction batching
 - [ ] Offline transaction preparation
-- [x] CIP-0103 (Canton dApp Standard) compliance
+- [x] CIP-0103 provider integration with documented compatibility limits
 - [x] Native CIP-0103 wallet discovery (`window.canton.*`)
 - [x] Enhanced telemetry (opt-in, privacy-safe)
 - [x] Default wallet catalog included in one npm installation

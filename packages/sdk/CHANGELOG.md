@@ -2,6 +2,15 @@
 
 ## 0.20.0
 
+- Recheck live native identity after message approval, so a bare signature is not
+  attributed to an old primary party after an eventless account change.
+
+- Use official discovery 1.15.0 as the browser-native connection owner, with
+  constrained cache migration, guarded identity changes and stable native account,
+  event and raw Ledger API passthrough. Legacy native caches require one reconnect.
+  Keep proprietary/custom compatibility contracts and Console signing encoding.
+  Add render-safe deferred initialization and installed-runtime integration tests.
+
 - Preserve actual ledger completion offsets and reject explicitly malformed or
   mismatched message/party echoes in signature responses. The provider bridge
   supports combined-only wallets without inventing signature/ledger event data.

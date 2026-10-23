@@ -90,6 +90,12 @@ export type AdapterClass = new () => WalletAdapter;
  */
 export interface PartyLayerConfig {
   /**
+   * Delay browser subscriptions and automatic restoration until initialize()
+   * or the first explicit client action. Frameworks use this for render safety.
+   * @default false
+   */
+  deferInitialization?: boolean;
+  /**
    * Registry base URL (optional). The client appends `/v1/{channel}/registry.json`,
    * so the default fetch is `https://registry.partylayer.xyz/v1/stable/registry.json`.
    * @default 'https://registry.partylayer.xyz'

@@ -153,17 +153,21 @@ registerAdapter(adapter: WalletAdapter): void
 
 #### asProvider
 
-Get a CIP-0103 compliant Provider that wraps this client.
+Get one stable provider facade for this client.
 
 ```typescript
 asProvider(): CIP0103Provider
 ```
 
-Returns a Provider that routes requests through the client's session and actual
-wallet capabilities. Account methods project the active party; the legacy
-`ledgerApi` response remains `{ response: string }`. Combined-only wallets submit
-directly. Signed/executed events require genuine signature or ledger update/offset
-data; acknowledgements and lost responses never become fabricated confirmation.
+For browser-native connections, account methods return real wallet accounts and
+key metadata; Ledger API requests forward path/query/header fields and return raw
+JSON. The official discovery client owns that native connection. Message signing
+retains the reviewed encoding/normalization policy. Existing compatibility
+integrations and explicit `createProviderBridge(client)` preserve their old
+one-party/`{ response: string }` behavior. `client.ledgerApi()` is unchanged.
+Migrate native `asProvider` ledger consumers to use raw JSON instead of parsing
+`result.response`. Genuine native events pass through; the compatibility bridge
+requires real signature or ledger update/offset evidence for signed/executed events.
 See [CIP-0103 alignment and limits](./CIP-0103-ALIGNMENT.md) and
 [Protocol ownership](./protocol-ownership.md).
 

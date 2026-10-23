@@ -219,7 +219,11 @@ as product changes. Review changed public APIs, approved loader pins, registry
 metadata and release changesets before merging. A newly published vendor version
 is an update candidate; a compatible, tested version is what PartyLayer ships.
 
-The candidate uses reviewed Canton dApp SDK **1.8.0** for WalletConnect. Walley's
+The candidate uses official discovery **1.15.0** for browser-native connections
+and reviewed Canton dApp SDK **1.8.0** for the existing WalletConnect compatibility path.
+Native cached sessions need one explicit reconnect when the official provider hint
+is absent. Native `asProvider` Ledger API reads now return raw JSON; review
+[the migration guide](./protocol-ownership.md#storage-and-api-migration) before release. Walley's
 1.2.0 runtime still requires its **^0.24.0** peer, explicitly supplied as 0.24.0
 by the default SDK. Keep that compatibility path isolated until the vendor changes
 its contract; a blanket upgrade would introduce a peer mismatch. See
