@@ -256,8 +256,8 @@ async function handleRequest(
         } catch (reason) {
           const code = (reason as { code?: unknown } | null)?.code;
           // A lost submit response has an unknown ledger outcome. Only a failure
-          // before the write, or explicit user rejection, establishes failure here.
-          if (!submitting || code === 4001 || code === 'USER_REJECTED') {
+          // before the write, or explicit user/transaction rejection, establishes failure here.
+          if (!submitting || code === 4001 || code === 'USER_REJECTED' || code === -32003) {
             eventBus.emit<CIP0103TxChangedEvent>(CIP0103_EVENTS.TX_CHANGED, { status: 'failed', commandId: cmdId });
           }
           throw reason;

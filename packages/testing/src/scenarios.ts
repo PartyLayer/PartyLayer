@@ -12,7 +12,7 @@
  *   userRejected        → 4001   (RPC_ERRORS.USER_REJECTED)        via userRejected()
  *   insufficientTraffic → -32002 (JSON_RPC_ERRORS.RESOURCE_UNAVAILABLE) via resourceUnavailable()
  *   synchronizerError   → 4901   (RPC_ERRORS.CHAIN_DISCONNECTED)   via chainDisconnected()
- *   transactionTimeout  → -32003 (JSON_RPC_ERRORS.TRANSACTION_REJECTED) via transactionRejected()
+ *   transactionTimeout  → -32603 (JSON_RPC_ERRORS.INTERNAL_ERROR), unknown ledger outcome
  *   genericError        → -32603 (JSON_RPC_ERRORS.INTERNAL_ERROR)  via internalError()
  */
 
@@ -21,7 +21,6 @@ import {
   chainDisconnected,
   internalError,
   resourceUnavailable,
-  transactionRejected,
   userRejected,
 } from '@partylayer/provider';
 
@@ -47,7 +46,7 @@ const PRESETS: Record<MockScenarioName, () => ProviderRpcError> = {
   insufficientTraffic: () =>
     resourceUnavailable('Insufficient traffic credits to submit the transaction'),
   synchronizerError: () => chainDisconnected('Synchronizer error'),
-  transactionTimeout: () => transactionRejected('Transaction timed out'),
+  transactionTimeout: () => internalError('Transaction timed out; ledger outcome unknown', { kind: 'timeout' }),
   genericError: () => internalError('RPC handler error'),
 };
 

@@ -56,9 +56,9 @@ describe('provider transaction truth and combined-wallet routing', () => {
     expect(events.map(event => event.status)).toEqual(['pending']);
   });
 
-  it('reports explicit user rejection without retrying the write', async () => {
-    const { client, provider, events } = setup({ submitTransaction: vi.fn(async () => { throw Object.assign(new Error('Rejected'), { code: 4001 }); }) });
-    await expect(provider.request({ method: 'prepareExecute', params })).rejects.toMatchObject({ code: 4001 });
+  it.each([4001, -32003])('reports explicit wallet/ledger rejection %j without retrying the write', async code => {
+    const { client, provider, events } = setup({ submitTransaction: vi.fn(async () => { throw Object.assign(new Error('Rejected'), { code }); }) });
+    await expect(provider.request({ method: 'prepareExecute', params })).rejects.toMatchObject({ code });
     expect(client.submitTransaction).toHaveBeenCalledTimes(1);
     expect(events.map(event => event.status)).toEqual(['pending', 'failed']);
   });

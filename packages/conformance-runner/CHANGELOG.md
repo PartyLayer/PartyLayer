@@ -4,6 +4,12 @@
 
 ### Patch Changes
 
+- Re-establish an authorized wallet connection before transaction lifecycle
+  checks, because the method-presence phase deliberately calls disconnect.
+  Disconnected providers no longer need fabricated transaction events to pass.
+  Reject unsupported-method codes for mandatory API methods instead of treating
+  any numeric RPC error as evidence that the method exists.
+
 - 817d357: Stop deriving what we require of other people's wallets from what this SDK speaks.
 
   `CIP0103_MANDATORY_METHODS` was `Object.values(CIP0103_METHODS)`. That coupled two

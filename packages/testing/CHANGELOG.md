@@ -4,6 +4,11 @@
 
 ### Patch Changes
 
+- Give the offline client explicit mock signature and ledger-offset evidence.
+  Keep timeout outcomes unknown instead of labeling them transaction rejection:
+  `transactionTimeout` now uses -32603 with timeout data, replacing its incorrect
+  -32003 code. Update offline examples for session validation before submission.
+
 - Updated dependencies [817d357]
 - Updated dependencies [2e07185]
 - Updated dependencies [882752f]

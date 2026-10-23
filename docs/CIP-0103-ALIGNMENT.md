@@ -63,8 +63,8 @@ never filled with empty strings or offset zero. A ledger-reported offset of zero
 is preserved as data, rather than synthesized as a default.
 
 A lost submission response has an unknown outcome. The bridge rejects the RPC
-without inventing a terminal failed event or replaying the write. Explicit user
-rejection and failures before submission can produce a failed event. Genuine
+without inventing a terminal failed event or replaying the write. Explicit user or
+transaction rejection and failures before submission can produce a failed event. Genuine
 wallet status events are forwarded only when their required payload fields exist.
 A combined-only wallet must not receive a separate sign-only call first.
 

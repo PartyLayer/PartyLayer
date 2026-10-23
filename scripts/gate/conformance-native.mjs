@@ -2,8 +2,9 @@
 /**
  * Regression gate — CIP-0103 native-path conformance check.
  *
- * Proves that the NATIVE provider path (`PartyLayerProvider`) stays
- * CIP-0103 conformant. The native provider is a pure router/normalizer;
+ * Checks the NATIVE provider path (`PartyLayerProvider`) against the local
+ * reference contract. This does not certify external wallet deployments.
+ * The native provider is a router/normalizer;
  * it has no wallet of its own, so we wrap an in-repo REFERENCE wallet
  * (`createProviderBridge(mockClient)` — the same construction used by the
  * provider package's own conformance-gate test) and run the published
@@ -70,13 +71,16 @@ function createReferenceClient() {
       'ledgerApi',
     ],
   };
+  let connected = false;
 
   return {
-    connect: async () => session,
-    disconnect: async () => {},
-    getActiveSession: async () => session,
+    connect: async () => { connected = true; return session; },
+    disconnect: async () => { connected = false; },
+    getActiveSession: async () => connected ? session : null,
     signMessage: async () => ({ signature: 'sig-ref-xyz' }),
     signTransaction: async () => ({
+      signature: 'sig-reference-only',
+      signedBy: 'key-reference-only',
       transactionHash: 'tx-ref-hash',
       signedTx: { data: 'signed-payload' },
       partyId: session.partyId,
@@ -86,6 +90,7 @@ function createReferenceClient() {
       submittedAt: 0,
       commandId: 'cmd-ref-1',
       updateId: 'update-ref-1',
+      completionOffset: 42,
     }),
     ledgerApi: async (params) => ({
       response: JSON.stringify({

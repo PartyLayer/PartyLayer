@@ -1,12 +1,11 @@
 /**
  * Mock CIP-0103 wallet provider.
  *
- * `createMockWallet(config)` returns a real, CIP-0103-compliant
- * `CIP0103Provider`. It is built by wrapping a configurable in-memory client
+ * `createMockWallet(config)` returns a controlled `CIP0103Provider` fixture.
+ * It is built by wrapping a configurable in-memory client
  * in the repo's canonical `createProviderBridge` from `@partylayer/provider`,
- * so the default/happy config passes `runCIP0103ConformanceTests` by
- * construction (it IS the conformance reference implementation, just with a
- * mock backend instead of a live wallet).
+ * with explicit mock signature and ledger evidence. Passing the local
+ * conformance checks is not proof of a live wallet or external certification.
  *
  * Failure scenarios are toggled per-method (see ./scenarios). A test can make
  * `connect` succeed while `submitTransaction` fails, etc.
@@ -123,6 +122,8 @@ export function createMockWalletClient(config: MockWalletConfig = {}): MockWalle
     async signTransaction() {
       await gate('signTransaction');
       return {
+        signature: 'mock-transaction-signature',
+        signedBy: partyId,
         transactionHash: 'mock-tx-hash',
         signedTx: { data: 'mock-signed-payload' },
         partyId,
@@ -135,6 +136,7 @@ export function createMockWalletClient(config: MockWalletConfig = {}): MockWalle
         submittedAt: 0,
         commandId: 'mock-command-1',
         updateId: 'mock-update-1',
+        completionOffset: 42,
       };
     },
     async ledgerApi(params) {
