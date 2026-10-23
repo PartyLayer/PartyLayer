@@ -11,6 +11,23 @@
 
 ### Minor Changes
 
+- Add authorized account-panel holdings and `TokenBalances`, plus exact-decimal
+  summaries grouped by issuer/admin and instrument id. Keep reported locks separate,
+  reject duplicate/invalid holding data and hide mismatched party/network data.
+  Update the wallet-balance example and docs to the current read-only snapshot
+  contract and public default button; remove floating-point token sums.
+
+- Add `useTransactionFlow` with explicit approval, submission, ledger-confirmed,
+  rejected, failed and unknown states; separate read-only reconciliation from the
+  single wallet write. Add scoped in-memory recent activity to the default account
+  panel and `useRecentTransactions`/`RecentTransactions` for custom views. Show
+  actual network and wallet-side recovery guidance for unsupported changes.
+
+- Disable automatic retries for all ledger-write mutation hooks, including global
+  QueryClient or explicit mutation retry options. A lost response after ledger
+  acceptance must be reconciled rather than submitting a second time. Existing
+  read-query retry behavior remains configurable.
+
 - Add optional application-backend authentication to PartyLayerKit and ConnectButton,
   with explicit sign-in/sign-out, restored backend session checks, and invalidation
   on observed wallet/party/network changes. Reject stale approvals and revoke late

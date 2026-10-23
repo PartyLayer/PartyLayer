@@ -33,10 +33,16 @@ function Navbar() {
         { prop: 'formatAddress', type: '(partyId: string) => string', description: 'Custom formatter for the connected label. Only used when connectedLabel="custom".' },
         { prop: 'className', type: 'string', description: 'CSS class name for the outer container.' },
         { prop: 'style', type: 'CSSProperties', description: 'Inline styles for the outer container.' },
-        { prop: 'showDisconnect', type: 'boolean', default: 'true', description: 'Whether to show the disconnect option in the connected dropdown.' },
+        { prop: 'showDisconnect', type: 'boolean', default: 'true', description: 'Show the account dropdown and disconnect action. False renders a compact account display without the menu.' },
+        { prop: 'holdings', type: 'AccountHoldings', description: 'Authorized holdings bound to the exact party and CAIP-2 network; shows available and locked balances in the account panel.' },
       ]} />
 
       <H2 id="states">Button States</H2>
+      <P>With optional backend authentication, the same button also offers explicit sign-in and
+        app sign-out. Transactions recorded through useTransactionFlow appear in the account
+        panel automatically. The panel shows the actual connected network, wallet-side change
+        guidance and any supplied authorized holdings. See <A href="/docs/authentication">Authentication</A>,
+        <A href="/docs/transaction-lifecycle">Transaction lifecycle</A> and <A href="/docs/wallet-balances">Wallet balances</A>.</P>
       <P>
         <Code>{'ConnectButton'}</Code> automatically transitions between three states:
       </P>

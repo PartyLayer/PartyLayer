@@ -32,7 +32,8 @@ import { useTheme } from './theme';
 import { useLocale } from './localization';
 import type { TxReceipt } from '@partylayer/core';
 
-export type TransactionToastStatus = 'idle' | 'pending' | 'success' | 'error';
+export type TransactionToastStatus = 'idle' | 'pending' | 'success' | 'error'
+  | 'awaitingApproval' | 'submitted' | 'confirmed' | 'rejected' | 'failed' | 'unknown';
 
 export interface TransactionToastProps {
   /**
@@ -70,12 +71,13 @@ export function TransactionToast({
     return null;
   }
 
-  // Map the status to a theme accent: success and error use their tokens; pending
-  // (and any neutral state) uses the secondary text color.
+  const failed = status === 'error' || status === 'failed' || status === 'rejected';
+  const successful = status === 'confirmed' || status === 'success';
+  // Legacy `success` means the submit call returned, not ledger confirmation.
   const accent =
-    status === 'success'
+    successful
       ? theme.colors.success
-      : status === 'error'
+      : failed
         ? theme.colors.error
         : theme.colors.textSecondary;
 
@@ -83,22 +85,26 @@ export function TransactionToast({
   // error use their tint tokens (green, red); pending (and any neutral state) keeps
   // the neutral surface.
   const background =
-    status === 'success'
+    successful
       ? theme.colors.successBg
-      : status === 'error'
+      : failed
         ? theme.colors.errorBg
         : theme.colors.surface;
 
   // The status line text: a custom message overrides the default.
   const defaultText =
-    status === 'pending'
+    status === 'awaitingApproval' ? t('awaitingApproval')
+      : status === 'confirmed' ? t('txConfirmed')
+      : status === 'rejected' ? t('txRejected')
+      : status === 'unknown' ? t('txUnknown')
+      : status === 'pending'
       ? t('submitting')
-      : status === 'success'
+      : status === 'success' || status === 'submitted'
         ? t('submitted')
         : t('txFailed', { reason: error?.message ?? t('unknownError') });
 
   const detail =
-    status === 'success' && receipt
+    ['success', 'submitted', 'confirmed', 'unknown'].includes(status) && receipt
       ? receipt.updateId ??
         receipt.commandId ??
         // `transactionHash` is optional, so stringify it only when it exists —
@@ -111,7 +117,7 @@ export function TransactionToast({
       lang={locale}
       dir={direction}
       className={className}
-      role={status === 'error' ? 'alert' : 'status'}
+      role={failed ? 'alert' : 'status'}
       data-status={status}
       style={{
         borderInlineStart: `3px solid ${accent}`,
@@ -124,7 +130,7 @@ export function TransactionToast({
         ...style,
       }}
     >
-      <div aria-live={status === 'error' ? 'assertive' : 'polite'} style={{ fontWeight: 600 }}>
+      <div aria-live={failed ? 'assertive' : 'polite'} style={{ fontWeight: 600 }}>
         <bdi dir="auto">{message ?? defaultText}</bdi>
       </div>
 

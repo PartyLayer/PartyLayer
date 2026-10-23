@@ -22,15 +22,17 @@ declare const tealLightTheme: CallableTheme;
 declare const themes: { readonly default: { readonly light: CallableTheme; readonly dark: CallableTheme; }; readonly midnight: { readonly light: CallableTheme; readonly dark: CallableTheme; }; readonly slate: { readonly light: CallableTheme; readonly dark: CallableTheme; }; readonly teal: { readonly light: CallableTheme; readonly dark: CallableTheme; }; readonly gold: { readonly light: CallableTheme; readonly dark: CallableTheme; }; readonly warm: { readonly light: CallableTheme; readonly dark: CallableTheme; }; };
 declare const warmDarkTheme: CallableTheme;
 declare const warmLightTheme: CallableTheme;
-declare function ConnectButton({ label, connectedLabel, accountStatus, formatAddress, className, style, showDisconnect, }: ConnectButtonProps): react_jsx_runtime.JSX.Element;
+declare function ConnectButton({ label, connectedLabel, accountStatus, formatAddress, className, style, showDisconnect, holdings, }: ConnectButtonProps): react_jsx_runtime.JSX.Element;
 declare function CostPreview({ estimate, paid, loading, error, formatCost, className, style, }: CostPreviewProps): react_jsx_runtime.JSX.Element | null;
 declare function PartyAvatar({ id, size, className, style }: PartyAvatarProps): react_jsx_runtime.JSX.Element;
 declare function PartyLayerAuthenticationProvider({ adapter, children }: PartyLayerAuthenticationProviderProps): react_jsx_runtime.JSX.Element;
 declare function PartyLayerKit({ network, appName, children, registryUrl, channel, adapters, additionalAdapters, walletConnect, bron, theme, locale, direction, authentication, walletIcons, walletOrder, sessionOptions, showAttribution, disclaimer, }: PartyLayerKitProps): react_jsx_runtime.JSX.Element;
 declare function PartyLayerLocaleProvider({ locale, direction, children, }: PartyLayerLocaleProviderProps): react_jsx_runtime.JSX.Element;
 declare function PartyLayerProvider({ client, children, sessionOptions, }: PartyLayerProviderProps): react_jsx_runtime.JSX.Element;
+declare function RecentTransactions({ transactions, limit }: { transactions: readonly TransactionFlowRecord[]; limit?: number; }): react_jsx_runtime.JSX.Element | null;
 declare function SynchronizerSwitcher({ networkId, options, onSwitch, className, style, }: SynchronizerSwitcherProps): react_jsx_runtime.JSX.Element | null;
 declare function ThemeProvider({ theme, children }: ThemeProviderProps): react_jsx_runtime.JSX.Element;
+declare function TokenBalances({ owner, holdings, loading, error, formatInstrument }: TokenBalancesProps): react_jsx_runtime.JSX.Element;
 declare function TransactionToast({ status, error, message, receipt, className, style, }: TransactionToastProps): react_jsx_runtime.JSX.Element | null;
 declare function WalletModal({ isOpen, onClose, onConnect, walletIcons: propIcons, walletOrder: propWalletOrder, showAttribution: propShowAttribution, disclaimer: propDisclaimer, showWalletGuide, }: WalletModalProps): react_jsx_runtime.JSX.Element | null;
 declare function createLocalStorage(): SessionStorage;
@@ -49,27 +51,30 @@ declare function useLedgerApi(): { ledgerApi: (params: LedgerApiParams) => Promi
 declare function usePartyLayer(): _partylayer_sdk.CantonConnectClient;
 declare function usePartyLayerContext(): PartyLayerContextValue;
 declare function usePartyState(): UsePartyStateReturn;
+declare function useRecentTransactions(): readonly TransactionFlowRecord[];
 declare function useRegistryStatus(): { status: RegistryStatus | null; refresh: () => Promise<void>; };
 declare function useSession(): UseSessionReturn;
 declare function useSignMessage(): { signMessage: (params: SignMessageParams) => Promise<SignedMessage | null>; isSigning: boolean; error: Error | null; };
 declare function useSignTransaction(): { signTransaction: (params: SignTransactionParams) => Promise<SignedTransaction | null>; isSigning: boolean; error: Error | null; };
 declare function useSubmitTransaction(): { submitTransaction: (params: SubmitTransactionParams) => Promise<TxReceipt | null>; isSubmitting: boolean; error: Error | null; };
 declare function useTheme(): PartyLayerTheme;
+declare function useTransactionFlow(parameters?: UseTransactionFlowParameters): UseTransactionFlowReturn;
 declare function useWalletIcons(): WalletIconMap;
 declare function useWallets(): { wallets: _partylayer_core.WalletInfo[]; isLoading: boolean; error: Error | null; };
 export { AuthenticationChallenge, AuthenticationIdentity, CostEstimation, TrafficCost, toTrafficCost } from '@partylayer/core';
 export { CookieAdapter, CookieSetOptions, CookieStorageOptions, createCookieStorage, documentCookieAdapter } from '@partylayer/session';
 export { RegistryStatus } from '@partylayer/registry-client';
-export { type CallableTheme, PartyLayerProvider as CantonConnectProvider, ConnectButton, type ConnectButtonProps, CostPreview, type CostPreviewProps, type DynamicTheme, NativeCIP0103Adapter, PartyAvatar, type PartyAvatarProps, type PartyLayerAuthenticationAdapter, PartyLayerAuthenticationProvider, type PartyLayerAuthenticationProviderProps, type PartyLayerDirection, PartyLayerKit, type PartyLayerKitProps, type PartyLayerLocale, PartyLayerLocaleProvider, type PartyLayerLocaleProviderProps, PartyLayerProvider, type PartyLayerTheme, type SessionChain, type SynchronizerOption, SynchronizerSwitcher, type SynchronizerSwitcherProps, type ThemeInput, type ThemeOverrides, ThemeProvider, TransactionToast, type TransactionToastProps, type TransactionToastStatus, type UseAccountEffectParameters, type UseAccountReturn, type UseAuthenticationReturn, type UsePartyStateReturn, type UseSessionReturn, type WalletIconMap, WalletModal, type WalletModalProps, accentPresets, createLocalStorage, createNativeAdapter, createSyntheticWalletInfo, createTheme, darkTheme, goldDarkTheme, goldLightTheme, lightTheme, midnightDarkTheme, midnightLightTheme, resolveWalletIcon, slateDarkTheme, slateLightTheme, tealDarkTheme, tealLightTheme, themes, truncatePartyId, useAccount, useAccountEffect, useAuthentication, usePartyLayer as useCantonConnect, useClientSession, useConnect, useDisconnect, useLedgerApi, usePartyLayer, usePartyLayerContext, usePartyState, useRegistryStatus, useSession, useSignMessage, useSignTransaction, useSubmitTransaction, useTheme, useWalletIcons, useWallets, warmDarkTheme, warmLightTheme };
+export { type AccountHoldings, type CallableTheme, PartyLayerProvider as CantonConnectProvider, ConnectButton, type ConnectButtonProps, CostPreview, type CostPreviewProps, type DynamicTheme, NativeCIP0103Adapter, PartyAvatar, type PartyAvatarProps, type PartyLayerAuthenticationAdapter, PartyLayerAuthenticationProvider, type PartyLayerAuthenticationProviderProps, type PartyLayerDirection, PartyLayerKit, type PartyLayerKitProps, type PartyLayerLocale, PartyLayerLocaleProvider, type PartyLayerLocaleProviderProps, PartyLayerProvider, type PartyLayerTheme, RecentTransactions, type SessionChain, type SynchronizerOption, SynchronizerSwitcher, type SynchronizerSwitcherProps, type ThemeInput, type ThemeOverrides, ThemeProvider, TokenBalances, type TokenBalancesProps, type TransactionConfirmation, type TransactionFlowRecord, type TransactionFlowStatus, TransactionToast, type TransactionToastProps, type TransactionToastStatus, type UseAccountEffectParameters, type UseAccountReturn, type UseAuthenticationReturn, type UsePartyStateReturn, type UseSessionReturn, type UseTransactionFlowParameters, type UseTransactionFlowReturn, type WalletIconMap, WalletModal, type WalletModalProps, accentPresets, createLocalStorage, createNativeAdapter, createSyntheticWalletInfo, createTheme, darkTheme, goldDarkTheme, goldLightTheme, lightTheme, midnightDarkTheme, midnightLightTheme, resolveWalletIcon, slateDarkTheme, slateLightTheme, tealDarkTheme, tealLightTheme, themes, truncatePartyId, useAccount, useAccountEffect, useAuthentication, usePartyLayer as useCantonConnect, useClientSession, useConnect, useDisconnect, useLedgerApi, usePartyLayer, usePartyLayerContext, usePartyState, useRecentTransactions, useRegistryStatus, useSession, useSignMessage, useSignTransaction, useSubmitTransaction, useTheme, useTransactionFlow, useWalletIcons, useWallets, warmDarkTheme, warmLightTheme };
 import * as _partylayer_core from '@partylayer/core';
 import * as _partylayer_sdk from '@partylayer/sdk';
 import * as react_jsx_runtime from 'react/jsx-runtime';
 import { AuthenticationIdentity, AuthenticationChallenge } from '@partylayer/core/authentication';
-import { CostEstimation, PaidTrafficCost, TrafficCost, TxReceipt as TxReceipt$1 } from '@partylayer/core';
 import { PartyLayerClient, Session, WalletInfo, ConnectOptions, LedgerApiParams, LedgerApiResult, RegistryStatus, SignMessageParams, SignedMessage, SignTransactionParams, SignedTransaction, SubmitTransactionParams, TxReceipt, WalletAdapter, AdapterClass, OfficialProviderAdapter, OfficialAdapterFactory, PartyLayerConfig, WalletId, CIP0103Provider, CapabilityKey, AdapterDetectResult, AdapterContext, PartyId, AdapterConnectResult, DiscoveredProvider, Cip0103StatusForDetection } from '@partylayer/sdk';
 import { ReactNode } from 'react';
 import { SessionStoreOptions, SessionStore, SessionAccount, SessionStatus, SessionState, SessionEvent, SessionStorage } from '@partylayer/session';
-interface ConnectButtonProps { label?: string; connectedLabel?: 'address' | 'wallet' | 'custom'; accountStatus?: 'avatar' | 'address' | 'full'; formatAddress?: (partyId: string) => string; className?: string; style?: React.CSSProperties; showDisconnect?: boolean; }
+import { TokenHoldingRef, TokenInstrumentId, CostEstimation, PaidTrafficCost, TrafficCost, TxReceipt as TxReceipt$1, SubmitTransactionParams as SubmitTransactionParams$1 } from '@partylayer/core';
+interface AccountHoldings { partyId: string; networkId: string; holdings: readonly TokenHoldingRef[]; loading?: boolean; error?: Error | null; }
+interface ConnectButtonProps { label?: string; connectedLabel?: 'address' | 'wallet' | 'custom'; accountStatus?: 'avatar' | 'address' | 'full'; formatAddress?: (partyId: string) => string; className?: string; style?: React.CSSProperties; showDisconnect?: boolean; holdings?: AccountHoldings; }
 interface CostPreviewProps { estimate?: CostEstimation | null; paid?: PaidTrafficCost | null; loading?: boolean; error?: Error | null; formatCost?: (cost: TrafficCost) => React.ReactNode; className?: string; style?: React.CSSProperties; }
 interface DynamicTheme { lightMode: PartyLayerTheme; darkMode: PartyLayerTheme; }
 interface EnrichedProvider extends DiscoveredProvider { status?: Cip0103StatusForDetection; matchedWallet?: WalletInfo; }
@@ -86,17 +91,23 @@ interface SynchronizerOption { networkId: string; label?: string; }
 interface SynchronizerSwitcherProps { networkId?: string | null; options?: SynchronizerOption[]; onSwitch?: (networkId: string) => void; className?: string; style?: React.CSSProperties; }
 interface ThemeOverrides { accentColor?: string; accentColorForeground?: string; borderRadius?: 'none' | 'small' | 'medium' | 'large' | string; overlayBlur?: 'none' | 'small' | 'large' | string; fontStack?: 'system' | 'rounded' | string; colors?: Partial<PartyLayerTheme['colors']>; }
 interface ThemeProviderProps { theme: ThemeInput; children: React.ReactNode; }
+interface TokenBalancesProps { owner: string; holdings: readonly TokenHoldingRef[]; loading?: boolean; error?: Error | null; formatInstrument?: (instrument: TokenInstrumentId) => React.ReactNode; }
+interface TransactionFlowRecord { readonly id: string; readonly walletId: string; readonly partyId: string; readonly networkId: string; readonly status: TransactionFlowStatus; readonly createdAt: number; readonly updatedAt: number; readonly receipt?: TxReceipt$1; readonly updateId?: string; readonly error?: Error; }
 interface TransactionToastProps { status?: TransactionToastStatus; error?: Error | null; message?: React.ReactNode; receipt?: TxReceipt$1 | null; className?: string; style?: React.CSSProperties; }
 interface UseAccountEffectParameters { onConnect?: (data: { account: SessionAccount | null; accounts: readonly SessionAccount[]; networkId: string | null; }) => void; onDisconnect?: () => void; onPartyChanged?: (data: { previous: string | null; current: string | null; }) => void; }
 interface UseAccountReturn { party: string | null; address: string | null; account: SessionAccount | null; accounts: readonly SessionAccount[]; status: SessionStatus; isConnected: boolean; isConnecting: boolean; isReconnecting: boolean; isDisconnected: boolean; networkId: string | null; chain: SessionChain | null; lastError: Error | null; }
 interface UseAuthenticationReturn { status: 'loading' | 'unauthenticated' | 'authenticated'; identity: AuthenticationIdentity | null; isPending: boolean; error: Error | null; signIn(): Promise<void>; signOut(): Promise<void>; refresh(): Promise<void>; }
 interface UsePartyStateReturn { party: string | null; account: SessionAccount | null; accounts: readonly SessionAccount[]; status: SessionStatus; isConnected: boolean; isDisconnected: boolean; networkId: string | null; lastError: Error | null; }
 interface UseSessionReturn extends SessionState { isConnected: boolean; isConnecting: boolean; isReconnecting: boolean; isDisconnected: boolean; connect(params?: Record<string, unknown>): Promise<SessionState>; disconnect(): Promise<void>; restore(): Promise<SessionState>; on<T extends SessionEvent['type']>(event: T, handler: (event: Extract<SessionEvent, { type: T; }>) => void): () => void; }
+interface UseTransactionFlowParameters { confirm?(parameters: { transaction: TransactionFlowRecord; signal: AbortSignal; }): Promise<TransactionConfirmation>; confirmationTimeoutMs?: number; }
+interface UseTransactionFlowReturn { transaction: TransactionFlowRecord | null; transactions: readonly TransactionFlowRecord[]; isPending: boolean; submitTransaction(parameters: SubmitTransactionParams$1): Promise<TransactionFlowRecord>; reconcile(id: string): Promise<TransactionFlowRecord>; }
 interface WalletModalProps { isOpen: boolean; onClose: () => void; onConnect?: (sessionId: string) => void; walletIcons?: WalletIconMap; walletOrder?: readonly string[]; showAttribution?: boolean; disclaimer?: React.ReactNode; showWalletGuide?: boolean; }
 type CallableTheme = ThemeFn & PartyLayerTheme;
 type PartyLayerDirection = 'ltr' | 'rtl';
 type PartyLayerLocale = 'en' | 'tr';
 type ThemeFn = (overrides?: ThemeOverrides) => PartyLayerTheme;
 type ThemeInput = 'light' | 'dark' | 'auto' | PartyLayerTheme | DynamicTheme;
-type TransactionToastStatus = 'idle' | 'pending' | 'success' | 'error';
+type TransactionConfirmation = { status: 'confirmed'; updateId: string; } | { status: 'failed'; reason: string; } | { status: 'unknown'; reason?: string; };
+type TransactionFlowStatus = 'awaitingApproval' | 'submitted' | 'confirmed' | 'rejected' | 'failed' | 'unknown';
+type TransactionToastStatus = 'idle' | 'pending' | 'success' | 'error' | 'awaitingApproval' | 'submitted' | 'confirmed' | 'rejected' | 'failed' | 'unknown';
 type WalletIconMap = Record<string, string>;

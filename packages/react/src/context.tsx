@@ -28,6 +28,7 @@ import type {
   WalletInfo,
 } from '@partylayer/sdk';
 import { createSessionStore, type SessionStore, type SessionStoreOptions } from '@partylayer/session';
+import { TransactionHistoryProvider } from './transaction-history';
 
 interface PartyLayerContextValue {
   client: PartyLayerClient | null;
@@ -221,7 +222,7 @@ export function PartyLayerProvider({
         store,
       }}
     >
-      {children}
+      <TransactionHistoryProvider client={client} session={session}>{children}</TransactionHistoryProvider>
     </PartyLayerContext.Provider>
   );
 }

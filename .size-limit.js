@@ -49,8 +49,10 @@ module.exports = [
     // English/Turkish UI dictionaries and SSR-safe locale/direction context add ~2.8 kB.
     // Optional authentication actions add ~0.42 kB. Backend challenge helpers
     // live in a separate core subpath so ordinary SDK/RN consumers do not pay for them.
-    // Measured 33.85 kB gzip; keep ~0.4 kB of headroom.
-    limit: '34.25 kB',
+    // In-memory recent activity, ledger-status labels and network guidance add ~1.5 kB.
+    // Exact-decimal, issuer-separated holdings UI adds ~1.2 kB.
+    // Measured 36.59 kB gzip; keep ~0.41 kB of headroom.
+    limit: '37 kB',
   },
   {
     name: 'react/query: useTokenHoldings',

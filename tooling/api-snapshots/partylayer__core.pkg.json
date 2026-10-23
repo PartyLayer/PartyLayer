@@ -5,6 +5,11 @@
       "require": "./dist/index.js",
       "types": "./dist/index.d.ts"
     },
+    "./amounts": {
+      "import": "./dist/amounts.mjs",
+      "require": "./dist/amounts.js",
+      "types": "./dist/amounts.d.ts"
+    },
     "./authentication": {
       "import": "./dist/authentication.mjs",
       "require": "./dist/authentication.js",

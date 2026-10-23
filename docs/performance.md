@@ -29,9 +29,10 @@ configured WalletConnect and Bron transports also load lazily. The current measu
 SDK contribution is 48.2 kB gzip (48.5 kB budget); React Native headless is 48.42 kB
 (48.75 kB budget). These are initial bundles; opening the picker downloads eligible wallet
 chunks, and connecting WalletConnect loads its underlying transport. Run `pnpm gate:size`
-for the current numbers. The React connection surface measures about 33.9 kB gzip with
-a 34.25 kB budget after adding keyboard behavior, English/Turkish UI and optional
-authentication actions. Server challenge/verification helpers use a separate
+for the current numbers. The React connection surface measures about 36.6 kB gzip with
+a 37 kB budget after adding keyboard behavior, English/Turkish UI, optional
+authentication actions, scoped recent activity, network guidance and exact-decimal
+holdings UI. Server challenge/verification helpers use a separate
 `@partylayer/core/authentication` subpath; the ordinary SDK and React Native headless
 bundles retain their prior sizes. The older comparisons below remain dated historical measurements.
 

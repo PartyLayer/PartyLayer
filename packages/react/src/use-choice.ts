@@ -47,6 +47,8 @@ export interface UseChoiceParameters<R, V> {
   exercise: (variables: V, signal?: AbortSignal) => Promise<R>;
   /**
    * Pass-through TanStack `useMutation` options (e.g. `onSuccess`, `onError`).
+   * Automatic retry is always disabled, including global/per-mutation retry settings.
+   * Reconcile an unknown ledger result before an explicit new submission.
    * `mutationFn` and `mutationKey` are managed by the hook and cannot be overridden.
    * Optimistic updates: `onMutate`/`onError`/`onSettled` pass through here. See
    * docs/react-optimistic-updates.md (and the `optimisticMutationOptions` helper).
@@ -70,6 +72,8 @@ export function useChoice<R, V>(
     ...mutation,
     mutationKey: partyLayerKeys.exerciseChoice(),
     // mutationFn is the dApp's fetcher. PartyLayer does not own ledger transport.
+    // A lost response can follow a successful ledger write. Never replay automatically.
+    retry: false,
     mutationFn: (variables) => exercise(variables),
   });
 

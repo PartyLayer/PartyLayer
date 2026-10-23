@@ -124,8 +124,11 @@ console.log('Single npm command: ESM, CommonJS, SSR initialization and all offic
 import assert from 'node:assert/strict';
 import { createRequire } from 'node:module';
 import { createAuthenticationChallenge, formatAuthenticationMessage } from '@partylayer/core/authentication';
+import { sumTokenAmounts } from '@partylayer/core/amounts';
 const require = createRequire(import.meta.url);
 assert.equal(typeof require('@partylayer/core/authentication').verifyAuthenticationProof, 'function');
+assert.equal(require('@partylayer/core/amounts').sumTokenAmounts(['0.1', '0.2']), '0.3');
+assert.equal(sumTokenAmounts(['9007199254740993.1', '0.2']), '9007199254740993.3');
 const challenge = createAuthenticationChallenge({ origin: 'https://app.example', partyId: 'party::packed',
   networkId: 'canton:da-devnet', nonce: 'packed-consumer-nonce-1234567890abcdef' });
 assert.ok(formatAuthenticationMessage(challenge).includes('Party: party::packed'));

@@ -108,6 +108,17 @@ function FocusHarness({ view }: { view: string }) {
 }
 
 describe('connected account menu', () => {
+  it('shows the actual network and wallet-side recovery for a mismatched connection', () => {
+    connected();
+    state.session = { ...state.session!, network: 'mainnet',
+      networkMismatch: { expected: 'canton:da-devnet', actual: 'canton:da-mainnet' } };
+    render(<ConnectButton />);
+    const trigger = screen.getByRole('button', { name: 'Wrong network' });
+    fireEvent.click(trigger);
+    expect(screen.getByText('Network: Mainnet')).not.toBeNull();
+    expect(screen.getByText('Switch to Devnet in your wallet, then reconnect.')).not.toBeNull();
+    expect(screen.getByRole('menuitem', { name: 'Disconnect' })).not.toBeNull();
+  });
   it('supports arrow navigation, Home/End and Escape with focus returning to the trigger', () => {
     connected();
     render(<ConnectButton accountStatus="avatar" />);

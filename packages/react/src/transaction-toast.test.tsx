@@ -133,4 +133,19 @@ describe('TransactionToast', () => {
     expect(root.getAttribute('role')).toBe('status');
     expect(root.style.backgroundColor).toBe(normalizeColor(lightTheme.colors.surface));
   });
+
+  it.each([
+    ['awaitingApproval', 'Approve the transaction in your wallet'],
+    ['submitted', 'Transaction submitted'],
+    ['confirmed', 'Transaction confirmed on the ledger'],
+    ['rejected', 'Transaction rejected'],
+    ['unknown', 'Transaction outcome unknown.'],
+  ] as const)('distinguishes the %s lifecycle state', (status, text) => {
+    const { container } = renderToast(<TransactionToast status={status} />);
+    expect(container.textContent).toContain(text);
+    if (status === 'submitted' || status === 'unknown') {
+      expect(container.textContent).not.toContain('confirmed');
+      expect((container.firstElementChild as HTMLElement).style.backgroundColor).toBe(normalizeColor(lightTheme.colors.surface));
+    }
+  });
 });

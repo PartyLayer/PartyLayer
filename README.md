@@ -802,6 +802,16 @@ network, nonce and expiry in the signed bytes; the backend independently verifie
 signature/key authority and manages its own session. Wallet connection alone is
 not application authentication.
 
+The [transaction lifecycle](./docs/transaction-lifecycle.md) provides one wallet
+submission followed by independent ledger reconciliation. The standard account
+panel displays this flow's recent activity by wallet/party/network. Write hooks
+never automatically retry a potentially accepted ledger request.
+
+The same account panel can display [authorized holdings](./docs/wallet-balances.md)
+with exact decimal amounts, distinct issuers and separate locked/available totals.
+Applications supply the private ledger data; a failed or unavailable read is never
+reported as a zero balance.
+
 Release acceptance for the default wallet platform:
 
 - One installation supplies the reviewed wallet runtimes, with no per-wallet developer wiring.

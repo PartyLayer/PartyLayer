@@ -23,6 +23,8 @@ import { partyLayerKeys } from './query-keys';
 export interface UseSubmitTransactionParameters {
   /**
    * Pass-through TanStack `useMutation` options (e.g. `onSuccess`, `onError`).
+   * Automatic retry is always disabled, including global/per-mutation retry settings.
+   * Reconcile an unknown ledger result before an explicit new submission.
    * `mutationFn` and `mutationKey` are managed by the hook and cannot be overridden.
    * Optimistic updates: `onMutate`/`onError`/`onSettled` pass through here. See
    * docs/react-optimistic-updates.md (and the `optimisticMutationOptions` helper).
@@ -49,6 +51,8 @@ export function useSubmitTransaction(
     ...parameters.mutation,
     mutationKey: partyLayerKeys.submitTransaction(),
     // Underlying submit path is UNCHANGED, same call the v1 hook makes.
+    // A lost response can follow a successful ledger write. Never replay automatically.
+    retry: false,
     mutationFn: (params) => client.submitTransaction(params),
   });
 

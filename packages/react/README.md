@@ -703,7 +703,8 @@ For the full upgrade (renames, the query peer, and the provider change), see the
 ## Vue parity
 
 The Vue bindings ship as [`@partylayer/vue`](https://www.npmjs.com/package/@partylayer/vue)
-with the same surface as composables.
+with the shared connection/account composables below. The new authentication and
+transaction-journal React components/hooks do not imply complete Vue feature parity.
 
 | React (`@partylayer/react`) | Vue (`@partylayer/vue`) |
 |---|---|
@@ -724,3 +725,17 @@ and refresh. Implement server challenge storage, CSRF/browser binding, exact mes
 signature verification and independent party-key authorization before enabling it.
 See the [authentication guide](../../docs/authentication.md); a wallet connection
 or client-side status does not authorize backend requests.
+
+Use `useTransactionFlow` to submit once and independently reconcile ledger outcomes.
+Transactions from this hook appear in the default account panel automatically;
+`useRecentTransactions` and `RecentTransactions` support custom activity views.
+The journal is private in-memory UI activity, scoped by wallet/party/network, not
+a full ledger indexer. An unknown outcome never triggers automatic submission.
+All ledger-write mutation hooks ignore automatic retry settings; check ledger
+state before an explicit new attempt. See [Transaction lifecycle](../../docs/transaction-lifecycle.md).
+
+Pass authorized, party/network-bound `holdings` to `ConnectButton` to show balances
+in the same account panel, or use `TokenBalances` for a custom view. Exact-decimal
+summaries separate instrument admin/id and reported locks. Data comes from your
+authorized backend or a supported wallet ledger proxy; unavailable reads do not
+become zero balances. See [Wallet balances](../../docs/wallet-balances.md).

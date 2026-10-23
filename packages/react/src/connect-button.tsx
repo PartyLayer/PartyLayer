@@ -17,6 +17,9 @@ import { useLocale } from './localization';
 import { WalletModal } from './modal';
 import { useWalletIcons, resolveWalletIcon } from './kit';
 import { useOptionalAuthentication } from './authentication';
+import { RecentTransactions, useRecentTransactions } from './transaction-history';
+import { TokenBalances, type AccountHoldings } from './token-balances';
+import { toCAIP2Network } from '@partylayer/core';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -37,8 +40,10 @@ export interface ConnectButtonProps {
   className?: string;
   /** Additional inline styles */
   style?: React.CSSProperties;
-  /** Show disconnect option in dropdown (default: true) */
+  /** Show the account dropdown and disconnect action (default: true); false is a compact display without a menu. */
   showDisconnect?: boolean;
+  /** Authorized holdings from your app/ledger read, bound to the exact party and CAIP-2 network. */
+  holdings?: AccountHoldings;
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -239,6 +244,7 @@ export function ConnectButton({
   className,
   style,
   showDisconnect = true,
+  holdings,
 }: ConnectButtonProps) {
   const session = useClientSession();
   const { isConnecting } = useConnect();
@@ -248,6 +254,7 @@ export function ConnectButton({
   const theme = useTheme();
   const { t, locale, direction } = useLocale();
   const authentication = useOptionalAuthentication();
+  const recentTransactions = useRecentTransactions();
 
   // Match the connected session's wallet to its registry entry (name + icon),
   // the same source the modal uses. Falls back gracefully when the wallet has no
@@ -348,6 +355,7 @@ export function ConnectButton({
 
   const getConnectedText = (): string => {
     if (!session) return '';
+    if (session.networkMismatch) return t('wrongNetwork');
     const partyId = String(session.partyId);
 
     switch (connectedLabel) {
@@ -365,6 +373,10 @@ export function ConnectButton({
   const brandYellow = theme.colors.primary;      // #FFCC00
   const brandHover = theme.colors.primaryHover;   // #E6B800
   const textOnBrand = theme.colors.primaryForeground ?? '#0B0F1A';
+  const connectionColor = session?.networkMismatch ? theme.colors.error : theme.colors.success;
+  const networkLabel = (network: string) => network === 'devnet' || network === 'canton:da-devnet' ? t('networkDevnet')
+    : network === 'testnet' || network === 'canton:da-testnet' ? t('networkTestnet')
+    : network === 'mainnet' || network === 'canton:da-mainnet' ? t('networkMainnet') : network;
   const authenticationError = authentication?.error && <span role="alert" style={{ display: 'block', maxWidth: '320px',
     color: theme.colors.error, fontFamily: theme.fontFamily, fontSize: '12px', overflowWrap: 'anywhere' }}>
     <bdi dir="auto">{t('authenticationFailed', { reason: authentication.error.message })}</bdi>
@@ -504,7 +516,7 @@ export function ConnectButton({
       <button
         type="button"
         ref={triggerRef}
-        aria-label={accountStatus === 'avatar' ? t('account', { party: connectedPartyId }) : undefined}
+        aria-label={accountStatus === 'avatar' ? `${session?.networkMismatch ? `${t('wrongNetwork')}: ` : ''}${t('account', { party: connectedPartyId })}` : undefined}
         aria-haspopup={showDisconnect ? 'menu' : undefined}
         aria-expanded={showDisconnect ? dropdownOpen : undefined}
         aria-controls={dropdownOpen && showDisconnect ? menuId : undefined}
@@ -552,7 +564,7 @@ export function ConnectButton({
             width: '8px',
             height: '8px',
             borderRadius: '50%',
-            backgroundColor: theme.colors.success,
+            backgroundColor: connectionColor,
             flexShrink: 0,
             boxShadow: `0 0 0 2px ${theme.colors.surface}`,
           }} />
@@ -566,7 +578,7 @@ export function ConnectButton({
               width: '8px',
               height: '8px',
               borderRadius: '50%',
-              backgroundColor: theme.colors.success,
+              backgroundColor: connectionColor,
               border: `2px solid ${theme.colors.surface}`,
             }} />
           </span>
@@ -598,7 +610,7 @@ export function ConnectButton({
 
       {authentication && authentication.status !== 'authenticated' && (
         <button type="button"
-          disabled={authentication.status === 'loading' || authentication.isPending}
+          disabled={authentication.status === 'loading' || authentication.isPending || !!session?.networkMismatch}
           aria-busy={authentication.isPending}
           onClick={() => { void authentication.signIn().catch(() => {}); }}
           style={{ border: 'none', borderRadius: theme.borderRadius, padding: '8px 14px',
@@ -612,11 +624,6 @@ export function ConnectButton({
       {/* Dropdown Menu */}
       {dropdownOpen && showDisconnect && (
         <div
-          ref={menuRef}
-          id={menuId}
-          role="menu"
-          aria-label={t('walletAccount')}
-          onKeyDown={handleMenuKeyDown}
           className="pl-account-menu"
           style={{
             position: 'absolute',
@@ -630,7 +637,9 @@ export function ConnectButton({
               : '0 4px 16px rgba(15,23,42,0.08), 0 16px 48px rgba(15,23,42,0.12)',
             minWidth: '250px',
             zIndex: 1000,
-            overflow: 'hidden',
+            overflowY: 'auto',
+            maxHeight: 'min(75vh, 600px)',
+            maxWidth: 'calc(100vw - 32px)',
             transformOrigin: direction === 'rtl' ? 'top left' : 'top right',
           }}
         >
@@ -666,16 +675,16 @@ export function ConnectButton({
                   width: '6px',
                   height: '6px',
                   borderRadius: '50%',
-                  backgroundColor: theme.colors.success,
+                  backgroundColor: connectionColor,
                 }} />
                 <span style={{
                   fontSize: '10px',
                   fontWeight: 600,
-                  color: theme.colors.success,
+                  color: connectionColor,
                   textTransform: 'uppercase',
                   letterSpacing: '0.6px',
                 }}>
-                  <bdi dir="auto">{t('connected')}</bdi>
+                  <bdi dir="auto">{t(session?.networkMismatch ? 'wrongNetwork' : 'connected')}</bdi>
                 </span>
               </div>
               <div
@@ -704,11 +713,26 @@ export function ConnectButton({
               }}>
                 {walletName}
               </div>
+              {session?.network && <div style={{ marginTop: '4px', color: theme.colors.textSecondary, fontSize: '11px' }}>
+                <bdi dir="auto">{t('accountNetwork', { network: networkLabel(String(session.network)) })}</bdi>
+              </div>}
             </div>
           </div>
 
+          <div style={{ padding: '10px 16px', maxWidth: '320px', color: session?.networkMismatch ? theme.colors.error : theme.colors.textSecondary,
+            fontFamily: theme.fontFamily, fontSize: '11px', lineHeight: 1.5 }}>
+            <bdi dir="auto">{session?.networkMismatch
+              ? t('switchNetworkInWallet', { network: networkLabel(session.networkMismatch.expected) }) : t('switchAccountInWallet')}</bdi>
+          </div>
+
           {/* Action rows: icon-led, aligned, comfortable spacing. */}
-          <div style={{ padding: '6px' }}>
+          <RecentTransactions transactions={recentTransactions} />
+          {holdings && session && holdings.partyId === String(session.partyId) &&
+            holdings.networkId === toCAIP2Network(session.network).networkId && (
+              <TokenBalances owner={holdings.partyId} holdings={holdings.holdings} loading={holdings.loading} error={holdings.error} />
+            )}
+          <div ref={menuRef} id={menuId} role="menu" aria-label={t('walletAccount')}
+            onKeyDown={handleMenuKeyDown} style={{ padding: '6px' }}>
             {authentication?.status === 'authenticated' && (
               <button type="button" role="menuitem" tabIndex={-1}
                 onClick={() => { setDropdownOpen(false); triggerRef.current?.focus(); void authentication.signOut().catch(() => {}); }}

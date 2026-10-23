@@ -7,6 +7,11 @@
   "module": "./dist/index.mjs",
   "types": "./dist/index.d.ts",
   "exports": {
+    "./amounts": {
+      "types": "./dist/amounts.d.ts",
+      "import": "./dist/amounts.mjs",
+      "require": "./dist/amounts.js"
+    },
     "./authentication": {
       "types": "./dist/authentication.d.ts",
       "import": "./dist/authentication.mjs",

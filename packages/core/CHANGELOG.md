@@ -4,6 +4,11 @@
 
 ### Minor Changes
 
+- Add the server-safe `@partylayer/core/amounts` helper for exact decimal token
+  sums, and centralize the shared Holding/Lock/reference types without changing
+  their existing React API shapes. Ordinary wallet client bundles do not import
+  authentication or amount helpers unless needed.
+
 - Add server-safe Canton application authentication challenge/message helpers and
   verification orchestration with exact origin/identity/time binding and atomic
   nonce consumption. Require application-owned signature AND party-key authorization;

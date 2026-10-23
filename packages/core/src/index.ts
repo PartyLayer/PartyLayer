@@ -16,6 +16,7 @@ export * from './network';
 export * from './cost';
 export * from './transfer';
 export type { AuthenticationIdentity, AuthenticationChallenge } from './authentication';
+export type { TokenLock, TokenHolding, TokenHoldingRef } from './token-holdings';
 export { DeepLinkTransport, createBrowserDeepLinkPlatform } from './transport/deeplink';
 export type { DeepLinkPlatform, DeepLinkCallback } from './transport/deeplink';
 export { PopupTransport } from './transport/popup';

@@ -254,7 +254,8 @@ import { ConnectButton } from '@partylayer/react';
 | `formatAddress` | `(partyId: string) => string` |, | Custom address formatter |
 | `className` | `string` |, | CSS class |
 | `style` | `CSSProperties` |, | Inline styles |
-| `showDisconnect` | `boolean` | `true` | Show disconnect in dropdown |
+| `showDisconnect` | `boolean` | `true` | Show account dropdown and disconnect; false is a compact display without the menu |
+| `holdings` | `AccountHoldings` | Omitted | Authorized holdings bound to exact party and CAIP-2 network; rendered in the account panel only on a scope match |
 
 **States:**
 - **Disconnected**: Brand yellow button, opens WalletModal on click
@@ -265,6 +266,37 @@ The account dropdown exposes menu semantics and keyboard navigation: Arrow Up/Do
 Home/End, Escape to close and restore the trigger, and Tab to leave. The wallet
 dialog moves focus inside, contains Tab navigation and restores the opener on close.
 These controls do not submit an enclosing application form.
+
+The account panel shows the connected network, wrong-network recovery guidance,
+and recent activity recorded through `useTransactionFlow`. Account/network changes
+are performed in the wallet; no nonstandard switch method is implied.
+
+### Transaction flow and recent activity
+
+`useTransactionFlow({ confirm?, confirmationTimeoutMs? })` returns `transaction`,
+`transactions`, `isPending`, `submitTransaction(params)` and `reconcile(id)`.
+Its lifecycle status is `awaitingApproval`, `submitted`, `confirmed`, `rejected`,
+`failed` or `unknown`. Only a read-only application ledger lookup with a real
+update id produces `confirmed`; no acknowledgement or time delay does so.
+
+`PartyLayerProvider`/`PartyLayerKit` includes the in-memory journal, consumed by
+`ConnectButton` and `useRecentTransactions()`. `RecentTransactions` accepts
+`transactions` and optional `limit` for a custom view. Existing direct SDK and
+mutation calls are not automatically journaled. `TransactionToast` accepts these
+six lifecycle states as well as its existing `idle`/`pending`/`success`/`error`
+states; legacy `success` still says submitted, not confirmed.
+
+Ledger-write query hooks always set `retry: false`, overriding global and explicit
+retry options to prevent replay after a possibly accepted request. Read-query
+retries are unaffected. See [Transaction lifecycle](./transaction-lifecycle.md).
+
+`TokenBalances` accepts `owner`, `holdings`, `loading`, `error` and an optional
+`formatInstrument({ admin, id })`. The query subpath exports
+`summarizeTokenHoldings(holdings, owner)` and `sumTokenAmounts(amounts)` for exact
+decimal string summaries. The framework-free server/vanilla summation helper is
+also available from `@partylayer/core/amounts`. Common Holding types now live in
+core and remain re-exported through the same existing React/query names.
+See [Wallet balances](./wallet-balances.md) for authorized read/data requirements.
 
 ### PartyLayerLocaleProvider
 
