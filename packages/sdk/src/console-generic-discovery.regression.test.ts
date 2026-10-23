@@ -368,7 +368,7 @@ describe('ConsoleAdapter behavior unchanged (smoke, no live extension)', () => {
     mockConsoleWallet.getActiveNetwork.mockResolvedValue({ id: 'devnet' });
     mockConsoleWallet.status.mockResolvedValue({ provider: { id: CONSOLE_ID, providerType: 'extension' } });
     mockConsoleWallet.signMessage.mockResolvedValue('0xsignature');
-    mockConsoleWallet.submitCommands.mockResolvedValue({ signature: '0xupdateid' });
+    mockConsoleWallet.submitCommands.mockResolvedValue({ status: true, signature: '0xsignature' });
 
     const adapter = new ConsoleAdapter({ target: 'remote' });
     expect(String(adapter.walletId)).toBe('console');
@@ -401,7 +401,7 @@ describe('ConsoleAdapter behavior unchanged (smoke, no live extension)', () => {
 
     // submitTransaction: SDK submitCommands with waitForFinalization; returns a TxReceipt.
     const receipt = await adapter.submitTransaction(ctx, session, { signedTx: { commands: [] } } as never);
-    expect(String(receipt.transactionHash)).toBe('0xupdateid');
+    expect(receipt.transactionHash).toBeUndefined();
     expect(typeof receipt.submittedAt).toBe('number');
     expect(mockConsoleWallet.submitCommands).toHaveBeenCalledWith(
       expect.objectContaining({ waitForFinalization: 5000 }),

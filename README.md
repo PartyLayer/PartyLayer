@@ -785,6 +785,12 @@ Want to add support for a new wallet? See the [Wallet Provider Guide](./docs/wal
 
 ## Roadmap
 
+The default wallet release is the foundation of the
+[Canton wallet platform roadmap](./docs/platform-roadmap.md), not a declaration of
+complete RainbowKit feature parity. The full roadmap includes authentication,
+account/party and network journeys, transaction history, localization,
+accessibility, dependency maintenance and final live wallet acceptance.
+
 The default integration is PartyLayer's ready-made `ConnectButton` and connect modal.
 Every React starter uses that component; the modal shows **Powered by PartyLayer** by
 default. Framework-specific starters carry the same attribution. Custom UI and attribution

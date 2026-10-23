@@ -16,7 +16,7 @@ const packs = join(staging, 'packs');
 await mkdir(packs);
 const run = async (command, args, cwd = root) => {
   try {
-    return await exec(command, args, { cwd, maxBuffer: 16 * 1024 * 1024,
+    return await exec(command, args, { cwd, timeout: 10 * 60_000, maxBuffer: 16 * 1024 * 1024,
       env: { ...process.env, NEXT_TELEMETRY_DISABLED: '1', CI: 'true' } });
   } catch (error) {
     throw new Error(`${command} ${args.join(' ')} failed in ${cwd}\n${error.stdout ?? ''}\n${error.stderr ?? ''}`);
@@ -56,7 +56,7 @@ const server = createServer((req, res) => {
     let metadata = publishedMetadata.get(pkg.name);
     if (!metadata) {
       metadata = fetch(`https://registry.npmjs.org/${encodeURIComponent(pkg.name)}`,
-        { headers: { accept: 'application/vnd.npm.install-v1+json' } })
+        { signal: AbortSignal.timeout(30_000), headers: { accept: 'application/vnd.npm.install-v1+json' } })
         .then(async response => response.ok ? response.json() : {});
       publishedMetadata.set(pkg.name, metadata);
     }
@@ -81,6 +81,7 @@ try {
     name: 'packed-wallet-consumer', private: true, type: 'module',
     dependencies: { react: '^18.3.1', 'react-dom': '^18.3.1' },
   }));
+  console.log('Installing the single-command React consumer…');
   await run('npm', ['install', '@partylayer/react', '@tanstack/react-query', ...npmFlags], minimal);
   const beta = await readFile(join(root, 'registry/v1/beta/registry.json'), 'utf8');
   await writeFile(join(minimal, 'registry.json'), beta);
@@ -108,6 +109,7 @@ try {
 } finally { client.destroy(); }
 console.log('Single npm command: ESM, CommonJS, SSR initialization and all official defaults passed');
 `);
+  console.log('Probing ESM, CommonJS, SSR and default wallet discovery…');
   const probe = await run('node', ['probe.mjs'], minimal);
   console.log(probe.stdout.trim());
 
@@ -117,7 +119,9 @@ console.log('Single npm command: ESM, CommonJS, SSR initialization and all offic
     console.log(`Checking packed CLI and clean ${template} consumer…`);
     await run('npm', ['exec', '--yes', `--registry=${registry}`, `--package=create-partylayer-app@${cliVersion}`,
       '--', 'create-partylayer-app', target, '--template', template, '--pm', 'npm', '--no-install', '--no-git'], staging);
+    console.log(`Installing ${template} dependencies…`);
     await run('npm', ['install', ...npmFlags], target);
+    console.log(`Building ${template}…`);
     const built = await run('npm', ['run', 'build'], target);
     await writeFile(join(staging, `${template}-build.log`), built.stdout + built.stderr);
     console.log(`Packed CLI → ${template}: clean npm installation and production build passed`);
@@ -136,5 +140,6 @@ console.log('Single npm command: ESM, CommonJS, SSR initialization and all offic
     await copyFile(join(staging, `${template}-build.log`), join(evidence, `${template}-build.log`));
   }
 } finally {
+  server.closeAllConnections();
   await new Promise(resolve => server.close(resolve));
 }

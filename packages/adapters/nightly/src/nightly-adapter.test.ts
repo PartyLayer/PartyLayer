@@ -309,14 +309,14 @@ describe('NightlyAdapter', () => {
       expect(typeof receipt.submittedAt).toBe('number');
     });
 
-    it('falls back to signature as the hash when updateId is absent', async () => {
+    it('returns an unconfirmed acknowledgement when updateId is absent', async () => {
       await connectedAdapter({
         submitResponse: { type: 'sign_request_approved', data: { signature: 'sig-99' } },
       });
       const receipt = await adapter.submitTransaction(ctx, createMockSession(), {
         signedTx: { command: {}, disclosedContracts: [] },
       });
-      expect(String(receipt.transactionHash)).toBe('sig-99');
+      expect(receipt.transactionHash).toBeUndefined();
     });
 
     it('rejects (UserRejectedError) on sign_request_rejected', async () => {
@@ -601,26 +601,26 @@ describe('NightlyAdapter', () => {
         signedTx: { command: {}, disclosedContracts: [] },
       });
 
-      // The signature is real, so it is reported; there is no update id, so the
-      // field is absent rather than filled with the signature.
-      expect(String(receipt.transactionHash)).toBe('sig-only');
+      // A signature alone does not establish a ledger update.
+      expect(receipt.transactionHash).toBeUndefined();
       expect(receipt.updateId).toBeUndefined();
     });
 
-    it('fails when the wallet approves but reports neither', async () => {
+    it('returns an unconfirmed acknowledgement when the wallet reports no identifier', async () => {
       // Was a generated `tx_<now>_<random>`.
       installNightly(
         createNightlyProvider({
           submitResponse: { type: 'sign_request_approved', data: {} },
-        }),
+        })
       );
       await adapter.connect(ctx);
 
-      await expect(
-        adapter.submitTransaction(ctx, createMockSession(), {
-          signedTx: { command: {}, disclosedContracts: [] },
-        }),
-      ).rejects.toThrow(/neither an updateId nor a signature/);
+      const receipt = await adapter.submitTransaction(ctx, createMockSession(), {
+        signedTx: { command: {}, disclosedContracts: [] },
+      });
+      expect(receipt.submittedAt).toBeGreaterThan(0);
+      expect(receipt.transactionHash).toBeUndefined();
+      expect(receipt.updateId).toBeUndefined();
     });
   });
 });

@@ -4,6 +4,8 @@
 
 ### Minor Changes
 
+- Keep command ids for correlation without presenting them as ledger transaction hashes. A submission acknowledgement alone is not ledger confirmation.
+
 - 0ebd598: Stop reporting wallets as installed when nothing was installed.
 
   `detectInstalled()` could only answer yes or no, and eight of twelve adapters had

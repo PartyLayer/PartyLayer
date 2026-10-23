@@ -163,6 +163,11 @@ uncaught page error). If it fails, the module loading regressed; do not publish.
 
 ## Default wallet release validation
 
+The broader product milestones and completion criteria are tracked in the
+[Canton wallet platform roadmap](./platform-roadmap.md). The default catalog release
+does not close those milestones. Live wallet tests, including Loop, are deferred
+to the final acceptance stage at the maintainer's request.
+
 The public catalog is tested across stable/beta and devnet/testnet/mainnet. Its
 network filters and capability filters must agree with the active integration.
 `pnpm gate` also packs all public packages, installs the packed React entry in a
@@ -177,11 +182,11 @@ implementation `2e435af` has separate automated coverage):
 | --- | --- | --- |
 | Vala | Devnet connect, message signature returned, reload/restore and disconnect passed | Pending valid vendor-provided Devnet transaction/test dApp |
 | Console | Devnet connection timed out after Chrome restart; unlock/readiness check pending | Not tested |
-| Cauri | Devnet approval popup opened; user completion pending because browser automation access was denied | Not tested |
+| Cauri | Devnet connect, message signature returned, saved session redisplayed after reload, and disconnect passed | Not tested |
 | Send | Test account available; Mainnet test pending | Not tested |
-| 5N Loop | Test account available; live test pending | Not tested |
+| 5N Loop | Devnet sign request reached wallet UI; wallet reported `Could not unlock private key`, also reproduced with the official Loop SDK alone | Not tested |
 | Walley | Test account available; live test pending | Not tested |
-| OneSwap | Test account available; live test pending | Not tested |
+| OneSwap | Maintainer reports prior successful use; repeat login test omitted at their request | Not retested |
 | Cantor8 | Live test access not established in this review | Not tested |
 | Nightly | Live test access not established in this review | Not tested |
 | Bron | Enterprise test access not established in this review | Not tested |
@@ -199,6 +204,21 @@ conformance suites in CI. The native provider conformance gate and mocked browse
 tests do not replace those live/extension checks. The separate extension-isolation
 record remains in `apps/demo/e2e/manual-runs.json`; do not mark it passed without
 running the named specs against recorded extension versions.
+
+## Wallet SDK maintenance
+
+`.github/dependabot.yml` checks supported wallet SDK dependencies every day at
+09:00 Europe/Istanbul, including weekends. It opens update PRs and advances the
+manifest minimum and pnpm lockfile together. Patch and minor updates are grouped
+separately; major releases remain individual PRs. The configuration covers the
+public SDK, legacy integrations and workspace lockfile, including Canton dApp SDK,
+Loop, Console, Cantor8, Walley, Cauri, OneSwap, Vala and WalletConnect.
+
+These PRs use the same build, unit, conformance, packed-consumer and browser gates
+as product changes. Review changed public APIs, approved loader pins, registry
+metadata and release changesets before merging. A newly published vendor version
+is an update candidate; a compatible, tested version is what PartyLayer ships.
+See the [Dependabot configuration reference](https://docs.github.com/en/code-security/reference/supply-chain-security/dependabot-options-reference).
 
 ## Pre-Release Checklist
 

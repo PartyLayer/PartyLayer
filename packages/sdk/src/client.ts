@@ -50,6 +50,7 @@ import {
 } from '@partylayer/provider';
 import { findMatchingWalletInfo } from '@partylayer/core';
 import { GenericAnnounceAdapter, getAnnounceCapabilities, type AnnounceAdapterConfig } from './announce-adapter';
+import { normalizeSignedMessage } from './sign-message';
 import { GenericDiscoveryAdapter } from './discovery-adapter';
 import {
   DEFAULT_REGISTRY_URL,
@@ -1240,7 +1241,7 @@ export class PartyLayerClient {
     try {
       this.assertNetworkOk(session);
       const ctx = this.createAdapterContext();
-      return await adapter.signMessage(ctx, session, params);
+      return normalizeSignedMessage(await adapter.signMessage(ctx, session, params), session, params);
     } catch (err) {
       const error = mapUnknownErrorToPartyLayerError(err, {
         phase: 'signMessage',

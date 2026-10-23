@@ -144,7 +144,7 @@ describe('Cantor8Adapter: network guard (devnet/mainnet only)', () => {
 });
 
 describe('Cantor8Adapter: submitTransaction maps to signAndExecute', () => {
-  it('passes the signAndExecute input through and returns a receipt keyed on commandId', async () => {
+  it('passes the signAndExecute input through and returns a receipt correlated by commandId', async () => {
     const adapter = new Cantor8Adapter();
     await adapter.connect(ctx('devnet'));
     const receipt = await adapter.submitTransaction(ctx('devnet'), session, {
@@ -163,7 +163,7 @@ describe('Cantor8Adapter: submitTransaction maps to signAndExecute', () => {
       commandsJson: '[{"CreateCommand":{}}]',
     });
     expect(receipt.commandId).toBe('cmd-123');
-    expect(String(receipt.transactionHash)).toBe('cmd-123');
+    expect(receipt.transactionHash).toBeUndefined();
   });
 
   it('rejects a signedTx that is not the SDK signAndExecute shape (no faking)', async () => {

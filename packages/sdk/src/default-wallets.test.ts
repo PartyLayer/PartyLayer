@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs';
 import { registryEntryToWalletInfo, type WalletRegistryV1 } from '@partylayer/registry-client';
 import { createPartyLayer } from './client';
 import { GenericDiscoveryAdapter } from './discovery-adapter';
-import { toWalletId } from '@partylayer/core';
+import { toWalletId, toPartyId, type WalletAdapter, type SignedMessage } from '@partylayer/core';
 
 vi.mock('@console-wallet/dapp-sdk', () => ({ consoleWallet: {} }));
 const mocks = vi.hoisted(() => {
@@ -52,6 +52,40 @@ function client(options: Partial<Parameters<typeof createPartyLayer>[0]> = {}) {
 }
 
 describe('public default wallet catalog', () => {
+  it('validates signature results at the public client boundary for legacy/custom adapters too', async () => {
+    const signMessage = vi.fn(async () => ({ signature: 'valid-signature' }) as SignedMessage);
+    const adapter: WalletAdapter = {
+      walletId: toWalletId('loop'),
+      name: 'Loop boundary fixture',
+      getCapabilities: () => ['connect', 'disconnect', 'signMessage'],
+      detectInstalled: async () => ({ installed: true }),
+      connect: async () => ({
+        partyId: toPartyId('party::boundary'),
+        session: { network: 'devnet' },
+        capabilities: ['connect', 'signMessage'],
+      }),
+      disconnect: async () => {},
+      signMessage,
+    };
+    const { c } = client({ adapters: [adapter] });
+    await c.connect({ walletId: toWalletId('loop') });
+    expect(
+      await c.signMessage({ message: 'original', nonce: 'challenge', domain: 'dapp.example' })
+    ).toEqual({
+      signature: 'valid-signature',
+      partyId: 'party::boundary',
+      message: 'original',
+      nonce: 'challenge',
+      domain: 'dapp.example',
+    });
+    for (const signature of ['', undefined, { error: 'Could not unlock private key' }]) {
+      signMessage.mockResolvedValueOnce({ signature } as unknown as SignedMessage);
+      await expect(c.signMessage({ message: 'original' })).rejects.toThrow(
+        /invalid message signature/
+      );
+    }
+  });
+
   it.each(['stable', 'beta'] as const)('checks every %s registry wallet across all three networks', async (channel) => {
     for (const network of ['devnet', 'testnet', 'mainnet'] as const) {
       const { c, r } = client({ channel, network, walletConnect: { projectId: 'catalog-test' }, bron: {

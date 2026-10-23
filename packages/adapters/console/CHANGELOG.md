@@ -1,6 +1,14 @@
 # @partylayer/adapter-console
 
-## 0.4.1
+## 0.5.0
+
+### Minor Changes
+
+- Remove the unsupported sign-only capability. The vendor's `submitCommands` signs
+  and sends; `signTransaction` now rejects without calling it. Applications that
+  intend to submit must use `submitTransaction` explicitly.
+- Submission acknowledgements no longer mislabel signatures as ledger transaction
+  hashes. Wait for a ledger update before displaying confirmation.
 
 ### Patch Changes
 

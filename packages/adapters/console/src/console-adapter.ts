@@ -48,10 +48,10 @@ import {
 import {
   toWalletId,
   toPartyId,
-  toTransactionHash,
   toSignature,
   WalletNotInstalledError,
   CapabilityNotSupportedError,
+  TransportError,
   mapUnknownErrorToPartyLayerError,
 } from '@partylayer/core';
 // Lazy, browser-only access to the Console Wallet SDK. A static VALUE import
@@ -136,23 +136,6 @@ function toBase64Message(message: string): string {
   let binary = '';
   for (const b of bytes) binary += String.fromCharCode(b);
   return btoa(binary);
-}
-
-/**
- * The signature Console reports for a submitted transaction, or `undefined`.
- *
- * NOTE ON THE NAME IT ENDS UP UNDER. Callers receive this as `transactionHash`,
- * and a signature is not a Canton transaction hash. That mislabelling is real
- * but it is a TYPE problem, not a value problem: `TxReceipt.transactionHash` and
- * `SignedTransaction.transactionHash` are required fields, so an adapter with no
- * hash to give has nowhere to put nothing. Fixing the label properly means making
- * those fields optional, which is a published-interface change and its own
- * decision. What this file no longer does is INVENT the value.
- */
-function readSignature(result: unknown): string | undefined {
-  if (!result || typeof result !== 'object' || !('signature' in result)) return undefined;
-  const signature = (result as { signature?: unknown }).signature;
-  return typeof signature === 'string' && signature.length > 0 ? signature : undefined;
 }
 
 /**
@@ -311,7 +294,6 @@ export class ConsoleAdapter implements WalletAdapter {
       'disconnect',
       'restore',
       'signMessage',
-      'signTransaction',
       'submitTransaction',
       'ledgerApi',
       // Console satisfies both halves of the transfer contract: submitCommands
@@ -659,8 +641,12 @@ export class ConsoleAdapter implements WalletAdapter {
           ? result
           : (result as { signature?: unknown } | null)?.signature ?? '';
 
+      if (typeof sig !== 'string' || sig.trim().length === 0) {
+        throw new TransportError('Console Wallet returned an invalid message signature');
+      }
+
       return {
-        signature: toSignature(String(sig)),
+        signature: toSignature(sig),
         partyId: session.partyId,
         message: params.message,
         nonce: params.nonce,
@@ -677,50 +663,15 @@ export class ConsoleAdapter implements WalletAdapter {
   }
 
   /**
-   * Sign a transaction. Uses submitCommands without waitForFinalization.
+   * Sign-only is unsupported: the vendor API always signs and submits.
    */
   async signTransaction(
-    ctx: AdapterContext,
-    session: Session,
-    params: SignTransactionParams,
+    _ctx: AdapterContext,
+    _session: Session,
+    _params: SignTransactionParams,
   ): Promise<SignedTransaction> {
-    const transport = resolveTransportLabel(this.target, this.activeTransport);
-
-    try {
-      ctx.logger.debug('Signing transaction with Console Wallet', {
-        sessionId: session.sessionId,
-        transport,
-      });
-
-      // submitCommands is the SDK's tx signing method
-      const result = await (await getConsoleWallet()).submitCommands(
-        params.tx as Parameters<ConsoleWalletApi['submitCommands']>[0],
-      );
-
-      // Was an unconditionally generated `tx_<now>_<random>` string — not a
-      // fallback but a fabrication on every call. Console reports the signature
-      // it produced; when it does not, there is nothing real to return and this
-      // fails rather than inventing one.
-      const signature = readSignature(result);
-      if (!signature) {
-        throw new Error(
-          'Console Wallet returned no signature for the transaction, so there is no real identifier to report.',
-        );
-      }
-
-      return {
-        signedTx: result,
-        transactionHash: toTransactionHash(signature),
-        partyId: session.partyId,
-      };
-    } catch (err) {
-      throw mapUnknownErrorToPartyLayerError(err, {
-        walletId: this.walletId,
-        phase: 'signTransaction',
-        transport,
-        details: { sessionId: session.sessionId },
-      });
-    }
+    // submitCommands signs AND sends; a sign-only request must never call it.
+    throw new CapabilityNotSupportedError(this.walletId, 'signTransaction');
   }
 
   /**
@@ -745,17 +696,12 @@ export class ConsoleAdapter implements WalletAdapter {
         waitForFinalization: 5000,
       });
 
-      const signature = readSignature(result);
-      if (!signature) {
-        throw new Error(
-          'Console Wallet returned no signature for the submitted transaction, so there is no real identifier to report.',
-        );
+      // SignSendResponse.status is the acknowledgement; its optional signature
+      // is not a ledger transaction/update id. Confirmation arrives separately.
+      if (!result || typeof result !== 'object' || result.status !== true) {
+        throw new TransportError('Console Wallet returned no successful submission acknowledgement');
       }
-
-      return {
-        transactionHash: toTransactionHash(signature),
-        submittedAt: Date.now(),
-      };
+      return { submittedAt: Date.now() };
     } catch (err) {
       throw mapUnknownErrorToPartyLayerError(err, {
         walletId: this.walletId,

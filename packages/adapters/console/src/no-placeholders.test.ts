@@ -6,8 +6,8 @@
  * standing in for a transaction hash on both signing paths. The signTransaction
  * one was not even a fallback: it ran on every call.
  *
- * The contract now is that the adapter reports what the wallet reported, or
- * fails. It never fills a gap with something that looks like an answer.
+ * Successful submission acknowledgements may carry no ledger identifier.
+ * Sign-only requests must never call the vendor's combined sign-and-send API.
  */
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { ConsoleAdapter } from './console-adapter';
@@ -74,7 +74,7 @@ describe('ConsoleAdapter invents nothing', () => {
       mockConsoleWallet.getPrimaryAccount.mockResolvedValue({ partyId: undefined });
 
       await expect(new ConsoleAdapter({ target: 'local' }).connect(ctx())).rejects.toThrow(
-        /no party id/i,
+        /no party id/i
       );
     });
 
@@ -88,57 +88,50 @@ describe('ConsoleAdapter invents nothing', () => {
     });
   });
 
+  describe('signMessage', () => {
+    it.each([undefined, '', '   ', { signature: {} }, { signature: 123 }])(
+      'rejects malformed signatures without coercing them to strings: %j', async (reply) => {
+        mockConsoleWallet.signMessage.mockResolvedValue(reply);
+        await expect(
+          new ConsoleAdapter().signMessage(ctx(), session(), { message: 'Hello Canton' }),
+        ).rejects.toThrow(/invalid message signature/i);
+      },
+    );
+  });
+
   describe('signTransaction', () => {
-    it('reports the wallet signature instead of a generated hash', async () => {
-      // Previously this call ALWAYS produced `tx_<now>_<random>`, whatever the
-      // wallet returned — a fabrication on the happy path, not an edge case.
+    it('never calls the combined sign-and-send API for a sign-only request', async () => {
       mockConsoleWallet.submitCommands.mockResolvedValue({ status: true, signature: 'sig-real' });
-
-      const signed = await new ConsoleAdapter().signTransaction(ctx(), session(), {
-        tx: { commands: [] },
-      });
-
-      expect(String(signed.transactionHash)).toBe('sig-real');
-      expect(String(signed.transactionHash)).not.toMatch(FABRICATED);
-    });
-
-    it('fails when the wallet returns no signature', async () => {
-      mockConsoleWallet.submitCommands.mockResolvedValue({ status: true });
-
       await expect(
-        new ConsoleAdapter().signTransaction(ctx(), session(), { tx: { commands: [] } }),
-      ).rejects.toThrow(/no signature/i);
+        new ConsoleAdapter().signTransaction(ctx(), session(), { tx: { commands: [] } })
+      ).rejects.toThrow(/signTransaction/i);
+      expect(mockConsoleWallet.submitCommands).not.toHaveBeenCalled();
     });
   });
 
   describe('submitTransaction', () => {
-    it('reports the wallet signature', async () => {
-      mockConsoleWallet.submitCommands.mockResolvedValue({ status: true, signature: 'sig-submit' });
-
+    it.each([
+      { status: true, signature: 'sig-submit' },
+      { status: true },
+      { status: true, signature: '' },
+    ])('returns an acknowledgement without inventing a ledger hash: %j', async (reply) => {
+      mockConsoleWallet.submitCommands.mockResolvedValue(reply);
       const receipt = await new ConsoleAdapter().submitTransaction(ctx(), session(), {
         signedTx: { commands: [] },
       });
-
-      expect(String(receipt.transactionHash)).toBe('sig-submit');
+      expect(receipt.submittedAt).toBeGreaterThan(0);
+      expect(receipt.transactionHash).toBeUndefined();
+      expect(receipt.updateId).toBeUndefined();
     });
 
-    it('fails when the wallet returns no signature', async () => {
-      mockConsoleWallet.submitCommands.mockResolvedValue({ status: true });
-
-      await expect(
-        new ConsoleAdapter().submitTransaction(ctx(), session(), { signedTx: { commands: [] } }),
-      ).rejects.toThrow(/no signature/i);
-    });
-
-    it('does not treat an empty-string signature as a value', async () => {
-      // The studio site returned '' as a transactionHash. An empty string is
-      // present, well-typed and falsy — it survives a null check while carrying
-      // nothing, which is why it is treated as absent here.
-      mockConsoleWallet.submitCommands.mockResolvedValue({ status: true, signature: '' });
-
-      await expect(
-        new ConsoleAdapter().submitTransaction(ctx(), session(), { signedTx: { commands: [] } }),
-      ).rejects.toThrow(/no signature/i);
-    });
+    it.each([undefined, null, {}, { status: false, signature: 'sig-rejected' }])(
+      'rejects unsuccessful or missing acknowledgements: %j',
+      async (reply) => {
+        mockConsoleWallet.submitCommands.mockResolvedValue(reply);
+        await expect(
+          new ConsoleAdapter().submitTransaction(ctx(), session(), { signedTx: { commands: [] } })
+        ).rejects.toThrow(/no successful submission acknowledgement/i);
+      }
+    );
   });
 });

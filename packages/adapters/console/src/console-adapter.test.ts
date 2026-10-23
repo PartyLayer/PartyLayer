@@ -22,6 +22,7 @@ import { ConsoleAdapter } from './console-adapter';
 import type { ConsoleAdapterConfig } from './console-adapter';
 import type { AdapterContext, PersistedSession, Session } from '@partylayer/core';
 import {
+  CapabilityNotSupportedError,
   toWalletId,
   toPartyId,
   toSessionId,
@@ -183,7 +184,7 @@ describe('ConsoleAdapter', () => {
       expect(caps).toContain('disconnect');
       expect(caps).toContain('restore');
       expect(caps).toContain('signMessage');
-      expect(caps).toContain('signTransaction');
+      expect(caps).not.toContain('signTransaction');
       expect(caps).toContain('submitTransaction');
       expect(caps).toContain('ledgerApi');
       expect(caps).toContain('events');
@@ -869,32 +870,13 @@ describe('ConsoleAdapter', () => {
       capabilitiesSnapshot: ['signTransaction'],
     };
 
-    it(
-      'should call submitCommands and return signed transaction',
-      async () => {
-        const txPayload = {
-          from: 'party::sender',
-          to: 'party::receiver',
-          token: 'USD',
-          amount: '100',
-          expireDate: '2026-12-31',
-        };
-        mockConsoleWallet.submitCommands.mockResolvedValue({
-          status: true,
-          signature: 'tx-sig',
-        });
-
-        const adapter = new ConsoleAdapter();
-        const result = await adapter.signTransaction(ctx, session as any, {
-          tx: txPayload,
-        });
-
-        expect(mockConsoleWallet.submitCommands).toHaveBeenCalledWith(txPayload);
-        expect(result.signedTx).toEqual({ status: true, signature: 'tx-sig' });
-        expect(result.transactionHash).toBeTruthy();
-        expect(result.partyId).toBe(toPartyId('party::signer'));
-      },
-    );
+    it('rejects sign-only requests without submitting commands', async () => {
+      mockConsoleWallet.submitCommands.mockResolvedValue({ status: true, signature: 'tx-sig' });
+      await expect(
+        new ConsoleAdapter().signTransaction(ctx, session as any, { tx: { commands: [] } })
+      ).rejects.toBeInstanceOf(CapabilityNotSupportedError);
+      expect(mockConsoleWallet.submitCommands).not.toHaveBeenCalled();
+    });
   });
 
   // =========================================================================
@@ -935,7 +917,7 @@ describe('ConsoleAdapter', () => {
           ...txPayload,
           waitForFinalization: 5000,
         });
-        expect(result.transactionHash).toBeTruthy();
+        expect(result.transactionHash).toBeUndefined();
         expect(result.submittedAt).toBeGreaterThan(0);
       },
     );
@@ -1075,7 +1057,7 @@ describe('ConsoleAdapter', () => {
       expect(caps).toContain('disconnect');
       expect(caps).toContain('restore');
       expect(caps).toContain('signMessage');
-      expect(caps).toContain('signTransaction');
+      expect(caps).not.toContain('signTransaction');
       expect(caps).toContain('submitTransaction');
       expect(caps).toContain('ledgerApi');
       expect(caps).toContain('events');
@@ -1096,7 +1078,6 @@ describe('ConsoleAdapter', () => {
         'disconnect',
         'restore',
         'signMessage',
-        'signTransaction',
         'submitTransaction',
         'ledgerApi',
         'transfer',
@@ -1106,16 +1087,14 @@ describe('ConsoleAdapter', () => {
       expect(caps).toEqual(expected);
     });
 
-    it('still reports every pre-transfer capability, in order', () => {
-      // The backward-compatibility guarantee stated as what it actually is:
-      // no capability that existed before requestTransfer was removed.
+    it('reports the implemented non-transfer capabilities in order', () => {
+      // Sign-only is intentionally excluded: submitCommands also sends.
       const caps = new ConsoleAdapter({ target: 'local' }).getCapabilities();
       const original = [
         'connect',
         'disconnect',
         'restore',
         'signMessage',
-        'signTransaction',
         'submitTransaction',
         'ledgerApi',
         'events',

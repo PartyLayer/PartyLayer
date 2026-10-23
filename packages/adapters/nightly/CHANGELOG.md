@@ -4,6 +4,8 @@
 
 ### Patch Changes
 
+- Return an unconfirmed submission acknowledgement when approval includes no ledger update id. Do not mislabel a signature as a transaction hash.
+
 - 0ebd598: Stop reporting wallets as installed when nothing was installed.
 
   `detectInstalled()` could only answer yes or no, and eight of twelve adapters had
