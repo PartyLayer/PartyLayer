@@ -55,10 +55,17 @@ menu offers **Sign out of app**, which preserves the wallet connection. Omit
 `PartyLayerAuthenticationProvider` inside `PartyLayerProvider`.
 
 `useAuthentication()` returns `status` (`loading`, `unauthenticated` or
-`authenticated`), `identity`, `isPending`, `error`, `signIn()`, `signOut()` and
+`authenticated`), `identity`, `isPending`, `canSignIn`, `error`, `signIn()`, `signOut()` and
 `refresh()`. Call `refresh()` after an application API returns 401 or when your
 backend session changes outside this flow. The backend always enforces its own
 session expiry and authorization; a client status is never proof of access.
+
+The provider prepares a server challenge after establishing that sign-in is needed,
+without prompting the wallet. Custom buttons should wait for `canSignIn` and call
+`signIn()` directly in their click handler: awaiting an HTTP request first can lose
+browser user activation and block hosted-wallet popups. Preparation errors offer
+retry through `refresh()`. An expired challenge is replaced without automatically
+opening the wallet; the user clicks again to approve the new request.
 
 ## Server challenge and verification
 

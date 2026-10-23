@@ -720,8 +720,10 @@ the message being signed; separate nonce/domain metadata is not a cryptographic 
 
 For application sign-in, pass a stable `authentication` backend integration to
 `PartyLayerKit`. The same `ConnectButton` then offers explicit sign-in and app
-sign-out. `useAuthentication()` exposes backend session status, pending/error state
-and refresh. Implement server challenge storage, CSRF/browser binding, exact message
+sign-out. `useAuthentication()` exposes backend session status, pending/error state,
+`canSignIn` and refresh. Custom buttons wait for `canSignIn` and invoke `signIn()`
+directly in their click handler to preserve hosted-wallet popup activation.
+Implement server challenge storage, CSRF/browser binding, exact message
 signature verification and independent party-key authorization before enabling it.
 See the [authentication guide](../../docs/authentication.md); a wallet connection
 or client-side status does not authorize backend requests.

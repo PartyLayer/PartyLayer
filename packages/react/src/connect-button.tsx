@@ -610,13 +610,16 @@ export function ConnectButton({
 
       {authentication && authentication.status !== 'authenticated' && (
         <button type="button"
-          disabled={authentication.status === 'loading' || authentication.isPending || !!session?.networkMismatch}
+          disabled={authentication.status === 'loading' || authentication.isPending || !!session?.networkMismatch ||
+            (!authentication.canSignIn && !authentication.error)}
           aria-busy={authentication.isPending}
-          onClick={() => { void authentication.signIn().catch(() => {}); }}
+          onClick={() => { void (authentication.error && !authentication.canSignIn
+            ? authentication.refresh() : authentication.signIn()).catch(() => {}); }}
           style={{ border: 'none', borderRadius: theme.borderRadius, padding: '8px 14px',
             backgroundColor: brandYellow, color: textOnBrand, fontFamily: theme.fontFamily,
             fontSize: '13px', fontWeight: 600, cursor: authentication.isPending ? 'wait' : 'pointer' }}>
-          <bdi dir="auto">{t(authentication.status === 'loading' ? 'checkingSession' : authentication.isPending ? 'signingIn' : 'signIn')}</bdi>
+          <bdi dir="auto">{t(authentication.status === 'loading' ? 'checkingSession' : authentication.isPending ? 'signingIn'
+            : authentication.error && !authentication.canSignIn ? 'tryAgain' : 'signIn')}</bdi>
         </button>
       )}
       {authenticationError && <div style={{ flexBasis: '100%' }}>{authenticationError}</div>}

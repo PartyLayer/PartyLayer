@@ -39,10 +39,14 @@ const authentication: PartyLayerAuthenticationAdapter = {
       automatically prompts for a signature on mount. Sign out of app preserves the wallet
       connection. Omit authentication for connection-only apps. Advanced compositions nest
       PartyLayerAuthenticationProvider inside PartyLayerProvider.</P>
-    <P><Code>useAuthentication()</Code> exposes status, identity, isPending, error, signIn(),
+    <P><Code>useAuthentication()</Code> exposes status, identity, isPending, canSignIn, error, signIn(),
       signOut() and refresh(). Status is loading, unauthenticated or authenticated. Call refresh()
       after an application API returns 401 or the backend session changes elsewhere. Backend
       endpoints enforce their own authorization and expiry.</P>
+    <P>The provider prepares a server challenge before the click without requesting a signature.
+      Custom buttons wait for canSignIn and call signIn() directly in the click handler, preserving
+      browser user activation for hosted-wallet popups. Retry preparation errors with refresh().
+      Expired challenges are replaced without opening the wallet automatically; the user clicks again.</P>
     <H2 id="server-challenge-and-verification">Server challenge and verification</H2>
     <P>Use the existing server-safe core helpers. Generate the nonce on the server and store the
       full challenge bound to a pre-auth browser session. The requested identity remains

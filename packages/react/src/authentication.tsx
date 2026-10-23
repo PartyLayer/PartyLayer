@@ -22,6 +22,8 @@ export interface UseAuthenticationReturn {
   status: 'loading' | 'unauthenticated' | 'authenticated';
   identity: AuthenticationIdentity | null;
   isPending: boolean;
+  /** A validated server challenge is ready; call signIn directly from the click handler. */
+  canSignIn: boolean;
   error: Error | null;
   /** Explicit user action; never automatically prompts for a signature on mount. */
   signIn(): Promise<void>;
@@ -57,13 +59,18 @@ export function PartyLayerAuthenticationProvider({ adapter, children }: PartyLay
     account.networkId === toCAIP2Network(session.network).networkId
     ? { partyId: account.party, networkId: account.networkId } : null;
   const key = identity ? JSON.stringify([session?.walletId, identity.partyId, identity.networkId]) : '';
-  const current = useRef({ key, identity, adapter });
-  current.current = { key, identity, adapter };
+  const current = useRef({ key, identity, adapter, client });
+  current.current = { key, identity, adapter, client };
   const [state, setState] = useState<{ key: string; status: UseAuthenticationReturn['status']; identity: AuthenticationIdentity | null }>({
     key: '', status: 'loading', identity: null,
   });
   const [error, setError] = useState<Error | null>(null);
   const [isPending, setPending] = useState(false);
+  const [prepared, setPrepared] = useState<{
+    key: string; adapter: PartyLayerAuthenticationAdapter; challenge: AuthenticationChallenge;
+  } | null>(null);
+  const [preparing, setPreparing] = useState(false);
+  const [challengeVersion, setChallengeVersion] = useState(0);
   const mounted = useRef(false);
   const pending = useRef(false);
   const operation = useRef(0);
@@ -80,12 +87,14 @@ export function PartyLayerAuthenticationProvider({ adapter, children }: PartyLay
     const captured = current.current;
     const id = ++operation.current;
     if (mounted.current) {
+      setPrepared(null);
       setError(null);
       setState({ key: captured.key, status: 'loading', identity: null });
     }
     try {
       const restored = await runBackend(() => captured.adapter.getSession());
-      if (!mounted.current || current.current.key !== captured.key || current.current.adapter !== captured.adapter || operation.current !== id) return;
+      if (!mounted.current || current.current.key !== captured.key || current.current.adapter !== captured.adapter ||
+        current.current.client !== captured.client || operation.current !== id) return;
       if (restored && !sameIdentity(restored, captured.identity)) {
         await runBackend(() => captured.adapter.signOut());
       }
@@ -101,16 +110,16 @@ export function PartyLayerAuthenticationProvider({ adapter, children }: PartyLay
     }
   }, [runBackend]);
 
-  const previous = useRef<{ key: string; adapter: PartyLayerAuthenticationAdapter } | null>(null);
+  const previous = useRef<{ key: string; adapter: PartyLayerAuthenticationAdapter; client: typeof client } | null>(null);
   useEffect(() => {
     mounted.current = true;
     if (resolving) return () => { mounted.current = false; ++operation.current; };
     const old = previous.current;
-    previous.current = { key, adapter };
+    previous.current = { key, adapter, client };
     setError(null);
     // Initial page load may restore a matching server session. A subsequent
     // wallet/account/network/config change always invalidates the old session.
-    if (old && ((!!old.key && old.key !== key) || old.adapter !== adapter)) {
+    if (old && ((!!old.key && old.key !== key) || old.adapter !== adapter || old.client !== client)) {
       ++operation.current;
       void runBackend(() => old.adapter.signOut()).then(refresh).catch(reason => {
         if (mounted.current) {
@@ -122,14 +131,41 @@ export function PartyLayerAuthenticationProvider({ adapter, children }: PartyLay
       void refresh();
     }
     return () => { mounted.current = false; ++operation.current; };
-  }, [key, adapter, resolving, refresh, runBackend]);
+  }, [key, adapter, client, resolving, refresh, runBackend]);
+
+  // Fetch the nonce before the click. Awaiting an HTTP request in signIn before
+  // invoking a hosted wallet would lose browser user activation and block its popup.
+  // Preparing a challenge never requests a wallet signature.
+  useEffect(() => {
+    setPrepared(null);
+    if (resolving || state.key !== key || state.status !== 'unauthenticated' || !identity || pending.current) {
+      setPreparing(false);
+      return;
+    }
+    let cancelled = false;
+    const captured = current.current;
+    const id = operation.current;
+    const valid = () => !cancelled && mounted.current && operation.current === id &&
+      current.current.key === captured.key && current.current.adapter === captured.adapter && current.current.client === captured.client;
+    setPreparing(true);
+    void runBackend(() => captured.adapter.getChallenge(captured.identity!)).then(challenge => {
+      if (!valid()) return;
+      validateAuthenticationChallenge(challenge, { ...captured.identity!, origin: window.location.origin });
+      setPrepared({ key: captured.key, adapter: captured.adapter, challenge });
+    }).catch(reason => {
+      if (valid()) setError(reason instanceof Error ? reason : new Error('Authentication challenge preparation failed'));
+    }).finally(() => { if (valid()) setPreparing(false); });
+    return () => { cancelled = true; };
+  }, [key, adapter, client, resolving, state.key, state.status, challengeVersion, runBackend]);
 
   const signOut = useCallback(async () => {
     const captured = current.current;
     ++operation.current;
     if (mounted.current) {
+      setPrepared(null);
       setState({ key: current.current.key, status: 'unauthenticated', identity: null });
       setError(null);
+      setChallengeVersion(version => version + 1);
     }
     try { await runBackend(() => captured.adapter.signOut()); }
     catch (reason) {
@@ -145,7 +181,8 @@ export function PartyLayerAuthenticationProvider({ adapter, children }: PartyLay
     if (!captured.identity || !client) throw new Error('Connect a wallet on the supported network before signing in');
     const id = ++operation.current;
     const assertCurrent = () => {
-      if (!mounted.current || current.current.key !== captured.key || current.current.adapter !== captured.adapter || operation.current !== id) {
+      if (!mounted.current || current.current.key !== captured.key || current.current.adapter !== captured.adapter ||
+        current.current.client !== captured.client || operation.current !== id) {
         throw new Error('Wallet account or network changed during authentication');
       }
     };
@@ -153,10 +190,15 @@ export function PartyLayerAuthenticationProvider({ adapter, children }: PartyLay
     setPending(true);
     setError(null);
     try {
-      const challenge = await runBackend(() => captured.adapter.getChallenge(captured.identity!));
       assertCurrent();
+      if (!prepared || prepared.key !== captured.key || prepared.adapter !== captured.adapter) {
+        throw new Error('Wait for the authentication challenge before signing in');
+      }
+      const { challenge } = prepared;
+      setPrepared(null);
       validateAuthenticationChallenge(challenge, { ...captured.identity, origin: window.location.origin });
       const message = formatAuthenticationMessage(challenge);
+      // Keep this wallet call before the first await in the user action.
       const signed = await client.signMessage({ message });
       assertCurrent();
       if (signed.message !== message || String(signed.partyId) !== captured.identity.partyId) {
@@ -198,13 +240,19 @@ export function PartyLayerAuthenticationProvider({ adapter, children }: PartyLay
       throw failure;
     } finally {
       pending.current = false;
-      if (mounted.current) setPending(false);
+      if (mounted.current) {
+        setPending(false);
+        setChallengeVersion(version => version + 1);
+      }
     }
-  }, [client, runBackend]);
+  }, [client, prepared, runBackend]);
 
   const active = state.key === key && sameIdentity(state.identity, identity);
   return <AuthenticationContext.Provider value={{
-    status: resolving ? 'loading' : active ? state.status : state.key === key && state.status === 'loading' ? 'loading' : 'unauthenticated',
-    identity: active ? state.identity : null, isPending, error, signIn, signOut, refresh,
+    status: resolving || preparing ? 'loading' : active ? state.status : state.key === key && state.status === 'loading' ? 'loading' : 'unauthenticated',
+    identity: active ? state.identity : null, isPending,
+    canSignIn: !resolving && !isPending && state.status === 'unauthenticated' &&
+      prepared?.key === key && prepared?.adapter === adapter,
+    error, signIn, signOut, refresh,
   }}>{children}</AuthenticationContext.Provider>;
 }

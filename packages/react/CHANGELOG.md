@@ -33,6 +33,9 @@
   on observed wallet/party/network changes. Reject stale approvals and revoke late
   verification after disconnect/unmount. Pair with the core single-use challenge
   helpers and an application-owned signature/key-authorization verifier.
+  Prepare validated challenges before explicit clicks, expose `canSignIn`, and
+  invoke the wallet before any HTTP await so hosted-wallet popups retain browser
+  user activation. Retry failed/expired preparations without automatic signing.
 
 - Add English/Turkish connection and operation UI, a `locale`/`direction` setting
   on `PartyLayerKit`, and `PartyLayerLocaleProvider` for advanced compositions.

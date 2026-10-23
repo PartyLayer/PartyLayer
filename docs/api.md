@@ -225,7 +225,7 @@ import { PartyLayerKit } from '@partylayer/react';
 | `authentication` | `PartyLayerAuthenticationAdapter` | Omitted | Application backend challenge/verify/session/logout integration |
 
 With `authentication` configured, `ConnectButton` adds explicit sign-in and app
-sign-out. `useAuthentication()` exposes `status`, `identity`, `isPending`, `error`,
+sign-out. `useAuthentication()` exposes `status`, `identity`, `isPending`, `canSignIn`, `error`,
 `signIn()`, `signOut()` and `refresh()`. For advanced compositions, nest
 `PartyLayerAuthenticationProvider` inside `PartyLayerProvider`.
 
