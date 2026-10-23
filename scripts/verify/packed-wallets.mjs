@@ -91,14 +91,10 @@ import { readFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { createPartyLayer } from '@partylayer/sdk';
 import { registryEntryToWalletInfo } from '@partylayer/registry-client';
-import { createAuthenticationChallenge, formatAuthenticationMessage } from '@partylayer/core/authentication';
 const require = createRequire(import.meta.url);
 assert.equal(typeof require('@partylayer/sdk').createPartyLayer, 'function');
 assert.equal(typeof require('@partylayer/react').PartyLayerKit, 'function');
-assert.equal(typeof require('@partylayer/core/authentication').verifyAuthenticationProof, 'function');
-const challenge = createAuthenticationChallenge({ origin: 'https://app.example', partyId: 'party::packed',
-  networkId: 'canton:da-devnet', nonce: 'packed-consumer-nonce-1234567890abcdef' });
-assert.ok(formatAuthenticationMessage(challenge).includes('Party: party::packed'));
+assert.equal(typeof require('@partylayer/react').useAuthentication, 'function');
 const registry = JSON.parse(readFileSync(new URL('./registry.json', import.meta.url)));
 const client = createPartyLayer({ network: 'devnet', channel: 'beta', app: { name: 'Packed consumer' }, discovery: { announce: false } });
 client.registryClient.getRegistry = async () => registry;
@@ -117,6 +113,25 @@ console.log('Single npm command: ESM, CommonJS, SSR initialization and all offic
   console.log('Probing ESM, CommonJS, SSR and default wallet discovery…');
   const probe = await run('node', ['probe.mjs'], minimal);
   console.log(probe.stdout.trim());
+
+  // A separate backend declares core directly. A transitive peer may legally
+  // hoist an older core at the app root; never test imports an app did not install.
+  const backend = join(staging, 'authentication-backend');
+  await mkdir(backend);
+  await writeFile(join(backend, 'package.json'), JSON.stringify({ name: 'packed-auth-backend', private: true, type: 'module' }));
+  await run('npm', ['install', '@partylayer/core', ...npmFlags], backend);
+  await writeFile(join(backend, 'probe.mjs'), `
+import assert from 'node:assert/strict';
+import { createRequire } from 'node:module';
+import { createAuthenticationChallenge, formatAuthenticationMessage } from '@partylayer/core/authentication';
+const require = createRequire(import.meta.url);
+assert.equal(typeof require('@partylayer/core/authentication').verifyAuthenticationProof, 'function');
+const challenge = createAuthenticationChallenge({ origin: 'https://app.example', partyId: 'party::packed',
+  networkId: 'canton:da-devnet', nonce: 'packed-consumer-nonce-1234567890abcdef' });
+assert.ok(formatAuthenticationMessage(challenge).includes('Party: party::packed'));
+console.log('Packed server authentication: clean npm, ESM and CommonJS passed');
+`);
+  console.log((await run('node', ['probe.mjs'], backend)).stdout.trim());
 
   const cliVersion = packages.get('create-partylayer-app').pkg.version;
   const templates = ['react-vite', 'next-ssr'];
@@ -141,7 +156,7 @@ console.log('Single npm command: ESM, CommonJS, SSR initialization and all offic
   const result = JSON.stringify({ passed: true,
     sdk: packages.get('@partylayer/sdk').pkg.version,
     react: packages.get('@partylayer/react').pkg.version, cli: cliVersion,
-    checks: ['single-command-install', 'esm', 'commonjs', 'ssr', 'official-defaults', 'react-vite', 'next-ssr'],
+    checks: ['single-command-install', 'esm', 'commonjs', 'ssr', 'official-defaults', 'authentication-backend', 'react-vite', 'next-ssr'],
   }, null, 2);
   await writeFile(join(staging, 'result.json'), result);
   const evidence = join(root, 'artifacts/packed-wallets');
