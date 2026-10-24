@@ -19,6 +19,7 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { createPartyLayer } from '../packages/sdk/dist/index.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const WRITE = process.argv.includes('--write');
@@ -30,30 +31,48 @@ const CAP_KEYS = [
   'signMessage',
   'signTransaction',
   'submitTransaction',
-  'transactionStatus',
-  'switchNetwork',
-  'multiParty',
+  'ledgerApi',
+  'restore',
+  'events',
 ];
 
 const registry = JSON.parse(
   readFileSync(join(ROOT, 'registry/v1/stable/registry.json'), 'utf-8'),
 );
 const wallets = registry.wallets;
+// Build the documentation from the same SDK catalog as consumers, without any
+// network calls or wallet authentication. Credentials below only enable metadata.
+const effectiveCapabilities = new Map();
+for (const network of ['devnet', 'testnet', 'mainnet']) {
+  const client = createPartyLayer({ network, app: { name: 'Documentation generator' },
+    discovery: { announce: false }, walletConnect: { projectId: 'documentation-only' },
+    bron: { auth: { clientId: 'documentation-only', authorizationUrl: 'https://auth.example',
+      tokenUrl: 'https://auth.example/token', redirectUri: 'https://app.example/callback' },
+      api: { baseUrl: 'https://signer.example' } },
+  });
+  client.registryClient.getRegistry = async () => registry;
+  client.registryClient.getWalletEntry = async id => wallets.find(w => w.id === id);
+  const { registryEntryToWalletInfo } = await import('../packages/registry-client/dist/index.mjs');
+  client.registryClient.getWallets = async () => wallets.map(w => registryEntryToWalletInfo(w, 'stable'));
+  try {
+    for (const wallet of await client.listWallets()) effectiveCapabilities.set(String(wallet.walletId), wallet.capabilities);
+  } finally { client.destroy(); }
+}
 
 const networks = (w) => (w.supportedNetworks ?? []).join(', ');
 const optIn = (w) => (w.adapter?.requiresConfig ? 'Yes' : 'No');
 const capabilities = (w) => {
-  const on = CAP_KEYS.filter((k) => w.capabilities?.[k] === true);
+  const on = CAP_KEYS.filter((k) => effectiveCapabilities.get(w.id)?.includes(k) === true);
   return on.length ? on.join(', ') : 'none';
 };
 
 /** The markdown table injected into the READMEs. */
 function markdownTable() {
   const lines = [
-    '| Wallet | Networks | Capabilities | Opt-in | Adapter |',
+    '| Wallet | Networks | Capabilities | Opt-in | Additional setup |',
     '|--------|----------|--------------|--------|---------|',
     ...wallets.map(
-      (w) => `| ${w.name} | ${networks(w)} | ${capabilities(w)} | ${optIn(w)} | \`${w.adapter?.type ?? ''}\` |`,
+      (w) => `| ${w.name} | ${networks(w)} | ${capabilities(w)} | ${optIn(w)} | ${w.id === 'walletconnect' ? 'Your project ID' : w.id === 'bron' ? 'Your OAuth/API configuration' : 'Included'} |`,
     ),
   ];
   return lines.join('\n');
@@ -63,7 +82,7 @@ function markdownTable() {
 function dataModule() {
   const entries = wallets
     .map((w) => {
-      const caps = CAP_KEYS.map((k) => `${k}: ${w.capabilities?.[k] === true}`).join(', ');
+      const caps = CAP_KEYS.map((k) => `${k}: ${effectiveCapabilities.get(w.id)?.includes(k) === true}`).join(', ');
       const nets = (w.supportedNetworks ?? []).map((n) => `'${n}'`).join(', ');
       return (
         `  {\n` +
@@ -89,9 +108,9 @@ export interface GeneratedWallet {
     signMessage: boolean;
     signTransaction: boolean;
     submitTransaction: boolean;
-    transactionStatus: boolean;
-    switchNetwork: boolean;
-    multiParty: boolean;
+    ledgerApi: boolean;
+    restore: boolean;
+    events: boolean;
   };
   /** True when the adapter is opt-in (requires explicit config/registration). */
   optIn: boolean;

@@ -90,17 +90,17 @@ describe('TransactionToast', () => {
     expect(container.querySelector('[aria-live="polite"]')?.textContent).toContain('Submitting transaction');
   });
 
-  it('maps each status to a distinct theme accent on the left border', () => {
+  it('maps each status to a distinct theme accent on the inline-start border', () => {
     const accentFor = (status: 'pending' | 'success' | 'error') => {
       const { container } = render(
         <ThemeProvider theme="dark">
           <TransactionToast status={status} />
         </ThemeProvider>,
       );
-      return (container.querySelector(`[data-status="${status}"]`) as HTMLElement).style.borderLeftColor;
+      return (container.querySelector(`[data-status="${status}"]`) as HTMLElement).style.borderInlineStart;
     };
     // success -> theme.colors.success, error -> theme.colors.error, pending -> neutral.
-    // Assert on the parsed color so jsdom's hex-to-rgb normalization does not matter,
+    // The logical border keeps the accent on the leading edge in either direction,
     // and that the three map to three different theme tokens.
     const success = accentFor('success');
     const error = accentFor('error');
@@ -132,5 +132,20 @@ describe('TransactionToast', () => {
     const root = container.querySelector('[data-status="pending"]') as HTMLElement;
     expect(root.getAttribute('role')).toBe('status');
     expect(root.style.backgroundColor).toBe(normalizeColor(lightTheme.colors.surface));
+  });
+
+  it.each([
+    ['awaitingApproval', 'Approve the transaction in your wallet'],
+    ['submitted', 'Transaction submitted'],
+    ['confirmed', 'Transaction confirmed on the ledger'],
+    ['rejected', 'Transaction rejected'],
+    ['unknown', 'Transaction outcome unknown.'],
+  ] as const)('distinguishes the %s lifecycle state', (status, text) => {
+    const { container } = renderToast(<TransactionToast status={status} />);
+    expect(container.textContent).toContain(text);
+    if (status === 'submitted' || status === 'unknown') {
+      expect(container.textContent).not.toContain('confirmed');
+      expect((container.firstElementChild as HTMLElement).style.backgroundColor).toBe(normalizeColor(lightTheme.colors.surface));
+    }
   });
 });

@@ -37,9 +37,8 @@ fully respected, secure-by-default only governs the **omitted** case.
 import { createSessionStore } from '@partylayer/session';
 
 const store = createSessionStore(provider /* any CIP0103Provider */, {
-  // storage is OPTIONAL, defaults to in-memory (no DOM access).
-  // In a browser, inject a localStorage adapter:
-  // storage: { getItem: (k) => localStorage.getItem(k), setItem: (k, v) => localStorage.setItem(k, v), removeItem: (k) => localStorage.removeItem(k) },
+  // Omitted storage uses encrypted IndexedDB when supported, memory otherwise.
+  // Explicit storage overrides that default; choose its security properties deliberately.
 });
 
 const unsubscribe = store.subscribe(() => {

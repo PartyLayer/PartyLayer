@@ -1,5 +1,105 @@
 # @partylayer/registry-client
 
+## 0.7.0
+
+### Minor Changes
+
+- 2e07185: Give the registry a field for how a wallet connects, and four capabilities it could not express.
+
+  One overloaded signal was answering three independent questions: how a wallet is
+  DISCOVERED, how its SDK is LOADED, and how it CONNECTS. `installation.scriptTag`
+  says how the SDK is loaded, and it was read as "scan" — which is right for Loop
+  and wrong for Cantor8, script-loaded but opening a popup.
+
+  `connect: ('injected' | 'popup' | 'relay')[]` is now its own field. The shapes
+  came from surveying all ten wallets rather than from the one that prompted it,
+  and that ordering paid: Loop and WalletConnect are BOTH `relay` — a QR scanned by
+  a phone app and a mobile pairing — so a popup-versus-scan flag would have been
+  wrong for two wallets on day one. Their shared subtitle reads "Connect from
+  another device", because the axis is where the connection happens, not what the
+  UI looks like.
+
+  ORDER IS PREFERENCE ORDER, and it has a reader: `connect[0]` is what the picker
+  tries first, and `preferInstalled: false` — the modal's "Try mobile" affordance —
+  advances to the next entry. Console is `['injected', 'relay']`. That preference
+  already exists; it is hardcoded in Console's adapter today, and this is where it
+  belongs instead.
+
+  `transfer`, `ledgerApi`, `popup` and `restore` are now expressible.
+  `walletInfo.capabilities` could never contain them, so
+  `listWallets({ requiredCapabilities: ['transfer'] })` matched zero wallets while
+  every adapter implemented `requestTransfer` — two capability gates reading
+  contradictory sources.
+
+  Also fixed: `installHints.deepLinkScheme` was populated from
+  `installation.scriptTag`, putting an npm package name in a field meaning
+  `loop://`, while `installation.deeplink` was never mapped at all. Both halves
+  corrected. Nothing read the field, so it was inert — wrong value, right value
+  dropped, and it would have shipped broken the day something read it.
+
+  No registry entries change here. The data follows once this is published, so no
+  client sees entries declaring a schema it does not understand.
+
+- 8e08da9: Stop reporting registry verification that did not happen.
+
+  Four defects in the signature path, all currently inert because nothing
+  configures `registryPublicKeys`, and all of which would have shipped broken on
+  the day signing is enabled.
+
+  **A 304 bypassed verification entirely.** On `304 Not Modified` the client
+  returned the cached registry without checking anything, and when the signature
+  fetch failed it fabricated `{ algorithm: 'ed25519', signature: '',
+keyFingerprint: '' }` and returned it as though all was well. Once keys are
+  configured most requests are 304s, so the unverified path would have been the
+  common one rather than an edge case.
+
+  A 304 now means only what it says: the served bytes are the ones our ETag names.
+  That is enough to reuse a cache entry we already verified, and not enough to
+  call an unverified entry verified. The client only offers `If-None-Match` when
+  the entry it would revalidate is one it could legitimately reuse, so an
+  unverified entry causes a full body to be fetched and checked.
+
+  **`verified: true` was hardcoded.** Both the cache write and the status update
+  set it unconditionally, so `RegistryStatus.verified` reported true even in dev
+  mode where no key is configured and the signature is never requested. It is a
+  public field the docs tell people to read. It now reflects what actually
+  happened, including `false` in dev mode.
+
+  **A missing signature was indistinguishable from an outage.** Both produced the
+  fabricated empty signature above. They are now separate outcomes: a `404` or
+  `410` raises the new `RegistrySignatureMissingError` (a deployment state:
+  signing not published for this channel), while an unreachable or failing
+  endpoint raises `RegistryFetchFailedError` (an outage). Either way, a client
+  holding a previously verified entry keeps serving it rather than going dark, so
+  the first CDN blip after enabling signing cannot take wallet discovery down.
+
+  **A failed verification was silently swallowed.** The refresh error handler fell
+  back to the last known good entry for every error, including
+  `RegistryVerificationFailedError`. That is the one case signature checking
+  exists to catch, and swallowing it left the app working and the operator
+  uninformed, which is the same as not checking. It now propagates.
+
+  The manifest and its signature are also fetched as a unit and verified against
+  the bytes that call received, rather than fetched independently. The two were
+  served with different `max-age` values, so a client could pair a fresh manifest
+  with a stale signature and fail verification on a pair that is valid at the
+  origin. The CDN header is corrected too, but fetching them together is what
+  stops the class of bug returning if a header drifts again.
+
+  `SignatureOutcome` is exported: a discriminated union whose verified variants
+  are not constructible without having run the check, so no path can express
+  success it did not earn.
+
+### Patch Changes
+
+- Updated dependencies [817d357]
+- Updated dependencies [2e07185]
+- Updated dependencies [882752f]
+- Updated dependencies [0ebd598]
+- Updated dependencies [8cb0f09]
+- Updated dependencies [8e08da9]
+  - @partylayer/core@0.15.0
+
 ## 0.6.4
 
 ### Patch Changes

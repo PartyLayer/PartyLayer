@@ -49,7 +49,7 @@ const nextConfig = {
       // subpaths like `@partylayer/react/query` fall through to the package exports.
       '@partylayer/react$': path.resolve(__dirname, '../../packages/react'),
       '@partylayer/sdk': path.resolve(__dirname, '../../packages/sdk'),
-      '@partylayer/core': path.resolve(__dirname, '../../packages/core'),
+      '@partylayer/core$': path.resolve(__dirname, '../../packages/core'),
       '@partylayer/registry-client': path.resolve(__dirname, '../../packages/registry-client'),
       '@partylayer/adapter-console': path.resolve(__dirname, '../../packages/adapters/console'),
       '@partylayer/adapter-loop': path.resolve(__dirname, '../../packages/adapters/loop'),

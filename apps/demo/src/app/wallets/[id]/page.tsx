@@ -267,25 +267,28 @@ export default function WalletIntegrationPage({ params }: { params: { id: string
       {note ? (
         <>
           <h2 style={{ fontSize: 22, margin: '0 0 12px' }}>Install</h2>
-          <CodeBlock>{`npm install @partylayer/react ${note.installPackage}`}</CodeBlock>
+          <CodeBlock>{`npm install @partylayer/react @tanstack/react-query`}</CodeBlock>
 
-          <h2 style={{ fontSize: 22, margin: '0 0 12px' }}>Construct the adapter</h2>
-          <CodeBlock>{note.construct}</CodeBlock>
-
-          <h2 style={{ fontSize: 22, margin: '0 0 12px' }}>Register it</h2>
+          <h2 style={{ fontSize: 22, margin: '0 0 12px' }}>Connect with the default catalog</h2>
           <p style={{ fontSize: 15, color: t.slate700, maxWidth: '62ch', margin: '0 0 16px' }}>
-            Pass the adapter to <code style={{ fontFamily: t.mono, fontSize: 13 }}>PartyLayerKit</code>.
-            Everything else, the button and the modal, is the same for every wallet.
+            Supported wallet SDKs are included. Choose a supported network and channel;
+            no wallet-specific import or registration is required.
           </p>
           <CodeBlock>{`import { PartyLayerKit, ConnectButton } from '@partylayer/react';
 
 export default function App() {
   return (
-    <PartyLayerKit network="devnet" appName="My dApp"${w.channel === 'beta' ? ' channel="beta"' : ''} adapters={[${w.id}]}>
+    <PartyLayerKit network="devnet" appName="My dApp"${w.channel === 'beta' ? ' channel="beta"' : ''}>
       <ConnectButton />
     </PartyLayerKit>
   );
 }`}</CodeBlock>
+
+          <details style={{ marginBottom: 24 }}>
+            <summary>Advanced: custom provider construction</summary>
+            <p>Only for applications replacing the default catalog.</p>
+            <CodeBlock>{note.construct}</CodeBlock>
+          </details>
 
           <h2 style={{ fontSize: 22, margin: '0 0 12px' }}>Connection flow</h2>
           <p style={{ fontSize: 15, color: t.slate700, maxWidth: '62ch', margin: '0 0 24px', lineHeight: 1.7 }}>

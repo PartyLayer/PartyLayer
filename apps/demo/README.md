@@ -1,129 +1,87 @@
-# PartyLayer Demo App
+# PartyLayer website and demo
 
-A Next.js demo application showcasing the PartyLayer SDK integration.
+The Next.js app behind `partylayer.xyz`: product pages, developer documentation,
+wallet directory and interactive kit demo. This is a workspace development guide;
+application developers should start with the [public quick start](https://partylayer.xyz/docs/quick-start).
 
-## Features
+## Run locally
 
-- Wallet connection via `WalletModal`
-- Session management (connect/disconnect)
-- Message signing demo
-- Registry status display
-- Event logging on debug page
-- **WalletConnect** (opt-in) — connect Canton wallets over WalletConnect (e.g.
-  Nightly mobile) by scanning a QR
-
-## WalletConnect (live mobile-wallet scan)
-
-The demo registers the opt-in `@partylayer/adapter-walletconnect`, so
-**"WalletConnect"** appears in the connect modal. Clicking it shows a scannable
-pairing QR + mobile deep-link **rendered by the `@partylayer/react` modal
-itself** (from the adapter's `onDisplayUri`) — the demo does no QR/URI rendering
-of its own.
-
-Set a WalletConnect Cloud project id (falls back to a shared local-dev id):
-
-```bash
-# apps/demo/.env.local
-NEXT_PUBLIC_WC_PROJECT_ID=577414f6b46f09a7383d3c306c013a57
-```
-
-To run the live scan test locally:
+From the repository root, using its pinned pnpm version:
 
 ```bash
 pnpm install
-pnpm -r --filter "@partylayer/*" build      # build the workspace packages
-cd apps/demo && NEXT_PUBLIC_WC_PROJECT_ID=577414f6b46f09a7383d3c306c013a57 pnpm dev
-# open http://localhost:3000 → Connect → WalletConnect → scan the QR with a
-# Canton WC wallet (e.g. Nightly mobile) → approve.
-```
-
-The WalletConnect adapter loads `@canton-network/dapp-sdk` only at connect time
-(dynamic import), so registering it does not pull `@walletconnect/sign-client`
-into the demo's main bundle.
-
-## Quick Start
-
-### Prerequisites
-
-1. **Node.js 18+** and **pnpm 8+** installed
-2. Registry server running (optional - will use fallback if unavailable)
-
-### Installation
-
-From the root of the PartyLayer repository:
-
-```bash
-# Install dependencies
-pnpm install
-
-# Build all packages
 pnpm build
-
-# Start the demo
-pnpm dev
+pnpm --filter partylayer-demo dev
 ```
 
-### Environment Variables
+Open `http://localhost:3000`. Set `PORT=3187` before the final command if port 3000
+is in use. Do not run multiple Next dev/build processes against the same `.next` directory.
 
-Create a `.env.local` file or set these environment variables:
+## Routes
 
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `NEXT_PUBLIC_REGISTRY_URL` | Registry server URL | `http://localhost:3001` |
-| `NEXT_PUBLIC_REGISTRY_CHANNEL` | Registry channel (`stable` or `beta`) | `stable` |
-| `NEXT_PUBLIC_NETWORK` | Network (`devnet`, `testnet`, `mainnet`) | `devnet` |
+| Route | Purpose |
+| --- | --- |
+| `/` | Product overview, installation and live connection tools |
+| `/docs` | Developer documentation |
+| `/docs/quick-start` | One-command React installation and complete Vite/Next.js setup |
+| `/wallets` | Registry-backed wallet directory |
+| `/kit-demo` | Themes, English/Turkish and RTL, wallet discovery and connection tools |
+| `/cost-demo` | Cost-related UI examples |
+| `/debug` | Registry and event diagnostics |
 
-### Running with Registry Server
+The homepage and kit demo explicitly use **Devnet beta** and a same-origin registry
+at `/registry`. Send is absent because its catalog entry supports Mainnet only.
+Vala's beta listing is not proof of live transaction acceptance. Use an independent
+app with an explicit network to test another supported environment.
 
-To run with a local registry server:
+## Registry and wallet configuration
+
+`predev` and `prebuild` run `scripts/copy-registry.mjs` to copy registry snapshots
+into the public assets. A separate registry server is not required for the main
+site/kit demo. Regenerate docs tables with `pnpm gen:readme` after catalog changes.
+
+For WalletConnect, configure an application-owned project ID:
+
+```dotenv
+# apps/demo/.env.local
+NEXT_PUBLIC_WC_PROJECT_ID=YOUR_PROJECT_ID
+```
+
+`src/lib/walletconnect-demo.ts` has a shared local-development fallback. Production
+integrators should use their own project ID and allowed origins. The React modal
+renders the pairing QR/deep link; application code does not render its own QR.
+The WalletConnect compatibility runtime loads at connection time.
+
+Hosted wallets need their own login and approval. A local page or passing automated
+mock test does not establish vendor production-origin authorization or a ledger result.
+
+## Documentation workflow
+
+The site uses task-oriented pages in `src/app/docs/<slug>/content.tsx`. Repository
+versions live in `docs/`. Keep shared guide headings and examples aligned; English
+is canonical. The quick start and README install commands must match the public kit.
 
 ```bash
-# Terminal 1: Start registry server
-pnpm --filter registry-server dev
-
-# Terminal 2: Start demo app
-pnpm --filter demo dev
+pnpm gate:docs-drift
+pnpm gate:readme
+pnpm --filter partylayer-demo typecheck
+pnpm --filter partylayer-demo lint
+pnpm --filter partylayer-demo build
 ```
 
-## Pages
+Before a coordinated package release, review candidate-version notes and ensure the
+website, README files, starters and published npm versions tell the same story.
 
-- `/` - Main demo page with wallet connection
-- `/debug` - Debug page showing registry status and event log
-
-## Supported Wallets
-
-| Wallet | Type | Status |
-|--------|------|--------|
-| Console Wallet | Browser Extension | Ready |
-| 5N Loop | QR Code / Popup | Ready |
-| Cantor8 (C8) | Browser Extension | Ready |
-| Bron | OAuth / Redirect | Ready |
-
-## E2E Tests
-
-Run end-to-end tests with Playwright:
+## Browser acceptance
 
 ```bash
-pnpm --filter demo test:e2e
+pnpm --filter partylayer-demo exec playwright install chromium
+CI=true pnpm --filter partylayer-demo test:e2e:pr
 ```
 
-## Project Structure
-
-```
-apps/demo/
-├── src/
-│   └── app/
-│       ├── page.tsx          # Main page with PartyLayer setup
-│       ├── components/
-│       │   └── DemoApp.tsx   # Demo UI component
-│       ├── debug/
-│       │   └── page.tsx      # Debug page
-│       ├── layout.tsx        # Root layout
-│       └── globals.css       # Global styles
-├── e2e/                      # Playwright E2E tests
-├── package.json
-└── next.config.js
-```
+The PR suite covers smoke, controlled connection, Vala beta, keyboard and axe checks.
+Real assistive-technology speech, vendor approvals and send/swap settlement require
+separate evidence. See [wallet acceptance](../../docs/wallet-acceptance.md).
 
 ## License
 

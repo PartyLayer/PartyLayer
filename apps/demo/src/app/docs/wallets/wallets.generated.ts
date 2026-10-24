@@ -9,9 +9,9 @@ export interface GeneratedWallet {
     signMessage: boolean;
     signTransaction: boolean;
     submitTransaction: boolean;
-    transactionStatus: boolean;
-    switchNetwork: boolean;
-    multiParty: boolean;
+    ledgerApi: boolean;
+    restore: boolean;
+    events: boolean;
   };
   /** True when the adapter is opt-in (requires explicit config/registration). */
   optIn: boolean;
@@ -23,7 +23,7 @@ export const GENERATED_WALLETS: GeneratedWallet[] = [
     id: 'console',
     name: "Console Wallet",
     networks: ['devnet', 'testnet', 'mainnet'],
-    capabilities: { signMessage: true, signTransaction: true, submitTransaction: true, transactionStatus: true, switchNetwork: false, multiParty: false },
+    capabilities: { signMessage: true, signTransaction: false, submitTransaction: true, ledgerApi: false, restore: true, events: false },
     optIn: false,
     adapter: "@partylayer/adapter-console",
   },
@@ -31,7 +31,7 @@ export const GENERATED_WALLETS: GeneratedWallet[] = [
     id: 'loop',
     name: "5N Loop",
     networks: ['devnet', 'mainnet'],
-    capabilities: { signMessage: true, signTransaction: false, submitTransaction: true, transactionStatus: true, switchNetwork: false, multiParty: false },
+    capabilities: { signMessage: true, signTransaction: false, submitTransaction: true, ledgerApi: true, restore: true, events: true },
     optIn: false,
     adapter: "@partylayer/adapter-loop",
   },
@@ -39,7 +39,7 @@ export const GENERATED_WALLETS: GeneratedWallet[] = [
     id: 'cantor8',
     name: "Cantor8",
     networks: ['devnet', 'mainnet'],
-    capabilities: { signMessage: false, signTransaction: false, submitTransaction: true, transactionStatus: true, switchNetwork: false, multiParty: false },
+    capabilities: { signMessage: false, signTransaction: false, submitTransaction: true, ledgerApi: false, restore: false, events: true },
     optIn: false,
     adapter: "@partylayer/adapter-cantor8",
   },
@@ -47,7 +47,7 @@ export const GENERATED_WALLETS: GeneratedWallet[] = [
     id: 'bron',
     name: "Bron",
     networks: ['devnet', 'testnet', 'mainnet'],
-    capabilities: { signMessage: true, signTransaction: true, submitTransaction: false, transactionStatus: false, switchNetwork: false, multiParty: false },
+    capabilities: { signMessage: true, signTransaction: true, submitTransaction: false, ledgerApi: true, restore: true, events: false },
     optIn: true,
     adapter: "@partylayer/adapter-bron",
   },
@@ -55,7 +55,7 @@ export const GENERATED_WALLETS: GeneratedWallet[] = [
     id: 'nightly',
     name: "Nightly",
     networks: ['devnet', 'testnet', 'mainnet'],
-    capabilities: { signMessage: true, signTransaction: false, submitTransaction: true, transactionStatus: false, switchNetwork: false, multiParty: false },
+    capabilities: { signMessage: true, signTransaction: false, submitTransaction: true, ledgerApi: true, restore: true, events: true },
     optIn: false,
     adapter: "@partylayer/adapter-nightly",
   },
@@ -63,7 +63,7 @@ export const GENERATED_WALLETS: GeneratedWallet[] = [
     id: 'cauri',
     name: "Cauri Wallet",
     networks: ['devnet', 'mainnet'],
-    capabilities: { signMessage: true, signTransaction: true, submitTransaction: true, transactionStatus: true, switchNetwork: false, multiParty: false },
+    capabilities: { signMessage: true, signTransaction: false, submitTransaction: true, ledgerApi: false, restore: false, events: false },
     optIn: false,
     adapter: "@lithiumdigital/cauri-dapp-sdk",
   },
@@ -71,7 +71,7 @@ export const GENERATED_WALLETS: GeneratedWallet[] = [
     id: 'oneswap',
     name: "OneSwap V2 Wallet",
     networks: ['devnet', 'mainnet'],
-    capabilities: { signMessage: true, signTransaction: false, submitTransaction: true, transactionStatus: false, switchNetwork: false, multiParty: false },
+    capabilities: { signMessage: true, signTransaction: false, submitTransaction: true, ledgerApi: false, restore: false, events: false },
     optIn: false,
     adapter: "@oneswap/wallet-cip0103-adapter",
   },
@@ -79,7 +79,7 @@ export const GENERATED_WALLETS: GeneratedWallet[] = [
     id: 'send',
     name: "Send",
     networks: ['mainnet'],
-    capabilities: { signMessage: true, signTransaction: false, submitTransaction: true, transactionStatus: true, switchNetwork: false, multiParty: false },
+    capabilities: { signMessage: true, signTransaction: false, submitTransaction: true, ledgerApi: true, restore: true, events: true },
     optIn: false,
     adapter: "@partylayer/adapter-send",
   },
@@ -87,7 +87,7 @@ export const GENERATED_WALLETS: GeneratedWallet[] = [
     id: 'walley',
     name: "Walley",
     networks: ['mainnet', 'testnet', 'devnet'],
-    capabilities: { signMessage: true, signTransaction: false, submitTransaction: true, transactionStatus: true, switchNetwork: false, multiParty: false },
+    capabilities: { signMessage: true, signTransaction: false, submitTransaction: true, ledgerApi: false, restore: false, events: false },
     optIn: false,
     adapter: "@k2flabs/walley-dapp-sdk",
   },
@@ -95,7 +95,7 @@ export const GENERATED_WALLETS: GeneratedWallet[] = [
     id: 'walletconnect',
     name: "WalletConnect",
     networks: ['devnet', 'testnet', 'mainnet'],
-    capabilities: { signMessage: true, signTransaction: false, submitTransaction: true, transactionStatus: false, switchNetwork: false, multiParty: false },
+    capabilities: { signMessage: true, signTransaction: false, submitTransaction: true, ledgerApi: true, restore: true, events: true },
     optIn: true,
     adapter: "@partylayer/adapter-walletconnect",
   },

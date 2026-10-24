@@ -161,6 +161,107 @@ pnpm run web-smoke
 It must exit 0 (wallet list opens, react-native-svg and Image renderers both work, no
 uncaught page error). If it fails, the module loading regressed; do not publish.
 
+## Local production UI acceptance
+
+A hosting account or Vercel preview login is not required for code, package or UI
+validation. From the repository root:
+
+```bash
+pnpm build
+pnpm --filter partylayer-demo start --port 43173 --hostname 127.0.0.1
+```
+
+Open `http://127.0.0.1:43173/kit-demo`. Check the actual supported wallet list,
+Vala's Devnet beta label, default PartyLayer attribution, search, language/RTL,
+keyboard focus containment and Escape restoration, and mobile overflow. Rebuild
+and restart the local server after changing production code; reload the browser
+before collecting evidence. Record the commit and checks separately from the
+live wallet matrix. Production UI acceptance uses the real catalog, without a
+mock connected account.
+
+Use `pnpm gate` for the automated workspace, packed-consumer and controlled
+browser checks. Wallet approval and ledger tests may require an origin allowed
+by the vendor; localhost UI checks do not establish that a production-origin
+wallet authorization, transfer or swap works.
+
+## Default wallet release validation
+
+The broader product milestones and completion criteria are tracked in the
+[Canton wallet platform roadmap](./platform-roadmap.md). The default catalog release
+does not close those milestones. Live wallet tests, including Loop, are deferred
+to the final acceptance stage at the maintainer's request.
+
+The public catalog is tested across stable/beta and devnet/testnet/mainnet. Its
+network filters and capability filters must agree with the active integration.
+`pnpm gate` also packs all public packages, installs the packed React entry in a
+clean npm consumer, checks ESM/CommonJS/SSR, and builds packed CLI-generated
+Next.js and Vite apps. These are automated integration checks, not proof of a
+successful live wallet approval or ledger commit.
+
+The 2026-10-24 code review also adds four axe accessibility scenarios to the PR
+browser suite, plus six docs axe/reflow cases across desktop and 320 px mobile.
+It rejects contradictory execution command IDs in both normalized
+receipts and the native provider facade. The installed Vala runtime is covered
+with controlled HTTP/popup tests. See [acceptance evidence](./wallet-acceptance.md)
+for the exact scope, the outstanding VoiceOver run and actual Devnet test areas.
+These checks do not complete the live matrix below.
+
+Live observations in this review (2026-10-23, production `33898ef`; the candidate
+in PR #343 has separate automated coverage and has not inherited these live results):
+
+| Wallet | Live result in this review | Live ledger submission |
+| --- | --- | --- |
+| Vala | Devnet connect, message signature returned, reload/restore and disconnect passed | Pending valid vendor-provided Devnet transaction/test dApp |
+| Console | Devnet connection timed out after Chrome restart; unlock/readiness check pending | Not tested |
+| Cauri | Devnet connect, message signature returned, saved session redisplayed after reload, and disconnect passed | Not tested |
+| Send | Test account available; Mainnet test pending | Not tested |
+| 5N Loop | Devnet sign request reached wallet UI; wallet reported `Could not unlock private key`, also reproduced with the official Loop SDK alone | Not tested |
+| Walley | Test account available; live test pending | Not tested |
+| OneSwap | Maintainer reports prior successful use; repeat login test omitted at their request | Not retested |
+| Cantor8 | Live test access not established in this review | Not tested |
+| Nightly | Live test access not established in this review | Not tested |
+| Bron | Enterprise test access not established in this review | Not tested |
+| WalletConnect | Paired wallet/relay live test not established in this review | Not tested |
+
+Vala's post-sign requests page reported `DAPP_API_ENABLED` disabled even though the
+message signature returned to PartyLayer. This warning does not establish that
+message signing failed, or that transaction submission works. Returned signature
+bytes alone are not an independent cryptographic verification against the wallet's
+public key. Keep Vala on Devnet beta and update these results after the remaining
+tests; do not describe the full wallet matrix as live-verified.
+
+The verification runner deliberately skips four browser-required adapter
+conformance suites in CI. The native provider conformance gate and mocked browser
+tests do not replace those live/extension checks. The separate extension-isolation
+record remains in `apps/demo/e2e/manual-runs.json`; do not mark it passed without
+running the named specs against recorded extension versions.
+
+## Wallet SDK maintenance
+
+`.github/dependabot.yml` checks supported wallet SDK dependencies every day at
+09:00 Europe/Istanbul, including weekends. It opens update PRs and advances the
+manifest minimum and pnpm lockfile together. Patch and minor updates are grouped
+separately; major releases remain individual PRs. The configuration covers the
+public SDK, legacy integrations and workspace lockfile, including Canton dApp SDK,
+Loop, Console, Cantor8, Walley, Cauri, OneSwap, Vala and WalletConnect.
+
+These PRs use the same build, unit, conformance, packed-consumer and browser gates
+as product changes. Review changed public APIs, approved loader pins, registry
+metadata and release changesets before merging. A newly published vendor version
+is an update candidate; a compatible, tested version is what PartyLayer ships.
+
+The candidate uses official discovery **1.15.0** for browser-native connections
+and reviewed Canton dApp SDK **1.8.0** for the existing WalletConnect compatibility path.
+Native cached sessions need one explicit reconnect when the official provider hint
+is absent. Native `asProvider` Ledger API reads now return raw JSON; review
+[the migration guide](./protocol-ownership.md#storage-and-api-migration) before release. Walley's
+1.2.0 runtime still requires its **^0.24.0** peer, explicitly supplied as 0.24.0
+by the default SDK. Keep that compatibility path isolated until the vendor changes
+its contract; a blanket upgrade would introduce a peer mismatch. See
+[Protocol ownership](./protocol-ownership.md) for the reviewed public APIs and
+remaining migration gates. Neither version pin establishes live relay acceptance.
+See the [Dependabot configuration reference](https://docs.github.com/en/code-security/reference/supply-chain-security/dependabot-options-reference).
+
 ## Pre-Release Checklist
 
 - [ ] All tests pass (`pnpm test`)
@@ -173,6 +274,20 @@ uncaught page error). If it fails, the module loading regressed; do not publish.
 - [ ] Changesets created for all changes
 - [ ] CHANGELOG.md reviewed
 - [ ] Documentation updated if needed
+
+## Documentation release alignment
+
+README and installation guides state their minimum version scope: React 3.1.0,
+SDK 0.20.0 and CLI 0.6.0 for this coordinated release. Confirm those versions are
+available before claiming a public-registry installation passed. Recheck the same
+commands against npm after publication; an `@latest` tag alone is not evidence.
+
+Keep the homepage, site installation/quick-start pages, root/SDK/React/CLI READMEs
+and generated template guides aligned. Run `pnpm gate:docs-drift`,
+`pnpm gate:readme` and `pnpm gate:templates`. The wallet table is generated from
+the registry plus actual SDK capabilities; use `pnpm gen:readme` instead of editing
+its marked sections. Document runtime inclusion separately from wallet login,
+network support, capability limits and completed live acceptance.
 
 ## Post-Release
 

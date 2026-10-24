@@ -7,7 +7,7 @@
  * NO need to:
  * - Install adapter packages separately
  * - Import and register adapters manually
- * - Load wallet SDKs (Loop SDK is lazy-loaded from CDN automatically)
+ * - Load wallet SDKs manually (reviewed runtimes are included)
  */
 
 import { createPartyLayer } from '@partylayer/sdk';
@@ -16,7 +16,7 @@ import type { PartyLayerClient } from '@partylayer/sdk';
 /**
  * Initialize PartyLayer client
  * 
- * This is ALL a dApp needs to do to support ALL wallets!
+ * Default runtimes are supplied automatically; network/channel and credential requirements still apply.
  * 
  * Configuration from environment variables:
  * - VITE_REGISTRY_URL: Registry server URL (default: http://localhost:3001)
@@ -28,7 +28,7 @@ import type { PartyLayerClient } from '@partylayer/sdk';
  * import { createClient } from './partylayer';
  * 
  * const client = createClient();
- * const wallets = await client.listWallets();  // All wallets available!
+ * const wallets = await client.listWallets();  // Wallets available for this configuration
  * const session = await client.connect({ walletId: 'console' });
  * ```
  */
@@ -39,7 +39,7 @@ export function createClient(): PartyLayerClient {
 
   // That's it! All wallet adapters are automatically registered:
   // - Console Wallet (browser extension)
-  // - 5N Loop (QR code / popup - SDK lazy-loaded from CDN)
+  // - 5N Loop (QR code / popup - official SDK included)
   const client = createPartyLayer({
     registryUrl,
     channel,

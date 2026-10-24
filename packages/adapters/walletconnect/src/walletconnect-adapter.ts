@@ -18,6 +18,9 @@
 
 import {
   CapabilityNotSupportedError,
+  TransportError,
+  detectNetworkMismatch,
+  isRecognizedNetwork,
   mapUnknownErrorToPartyLayerError,
   toPartyId,
   toCAIP2Network,
@@ -297,7 +300,10 @@ export class WalletConnectAdapter implements WalletAdapter {
 
       // Establishes the WC session: fires `onUri` (→ display URI / modal QR),
       // then awaits wallet approval.
-      await wc.request({ method: 'connect' });
+      const connected = await wc.request<{ isConnected?: boolean } | boolean>({ method: 'connect' });
+      if (connected === false || (connected && typeof connected === 'object' && connected.isConnected === false)) {
+        throw new TransportError('WalletConnect did not establish a connection');
+      }
 
       const account = await wc.request<{
         partyId: string;
@@ -307,6 +313,7 @@ export class WalletConnectAdapter implements WalletAdapter {
         signingProviderId?: string;
         hint?: string;
       }>({ method: 'getPrimaryAccount' });
+      assertPrimaryAccount(account);
 
       let status: {
         network?: { networkId?: string; ledgerApi?: { baseUrl?: string } };
@@ -376,8 +383,20 @@ export class WalletConnectAdapter implements WalletAdapter {
         this.official = null;
         return null;
       }
+      const account = await wc.request<{ partyId?: string; networkId?: string }>({ method: 'getPrimaryAccount' });
+      assertPrimaryAccount(account);
+      if (account.partyId !== persisted.partyId) return null;
+      let status: { isConnected?: boolean; network?: { networkId?: string }; session?: { expiresAt?: number } } = {};
+      try { status = await wc.request({ method: 'status' }); } catch { /* Some paired wallets do not implement status. */ }
+      if (status?.isConnected === false) return null;
+      const reported = status?.network?.networkId;
+      const network = typeof reported === 'string' && isRecognizedNetwork(reported) ? reported
+        : typeof account.networkId === 'string' && isRecognizedNetwork(account.networkId) ? account.networkId : undefined;
+      if (network && detectNetworkMismatch(persisted.network, network)) return null;
+      const expiresAt = status?.session?.expiresAt;
+      if (typeof expiresAt === 'number' && Date.now() >= expiresAt) return null;
       ctx.logger.debug('Restored WalletConnect session', { partyId: persisted.partyId });
-      return { ...persisted, walletId: this.walletId };
+      return { ...persisted, walletId: this.walletId, ...(typeof expiresAt === 'number' ? { expiresAt } : {}) };
     } catch (err) {
       ctx.logger.warn('Failed to restore WalletConnect session', err);
       return null;
@@ -393,10 +412,17 @@ export class WalletConnectAdapter implements WalletAdapter {
       const wc = await this.ensureOfficial();
       // The official adapter prefixes `canton_`, so this issues a
       // `canton_signMessage` request over the WalletConnect session.
-      const result = await wc.request<{ signature?: string }>({
+      const result = await wc.request<{ signature?: string; partyId?: string; message?: string }>({
         method: 'signMessage',
         params: { message: params.message },
       });
+      if (typeof result?.signature !== 'string' || !result.signature.trim()) {
+        throw new TransportError('WalletConnect returned an invalid message signature');
+      }
+      if ((result.partyId !== undefined && result.partyId !== session.partyId) ||
+        (result.message !== undefined && result.message !== params.message)) {
+        throw new TransportError('WalletConnect signed for an unexpected message or party');
+      }
       return {
         signature: toSignature(result?.signature ?? ''),
         partyId: session.partyId,
@@ -433,7 +459,7 @@ export class WalletConnectAdapter implements WalletAdapter {
     try {
       const wc = await this.ensureOfficial();
       const result = await wc.request<{
-        tx?: { payload?: { updateId?: string }; commandId?: string };
+        tx?: { payload?: { updateId?: string; completionOffset?: number }; commandId?: string };
       }>({ method: 'prepareExecuteAndWait', params: params.signedTx });
       // Was `updateId ?? commandId ?? 'pending'` — a three-level chain ending in
       // the literal string "pending" as a transactionHash. It now reads the real
@@ -451,6 +477,9 @@ export class WalletConnectAdapter implements WalletAdapter {
         transactionHash: toTransactionHash(updateId),
         submittedAt: Date.now(),
         updateId,
+        ...(typeof result?.tx?.payload?.completionOffset === 'number' &&
+          Number.isSafeInteger(result.tx.payload.completionOffset) && result.tx.payload.completionOffset >= 0
+          ? { completionOffset: result.tx.payload.completionOffset } : {}),
         ...(result?.tx?.commandId ? { commandId: result.tx.commandId } : {}),
       };
     } catch (err) {
@@ -536,6 +565,12 @@ export class WalletConnectAdapter implements WalletAdapter {
 }
 
 // ── helpers ──────────────────────────────────────────────────────────────────
+
+function assertPrimaryAccount<T extends { partyId?: unknown } | null | undefined>(account: T): asserts account is T & { partyId: string } {
+  if (typeof account?.partyId !== 'string' || !account.partyId.trim()) {
+    throw new TransportError('WalletConnect did not return a primary party');
+  }
+}
 
 /**
  * The official dapp-sdk adapter unconditionally opens a blank popup via

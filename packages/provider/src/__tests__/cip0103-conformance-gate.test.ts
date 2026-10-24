@@ -46,11 +46,14 @@ function createMockClient(overrides: Partial<BridgeableClient> = {}): Bridgeable
       signature: 'sig-gate-xyz' as unknown,
     })),
     signTransaction: vi.fn(async () => ({
+      signature: 'actual-signature-fixture',
+      signedBy: 'party-gate-abc',
       transactionHash: 'tx-gate-hash' as unknown,
       signedTx: { data: 'signed-payload' },
       partyId: 'party-gate-abc' as unknown,
     })),
     submitTransaction: vi.fn(async () => ({
+      completionOffset: 37,
       transactionHash: 'tx-gate-hash' as unknown,
       submittedAt: Date.now(),
       commandId: 'cmd-gate-1',
@@ -294,9 +297,9 @@ describe('CIP-0103 Conformance Gate', () => {
       expect(events.map(e => e.status)).toEqual(['pending', 'failed']);
     });
 
-    it('submit failure: pending → signed → failed', async () => {
+    it('explicit submit rejection: pending → signed → failed', async () => {
       const client = createMockClient({
-        submitTransaction: vi.fn(async () => { throw new Error('network error'); }),
+        submitTransaction: vi.fn(async () => { throw Object.assign(new Error('user rejected'), { code: 4001 }); }),
       });
       const p = createProviderBridge(client);
       const events: Array<{ status: string }> = [];

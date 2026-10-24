@@ -102,7 +102,7 @@ describe('accent overrides', () => {
   it('applies an accent preset: sets primary and its foreground, derives a distinct hover', () => {
     const themed = applyAccent(themes.default.dark, accentPresets.blue);
     expect(themed.colors.primary).toBe('#3B82F6');
-    expect(themed.colors.primaryForeground).toBe('#FFFFFF');
+    expect(themed.colors.primaryForeground).toBe('#0B0F1A');
     expect(themed.colors.primaryHover).toMatch(/^#[0-9a-fA-F]{6}$/);
     expect(themed.colors.primaryHover).not.toBe(themed.colors.primary);
   });
@@ -118,4 +118,30 @@ describe('accent overrides', () => {
     applyAccent(themes.default.light, { accentColor: '#123456' });
     expect(themes.default.light.colors.primary).toBe(before);
   });
+});
+
+// Independent WCAG luminance check for the native normal/pressed accent pair.
+function contrastRatio(a: string | undefined, b: string): number {
+  if (!a) throw new Error('Missing foreground');
+  const luminance = (hex: string) => {
+    const rgb = hex.slice(1).match(/../g)!.map((value) => parseInt(value, 16) / 255);
+    const c = rgb.map((v) => v <= 0.04045 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4);
+    return c[0] * 0.2126 + c[1] * 0.7152 + c[2] * 0.0722;
+  };
+  const [high, low] = [luminance(a), luminance(b)].sort((x, y) => y - x);
+  return (high + 0.05) / (low + 0.05);
+}
+
+it('keeps native preset and custom accent text readable while pressed', () => {
+  for (const base of [themes.default.light, themes.default.dark]) {
+    const overrides = [
+      ...Object.values(accentPresets),
+      ...['#3B82F6', '#EC4899', '#808080', '#777777', '#F97316'].map((accentColor) => ({ accentColor })),
+    ];
+    for (const value of overrides) {
+      const c = applyAccent(base, value).colors;
+      expect(contrastRatio(c.primaryForeground, c.primary)).toBeGreaterThanOrEqual(4.5);
+      expect(contrastRatio(c.primaryForeground, c.primaryHover)).toBeGreaterThanOrEqual(4.5);
+    }
+  }
 });

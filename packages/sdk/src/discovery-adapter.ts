@@ -24,8 +24,8 @@
  * Session restore forwards to the official adapter's own `restore` (see {@link
  * GenericDiscoveryAdapter.restore}): on reload the wallet reinstates its session, typically
  * from its own storage, and the bridge adopts the returned live provider, so the first
- * request after reload works. If the official adapter has no `restore`, the SDK revives the
- * persisted record as-is.
+ * request after reload works. A silent primary-account probe validates the persisted party;
+ * an expired or unavailable provider requires reconnection.
  *
  * Eventless note: the official provider exposes `on`/`emit`/`removeListener`
  * but popup/remote wallets typically never emit, so `getCapabilities()` NEVER
@@ -38,6 +38,8 @@ import type {
   CapabilityKey,
   CIP0103Account,
   CIP0103Provider,
+  LedgerApiParams,
+  LedgerApiResult,
   NetworkHosts,
   NetworkId,
   OfficialAdapterFactory,
@@ -51,8 +53,11 @@ import type {
   WalletAdapter,
   WalletId,
 } from '@partylayer/core';
-import { toPartyId, toWalletId, isRecognizedNetwork } from '@partylayer/core';
+import { toPartyId, toWalletId, isRecognizedNetwork, normalizeLedgerMethodLower, ledgerApiBodyToObject, detectNetworkMismatch } from '@partylayer/core';
 import { submitViaPrepareExecute, type ExecuteVerbState } from './prepare-execute';
+import { normalizeSignedMessage } from './sign-message';
+import { assertConnectionAccepted, assertPrimaryParty } from './connection-result';
+import { nativeAdapterCopies, nativeOwnerBindings } from './native-owner';
 
 export interface GenericDiscoveryAdapterArgs {
   /**
@@ -61,6 +66,8 @@ export interface GenericDiscoveryAdapterArgs {
    * `networkHosts` are ignored. Mutually exclusive with `factory`.
    */
   official?: OfficialProviderAdapter;
+  /** Declared registry capabilities; only methods implemented by this bridge are exposed. */
+  capabilities?: Partial<Record<CapabilityKey, boolean>>;
   /**
    * Factory form: `create(host)` constructs the official adapter with a host
    * resolved from `networkHosts[activeNetwork]` at connect time. Needed because
@@ -88,6 +95,17 @@ export interface GenericDiscoveryAdapterArgs {
   icon?: string;
 }
 
+/** The generic bridge's implemented methods, constrained by registry declarations. */
+export function getDiscoveryCapabilities(
+  declared?: Partial<Record<CapabilityKey, boolean>>,
+): CapabilityKey[] {
+  const capabilities: CapabilityKey[] = ['connect', 'disconnect'];
+  if (declared?.signMessage !== false) capabilities.push('signMessage');
+  if (declared?.submitTransaction !== false) capabilities.push('submitTransaction');
+  if (declared?.ledgerApi) capabilities.push('ledgerApi');
+  return capabilities;
+}
+
 export class GenericDiscoveryAdapter implements WalletAdapter {
   readonly walletId: WalletId;
   readonly name: string;
@@ -110,8 +128,26 @@ export class GenericDiscoveryAdapter implements WalletAdapter {
    * submit and reused, so the wallet is asked at most once.
    */
   private readonly executeVerb: ExecuteVerbState = {};
+  private readonly capabilities: CapabilityKey[];
+  readonly ledgerApi?: WalletAdapter['ledgerApi'];
 
   constructor(args: GenericDiscoveryAdapterArgs) {
+    const configuration = { ...args, capabilities: args.capabilities && { ...args.capabilities } };
+    nativeAdapterCopies.set(this, () => new GenericDiscoveryAdapter({
+      ...configuration, networkHosts: { ...this.networkHosts },
+    }));
+    this.capabilities = getDiscoveryCapabilities(args.capabilities);
+    if (args.capabilities?.ledgerApi) {
+      this.ledgerApi = async (_ctx, _session, params: LedgerApiParams): Promise<LedgerApiResult> => {
+        const result = await this.provider.request<{ response?: string }>({
+          method: 'ledgerApi', params: {
+            requestMethod: normalizeLedgerMethodLower(params.requestMethod),
+            resource: params.resource, body: ledgerApiBodyToObject(params.body),
+          },
+        });
+        return { response: typeof result?.response === 'string' ? result.response : JSON.stringify(result ?? null) };
+      };
+    }
     if (args.official) {
       this.official = args.official;
       this.factory = null;
@@ -174,11 +210,21 @@ export class GenericDiscoveryAdapter implements WalletAdapter {
     this.official = this.factory.create(host);
   }
 
+  /** @internal Prepare the official owner before a popup-opening click. */
+  async prepareNativeConnection(network: NetworkId): Promise<void> {
+    const owner = nativeOwnerBindings.get(this);
+    if (!owner) return;
+    this.resolveOfficial(network);
+    await owner.prepare(String(this.walletId), this.official!, network);
+  }
+
   /** Lazily obtain (and cache) the official provider — deferred off the init/SSR path.
    *  `official.provider()` is typed `OfficialProvider` (loose `request` so real
    *  official adapters are assignable); it is call-compatible with CIP0103Provider
    *  (the bridge only ever calls `request({ method, params })`). */
   private get provider(): CIP0103Provider {
+    const owner = nativeOwnerBindings.get(this);
+    if (owner) return owner.getProvider(String(this.walletId));
     if (this.providerInstance === null) {
       if (!this.official) {
         throw new Error(
@@ -191,23 +237,9 @@ export class GenericDiscoveryAdapter implements WalletAdapter {
     return this.providerInstance;
   }
 
-  /**
-   * Baseline CIP-0103 capabilities. NEVER includes `'events'`: popup/remote
-   * wallets expose the event surface but do not emit (truthfulness doctrine).
-   *
-   * KNOWN OPEN DEFECT — see `docs/open-findings.md` #3. This list is a constant.
-   * It is returned from `connect()` and stored as `session.capabilitiesSnapshot`,
-   * which this codebase's own JSDoc tells consumers to query. A wallet whose SDK
-   * exposes more than these four — Walley documents `ledgerApi` and both
-   * `prepareExecute` verbs — is reported as not having them.
-   *
-   * Adding capabilities to the REGISTRY does not close this. That improves
-   * `WalletInfo.capabilities`, which is what the picker shows; this is what the
-   * session reports. If you arrived here after the registry entries gained
-   * `ledgerApi`, the defect is still open: two surfaces, one fixed.
-   */
+  /** Implemented, registry-declared capabilities; popup event listeners are never claimed. */
   getCapabilities(): CapabilityKey[] {
-    return ['connect', 'disconnect', 'signMessage', 'submitTransaction'];
+    return [...this.capabilities];
   }
 
   /**
@@ -244,7 +276,7 @@ export class GenericDiscoveryAdapter implements WalletAdapter {
     };
   }
 
-  async connect(ctx: AdapterContext): Promise<AdapterConnectResult> {
+  async connect(ctx: AdapterContext, options?: { signal?: AbortSignal }): Promise<AdapterConnectResult> {
     // Resolve the official adapter for the active network FIRST and
     // SYNCHRONOUSLY (no await precedes it) — for the factory form this builds
     // the official with the network-resolved host; for the instance form it is a
@@ -254,15 +286,18 @@ export class GenericDiscoveryAdapter implements WalletAdapter {
     // CIP-0103 connect handshake over the official provider. For popup wallets
     // this opens the wallet's popup; it must be reached SYNCHRONOUSLY from the
     // user gesture (see the SDK's popup-safe connect fast-path).
-    await this.provider.request({ method: 'connect' });
-    const account = await this.provider.request<CIP0103Account>({
+    const owner = nativeOwnerBindings.get(this);
+    const native = owner ? await owner.connect(String(this.walletId), options?.signal) : undefined;
+    if (!owner) assertConnectionAccepted(await this.provider.request({ method: 'connect' }));
+    const account = native?.account ?? await this.provider.request<CIP0103Account>({
       method: 'getPrimaryAccount',
     });
+    assertPrimaryParty(account);
 
     // Wallet-reported network (truthful) → fall back to account, then dApp config.
     let reportedNetwork: string | undefined;
     try {
-      const status = await this.provider.request<{ network?: { networkId?: string } }>({
+      const status = native?.status ?? await this.provider.request<{ network?: { networkId?: string } }>({
         method: 'status',
       });
       reportedNetwork = status?.network?.networkId;
@@ -290,53 +325,45 @@ export class GenericDiscoveryAdapter implements WalletAdapter {
     return { partyId, session, capabilities: this.getCapabilities() };
   }
 
-  /**
-   * Restore a persisted session by delegating to the official adapter's own `restore`.
-   *
-   * The official `ProviderAdapter` shape carries an optional `restore()` that reinstates a
-   * session (for example from the wallet's own storage) and returns a LIVE provider.
-   * Without this method the SDK revived the persisted record as-is and then built a fresh,
-   * SESSION-LESS provider from `provider()`, so a wallet that restores in `restore` looked
-   * connected after a reload but its first real request threw. This forwards to the
-   * official `restore` and, when it yields a provider, adopts it as the cached provider so
-   * the very next request uses the restored session.
-   *
-   * Popup-safe: this runs on the SDK's init/restore path, never inside a user gesture, so a
-   * popup could not open here even if an adapter tried (the browser would block it). Per
-   * the official contract `restore` is storage-based and gesture-free. If the official
-   * adapter has no `restore`, it returns null, or host resolution is not ready, this falls
-   * through to the previous behavior: the persisted session is returned and the provider is
-   * built lazily on first use, exactly as before.
-   */
+  /** Restore silently and validate the live party before exposing a connected session. */
   async restore(ctx: AdapterContext, persisted: PersistedSession): Promise<Session | null> {
-    const asIs = { ...persisted, walletId: this.walletId } as Session;
-    // Resolve the official adapter for the active network first (synchronous, as connect
-    // does) so the factory form has its host. If it can't (e.g. host not yet known), fall
-    // through to the as-is revival below.
     try {
+      if (persisted.expiresAt && Date.now() >= persisted.expiresAt) return null;
       this.resolveOfficial(ctx.network);
-    } catch {
-      return asIs;
-    }
-    const restore = this.official?.restore;
-    if (this.official && restore) {
-      let restored: Awaited<ReturnType<NonNullable<OfficialProviderAdapter['restore']>>> | null = null;
-      try {
-        restored = await restore.call(this.official);
-      } catch {
-        restored = null;
+      const owner = nativeOwnerBindings.get(this);
+      if (owner) {
+        await this.prepareNativeConnection(ctx.network);
+        const restored = await owner.restore({
+          id: String(this.walletId), partyId: persisted.partyId, network: persisted.network,
+        });
+        return restored?.id === String(this.walletId)
+          ? { ...persisted, walletId: this.walletId, capabilitiesSnapshot: this.getCapabilities() } as Session : null;
       }
-      if (restored) {
-        // Adopt the restored, live provider so the next request uses the session.
+      if (this.official?.restore) {
+        const restored = await this.official.restore();
+        if (!restored) return null;
         this.providerInstance = restored as unknown as CIP0103Provider;
-        return asIs;
       }
+      // Some providers persist authentication themselves without an adapter restore().
+      // A silent account probe distinguishes that case from an expired session.
+      const account = await this.provider.request<CIP0103Account>({ method: 'getPrimaryAccount' });
+      if (account.partyId !== persisted.partyId) return null;
+      let status: { connection?: { isConnected?: boolean }; network?: { networkId?: string } } | undefined;
+      try { status = await this.provider.request({ method: 'status' }); } catch { /* Use the account network if status is unavailable. */ }
+      if (status?.connection?.isConnected === false) return null;
+      const network = [status?.network?.networkId, account.networkId].find(
+        (value): value is string => typeof value === 'string' && isRecognizedNetwork(value),
+      );
+      if (network && detectNetworkMismatch(persisted.network, network)) return null;
+      return { ...persisted, walletId: this.walletId, capabilitiesSnapshot: this.getCapabilities() } as Session;
+    } catch {
+      return null;
     }
-    // No official restore, or nothing to restore: revive as-is, exactly as before.
-    return asIs;
   }
 
   async disconnect(): Promise<void> {
+    const owner = nativeOwnerBindings.get(this);
+    if (owner) { await owner.disconnect(); return; }
     try {
       await this.provider.request({ method: 'disconnect' });
     } catch {
@@ -346,13 +373,14 @@ export class GenericDiscoveryAdapter implements WalletAdapter {
 
   async signMessage(
     _ctx: AdapterContext,
-    _session: Session,
+    session: Session,
     params: SignMessageParams,
   ): Promise<SignedMessage> {
-    return this.provider.request<SignedMessage>({
+    const response = await this.provider.request<unknown>({
       method: 'signMessage',
       params: { message: params.message },
     });
+    return normalizeSignedMessage(response, session, params);
   }
 
   async submitTransaction(

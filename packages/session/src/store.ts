@@ -159,6 +159,7 @@ export function createSessionStore(
     }, expiry.ttlMs);
   }
   function drainPending(): void {
+    if (disposed) { rejectPending(new Error('Session store was destroyed')); return; }
     const items = pending.splice(0, pending.length);
     for (const it of items) it.run().then(it.resolve, it.reject);
   }
@@ -179,9 +180,9 @@ export function createSessionStore(
   // re-broadcasting (defensive — applyRemote also bypasses the provider handlers).
   let applyingRemote = false;
 
-  const sync: SyncChannel = options.broadcast
-    ? openSyncChannel(storageKey, typeof options.broadcast === 'object' ? options.broadcast : {})
-    : { active: false, post() {}, onMessage() {}, close() {} };
+  let initialized = false;
+  let disposed = false;
+  let sync: SyncChannel = { active: false, post() {}, onMessage() {}, close() {} };
 
   function buildSnapshot(): PersistedSessionSnapshot {
     return {
@@ -231,7 +232,6 @@ export function createSessionStore(
     }
   }
 
-  sync.onMessage(applyRemote);
 
   function notify(): void {
     for (const listener of listeners) {
@@ -245,6 +245,7 @@ export function createSessionStore(
 
   /** Replace state only on real change (keeps getSnapshot reference stable). */
   function setState(patch: Partial<MutableState>): void {
+    if (disposed) return;
     const next: SessionState = { ...state, ...patch };
     if (statesEqual(state, next)) return;
     // A transition INTO 'disconnected' ends the current connection: clear the
@@ -257,6 +258,7 @@ export function createSessionStore(
   }
 
   async function persistConnected(): Promise<void> {
+    if (disposed) return;
     try {
       // when snapshot persistence is on, write the full session envelope (and
       // rewrite it on party/network change); otherwise the legacy '1' marker.
@@ -289,6 +291,7 @@ export function createSessionStore(
    * it connects (secure-by-default), not just after the first reload or a switch.
    */
   function establishConnection(): Promise<void> {
+    if (disposed) return Promise.resolve();
     if (connectionPersisted) return establishInFlight ?? Promise.resolve();
     connectionPersisted = true;
     connectedAt = new Date().getTime(); // stamp for the persisted snapshot
@@ -392,9 +395,18 @@ export function createSessionStore(
     }
   };
 
-  provider.on(CIP0103_EVENTS.STATUS_CHANGED, onStatusChanged);
-  provider.on(CIP0103_EVENTS.ACCOUNTS_CHANGED, onAccountsChanged);
-  provider.on('chainChanged', onChainChanged);
+  function initialize(): void {
+    if (disposed) throw new Error('Session store was destroyed');
+    if (initialized) return;
+    initialized = true;
+    if (options.broadcast) {
+      sync = openSyncChannel(storageKey, typeof options.broadcast === 'object' ? options.broadcast : {});
+      sync.onMessage(applyRemote);
+    }
+    provider.on(CIP0103_EVENTS.STATUS_CHANGED, onStatusChanged);
+    provider.on(CIP0103_EVENTS.ACCOUNTS_CHANGED, onAccountsChanged);
+    provider.on('chainChanged', onChainChanged);
+  }
 
   // ── reconnect (exponential backoff) ───────────────────────────────────
   // Triggered ONLY by a transient drop (see onStatusChanged). Cancelled by an
@@ -483,10 +495,12 @@ export function createSessionStore(
   async function restoreImpl(): Promise<SessionState> {
     setState({ status: 'reconnecting', lastError: null });
     try {
+      initialize();
       const hadMarker = (await storage.getItem(storageKey)) !== null;
       const status = await provider.request<CIP0103StatusEvent>({
         method: 'status',
       });
+      if (disposed) return state;
       const connected = status?.connection?.isConnected === true;
 
       if (connected) {
@@ -543,6 +557,7 @@ export function createSessionStore(
     },
 
     async connect(params) {
+      initialize();
       // a fresh user-initiated connect clears any prior explicit-disconnect
       // intent and cancels any in-flight reconnect backoff.
       explicitDisconnect = false;
@@ -572,6 +587,7 @@ export function createSessionStore(
     },
 
     async disconnect() {
+      initialize();
       // EXPLICIT user intent — never auto-reconnect after this; cancel any
       // pending backoff + expiry timer.
       explicitDisconnect = true;
@@ -619,6 +635,7 @@ export function createSessionStore(
     },
 
     async enqueue<T>(op: () => Promise<T>): Promise<T> {
+      if (disposed) throw new Error('Session store was destroyed');
       // No re-auth in flight → run immediately.
       if (!reauthInProgress) return op();
       // Bounded queue: overflow rejects with a clear, actionable error.
@@ -637,6 +654,9 @@ export function createSessionStore(
     },
 
     destroy() {
+      if (disposed) return;
+      disposed = true;
+      rejectPending(new Error('Session store was destroyed'));
       provider.removeListener(CIP0103_EVENTS.STATUS_CHANGED, onStatusChanged);
       provider.removeListener(CIP0103_EVENTS.ACCOUNTS_CHANGED, onAccountsChanged);
       provider.removeListener('chainChanged', onChainChanged);
@@ -648,5 +668,6 @@ export function createSessionStore(
     },
   };
 
+  if (!options.deferInitialization) initialize();
   return store;
 }

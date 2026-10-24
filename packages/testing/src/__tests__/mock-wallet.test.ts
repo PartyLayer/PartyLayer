@@ -18,7 +18,7 @@ const EXPECTED_CODE: Record<MockScenarioName, number> = {
   userRejected: RPC_ERRORS.USER_REJECTED, // 4001
   insufficientTraffic: JSON_RPC_ERRORS.RESOURCE_UNAVAILABLE, // -32002
   synchronizerError: RPC_ERRORS.CHAIN_DISCONNECTED, // 4901
-  transactionTimeout: JSON_RPC_ERRORS.TRANSACTION_REJECTED, // -32003
+  transactionTimeout: JSON_RPC_ERRORS.INTERNAL_ERROR, // -32603: outcome unknown
   genericError: JSON_RPC_ERRORS.INTERNAL_ERROR, // -32603
 };
 

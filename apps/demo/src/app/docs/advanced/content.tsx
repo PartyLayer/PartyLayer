@@ -68,50 +68,26 @@ const client = createPartyLayer({
 
       <H2 id="session-persistence">Session Persistence</H2>
       <P>
-        PartyLayer automatically persists wallet sessions in <Code>{'localStorage'}</Code> so users
-        don{"'"}t need to reconnect on page reload.
+        Session persistence has three distinct layers: the wallet-owned connection, the SDK cache
+        and the React live session view. A stored cache or cookie is never proof of wallet
+        authorization or application login.
       </P>
-
       <H3>How It Works</H3>
       <UL>
-        <LI>Sessions are stored encrypted in <Code>{'localStorage'}</Code> under the key <Code>{'partylayer_active_session'}</Code></LI>
-        <LI>Sessions are bound to the dApp <Strong>origin</Strong>, a session from <Code>{'app-a.com'}</Code> cannot be restored on <Code>{'app-b.com'}</Code></LI>
-        <LI>Expired sessions (past <Code>{'expiresAt'}</Code>) are automatically pruned</LI>
-        <LI>On mount, <Code>{'PartyLayerKit'}</Code> attempts to restore the last session via the adapter{"'"}s <Code>{'restore()'}</Code> method</LI>
+        <LI>Official native discovery owns its provider-ID hint. The SDK restores a native session only after checking the live provider, party, network, origin and expiry.</LI>
+        <LI>Old native caches without that provider hint require one explicit reconnect; failed probes do not display a cached connected account.</LI>
+        <LI>The SDK cache uses its configured storage/crypto adapters. The default SDK storage is browser localStorage; its origin-derived crypto encoding is not a secret vault and can fall back to base64. Do not put authentication secrets or keys in this cache.</LI>
+        <LI>The React kit uses an in-memory live projection by default. Explicit <Code>sessionOptions.storage</Code> is a UI cache; it does not bypass wallet checks.</LI>
+        <LI>Standalone <Code>@partylayer/session</Code> stores default to encrypted IndexedDB where supported and memory otherwise. This standalone default is distinct from the kit and SDK defaults.</LI>
       </UL>
-
       <H3>Per-Wallet Restore Support</H3>
       <P>
-        Each adapter implements its own <Code>{'restore()'}</Code> method. Behavior after a page
-        reload depends on the wallet:
+        Restoration depends on wallet support and live authentication. Official popup providers are
+        probed before restoration; OneSwap requires a fresh explicit connection. A wallet logout,
+        expired session or changed party/network must not be hidden by a saved UI state. Inspect the
+        current session and capabilities instead of assuming every wallet silently reconnects.
       </P>
-      <UL>
-        <LI><Strong>Console</Strong>, checks extension availability + <Code>{'isConnected()'}</Code> state; restores if the wallet reports a live session</LI>
-        <LI><Strong>Loop</Strong>, calls <Code>{'loop.init()'}</Code> with a 5s auto-connect timeout; restores if the Loop auth token is still valid</LI>
-        <LI><Strong>Nightly</Strong>, checks <Code>{'window.nightly.canton'}</Code> provider is connected; restores if so</LI>
-        <LI><Strong>Cantor8</Strong>, restores if the stored session token hasn{"'"}t expired (pure metadata-based)</LI>
-        <LI><Strong>Bron</Strong>, requires a live OAuth access token; user must be signed in to Bron{"'"}s auth provider</LI>
-      </UL>
 
-      <H3>Handling Null Session</H3>
-      <P>
-        Restore is asynchronous. Your component may mount with{' '}
-        <Code>{'session === null'}</Code> for a tick while restore runs, OR the user may have
-        cleared their storage. Always guard:
-      </P>
-      <CodeBlock language="tsx">{`import { useAccount, ConnectButton } from '@partylayer/react';
-
-function App() {
-  const { isConnected, status } = useAccount();
-
-  if (!isConnected) {
-    // status is 'disconnected' | 'connecting' | 'reconnecting' here,
-    // no prior session, restore failed, or still restoring.
-    return <ConnectButton />;
-  }
-
-  return <YourConnectedUI />;
-}`}</CodeBlock>
 
       <H3>Custom Storage</H3>
       <P>Provide a custom storage adapter for non-browser environments:</P>

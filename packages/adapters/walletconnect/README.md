@@ -1,5 +1,12 @@
 # @partylayer/adapter-walletconnect
 
+> **Default application integration:** The React kit already includes this compatibility
+> runtime where applicable. Install `@partylayer/react @tanstack/react-query` in one
+> command and use `PartyLayerKit` with `ConnectButton`; no per-wallet package
+> installation is required. See [the quick start](https://partylayer.xyz/docs/quick-start).
+> The instructions below are for explicitly using this standalone compatibility package.
+> Native provider paths and limits are recorded in the [integration matrix](https://github.com/PartyLayer/PartyLayer/blob/main/docs/wallet-cip0103-matrix.md).
+
 > **Legacy integration.** This package predates the generic bridge and is kept for
 > compatibility; a new wallet should not copy this pattern. New wallets integrate
 > through Path A or Path B with no PartyLayer-specific code, see
@@ -12,7 +19,17 @@ the `canton_` method mapping, `session_event` handling, and restore all come
 from the official adapter — this package only adapts it to PartyLayer's
 `WalletAdapter` contract.
 
-## Install (opt-in)
+## Recommended integration
+
+The default PartyLayer installation already includes this runtime lazily. Existing
+React apps install `@partylayer/react @tanstack/react-query`, render `PartyLayerKit`
+and `ConnectButton`, and pass a WalletConnect Cloud project ID through the shared
+`walletConnect` setting. No extra PartyLayer wallet package registration is needed.
+See the [quick start](https://partylayer.xyz/docs/quick-start).
+
+## Existing explicit integrations
+
+The following low-level setup remains available for compatibility:
 
 ```sh
 pnpm add @partylayer/adapter-walletconnect
@@ -44,14 +61,17 @@ const pl = createPartyLayer({ adapters: [...getBuiltinAdapters(), wc] });
 static import would eagerly pull `@walletconnect/sign-client` and break
 webpack/Next consumers that haven't installed it. So this adapter imports the
 barrel **only via dynamic `import()`** inside `connect()`/`restore()` — never at
-module load. `detectInstalled()` is pure (a `projectId` check), so rendering the
+module load. `detectInstalled()` is pure and reports no local installation, so rendering the
 picker never pulls dapp-sdk either. Apps that don't opt in never reference this
 package, so they never bundle dapp-sdk or sign-client.
 
 ## Notes
 
-- `chainId` is left **unset** by default (per the Canton WC spec: request the
-  `canton` namespace and use whatever network the wallet provides).
+- The requested chain is derived from the configured PartyLayer network unless
+  explicitly overridden with `chainId`. The connected session reports the wallet's
+  actual network; incompatible restored networks require reconnection.
+- The official SDK is pinned to reviewed version **1.8.0**. A matching persisted
+  party, live recognized network and active, unexpired session are required for restore.
 - Capabilities: `connect, disconnect, restore, signMessage, submitTransaction,
   ledgerApi, events, remoteSigner, deeplink`. `signTransaction` is unsupported
   (Canton WC fuses sign-and-submit via `prepareExecute`).

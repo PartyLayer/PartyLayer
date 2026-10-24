@@ -1,37 +1,35 @@
-# Wallet Balance — Loop Example
+# Canton wallet holdings example
 
-Minimal Vite + React + TypeScript app that connects a Loop wallet and queries token balance via the PartyLayer SDK.
+Vite + React + TypeScript workspace example using the public default wallet catalog,
+PartyLayer's ConnectButton and exact token holding summaries. The directory keeps
+its historical name; the UI can connect any supported wallet on the configured
+Devnet. Reading requires a compatible Token Standard and the active ledgerApi
+capability. An authorized application backend is the alternative when the wallet
+does not expose ledger reads.
 
-This example can be cloned and run **standalone** — it installs PartyLayer from npm.
-
-## Setup
+From the repository root:
 
 ```bash
-npm install
-npm run dev
+pnpm install --frozen-lockfile
+pnpm build
+pnpm --filter wallet-balance-loop-example dev
 ```
 
-Open http://localhost:5174 in your browser.
+Open the Vite URL printed by the command (normally http://localhost:5174).
+This checkout uses workspace dependencies. It is not a standalone npm project.
+For an independent application, use the published CLI starter and copy the two
+example source files after the coordinated package release is available.
 
-## What it does
+The example reads ledger-end and a consistent active-contract snapshot through
+the Holding interface. It keeps contract ids, owner, instrument admin/id, exact
+decimal amounts and reported locks. Unsafe offsets, incomplete pagination,
+duplicate contracts and malformed views produce an error instead of a partial
+or invented zero balance. The ready-made account panel and TokenBalances show
+available/locked amounts for the current party/network only.
 
-1. Connects to Loop wallet via QR code / popup
-2. Queries the Active Contract Set (ACS) for a specific template ID
-3. Sums `payload.amount.initialAmount` across all matching contracts
-4. Displays the balance and raw response
+The test fixtures exercise the read-only request contract; they are not live
+wallet/ledger acceptance. Loop's separately recorded key-unlock problem and all
+remaining live-wallet tests remain in the final acceptance stage.
 
-## Template ID format
-
-Loop wallet requires **fully-qualified Daml template IDs** with the package name prefix:
-
-```
-#splice-amulet:Splice.Amulet:Amulet       (correct for Loop)
-Splice.Amulet:Amulet                       (short form — Console/Nightly only)
-```
-
-The default template ID in the example is `#splice-amulet:Splice.Amulet:Amulet`. Change it in the input field to query other templates.
-
-## Reference
-
-- [Wallet Balances docs](https://partylayer.xyz/docs/wallet-balances)
-- [useLedgerApi hook](https://partylayer.xyz/docs/hooks#use-ledger-api)
+- [Wallet balances](../../docs/wallet-balances.md)
+- [Transaction lifecycle](../../docs/transaction-lifecycle.md)

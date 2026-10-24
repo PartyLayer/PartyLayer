@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import Cip0103Content from './content';
 
-const title = 'CIP-0103: the Canton dApp Standard, implemented';
+const title = 'CIP-0103: Canton provider integration and compatibility';
 const description =
   'How CIP-0103 actually works: all ten methods with real request and response payloads read from the published upstream types, the event model, the full error taxonomy, how a dApp and a wallet each implement it, and how to verify compliance with our conformance runner.';
 const url = 'https://partylayer.xyz/docs/cip-0103';
@@ -16,7 +16,7 @@ export const metadata: Metadata = {
 const articleJsonLd = {
   '@context': 'https://schema.org',
   '@type': 'TechArticle',
-  headline: 'CIP-0103: the Canton dApp Standard, implemented',
+  headline: 'CIP-0103: Canton provider integration and compatibility',
   description,
   url,
   proficiencyLevel: 'Intermediate',

@@ -131,6 +131,8 @@ export interface UseTransferInstructionParameters<R = unknown> {
   submit: (transfer: TokenTransfer, signal?: AbortSignal) => Promise<R>;
   /**
    * Pass-through TanStack `useMutation` options (e.g. `onSuccess`, `onError`).
+   * Automatic retry is always disabled, including global/per-mutation retry settings.
+   * Reconcile an unknown ledger result before an explicit new submission.
    * `mutationFn` and `mutationKey` are managed by the hook and cannot be overridden.
    */
   mutation?: Omit<UseMutationOptions<R, Error, TokenTransfer>, 'mutationFn' | 'mutationKey'>;
@@ -152,6 +154,8 @@ export function useTransferInstruction<R = unknown>(
     ...mutation,
     mutationKey: partyLayerKeys.transferInstruction(),
     // mutationFn is the dApp's fetcher. PartyLayer does not own ledger transport.
+    // A lost response can follow a successful ledger write. Never replay automatically.
+    retry: false,
     mutationFn: (transfer) => submit(transfer),
   });
 

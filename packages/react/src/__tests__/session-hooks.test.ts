@@ -246,6 +246,21 @@ describe('useAccountEffect', () => {
 
 // M1-S4: the legacy SDK-layer getter is preserved VERBATIM under useClientSession.
 describe('useClientSession (legacy SDK-layer getter) — behavior preserved under new name', () => {
+  it('does not overwrite a fresh connection when the initial wallet-list request finishes late', async () => {
+    const provider = createMockWallet();
+    const handlers: Record<string, (event: unknown) => void> = {};
+    const client = fakeClient(provider, { on: (name, handler) => { handlers[name] = handler; return () => delete handlers[name]; } });
+    let resolveWallets!: (value: []) => void;
+    client.listWallets = () => new Promise(resolve => { resolveWallets = resolve; });
+    const { result } = renderHook(() => useClientSession(), { wrapper: wrapperFor(client) });
+    await waitFor(() => expect(resolveWallets).toBeTypeOf('function'));
+    const session = { sessionId: 'new', walletId: 'native', partyId: 'party::new' };
+    act(() => handlers['session:connected']({ type: 'session:connected', session }));
+    expect(result.current).toEqual(session);
+    await act(async () => resolveWallets([]));
+    expect(result.current).toEqual(session);
+  });
+
   it('still returns the SDK session from context, independent of the new store', async () => {
     const provider = createMockWallet();
     const handlers: Record<string, (e: unknown) => void> = {};
@@ -274,6 +289,20 @@ describe('useClientSession (legacy SDK-layer getter) — behavior preserved unde
 
 // M1-S4: the NEW useSession is the reactive session-store hook.
 describe('useSession (M1-S4 reactive session-store hook)', () => {
+  it('retains live provider subscriptions across StrictMode effect replay and removes them on unmount', async () => {
+    const provider = createMockWallet();
+    const remove = vi.spyOn(provider, 'removeListener');
+    const client = fakeClient(provider);
+    const wrapper = ({ children }: { children: React.ReactNode }) => React.createElement(React.StrictMode, null,
+      React.createElement(PartyLayerProvider, { client }, children));
+    const { result, unmount } = renderHook(() => useAccount(), { wrapper });
+    await act(async () => { await Promise.resolve(); });
+    await act(async () => { await provider.request({ method: 'connect' }); });
+    expect(result.current.party).toBe('party::mock-1');
+    expect(remove).not.toHaveBeenCalled();
+    unmount();
+    await waitFor(() => expect(remove).toHaveBeenCalledTimes(3));
+  });
   it('exposes reactive SessionState + bound actions; reflects connect/disconnect', async () => {
     const provider = createMockWallet();
     const { result } = renderHook(() => useSession(), { wrapper: wrapperFor(fakeClient(provider)) });

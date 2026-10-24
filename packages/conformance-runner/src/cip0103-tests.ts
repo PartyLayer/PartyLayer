@@ -89,11 +89,12 @@ export async function runCIP0103ConformanceTests(
       // A valid ProviderRpcError means the method IS handled
       // (it just may not be authorized / connected yet)
       const isValidError = isNumericCodeError(err);
+      const unsupported = isValidError && (err.code === 4200 || err.code === -32601);
       results.push({
         name: `Method "${method}" is handled`,
         category: 'method',
-        passed: isValidError,
-        error: isValidError
+        passed: isValidError && !unsupported,
+        error: unsupported ? 'A mandatory method cannot be unsupported' : isValidError
           ? undefined
           : `Expected ProviderRpcError with numeric code, got: ${String(err)}`,
         details: isValidError
@@ -190,6 +191,11 @@ export async function runCIP0103ConformanceTests(
     provider.on(CIP0103_EVENTS.TX_CHANGED, txHandler);
 
     try {
+      // Method-presence checks include disconnect. Establish authorization again
+      // before exercising a write; a disconnected provider must not manufacture
+      // transaction events merely to make this suite pass.
+      const connected = await provider.request<{ isConnected: boolean }>({ method: 'connect' });
+      if (connected?.isConnected !== true) throw new Error('Wallet connection is required for lifecycle checks');
       await provider.request({
         method: 'prepareExecute',
         params: { tx: { _conformance: true } },
@@ -293,7 +299,7 @@ export async function runCIP0103ConformanceTests(
     });
   } catch (err: unknown) {
     // ProviderRpcError with numeric code = method is recognized
-    const isHandled = isNumericCodeError(err);
+    const isHandled = isNumericCodeError(err) && err.code !== 4200 && err.code !== -32601;
     results.push({
       name: 'ledgerApi is handled (returns result or ProviderRpcError)',
       category: 'method',
@@ -315,7 +321,7 @@ export async function runCIP0103ConformanceTests(
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
-function isNumericCodeError(err: unknown): boolean {
+function isNumericCodeError(err: unknown): err is { code: number } {
   if (typeof err !== 'object' || err === null) return false;
   return typeof (err as Record<string, unknown>).code === 'number';
 }

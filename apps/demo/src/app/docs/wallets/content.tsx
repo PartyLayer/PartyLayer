@@ -17,8 +17,8 @@ export default function WalletsPage() {
         Wallets are discovered through the registry and CIP-0103 native provider detection.
       </P>
       <P>
-        This page is about registering and writing adapters. For the wallet list itself, with the
-        transport each one connects over and a page per integration, see the{' '}
+        The default catalog is included with the kit; no per-wallet installation is required.
+        Custom adapters are an advanced extension point. For transports and a page per integration, see the{' '}
         <A href="/wallets">Canton wallet directory</A>.
       </P>
 
@@ -32,7 +32,7 @@ export default function WalletsPage() {
         }}>
           <thead>
             <tr style={{ background: '#F5F6F8' }}>
-              {['Wallet', 'Networks', 'Opt-in', 'Adapter'].map(h => (
+              {['Wallet', 'Networks', 'Opt-in', 'Additional setup'].map(h => (
                 <th key={h} style={{ textAlign: 'left', padding: '10px 14px', fontWeight: 600, color: '#0B0F1A', borderBottom: '1px solid rgba(15,23,42,0.10)', fontSize: 13 }}>{h}</th>
               ))}
             </tr>
@@ -43,7 +43,7 @@ export default function WalletsPage() {
                 <td style={{ padding: '10px 14px', fontWeight: 500, color: '#0B0F1A' }}>{w.name}</td>
                 <td style={{ padding: '10px 14px', color: '#64748B' }}>{w.networks.join(', ')}</td>
                 <td style={{ padding: '10px 14px', color: w.optIn ? '#92400E' : '#166534', fontWeight: 500 }}>{w.optIn ? 'Yes' : 'No'}</td>
-                <td style={{ padding: '10px 14px', color: '#64748B', fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace', fontSize: 12.5 }}>{w.adapter}</td>
+                <td style={{ padding: '10px 14px', color: '#64748B', fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace', fontSize: 12.5 }}>{w.id === 'walletconnect' ? 'Your project ID' : w.id === 'bron' ? 'Your OAuth/API configuration' : 'Included'}</td>
               </tr>
             ))}
           </tbody>
@@ -52,14 +52,14 @@ export default function WalletsPage() {
 
       <Callout type="note">
         Wallets marked <Strong>Opt-in</Strong> (<Strong>Bron</Strong>, <Strong>WalletConnect</Strong>) require explicit
-        configuration, register them via <Code>{'config.adapters'}</Code> (Bron needs an OAuth client ID;
-        WalletConnect needs the optional <Code>{'@walletconnect/*'}</Code> peers). The rest are auto-registered
-        when using <Code>{'PartyLayerKit'}</Code>.
+        configuration: pass <Code>{'bron'}</Code> for OAuth/API access and <Code>{'walletConnect'}</Code>
+        with your Cloud project id. Their runtime dependencies are included. The default catalog
+        supplies the other supported wallets for the configured network and channel.
       </Callout>
 
       <H2 id="capability-matrix">Capability Matrix</H2>
       <P>
-        Not every wallet supports every operation. Check this matrix before building features
+        Not every wallet supports every operation. This matrix is generated from the active SDK integrations. Check it before building features
         that depend on specific capabilities.
       </P>
 
@@ -77,16 +77,7 @@ export default function WalletsPage() {
             </tr>
           </thead>
           <tbody>
-            {[
-              { name: 'Console', connect: true, signMessage: true, signTransaction: true, submitTransaction: true, ledgerApi: 'full', restore: true },
-              { name: '5N Loop', connect: true, signMessage: true, signTransaction: false, submitTransaction: true, ledgerApi: 'limited', restore: true },
-              { name: 'Cantor8', connect: true, signMessage: true, signTransaction: true, submitTransaction: false, ledgerApi: 'none', restore: true },
-              { name: 'Nightly', connect: true, signMessage: true, signTransaction: false, submitTransaction: true, ledgerApi: 'full', restore: true },
-              { name: 'Bron', connect: true, signMessage: true, signTransaction: true, submitTransaction: false, ledgerApi: 'full', restore: true },
-              { name: 'Send', connect: true, signMessage: true, signTransaction: false, submitTransaction: true, ledgerApi: 'full', restore: true },
-              { name: 'Walley', connect: true, signMessage: true, signTransaction: false, submitTransaction: true, ledgerApi: 'none', restore: true },
-              { name: 'WalletConnect', connect: true, signMessage: true, signTransaction: false, submitTransaction: true, ledgerApi: 'full', restore: true },
-            ].map(w => (
+            {GENERATED_WALLETS.map(entry => ({ name: entry.name, connect: true, ...entry.capabilities })).map(w => (
               <tr key={w.name} style={{ borderBottom: '1px solid rgba(15,23,42,0.10)' }}>
                 <td style={{ padding: '10px 14px', fontWeight: 500, color: '#0B0F1A' }}>{w.name}</td>
                 {['connect', 'signMessage', 'signTransaction', 'submitTransaction'].map(cap => {
@@ -98,9 +89,7 @@ export default function WalletsPage() {
                   );
                 })}
                 <td style={{ padding: '10px 14px', textAlign: 'center' }}>
-                  {w.ledgerApi === 'full' && <span style={{ color: '#166534' }}>{'full'}</span>}
-                  {w.ledgerApi === 'limited' && <span style={{ color: '#92400E' }}>{'limited'}</span>}
-                  {w.ledgerApi === 'none' && <span style={{ color: '#991B1B' }}>{'none'}</span>}
+                  {w.ledgerApi ? <span style={{ color: '#166534' }}>supported</span> : <span style={{ color: '#991B1B' }}>none</span>}
                 </td>
                 <td style={{ padding: '10px 14px', textAlign: 'center' }}>
                   {w.restore ? <span style={{ color: '#166534' }}>{'supported'}</span> : <span style={{ color: '#991B1B' }}>{'none'}</span>}
@@ -117,59 +106,47 @@ export default function WalletsPage() {
           and submission into a single step. Use <Code>{'submitTransaction'}</Code> directly instead
           of the separate sign-then-submit pattern. Calling <Code>{'signTransaction'}</Code> on any of
           them throws <Code>{'CapabilityNotSupportedError'}</Code> pointing you at this fix.</LI>
-        <LI><Strong>Send, passkey signing &amp; namespace guard:</Strong> Send injects at the bare{' '}
-          <Code>{'window.canton'}</Code> slot (the same slot any splice-wallet-kernel-compatible
-          extension would use). The Send adapter verifies the running provider{"'"}s{' '}
-          <Code>{'kernel.id'}</Code> before forwarding any RPC, so installing Send next to a
-          Console-class wallet never claims the wrong provider. Send is currently <Strong>mainnet-only</Strong>{' '}
-          and signs every transaction via WebAuthn-PRF (Touch ID / Face ID), so the user sees a
-          passkey prompt rather than an extension popup.</LI>
+        <LI><Strong>Send:</Strong> the default catalog uses the native announce path.
+          It is Mainnet-only in the catalog and requires the wallet&apos;s own login/passkey approval.
+          The standalone compatibility adapter has its own provider identity guard; it is not required
+          for the default kit. See <A href="/docs/wallets/send">the Send guide</A>.</LI>
         <LI><Strong>Loop, ledgerApi (limited):</Strong> Supports <Code>{'POST /v2/state/acs'}</Code>,{' '}
           <Code>{'GET /v2/state/acs/active-contracts'}</Code>, <Code>{'POST /v2/commands/submit'}</Code>,{' '}
           and <Code>{'POST /v2/commands/submit-and-wait'}</Code>. Other endpoints are not available,
-          for full Ledger API access, use Console, Nightly, or Bron.</LI>
-        <LI><Strong>Cantor8:</Strong> Mobile-only deep link transport. Supports <Code>{'signMessage'}</Code>{' '}
-          and <Code>{'signTransaction'}</Code> via the deep link flow, but does not expose{' '}
-          <Code>{'submitTransaction'}</Code> or <Code>{'ledgerApi'}</Code>.</LI>
+          for broader Ledger API access, check the active capabilities of Nightly or Bron.</LI>
+        <LI><Strong>Cantor8:</Strong> hosted popup integration. Use <Code>{'submitTransaction'}</Code>
+          for its combined sign-and-execute flow. Separate message signing, transaction signing and
+          Ledger API access are not exposed by this integration.</LI>
         <LI><Strong>Bron, submitTransaction:</Strong> Bron is a remote signer (OAuth), it signs commands
           but does not submit them directly to the ledger. Pair{' '}
           <Code>{'signTransaction'}</Code> with your own participant submission, or call{' '}
           <Code>{'ledgerApi'}</Code> against <Code>{'/v2/commands/submit-and-wait'}</Code> and let Bron sign
-          the pre-built command. Requires explicit OAuth configuration via{' '}
-          <Code>{'BronAdapter'}</Code> with <Code>{'auth'}</Code> and <Code>{'api'}</Code> config.</LI>
-        <LI><Strong>Session restore (all five wallets):</Strong> every adapter declares the{' '}
-          <Code>{'restore'}</Code> capability and implements a matching{' '}
-          <Code>{'restore()'}</Code> method. On page reload, the SDK decrypts the persisted
-          session and hands it to the adapter, which re-establishes the provider if it can.
+          the pre-built command. Requires the <Code>{'bron'}</Code> configuration with <Code>{'auth'}</Code> and <Code>{'api'}</Code>.</LI>
+        <LI><Strong>Session restore:</Strong> support depends on the wallet and its live authentication.
+          A stored PartyLayer session alone does not establish a wallet connection. Official popup
+          providers are probed before restoration; OneSwap requires a fresh explicit connection.
           See <a href="/docs/advanced#session-persistence" style={{ color: '#E6B800' }}>
             Advanced → Session Persistence
-          </a> for per-wallet behavior and edge cases.</LI>
+          </a> for per-wallet behavior.</LI>
       </UL>
 
       <H2 id="adding-bron">Adding Bron (Enterprise)</H2>
-      <CodeBlock language="tsx">{`import { PartyLayerKit } from '@partylayer/react';
-import { getBuiltinAdapters } from '@partylayer/sdk';
-import { BronAdapter } from '@partylayer/adapter-bron';
+      <CodeBlock language="tsx">{`import { PartyLayerKit, ConnectButton } from '@partylayer/react';
 
-<PartyLayerKit
-  network="mainnet"
-  appName="My dApp"
-  adapters={[
-    ...getBuiltinAdapters(),
-    new BronAdapter({
-      auth: {
-        clientId: 'your-oauth-client-id',
-        redirectUri: 'https://my-app.com/callback',
-        authorizationUrl: 'https://auth.bron.example/authorize',
-        tokenUrl: 'https://auth.bron.example/token',
-      },
-      api: {
-        baseUrl: 'https://api.bron.example',
-        getAccessToken: async () => getStoredAccessToken(),
-      },
-    }),
-  ]}
->`}</CodeBlock>
+const walletConnect = { projectId: 'your-walletconnect-project-id' };
+const bron = {
+  auth: {
+    clientId: 'your-client-id',
+    redirectUri: 'https://your-app.com/auth/callback',
+    authorizationUrl: 'https://auth.bron.example/authorize',
+    tokenUrl: 'https://auth.bron.example/token',
+  },
+  api: { baseUrl: 'https://api.bron.example' },
+};
+
+<PartyLayerKit network="mainnet" appName="My dApp" walletConnect={walletConnect} bron={bron}>
+  <ConnectButton />
+</PartyLayerKit>`}</CodeBlock>
 
       <H2 id="discovery">Wallet Discovery</H2>
       <P>
@@ -185,7 +162,7 @@ import { BronAdapter } from '@partylayer/adapter-bron';
       </P>
       <P>
         If the registry is unreachable, the SDK gracefully falls back to adapter-only discovery,
-        ensuring your dApp still works offline.
+        which can preserve known wallet entries. Hosted-wallet login and ledger access still require their services.
       </P>
 
       <H3>2. CIP-0103 Native Detection</H3>
@@ -201,16 +178,18 @@ const providers = discoverInjectedProviders();
 
       <H2 id="builtin-adapters-function">getBuiltinAdapters</H2>
       <P>
-        Returns all auto-registered adapters (Console, Loop, Cantor8, Nightly):
+        Returns the synchronous legacy subset (Loop, Cantor8, Nightly), not the complete default catalog:
       </P>
       <CodeBlock language="typescript">{`import { getBuiltinAdapters } from '@partylayer/sdk';
 
 const adapters = getBuiltinAdapters();
-// → [ConsoleAdapter, LoopAdapter, Cantor8Adapter, NightlyAdapter]`}</CodeBlock>
+// → [LoopAdapter, Cantor8Adapter, NightlyAdapter]`}</CodeBlock>
 
       <H2 id="custom-adapter">Creating a Custom Adapter</H2>
       <P>
-        To support a new wallet, implement the <Code>{'WalletAdapter'}</Code> interface:
+        New wallets should follow <A href="/docs/generic-bridge">CIP-0103 Path A or B</A>.
+        The following advanced example documents the existing <Code>{'WalletAdapter'}</Code> contract
+        for application-owned integrations and test fixtures:
       </P>
       <CodeBlock language="typescript">{`import type {
   WalletAdapter, AdapterContext, AdapterDetectResult,

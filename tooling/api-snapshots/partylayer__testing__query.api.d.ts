@@ -15,7 +15,7 @@ declare function trackOptimisticRollback<T>(client: QueryClient, key: QueryKey):
 export { type OptimisticRollback, type QueryHarness, type QueryStateView, createQueryHarness, createTestQueryClient, expectInvalidated, getQueryState, trackOptimisticRollback };
 import '@partylayer/core';
 import '@partylayer/provider';
-import { O as OfflineHarness, e as MockWalletConfig } from './offline-CELeTEq9.js';
+import { O as OfflineHarness, e as MockWalletConfig } from './offline-kSIUSZ3L.js';
 import { QueryClient, QueryClientConfig, QueryKey } from '@tanstack/query-core';
 import { SessionStoreOptions } from '@partylayer/session';
 interface OptimisticRollback<T> { readonly snapshot: T | undefined; apply(next: T): void; rollback(): void; current(): T | undefined; }

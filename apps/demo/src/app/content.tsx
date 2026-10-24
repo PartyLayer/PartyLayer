@@ -7,10 +7,15 @@ import Link from 'next/link';
 import { PartyLayerKit, WalletModal, useClientSession, ConnectButton, truncatePartyId, useAccount, usePartyLayer } from '@partylayer/react';
 import { DEFAULT_RETRY_POLICY, type SessionStoreOptions } from '@partylayer/session';
 import { buildDemoAdapters } from '../lib/canton-demo-adapter';
+import { WC_METADATA, wcProjectId } from '../lib/walletconnect-demo';
+
 import { sortByCanonicalOrder, CANONICAL_WALLET_ORDER } from '../lib/wallet-order';
 import { DEMO_WALLET_ICONS } from '../lib/demo-registry';
 import { registryIconUrl } from '../lib/registry-icon';
 import { useBreakpoint, responsive } from './hooks/useBreakpoint';
+const DEMO_ADDITIONAL_ADAPTERS = buildDemoAdapters();
+const DEMO_WALLET_CONNECT = { projectId: wcProjectId(), metadata: WC_METADATA };
+
 
 /*
  * PROVENANCE. Sections below are marked "ported from the former marketing app".
@@ -53,7 +58,7 @@ const t = {
 };
 
 const GITHUB_URL = 'https://github.com/PartyLayer/PartyLayer';
-const NPM_URL = 'https://www.npmjs.com/package/@partylayer/sdk';
+const NPM_URL = 'https://www.npmjs.com/package/@partylayer/react';
 
 /* ─── Wallet Data ──────────────────────────────────────────────────────── */
 
@@ -64,10 +69,10 @@ const NPM_URL = 'https://www.npmjs.com/package/@partylayer/sdk';
 const wallets = sortByCanonicalOrder(
   [
     { id: 'console', name: 'Console Wallet', desc: 'Official Console Wallet for Canton Network', transport: 'Extension + Mobile' },
-    { id: 'send', name: 'Send', desc: 'Passkey-based Canton wallet (mainnet)', transport: 'Injected (window.canton)' },
+    { id: 'send', name: 'Send', desc: 'Passkey-based Canton wallet (mainnet)', transport: 'CIP-0103 announce' },
     { id: 'loop', name: '5N Loop', desc: '5N Loop Wallet for Canton Network', transport: 'QR Code / Popup' },
     { id: 'walley', name: 'Walley', desc: 'Popup/remote CIP-0103 wallet for Canton Network', transport: 'Popup / Remote' },
-    { id: 'cantor8', name: 'Cantor8 (C8)', desc: 'Cantor8 Wallet for Canton Network', transport: 'Deep Link' },
+    { id: 'cantor8', name: 'Cantor8 (C8)', desc: 'Cantor8 Wallet for Canton Network', transport: 'Hosted Popup' },
     { id: 'nightly', name: 'Nightly', desc: 'Multichain wallet with native Canton support', transport: 'Injected' },
     { id: 'bron', name: 'Bron', desc: 'Enterprise wallet for Canton Network', transport: 'OAuth2 / API' },
   ],
@@ -261,7 +266,7 @@ function Background({ children }: { children: ReactNode }) {
 
 function Logo({ size = 'md' }: { size?: 'sm' | 'md' | 'lg' }) {
   const sizeMap = {
-    sm: { height: 96, my: -35, ml: -9 },
+    sm: { height: 80, my: -29, ml: -7 },
     md: { height: 132, my: -48, ml: -13 },
     lg: { height: 180, my: -66, ml: -18 },
   };
@@ -313,7 +318,17 @@ function BookIcon({ size = 20 }: { size?: number }) {
   );
 }
 
-const INSTALL_CMD = 'npm i @partylayer/sdk @partylayer/react';
+const INSTALL_CMD = 'npm install @partylayer/react @tanstack/react-query';
+
+const LANDING_INTEGRATION_EXAMPLE = `import { PartyLayerKit, ConnectButton } from '@partylayer/react';
+
+export default function App() {
+  return (
+    <PartyLayerKit network="devnet" appName="My dApp">
+      <ConnectButton />
+    </PartyLayerKit>
+  );
+}`;
 
 function CopyInstallButton() {
   const [copied, setCopied] = useState(false);
@@ -385,14 +400,6 @@ function ChevronDown() {
   return (
     <svg width={16} height={16} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
       <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-    </svg>
-  );
-}
-
-function VerifiedBadge() {
-  return (
-    <svg width={12} height={12} fill="currentColor" viewBox="0 0 20 20">
-      <path fillRule="evenodd" d="M16.403 12.652a3 3 0 000-5.304 3 3 0 00-3.75-3.751 3 3 0 00-5.305 0 3 3 0 00-3.751 3.75 3 3 0 000 5.305 3 3 0 003.75 3.751 3 3 0 005.305 0 3 3 0 003.751-3.75zm-2.546-4.46a.75.75 0 00-1.214-.883l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z" clipRule="evenodd" />
     </svg>
   );
 }
@@ -561,7 +568,7 @@ function Nav({ onConnect }: { onConnect: () => void }) {
         height: 64, display: 'flex', alignItems: 'center', justifyContent: 'space-between',
         fontFamily: t.font,
       }}>
-        <Logo size="md" />
+        <Logo size={bp === 'mobile' ? 'sm' : 'md'} />
 
         {/* Desktop/Tablet nav links */}
         {bp !== 'mobile' && (
@@ -588,7 +595,7 @@ function Nav({ onConnect }: { onConnect: () => void }) {
           /* ── Connected: the shipped ConnectButton (real upgraded component:
                 PartyAvatar + wallet-badge identity header, Copy address, Disconnect).
                 It self-manages its dropdown, so the demo no longer hand-rolls one. ── */
-          <ConnectButton accountStatus="full" />
+          <ConnectButton accountStatus={bp === 'mobile' ? 'avatar' : 'full'} />
         ) : (
           /* ── Disconnected: connect button ── */
           <button onClick={onConnect}
@@ -612,11 +619,11 @@ function Nav({ onConnect }: { onConnect: () => void }) {
 
         {/* Mobile hamburger */}
         {bp === 'mobile' && (
-          <button onClick={() => setMobileMenuOpen(o => !o)} style={{
+          <button aria-label="Toggle navigation" aria-expanded={mobileMenuOpen} onClick={() => setMobileMenuOpen(o => !o)} style={{
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             width: 36, height: 36, borderRadius: t.radius.sm,
             border: `1px solid ${t.border}`, background: 'transparent', cursor: 'pointer',
-            order: -1, marginRight: 'auto', marginLeft: 12,
+            order: -1, flexShrink: 0,
           }}>
             <svg width={18} height={18} fill="none" viewBox="0 0 24 24" stroke={t.slate600} strokeWidth={2} strokeLinecap="round">
               {mobileMenuOpen
@@ -695,7 +702,7 @@ function Hero({ onConnect }: { onConnect: () => void }) {
               fontWeight: 700, color: t.fg, marginBottom: 24,
               textWrap: 'balance',
             }}>
-              One SDK for every{' '}
+              One SDK for every supported{' '}
               <span style={{ position: 'relative', display: 'inline-block' }}>
                 <span style={{ position: 'relative', zIndex: 1 }}>Canton wallet</span>
                 <span style={{
@@ -708,8 +715,8 @@ function Hero({ onConnect }: { onConnect: () => void }) {
 
             {/* Subtitle */}
             <p style={{ fontSize: 16, lineHeight: 1.6, color: t.slate600, maxWidth: 480, marginBottom: 32 }}>
-              CIP-0103 compliant wallet integration for Canton: registry-backed, verified wallets,
-              and a clean developer experience.
+              CIP-0103 compliant wallet integration for Canton. One installation includes supported
+              wallet runtimes and a branded Connect Wallet experience.
             </p>
 
             {/* CTAs */}
@@ -782,16 +789,16 @@ function Hero({ onConnect }: { onConnect: () => void }) {
                       </div>
                     </div>
                     <p style={{ fontSize: 14, lineHeight: 1.5, color: t.slate500, marginBottom: 16, marginTop: 0 }}>
-                      Select a wallet to connect to this dapp.
+                      UI preview. Open the live picker to see wallets for your selected network.
                     </p>
 
                     {/* Wallet List Preview, capped to 4 (the real PartyLayerKit
-                        modal shows ALL wallets; this is just a hero mockup).
+                        modal filters available wallets by network and configuration).
                         Selected by id: walley is not in CANONICAL_WALLET_ORDER,
                         so it sorts after the ranked ids and lands 4th here. */}
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                       {wallets.filter((w) => ['console', 'send', 'loop', 'walley'].includes(w.id)).map((wallet, i) => (
-                        <button key={wallet.id} onClick={onConnect}
+                        <button key={wallet.id} onClick={onConnect} aria-label={`Open wallet picker (preview: ${wallet.name})`}
                           style={{
                             display: 'flex', alignItems: 'center', gap: 12, padding: 12,
                             borderRadius: t.radius.md, border: `1px solid ${t.border}`,
@@ -817,14 +824,10 @@ function Hero({ onConnect }: { onConnect: () => void }) {
                           <div style={{ flex: 1, minWidth: 0 }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                               <span style={{ fontWeight: 500, color: t.fg }}>{wallet.name}</span>
-                              <span style={{ ...badge.base, ...badge.verified }}>
-                                <VerifiedBadge /> Verified
-                              </span>
+                              {wallet.id === 'send' && <span style={{ fontSize: 11, color: t.slate600 }}>Mainnet</span>}
                             </div>
                           </div>
-                          {i === 0 && (
-                            <span style={{ fontSize: 12, color: '#16A34A', fontWeight: 500 }}>Installed</span>
-                          )}
+
                         </button>
                       ))}
                     </div>
@@ -855,7 +858,7 @@ type ArchNodeId = 'dapp' | 'hooks' | 'sdk' | 'adapters' | 'wallets';
 
 const archNodes: { id: ArchNodeId; label: string; sub: string; icon: ReactNode; detail: ReactNode }[] = [
   {
-    id: 'dapp', label: 'Your dApp', sub: '3 lines to integrate',
+    id: 'dapp', label: 'Your dApp', sub: 'Kit + ConnectButton',
     icon: (
       <svg width={28} height={28} fill="none" viewBox="0 0 24 24" stroke="#818CF8" strokeWidth={1.5}>
         <path strokeLinecap="round" strokeLinejoin="round" d="M17.25 6.75L22.5 12l-5.25 5.25m-10.5 0L1.5 12l5.25-5.25m7.5-3l-4.5 16.5" />
@@ -868,12 +871,7 @@ const archNodes: { id: ArchNodeId; label: string; sub: string; icon: ReactNode; 
           margin: 0, padding: 12, borderRadius: 8, background: '#0F172A', fontSize: 12,
           fontFamily: t.mono, lineHeight: 1.6, overflowX: 'auto', color: '#CBD5E1',
         }}>
-          <span style={{ color: '#C084FC' }}>import</span>{' { PartyLayerKit }'} <span style={{ color: '#C084FC' }}>from</span> <span style={{ color: '#4ADE80' }}>{`'@partylayer/react'`}</span>{'\n'}
-          {'\n'}
-          <span style={{ color: '#64748B' }}>{'// Wrap your app, done.'}</span>{'\n'}
-          {'<'}<span style={{ color: '#F87171' }}>PartyLayerKit</span> <span style={{ color: '#FDBA74' }}>network</span>{'='}<span style={{ color: '#4ADE80' }}>{`"mainnet"`}</span>{'>'}{'\n'}
-          {'  <'}<span style={{ color: '#F87171' }}>App</span>{' />'}{'\n'}
-          {'</'}<span style={{ color: '#F87171' }}>PartyLayerKit</span>{'>'}
+          <code>{LANDING_INTEGRATION_EXAMPLE}</code>
         </pre>
       </div>
     ),
@@ -892,7 +890,7 @@ const archNodes: { id: ArchNodeId; label: string; sub: string; icon: ReactNode; 
       <div>
         <div style={{ fontSize: 13, fontWeight: 600, color: t.fg, marginBottom: 8 }}>Available Hooks</div>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
-          {['useConnect', 'useSession', 'useDisconnect', 'useWallets', 'useSign', 'useProvider'].map(h => (
+          {['useConnect', 'useSession', 'useDisconnect', 'useWallets', 'useSignMessage', 'usePartyLayer'].map(h => (
             <div key={h} style={{
               padding: '6px 10px', borderRadius: 6, background: '#EEF2FF',
               fontFamily: t.mono, fontSize: 12, color: '#4338CA', fontWeight: 500,
@@ -1210,7 +1208,7 @@ const proofItems = [
       </svg>
     ),
     title: 'Multi-Wallet',
-    description: 'Console, Send, Loop, Cantor8, Nightly, Bron: one integration for all.',
+    description: 'Supported wallet runtimes included. Availability follows your network, channel and application configuration.',
   },
   {
     icon: (
@@ -1219,7 +1217,7 @@ const proofItems = [
       </svg>
     ),
     title: 'CIP-0103 Standard',
-    description: 'Full CIP-0103 compliance with 10 methods, 4 events, and typed error model.',
+    description: 'Full CIP-0103 compliance with a typed provider interface, native requests and events. Available operations follow the connected wallet’s capabilities.',
   },
   {
     icon: (
@@ -1385,13 +1383,13 @@ const codeTabs = [
   {
     id: 'install',
     label: 'Install',
-    code: `npm install @partylayer/sdk @partylayer/react
+    code: `npm install @partylayer/react @tanstack/react-query
 
 # or with yarn
-yarn add @partylayer/sdk @partylayer/react
+yarn add @partylayer/react @tanstack/react-query
 
 # or with pnpm
-pnpm add @partylayer/sdk @partylayer/react`,
+pnpm add @partylayer/react @tanstack/react-query`,
   },
   {
     id: 'react',
@@ -1402,7 +1400,7 @@ function App() {
   return (
     <PartyLayerKit network="devnet" appName="My dApp" theme="auto">
       <ConnectButton />
-      <YourApp />
+      <main>My Canton dApp</main>
     </PartyLayerKit>
   );
 }`,
@@ -1417,21 +1415,33 @@ const client = createPartyLayer({
   app: { name: 'My dApp' },
 });
 
-const session = await client.connect({ walletId: 'console' });
-const signed = await client.signMessage({ message: 'Hello!' });`,
+// Load available wallets before the user starts a popup connection.
+const wallets = await client.listWallets();
+for (const wallet of wallets) {
+  const button = document.createElement('button');
+  button.textContent = wallet.name;
+  button.onclick = () => {
+    void client.connect({ walletId: wallet.walletId })
+      .then(session => console.log(session.partyId))
+      .catch(console.error);
+  };
+  document.body.append(button);
+}`,
   },
   {
     id: 'cip0103',
     label: 'CIP-0103',
-    code: `import { discoverInjectedProviders } from '@partylayer/provider';
+    code: `import { usePartyLayer } from '@partylayer/react';
 
-// Discover all CIP-0103 wallets on window.canton.*
-const providers = discoverInjectedProviders();
-
-// Use standard CIP-0103 methods
-const provider = providers[0].provider;
-await provider.request({ method: 'connect' });
-const accounts = await provider.request({ method: 'listAccounts' });`,
+// Render inside PartyLayerKit after connecting a wallet.
+function WalletAccounts() {
+  const client = usePartyLayer();
+  const readAccounts = async () => {
+    const accounts = await client.asProvider().request({ method: 'listAccounts' });
+    console.log(accounts);
+  };
+  return <button onClick={readAccounts}>Read connected accounts</button>;
+}`,
   },
 ];
 
@@ -1641,7 +1651,7 @@ const faqItems = [
   },
   {
     question: 'Which networks are supported?',
-    answer: 'PartyLayer supports all Canton networks including mainnet, testnet, and devnet environments. The SDK automatically detects the connected network and adapts accordingly. Each wallet adapter handles network-specific connection logic.',
+    answer: 'PartyLayer supports all Canton networks including mainnet, testnet, and devnet environments. Choose the target network explicitly. The catalog filters wallets by network support, while the account UI reports the wallet\'s actual network and guards incompatible operations.',
   },
   {
     question: 'What error codes should I handle?',
@@ -1653,7 +1663,7 @@ const faqItems = [
   },
   {
     question: 'How do I add a new wallet to the registry?',
-    answer: 'Wallet providers can apply for registry inclusion by submitting a pull request to the PartyLayer repository. Requirements include implementing the standard adapter interface, passing conformance tests, and providing wallet metadata. See the wallet-provider-guide in our docs.',
+    answer: 'Wallet providers can apply for registry inclusion by submitting a pull request to the PartyLayer repository. Use the generic CIP-0103 announce or official provider-adapter path, provide registry metadata, and run conformance checks. No new PartyLayer-specific wallet package is required. See the generic provider guide in our docs.',
   },
 ];
 
@@ -1764,7 +1774,7 @@ function Footer() {
           <div style={{ textAlign: bp === 'mobile' ? 'center' : 'left' }}>
             <Logo size="lg" />
             <p style={{ marginTop: 16, fontSize: bp === 'mobile' ? 14 : 16, lineHeight: 1.6, color: t.slate500, maxWidth: 360, margin: bp === 'mobile' ? '16px auto 0' : undefined }}>
-              One SDK for every Canton wallet. Open source, registry-backed, and built for developers.
+              One integration for supported Canton wallets. Open source, registry-backed, and built for developers.
             </p>
           </div>
 
@@ -1879,11 +1889,9 @@ function LandingContent() {
 //   • reconnect: exponential-backoff reconnect on transient drops (the store
 //     default is DISABLED).
 //   • broadcast: multi-tab session sync (the store default is OFF).
-// storage + persistSnapshot are intentionally OMITTED: the 1.0 capability-detected
-// default already yields encrypted IndexedDB in the browser and in-memory on the
-// server (Node/SSR), so the apex prerenders cleanly with no storage probing, and
-// the Kit's pre-1.0 localStorage-marker sweep only runs when no explicit storage is
-// pinned. Module-level constant → referentially stable (the Kit rebuilds the store
+// storage + persistSnapshot are intentionally OMITTED: the kit maintains an
+// in-memory live projection of the SDK provider. Native restoration validates the
+// wallet-owned identity; a UI cache never authorizes a connection. Module-level constant → referentially stable (the Kit rebuilds the store
 // when sessionOptions changes identity), so no useMemo needed.
 const APEX_SESSION_OPTIONS: Partial<SessionStoreOptions> = {
   reconnect: DEFAULT_RETRY_POLICY,
@@ -1903,7 +1911,7 @@ export default function Home() {
       walletIcons={DEMO_WALLET_ICONS}
       appName="PartyLayer"
       walletOrder={CANONICAL_WALLET_ORDER}
-      adapters={buildDemoAdapters()}
+      additionalAdapters={DEMO_ADDITIONAL_ADAPTERS} walletConnect={DEMO_WALLET_CONNECT}
       registryUrl="/registry"
       sessionOptions={APEX_SESSION_OPTIONS}
     >

@@ -41,7 +41,6 @@ import type {
 import {
   toWalletId,
   toPartyId,
-  toTransactionHash,
   CapabilityNotSupportedError,
   mapUnknownErrorToPartyLayerError,
   type CapabilityKey,
@@ -281,10 +280,9 @@ export class Cantor8Adapter implements WalletAdapter {
         commandsJson: input.commandsJson,
         disclosedContracts: input.disclosedContracts ?? '',
       });
-      // signAndExecute returns no id; key the receipt on the caller's commandId.
+      // signAndExecute returns no ledger id; retain commandId only for correlation.
       // The confirmed ledger txId + status arrive via the txChanged event.
       return {
-        transactionHash: toTransactionHash(input.commandId),
         submittedAt: Date.now(),
         commandId: input.commandId,
       };

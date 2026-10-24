@@ -153,13 +153,23 @@ registerAdapter(adapter: WalletAdapter): void
 
 #### asProvider
 
-Get a CIP-0103 compliant Provider that wraps this client.
+Get one stable provider facade for this client.
 
 ```typescript
 asProvider(): CIP0103Provider
 ```
 
-Returns a Provider that routes all `request()` calls through the client's session and adapter. Supports all 10 mandatory CIP-0103 methods. See [CIP-0103 Compliance](../README.md#cip-0103-canton-dapp-standard-compliance) for details.
+For browser-native connections, account methods return real wallet accounts and
+key metadata; Ledger API requests forward path/query/header fields and return raw
+JSON. The official discovery client owns that native connection. Message signing
+retains the reviewed encoding/normalization policy. Existing compatibility
+integrations and explicit `createProviderBridge(client)` preserve their old
+one-party/`{ response: string }` behavior. `client.ledgerApi()` is unchanged.
+Migrate native `asProvider` ledger consumers to use raw JSON instead of parsing
+`result.response`. Genuine native events pass through; the compatibility bridge
+requires real signature or ledger update/offset evidence for signed/executed events.
+See [CIP-0103 alignment and limits](./CIP-0103-ALIGNMENT.md) and
+[Protocol ownership](./protocol-ownership.md).
 
 #### on / off
 
@@ -222,6 +232,19 @@ import { PartyLayerKit } from '@partylayer/react';
 | `adapters` | `(WalletAdapter \| AdapterClass)[]` | Built-in adapters | Custom adapters |
 | `theme` | `'light' \| 'dark' \| 'auto' \| PartyLayerTheme` | `'light'` | Theme preset or custom theme |
 | `walletIcons` | `Record<string, string>` | `{}` | Custom wallet icon URLs by walletId |
+| `authentication` | `PartyLayerAuthenticationAdapter` | Omitted | Application backend challenge/verify/session/logout integration |
+
+With `authentication` configured, `ConnectButton` adds explicit sign-in and app
+sign-out. `useAuthentication()` exposes `status`, `identity`, `isPending`, `canSignIn`, `error`,
+`signIn()`, `signOut()` and `refresh()`. For advanced compositions, nest
+`PartyLayerAuthenticationProvider` inside `PartyLayerProvider`.
+
+The server-safe `@partylayer/core/authentication` subpath exports `createAuthenticationChallenge`,
+`formatAuthenticationMessage`, `validateAuthenticationChallenge` and
+`verifyAuthenticationProof`. The application supplies atomic, browser-bound
+challenge consumption and a verifier that checks both signature bytes and party
+authority. See [Application authentication](./authentication.md) for the complete
+backend contract and session/cookie requirements.
 
 ### ConnectButton
 
@@ -241,12 +264,58 @@ import { ConnectButton } from '@partylayer/react';
 | `formatAddress` | `(partyId: string) => string` |, | Custom address formatter |
 | `className` | `string` |, | CSS class |
 | `style` | `CSSProperties` |, | Inline styles |
-| `showDisconnect` | `boolean` | `true` | Show disconnect in dropdown |
+| `showDisconnect` | `boolean` | `true` | Show account dropdown and disconnect; false is a compact display without the menu |
+| `holdings` | `AccountHoldings` | Omitted | Authorized holdings bound to exact party and CAIP-2 network; rendered in the account panel only on a scope match |
 
 **States:**
 - **Disconnected**: Brand yellow button, opens WalletModal on click
 - **Connecting**: Disabled with spinner animation
 - **Connected**: Compact button showing truncated party ID, dropdown with disconnect
+
+The account dropdown exposes menu semantics and keyboard navigation: Arrow Up/Down,
+Home/End, Escape to close and restore the trigger, and Tab to leave. The wallet
+dialog moves focus inside, contains Tab navigation and restores the opener on close.
+These controls do not submit an enclosing application form.
+
+The account panel shows the connected network, wrong-network recovery guidance,
+and recent activity recorded through `useTransactionFlow`. Account/network changes
+are performed in the wallet; no nonstandard switch method is implied.
+
+### Transaction flow and recent activity
+
+`useTransactionFlow({ confirm?, confirmationTimeoutMs? })` returns `transaction`,
+`transactions`, `isPending`, `submitTransaction(params)` and `reconcile(id)`.
+Its lifecycle status is `awaitingApproval`, `submitted`, `confirmed`, `rejected`,
+`failed` or `unknown`. Only a read-only application ledger lookup with a real
+update id produces `confirmed`; no acknowledgement or time delay does so.
+
+`PartyLayerProvider`/`PartyLayerKit` includes the in-memory journal, consumed by
+`ConnectButton` and `useRecentTransactions()`. `RecentTransactions` accepts
+`transactions` and optional `limit` for a custom view. Existing direct SDK and
+mutation calls are not automatically journaled. `TransactionToast` accepts these
+six lifecycle states as well as its existing `idle`/`pending`/`success`/`error`
+states; legacy `success` still says submitted, not confirmed.
+
+Ledger-write query hooks always set `retry: false`, overriding global and explicit
+retry options to prevent replay after a possibly accepted request. Read-query
+retries are unaffected. See [Transaction lifecycle](./transaction-lifecycle.md).
+
+`TokenBalances` accepts `owner`, `holdings`, `loading`, `error` and an optional
+`formatInstrument({ admin, id })`. The query subpath exports
+`summarizeTokenHoldings(holdings, owner)` and `sumTokenAmounts(amounts)` for exact
+decimal string summaries. The framework-free server/vanilla summation helper is
+also available from `@partylayer/core/amounts`. Common Holding types now live in
+core and remain re-exported through the same existing React/query names.
+See [Wallet balances](./wallet-balances.md) for authorized read/data requirements.
+
+### PartyLayerLocaleProvider
+
+Use `PartyLayerKit locale="tr-TR" direction="rtl"` for localized wallet UI.
+Advanced compositions can wrap `PartyLayerProvider` with `PartyLayerLocaleProvider`.
+Both accept `locale?: string` (English/Turkish tags, otherwise English fallback) and
+`direction?: 'ltr' | 'rtl'` (default `ltr`). Locale changes preserve the SDK client
+and active wallet. Application content and vendor approval screens retain their own
+language settings.
 
 ### WalletModal
 

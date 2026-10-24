@@ -1,6 +1,6 @@
 {
   "name": "@partylayer/sdk",
-  "version": "0.19.0",
+  "version": "0.20.0",
   "sideEffects": false,
   "description": "Main SDK for PartyLayer - Unified wallet integration for Canton Network",
   "main": "./dist/index.js",
@@ -41,15 +41,25 @@
     "url": "https://github.com/PartyLayer/PartyLayer/issues"
   },
   "dependencies": {
-    "@partylayer/core": "workspace:^",
-    "@partylayer/registry-client": "workspace:^",
+    "@canton-network/core-types": "1.14.0",
+    "@canton-network/core-wallet-discovery": "1.15.0",
+    "@canton-network/dapp-sdk": "0.24.0",
+    "@k2flabs/walley-dapp-sdk": "1.2.0",
+    "@lithiumdigital/cauri-dapp-sdk": "0.2.0",
+    "@oneswap/wallet-cip0103-adapter": "0.2.0",
+    "@partylayer/adapter-bron": "workspace:^",
+    "@partylayer/adapter-cantor8": "workspace:^",
     "@partylayer/adapter-console": "workspace:^",
     "@partylayer/adapter-loop": "workspace:^",
-    "@partylayer/adapter-cantor8": "workspace:^",
-    "@partylayer/adapter-bron": "workspace:^",
     "@partylayer/adapter-nightly": "workspace:^",
     "@partylayer/adapter-send": "workspace:^",
-    "@partylayer/provider": "workspace:^"
+    "@partylayer/adapter-walletconnect": "workspace:^",
+    "@partylayer/core": "workspace:^",
+    "@partylayer/provider": "workspace:^",
+    "@partylayer/registry-client": "workspace:^",
+    "@vala-wallet/dapp-sdk": "0.1.0",
+    "@walletconnect/sign-client": "^2.23.8",
+    "@walletconnect/types": "^2.23.8"
   },
   "devDependencies": {
     "@types/node": "^20.11.0",

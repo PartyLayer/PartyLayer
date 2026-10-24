@@ -7,11 +7,12 @@ export default function CIP0103Page() {
 
   return (
     <>
-      <H1>CIP-0103: the Canton dApp Standard, implemented</H1>
+      <H1>CIP-0103: interface, integration and limits</H1>
       <P>
         CIP-0103 is the Canton dApp Standard, the specification for how wallets and dApps communicate
-        on the Canton Network. PartyLayer fully implements CIP-0103 with 10 methods, 4 events, and a
-        typed error model.
+        on the Canton Network. PartyLayer exposes the provider interface, shared wallet integrations
+        and typed errors. Backing capabilities and the client compatibility limits below determine
+        which operations and event payloads are available.
       </P>
       <P>
         For which wallets declare CIP-0103 native support, with the evidence recorded for each, see
@@ -26,7 +27,7 @@ export default function CIP0103Page() {
         <A href="https://www.npmjs.com/package/@canton-network/core-wallet-dapp-rpc-client">
           @canton-network/core-wallet-dapp-rpc-client
         </A>{' '}
-        at version 1.11.0, which the standard&apos;s authors ship, <Strong>verified 2026-09-03</Strong>.
+        at version 1.14.0, which the standard&apos;s authors ship, <Strong>reviewed 2026-10-23</Strong>.
         That version is pinned here on purpose: it is the one claim on this page that can go stale
         without anything telling us, so it is stated where a reader can judge its age. For the
         reasoning behind the
@@ -46,12 +47,12 @@ export default function CIP0103Page() {
       <P>PartyLayer supports two ways to integrate:</P>
       <UL>
         <LI>
-          <Strong>Adapter SDK</Strong> (recommended), Use <Code>{'PartyLayerKit'}</Code> and React hooks.
+          <Strong>PartyLayer connection kit</Strong> (recommended), Use <Code>{'PartyLayerKit'}</Code> and React hooks.
           The SDK abstracts CIP-0103 behind a higher-level API.
         </LI>
         <LI>
           <Strong>Native CIP-0103 Provider</Strong>, Work directly with the CIP-0103 provider interface.
-          Useful for non-React apps or when you need raw CIP-0103 compliance.
+          Useful when the attached wallet supplies the required native requests and events.
         </LI>
       </UL>
 
@@ -73,7 +74,7 @@ export default function CIP0103Page() {
       <CodeBlock language="typescript">{`const result = await provider.request<CIP0103ConnectResult>({
   method: 'connect',
 });
-// → { isConnected: true, isNetworkConnected: true }`}</CodeBlock>
+// → { isConnected: true }`}</CodeBlock>
 
       <H3>disconnect</H3>
       <CodeBlock language="typescript">{`await provider.request({ method: 'disconnect' });`}</CodeBlock>
@@ -96,7 +97,7 @@ export default function CIP0103Page() {
       <CodeBlock language="typescript">{`const network = await provider.request<CIP0103Network>({
   method: 'getActiveNetwork',
 });
-// → { networkId: 'canton:da-mainnet', ledgerApi: '...', accessToken: '...' }`}</CodeBlock>
+// → { networkId: 'canton:da-mainnet', ...walletNetworkDetails }`}</CodeBlock>
 
       <H3>listAccounts</H3>
       <CodeBlock language="typescript">{`const accounts = await provider.request<CIP0103Account[]>({
@@ -111,41 +112,25 @@ export default function CIP0103Page() {
 // → { primary: true, partyId: '...', publicKey: '...', status: 'allocated' }`}</CodeBlock>
 
       <H3>signMessage</H3>
-      <CodeBlock language="typescript">{`const result = await provider.request<{ signature: string }>({
+      <CodeBlock language="typescript">{`const signature = await provider.request<string>({
   method: 'signMessage',
   params: { message: 'Hello Canton!' },
 });
-// → { signature: '0x...' }`}</CodeBlock>
+// Signature encoding is defined by the wallet; verify exact bytes and authorized keys.`}</CodeBlock>
 
       <H3>prepareExecute</H3>
       <P>Prepare and submit a Daml command for execution.</P>
       <CodeBlock language="typescript">{`await provider.request({
   method: 'prepareExecute',
-  params: {
-    commands: [{ templateId: '...', choiceId: '...', argument: {...} }],
-  },
+  params: preparedSubmission, // Valid application-owned Daml commands and required fields.
 });`}</CodeBlock>
 
       <H3>ledgerApi</H3>
       <P>Proxy requests to the Canton Ledger API through the wallet.</P>
-      <CodeBlock language="typescript">{`const result = await provider.request<CIP0103LedgerApiResponse>({
+      <CodeBlock language="typescript">{`const result = await nativeProvider.request<{ offset: number }>({
   method: 'ledgerApi',
-  params: {
-    requestMethod: 'POST',
-    resource: '/v2/state/active-contracts',
-    body: JSON.stringify({
-      filter: {
-        filtersByParty: {
-          [partyId]: {
-            inclusive: {
-              templateFilters: [{ templateId: 'Splice.Amulet:Amulet' }],
-            },
-          },
-        },
-      },
-    }),
-  },
-});`}</CodeBlock>
+  params: { requestMethod: 'get', resource: '/v2/state/ledger-end' },
+}); // Raw JSON response from this node's Ledger API version.`}</CodeBlock>
 
       <H2 id="events">4 Events</H2>
 
@@ -195,12 +180,12 @@ export default function CIP0103Page() {
         <A href="https://www.npmjs.com/package/@canton-network/core-wallet-dapp-rpc-client">
           @canton-network/core-wallet-dapp-rpc-client
         </A>{' '}
-        (read at version 1.11.0), and this SDK.
+        (read at version 1.14.0), and this SDK.
       </P>
       <P>
-        A documented divergence is more useful than a false consensus. None of these is a defect in
-        anyone&apos;s code; they are places where the standard leaves room and implementations took
-        different readings.
+        The standard remains authoritative. Some differences are optional extensions; others are
+        compatibility limits and versioned migration requirements. A passing local fixture does not
+        certify every wallet or deployment.
       </P>
 
       <H3>1. prepareExecuteAndWait is in the client, not in the spec&apos;s method table</H3>
@@ -214,10 +199,24 @@ export default function CIP0103Page() {
       <P>
         This SDK uses it. The WalletConnect and Send adapters both call it, because a single call
         that returns the executed transaction is far easier to build a UI around than a void call
-        plus an event subscription. Our <Code>{'CIP0103_METHODS'}</Code> constant nevertheless lists
-        ten names and omits it, so the constant tracks the spec while the adapters track the client.
-        That is a real inconsistency on our side, not a reading of the standard.
+        plus an event subscription. Our <Code>{'CIP0103_METHODS'}</Code> includes the optional verb,
+        while <Code>{'CIP0103_MANDATORY_METHODS'}</Code> retains the ten normative methods.
+        Generic providers fall back only for explicit unsupported-method errors; accepted or
+        uncertain submissions are never replayed to obtain a better receipt.
       </P>
+
+      <H3>Client bridge account, Ledger API and transaction limits</H3>
+      <P>The direct wrapper forwards its attached provider. In the SDK 0.20 candidate,
+        client.asProvider uses one official discovery owner for browser-native connections,
+        exposes real account/key metadata and forwards raw Ledger API JSON plus path/query/header
+        fields. Existing compatibility integrations and explicit createProviderBridge keep the
+        older one-party and response-string wrapper. Native callers migrating from that wrapper
+        must consume raw JSON directly. See the <a href="https://github.com/PartyLayer/PartyLayer/blob/main/docs/protocol-ownership.md#storage-and-api-migration">storage and API migration guide</a>.</P>
+      <P>Combined-only wallets submit directly. A transaction hash is never a signature, a command
+        ID is never a ledger update ID, and missing completion offsets are never filled with zero.
+        Signed/executed events require actual complete evidence; lost submit responses remain
+        unknown. Use independent read-only reconciliation for application confirmation. See the
+        {' '}<A href="https://github.com/PartyLayer/PartyLayer/blob/main/docs/protocol-ownership.md">protocol ownership decision</A>.</P>
 
       <H3>2. messageSignature exists upstream and not here</H3>
       <P>

@@ -6,9 +6,18 @@
 
 ## Overview
 
-Console Wallet is the official wallet for Canton Network provided by Digital Asset. The adapter supports both the browser extension (via postMessage) and mobile wallet connect (via QR code / deep link relay).
+The default PartyLayer catalog connects Console through CIP-0103 announce and
+official discovery. Ordinary React apps use `PartyLayerKit` and `ConnectButton`;
+no separate Console package or registration is required. Native account/network
+responses and declared signing encoding are preserved.
 
-## Connection Modes
+The examples below describe the **explicit legacy `ConsoleAdapter` compatibility
+path**, including its extension and QR/deep-link modes. These modes and the legacy
+sign-only capability are not guarantees of the default native path. Inspect the
+connected session capabilities. See the [current wallet matrix](../wallet-cip0103-matrix.md)
+and [native migration guidance](../protocol-ownership.md).
+
+## Legacy compatibility connection modes
 
 The Console adapter supports three connection modes:
 
@@ -45,9 +54,9 @@ Forces QR code / deep link flow. No extension detection.
 const adapter = new ConsoleAdapter({ target: 'remote' });
 ```
 
-## Capabilities
+## Legacy wrapper capabilities
 
-Console Wallet supports:
+The compatibility wrapper exposes:
 - Connect/Disconnect
 - Sign Message
 - Sign Transaction
@@ -105,9 +114,7 @@ Console Wallet supports:
 
 ## Origin Binding
 
-Console Wallet enforces origin binding. Sessions are bound to the origin that created them. This prevents:
-- Session hijacking across domains
-- Cross-site request forgery
+Console Wallet enforces origin binding. Sessions are bound to the origin that created them. PartyLayer also scopes native restoration to live matching wallet identity, network and application origin. Application authentication still requires server-side challenge verification and CSRF/session protection; a wallet connection alone is not an application login.
 
 ## See Also
 

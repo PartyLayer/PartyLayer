@@ -312,6 +312,8 @@ export interface SignedTransaction {
  * Transaction receipt
  */
 export interface TxReceipt {
+  /** Ledger-reported completion offset, when supplied; never synthesized. */
+  completionOffset?: number;
   /**
    * The transaction hash, when the wallet reports one. See
    * {@link SignedTransaction.transactionHash} for why this is optional.

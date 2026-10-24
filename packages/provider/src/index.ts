@@ -64,7 +64,7 @@ export type {
   WaitForAnnouncedOptions,
 } from './discovery';
 export { createExtensionChannelProvider } from './extension-channel';
-export type { ExtensionChannelOptions } from './extension-channel';
+export type { ExtensionChannelOptions, ExtensionChannelProvider } from './extension-channel';
 
 // ─── Async Wallet ───────────────────────────────────────────────────────────
 

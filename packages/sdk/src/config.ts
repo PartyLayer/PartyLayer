@@ -2,6 +2,9 @@
  * Configuration types for PartyLayer SDK
  */
 
+import type { BronAdapterConfig } from '@partylayer/adapter-bron';
+import type { WalletConnectAdapterConfig } from '@partylayer/adapter-walletconnect';
+
 import type {
   NetworkId,
   WalletId,
@@ -87,6 +90,12 @@ export type AdapterClass = new () => WalletAdapter;
  */
 export interface PartyLayerConfig {
   /**
+   * Delay browser subscriptions and automatic restoration until initialize()
+   * or the first explicit client action. Frameworks use this for render safety.
+   * @default false
+   */
+  deferInitialization?: boolean;
+  /**
    * Registry base URL (optional). The client appends `/v1/{channel}/registry.json`,
    * so the default fetch is `https://registry.partylayer.xyz/v1/stable/registry.json`.
    * @default 'https://registry.partylayer.xyz'
@@ -109,46 +118,10 @@ export interface PartyLayerConfig {
    * proceeded. Set `'off'` to restore that.
    */
   networkEnforcement?: 'off' | 'guard' | 'strict';
-  /** 
-   * Wallet adapters to register (OPTIONAL)
-   * 
-   * By default, the built-in adapters that need no configuration are registered:
-   * - LoopAdapter (5N Loop - QR code / popup)
-   * - Cantor8Adapter (Cantor8 - deep link transport)
-   * - NightlyAdapter (Nightly - injected extension)
-   *
-   * Console and Send are NOT in the defaults; they are CIP-0103 native and appear
-   * through the announce path. BronAdapter (hosted OAuth) and the WalletConnect
-   * adapter require configuration and are opt-in.
-   *
-   * Only provide this if you want to customize which adapters to use.
-   *
-   * @example
-   * ```typescript
-   * // Default: the no-config built-in adapters (recommended)
-   * const client = createPartyLayer({
-   *   network: 'devnet',
-   *   app: { name: 'My dApp' },
-   *   // adapters not specified = getBuiltinAdapters() = Loop, Cantor8, Nightly
-   * });
-   * 
-   * // Custom: only specific adapters
-   * import { ConsoleAdapter } from '@partylayer/sdk';
-   * const client = createPartyLayer({
-   *   adapters: [new ConsoleAdapter()], // Only Console Wallet
-   *   // ...
-   * });
-   * 
-   * // With Bron (enterprise wallet with OAuth)
-   * import { BronAdapter, getBuiltinAdapters } from '@partylayer/sdk';
-   * const client = createPartyLayer({
-   *   adapters: [
-   *     ...getBuiltinAdapters(),
-   *     new BronAdapter({ auth: {...}, api: {...} }),
-   *   ],
-   *   // ...
-   * });
-   * ```
+  /**
+   * Replace the default wallet catalog. Omit for all supported wallets on the
+   * configured network/channel. Official wallet SDKs are included and loaded
+   * lazily; no per-wallet installation or registration is required.
    */
   adapters?: (
     | WalletAdapter
@@ -156,6 +129,12 @@ export interface PartyLayerConfig {
     | OfficialProviderAdapter
     | OfficialAdapterFactory
   )[];
+  /** Extend the default catalog with custom adapters (for example a test wallet). */
+  additionalAdapters?: PartyLayerConfig['adapters'];
+  /** Enable WalletConnect with your application's Cloud project id. */
+  walletConnect?: WalletConnectAdapterConfig;
+  /** Enable the Bron remote signer with your application's OAuth/API configuration. */
+  bron?: BronAdapterConfig;
   /** Storage adapter (default: browser localStorage-based encrypted) */
   storage?: StorageAdapter;
   /** Crypto adapter (default: WebCrypto) */

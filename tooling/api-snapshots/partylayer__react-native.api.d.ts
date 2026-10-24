@@ -34,13 +34,13 @@ declare function useTheme(): ReactNativeTheme;
 declare function useWallets(): UseWalletsResult;
 declare function useWallets(client: PartyLayerClient, parameters?: UseWalletsParameters): UseWalletsResult;
 declare function useWallets(parameters: UseWalletsParameters): UseWalletsResult;
-export { A as AccentOverrides, a as AccentPreset, D as DEFAULT_BORDER_RADIUS, I as IconFormat, b as REM_BASE_PX, T as ThemeFamily, c as accentPresets, d as applyAccent, e as deriveIconFormat, p as parseBorderRadius, t as themes, f as toReactNativeTheme, g as toThemeTokens, w as walletIconInfo } from './icons-aZXHJrwj.js';
+export { A as AccentOverrides, a as AccentPreset, D as DEFAULT_BORDER_RADIUS, I as IconFormat, b as REM_BASE_PX, T as ThemeFamily, c as accentPresets, d as applyAccent, e as deriveIconFormat, p as parseBorderRadius, t as themes, f as toReactNativeTheme, g as toThemeTokens, w as walletIconInfo } from './icons-DbFeyS0A.js';
 export { type ConnectStatus, type DynamicReactNativeTheme, type PartyLayerContextValue, PartyLayerProvider, type PartyLayerProviderProps, PartyLayerTheme, type RNAsyncStorage, type RNLinking, type ReactNativeClientConfig, ReactNativeTheme, type ReactNativeThemeInput, type SessionChain, ThemeProvider, type ThemeProviderProps, type UseAccountEffectParameters, type UseAccountResult, type UseConnectResult, type UseDisconnectResult, type UseLedgerApiResult, type UseSessionResult, type UseSignMessageResult, type UseSignTransactionResult, type UseSubmitTransactionResult, type UseWalletsParameters, type UseWalletsResult, WalletIconInfo, createAsyncStorage, createAsyncStorageAdapter, createReactNativeClient, createReactNativeDeepLinkPlatform, useAccount, useAccountEffect, useConnect, useDisconnect, useLedgerApi, usePartyLayer, usePartyLayerContext, useSession, useSignMessage, useSignTransaction, useSubmitTransaction, useTheme, useWallets };
 import * as react_jsx_runtime from 'react/jsx-runtime';
 import { DeepLinkPlatform, StorageAdapter } from '@partylayer/core';
 import { PartyLayerClient, Session, WalletInfo, PartyLayerConfig, LedgerApiParams, LedgerApiResult, SignMessageParams, SignedMessage, SignTransactionParams, SignedTransaction, SubmitTransactionParams, TxReceipt, WalletFilter, ConnectOptions } from '@partylayer/sdk';
 import { SessionStore, SessionStoreOptions, SessionStorage, SessionAccount, SessionStatus, SessionState, SessionEvent } from '@partylayer/session';
-import { W as WalletIconInfo, R as ReactNativeTheme, P as PartyLayerTheme } from './icons-aZXHJrwj.js';
+import { W as WalletIconInfo, R as ReactNativeTheme, P as PartyLayerTheme } from './icons-DbFeyS0A.js';
 interface DynamicReactNativeTheme { lightMode: ReactNativeTheme | PartyLayerTheme; darkMode: ReactNativeTheme | PartyLayerTheme; }
 interface PartyLayerContextValue { client: PartyLayerClient | null; session: Session | null; wallets: WalletInfo[]; isLoading: boolean; error: Error | null; store: SessionStore | null; }
 interface PartyLayerProviderProps { client: PartyLayerClient; children: React.ReactNode; asyncStorage?: RNAsyncStorage; sessionOptions?: Partial<SessionStoreOptions>; }

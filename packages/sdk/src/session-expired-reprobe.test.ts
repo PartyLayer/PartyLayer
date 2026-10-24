@@ -1,49 +1,7 @@
-/**
- * The fourth `session:expired` emit site: the restore re-probe inside
- * listWallets (client.ts:628).
- *
- * It is the only one of the four that could not be reached from the other test
- * file, because it needs a specific sequence rather than a specific input:
- *
- *   1. a session is restored while NO adapter is registered for its wallet, so
- *      restoreSession falls through to the as-is path and sets
- *      activeSessionNeedsProbe (client.ts:1553-1558);
- *   2. listWallets then finds an announced provider whose id maps to a registry
- *      entry with `adapter.transport: 'announce'`, and builds a
- *      GenericAnnounceAdapter for it on the spot;
- *   3. that adapter has a `restore` (only present when the entry sets
- *      `adapter.config.restore`), so the re-probe runs;
- *   4. the re-probe returns null, and the emit under test fires.
- *
- * Everything below exists to produce that sequence. The point was to find out
- * whether this site shares the null-dereference the getActiveSession site had,
- * by making it fire rather than by reading it.
- *
- * RESULT: it does not. It is GUARDED, by two separate things, and the second
- * one is worth knowing about because it changes what a bug here would look
- * like.
- *
- *   Guard 1, the local `active`. The session id is read from a binding captured
- *   before `this.activeSession = null`, so the emit never dereferences the
- *   field. Verified by mutation: swapping `active.sessionId` for
- *   `this.activeSession!.sessionId` makes this test fail. That is what makes
- *   "guarded" mean something here rather than being an observation about the
- *   shape of the code.
- *
- *   Guard 2, the surrounding try/catch (client.ts:629). The re-probe is wrapped
- *   so it can never break listWallets. Under the mutation above, the TypeError
- *   is SWALLOWED: the test fails with zero events emitted, not with a thrown
- *   error. So the same defect that crashed getActiveSession would be silent
- *   here, surfacing as a missing session:expired and a session left stale
- *   rather than as a crash.
- *
- * Which is the reason not to copy one site's pattern to another. In
- * getActiveSession the defect was loud and took down signMessage; here it would
- * have been quiet and left a stale session behind. Loud is easier to find.
- */
-
+// @vitest-environment jsdom
+/** A rejected native cache migration emits the original session id once. */
 import { describe, it, expect, vi } from 'vitest';
-import type { WalletAdapter, Session, PersistedSession, Storage, WalletInfo } from '@partylayer/core';
+import type { WalletAdapter, Storage, WalletInfo } from '@partylayer/core';
 import { toWalletId, toPartyId } from '@partylayer/core';
 
 // vi.mock factories are hoisted above module-level consts, so anything they
@@ -147,33 +105,6 @@ vi.mock('@partylayer/registry-client', async () => {
 
 import { createPartyLayer } from './index';
 
-// announceEnabled returns false when `window` is undefined (client.ts:478), so
-// in a Node runner the entire announce path, and the re-probe inside it, is
-// unreachable. A bare object is enough: discoverProviders and
-// createExtensionChannelProvider are both mocked above, so nothing else on the
-// announce path touches window.
-vi.stubGlobal('window', {});
-
-/**
- * Poll for a condition with a bound, rather than sleeping a fixed tick.
- *
- * The constructor's restoreSession() is fire-and-forget (client.ts:283), so the
- * test does not own the promise it is waiting on. This originally waited one
- * macrotask, which was enough on a dev machine and not on CI: the session had
- * not been revived yet and the precondition failed there and only there.
- *
- * Deliberately does NOT assert on timeout. It returns either way, so the
- * caller's own assertion runs and reports what was actually observed, rather
- * than a generic "timed out" that hides the state.
- */
-async function waitFor(check: () => boolean, timeoutMs = 5000): Promise<void> {
-  const deadline = Date.now() + timeoutMs;
-  while (Date.now() < deadline) {
-    if (check()) return;
-    await new Promise((r) => setTimeout(r, 5));
-  }
-}
-
 function makeStorage(): Storage {
   const data = new Map<string, string>();
   return {
@@ -209,56 +140,28 @@ class SeedAdapter implements WalletAdapter {
   restore?: undefined;
 }
 
-describe('session:expired from the listWallets re-probe', () => {
-  it('emits with the pre-clear session id and does not throw', async () => {
+describe('native cache migration expiry', () => {
+  it('emits the discarded cache session id and never exposes the unverified party', async () => {
+    localStorage.clear();
     const storage = makeStorage();
-
-    // Seed a persisted session for WALLET_ID.
     const seed = createPartyLayer({
-      network: 'devnet',
-      app: { name: 'reprobe', origin: 'https://reprobe.example' },
-      registryUrl: 'https://unused.invalid',
-      adapters: [new SeedAdapter()],
-      storage,
+      network: 'devnet', app: { name: 'migration', origin: 'https://reprobe.example' },
+      adapters: [new SeedAdapter()], storage,
     });
-    await seed.connect({ walletId: toWalletId(WALLET_ID) });
-    await seed.destroy();
-
-    // Second client registers NO adapter for that wallet, so restoreSession
-    // revives the session as-is and sets activeSessionNeedsProbe.
+    const original = await seed.connect({ walletId: toWalletId(WALLET_ID) });
+    seed.destroy();
     const client = createPartyLayer({
-      network: 'devnet',
-      app: { name: 'reprobe', origin: 'https://reprobe.example' },
-      registryUrl: 'https://unused.invalid',
-      adapters: [],
-      storage,
+      network: 'devnet', app: { name: 'migration', origin: 'https://reprobe.example' },
+      adapters: [], storage,
     });
-
-    const internals = client as unknown as {
-      activeSession: Session | null;
-      activeSessionNeedsProbe: boolean;
-    };
-
-    // Wait for the constructor's fire-and-forget restoreSession to revive the
-    // session as-is. Bounded poll, not a fixed sleep: a bigger sleep is the same
-    // bug with a better hit rate.
-    await waitFor(() => internals.activeSession !== null);
-    // Preconditions for the branch. Asserted, not assumed: if the as-is revive
-    // stops happening, this test would otherwise silently stop covering the site.
-    expect(internals.activeSession).not.toBeNull();
-    expect(internals.activeSessionNeedsProbe).toBe(true);
-    const idBefore = internals.activeSession?.sessionId;
-
-    const seen: Array<{ sessionId: unknown }> = [];
-    client.on('session:expired', (e) => seen.push(e as { sessionId: unknown }));
-
-    // The re-probe runs here, inside listWallets.
+    const expired = vi.fn(); client.on('session:expired', expired);
+    expect(await client.getActiveSession()).toBeNull();
+    expect(expired).toHaveBeenCalledTimes(1);
+    expect(expired).toHaveBeenCalledWith(expect.objectContaining({ sessionId: original.sessionId }));
+    expect(await storage.get('active_session')).toBeNull();
     await expect(client.listWallets()).resolves.toBeDefined();
-
-    expect(seen.length).toBeGreaterThanOrEqual(1);
-    expect(seen[0]?.sessionId).toBe(idBefore);
-    expect(internals.activeSession).toBeNull();
-
-    await client.destroy();
+    expect(await client.getActiveSession()).toBeNull();
+    expect(expired).toHaveBeenCalledTimes(1);
+    client.destroy();
   });
 });

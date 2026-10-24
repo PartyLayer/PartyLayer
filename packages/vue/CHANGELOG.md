@@ -1,5 +1,18 @@
 # @partylayer/vue
 
+## 2.0.1
+
+### Patch Changes
+
+- Updated dependencies [817d357]
+- Updated dependencies [2e07185]
+- Updated dependencies [882752f]
+- Updated dependencies [0ebd598]
+- Updated dependencies [8cb0f09]
+- Updated dependencies [8e08da9]
+  - @partylayer/core@0.15.0
+  - @partylayer/session@1.1.9
+
 ## 2.0.0
 
 ### Major Changes

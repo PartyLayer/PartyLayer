@@ -44,7 +44,8 @@
       "@partylayer/adapter-nightly": "file:./vendor/partylayer-adapter-nightly.tgz",
       "@partylayer/adapter-send": "file:./vendor/partylayer-adapter-send.tgz",
       "@partylayer/sdk": "file:./vendor/partylayer-sdk.tgz",
-      "@partylayer/react-native": "file:./vendor/partylayer-react-native.tgz"
+      "@partylayer/react-native": "file:./vendor/partylayer-react-native.tgz",
+      "@partylayer/adapter-walletconnect": "file:./vendor/partylayer-adapter-walletconnect.tgz"
     }
   }
 }

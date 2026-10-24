@@ -7,377 +7,183 @@ export default function QuickStartPage() {
 
   return (
     <>
-      <H1>Canton dApp quickstart: zero to a working wallet connection</H1>
+      <H1>Quick start</H1>
       <P>
-        Get a full wallet connection flow working in your React app in 3 steps.
-        By the end of this guide, your users will be able to connect any Canton wallet.
+        Add the PartyLayer wallet picker and account menu to your React app. One installation
+        includes the SDK and reviewed wallet runtimes. No wallet-specific imports or stylesheet
+        import are required.
       </P>
-
-      <P>
-        <Strong>Coming from Ethereum?</Strong> The connect layer below will feel familiar, and{' '}
-        <A href="/docs/wagmi-for-canton">wagmi for Canton</A> maps the hooks you already know onto
-        these ones. Read it before you port a read path, because that is the part that does not
-        translate.
-      </P>
-
-      <H2 id="which-sdk">Which Canton SDK do you need?</H2>
-      <P>
-        Searching for a Canton Network SDK returns several packages that do different jobs, and
-        picking the wrong one costs a day. Here is the honest layout, with each package described by
-        what its own publisher says it is.
-      </P>
-
-      <div style={{ overflowX: 'auto', marginBottom: 20 }}>
-        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 14, border: '1px solid rgba(15,23,42,0.10)' }}>
-          <thead>
-            <tr style={{ background: '#F5F6F8' }}>
-              <th style={{ textAlign: 'left', padding: '9px 12px', borderBottom: '1px solid rgba(15,23,42,0.10)' }}>Package</th>
-              <th style={{ textAlign: 'left', padding: '9px 12px', borderBottom: '1px solid rgba(15,23,42,0.10)' }}>Use it when</th>
-            </tr>
-          </thead>
-          <tbody>
-            {[
-              [
-                '@canton-network/wallet-sdk',
-                'You are building a wallet, an exchange or a custody service and need to talk to the ledger directly: allocate parties, authenticate to synchronizers, sign and submit. Published as a Node and browser SDK for integrating with Canton Network. Not what a dApp frontend needs.',
-              ],
-              [
-                '@canton-network/dapp-sdk',
-                'You are building a dApp frontend and want the first-party CIP-0103 implementation, published as a browser SDK for dApp development on the Canton Network. It ships its own discovery and wallet-picker component. If you want the reference implementation with no third-party layer, use this.',
-              ],
-              [
-                '@partylayer/react',
-                'You are building a dApp frontend in React and want per-wallet quirks handled for you, a registry-backed wallet list, and a themeable connect UI. That is this page. It speaks CIP-0103 too, and adds adapters for wallets that do not.',
-              ],
-            ].map(([pkg, when]) => (
-              <tr key={pkg}>
-                <td style={{ padding: '10px 12px', borderBottom: '1px solid rgba(15,23,42,0.06)', fontFamily: 'ui-monospace, Menlo, monospace', fontSize: 13, verticalAlign: 'top', whiteSpace: 'nowrap' }}>{pkg}</td>
-                <td style={{ padding: '10px 12px', borderBottom: '1px solid rgba(15,23,42,0.06)' }}>{when}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-
-      <Callout type="note">
-        <Strong>The honest comparison.</Strong> If your app targets one CIP-0103 native wallet and you
-        want the fewest dependencies, the first-party <Code>{'@canton-network/dapp-sdk'}</Code> is the
-        shorter path and you should take it. PartyLayer earns its place when you need several wallets
-        at once, including ones that are not CIP-0103 native and need an adapter, and when you would
-        rather not discover each wallet&apos;s quirks yourself. The{' '}
-        <A href="/wallets">wallet directory</A> lists which is which, with the evidence for each.
+      <Callout type="note" title="Version scope">
+        This guide requires React 3.1.0+ / SDK 0.20.0+. See{' '}
+        <A href="https://github.com/PartyLayer/PartyLayer/blob/main/docs/releasing.md#default-wallet-release-validation">release validation</A>{' '}
+        for publication and acceptance evidence.
       </Callout>
+      <P>
+        Use React 18+ and a supported Node LTS version that meets your framework requirements.
+        To complete a real connection, users need a wallet account or extension on your selected network.
+      </P>
 
-      <H2 id="prerequisites">Before you start</H2>
-      <UL>
-        <LI>
-          <Strong>React 18 or 19</Strong> and Node 18 or newer. Every code block below has a
-          Next.js and a Vite tab. The code is plain React, so another bundler will work, but those
-          two are the ones actually shown.
-        </LI>
-        <LI>
-          <Strong>A wallet to connect to.</Strong> On devnet you do not need one installed to see the
-          flow: the modal lists registry wallets and shows install prompts for the ones you lack. To
-          complete a real connection you need one of the wallets from the{' '}
-          <A href="/wallets">directory</A> that supports your target network.
-        </LI>
-        <LI>
-          <Strong>No ledger credentials, no participant node, no Daml.</Strong> Connecting a wallet
-          and reading the connected party needs none of that. You need them when you start submitting
-          transactions, which is <A href="/docs/token-transfers">Token transfers</A>.
-        </LI>
-      </UL>
+      <H2 id="new-app">Start a new app</H2>
+      <P>The CLI creates your project and installs its dependencies:</P>
+      <CodeBlock language="bash">{`npm create partylayer-app@latest my-dapp -- --template react-vite --pm npm
+cd my-dapp
+npm run dev`}</CodeBlock>
+      <P>
+        Use <Code>--template next-ssr</Code> for Next.js App Router. The{' '}
+        <A href="https://github.com/PartyLayer/PartyLayer/tree/main/packages/create-partylayer-app">CLI guide</A>{' '}
+        lists all six templates. Generated React apps already use the PartyLayer button and attribution.
+        For an existing app, follow the steps below.
+      </P>
 
       <H2 id="step-1">Step 1: Install</H2>
-      <P>
-        Add the PartyLayer packages to your existing React project. If you{"'"}re starting fresh with
-        Vite, run <Code>{'npm create vite@latest my-dapp -- --template react-ts'}</Code> first.
-      </P>
-      <CodeBlock language="bash">{`npm install @partylayer/sdk @partylayer/react @tanstack/react-query`}</CodeBlock>
-
-      <H2 id="step-2">Step 2: Wrap Your App</H2>
-      <P>
-        Add <Code>{'PartyLayerKit'}</Code> at the root of your component tree.
-        It handles wallet discovery, session management, and theming automatically.
-      </P>
       <TabGroup tabs={[
-        {
-          label: 'Vite + React',
-          language: 'tsx',
-          content: `// src/main.tsx
+        { label: 'npm', content: 'npm install @partylayer/react @tanstack/react-query', language: 'bash' },
+        { label: 'pnpm', content: 'pnpm add @partylayer/react @tanstack/react-query', language: 'bash' },
+        { label: 'yarn', content: 'yarn add @partylayer/react @tanstack/react-query', language: 'bash' },
+      ]} />
+      <P>
+        You do not need a separate SDK, core or wallet package installation. TanStack Query is a
+        required peer. Its <Code>QueryClientProvider</Code> is needed for optional{' '}
+        <Code>@partylayer/react/query</Code> data hooks; the base connect UI works without that provider.
+      </P>
+
+      <H2 id="step-2">Step 2: Mount the kit</H2>
+      <TabGroup tabs={[
+        { label: 'Vite + React', language: 'tsx', content: `// src/main.tsx
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { PartyLayerKit } from '@partylayer/react';
 import App from './App';
 
-const queryClient = new QueryClient();
-
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <QueryClientProvider client={queryClient}>
-      <PartyLayerKit network="mainnet" appName="My dApp">
-        <App />
-      </PartyLayerKit>
-    </QueryClientProvider>
+    <PartyLayerKit network="devnet" appName="My dApp">
+      <App />
+    </PartyLayerKit>
   </StrictMode>,
-);`,
-        },
-        {
-          label: 'Next.js',
-          language: 'tsx',
-          content: `// app/providers.tsx
+);` },
+        { label: 'Next.js', language: 'tsx', content: `// app/providers.tsx
 'use client';
 
-import { useState } from 'react';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import type { ReactNode } from 'react';
 import { PartyLayerKit } from '@partylayer/react';
 
-export function Providers({ children }: { children: React.ReactNode }) {
-  // useState gives each client one stable QueryClient (never shared across requests).
-  const [queryClient] = useState(() => new QueryClient());
+export function Providers({ children }: { children: ReactNode }) {
   return (
-    <QueryClientProvider client={queryClient}>
-      <PartyLayerKit network="mainnet" appName="My dApp">
-        {children}
-      </PartyLayerKit>
-    </QueryClientProvider>
+    <PartyLayerKit network="devnet" appName="My dApp">
+      {children}
+    </PartyLayerKit>
   );
-}`,
-        },
+}` },
       ]} />
+      <P>In Next.js, mount the provider in your server-rendered root layout:</P>
+      <CodeBlock language="tsx">{`// app/layout.tsx — keep this a Server Component
+import type { ReactNode } from 'react';
+import { Providers } from './providers';
 
-      <Callout type="tip">
-        <Code>{'PartyLayerKit'}</Code> automatically registers all built-in wallet adapters
-        (Console, Loop, Cantor8, Nightly), fetches the wallet registry, and sets up session persistence.
-        Send is discovered through the CIP-0103 announce path, so it appears in the picker without being registered.
-      </Callout>
-
-      <Callout type="note" title="Why QueryClientProvider">
-        v2{"'"}s data hooks (the <Code>{'@partylayer/react/query'}</Code> entrypoint) are built on
-        TanStack Query, so they need a <Code>{'QueryClient'}</Code> in context. The base connect flow
-        below (<Code>{'PartyLayerKit'}</Code>, <Code>{'ConnectButton'}</Code>, <Code>{'useAccount'}</Code>)
-        works without it, but wrapping in <Code>{'QueryClientProvider'}</Code> now means the data hooks
-        are ready when you reach for them. See the <A href="/docs/hooks">Hooks</A> reference.
-      </Callout>
+export default function RootLayout({ children }: { children: ReactNode }) {
+  return (
+    <html lang="en">
+      <body><Providers>{children}</Providers></body>
+    </html>
+  );
+}`}</CodeBlock>
+      <P>
+        Use one kit at your application boundary. It owns discovery, client cleanup, theme and
+        session context. Keep <Code>walletConnect</Code>, <Code>bron</Code> and{' '}
+        <Code>additionalAdapters</Code> objects stable outside render or with <Code>useMemo</Code>;
+        changes recreate the client.
+      </P>
 
       <H2 id="step-3">Step 3: Add ConnectButton</H2>
-      <P>
-        Drop <Code>{'ConnectButton'}</Code> anywhere in your app. It renders a connect button when
-        disconnected and shows the connected address with a disconnect dropdown when connected.
-      </P>
-      <TabGroup tabs={[
-        {
-          label: 'Vite + React',
-          language: 'tsx',
-          content: `// src/App.tsx
-import { ConnectButton } from '@partylayer/react';
+      <P>Use <Code>src/App.tsx</Code> in Vite or <Code>app/page.tsx</Code> in Next.js:</P>
+      <CodeBlock language="tsx">{`'use client';
 
-export default function App() {
-  return (
-    <div>
-      <h1>My Canton dApp</h1>
-      <ConnectButton />
-    </div>
-  );
-}`,
-        },
-        {
-          label: 'Next.js',
-          language: 'tsx',
-          content: `// app/page.tsx
 import { ConnectButton } from '@partylayer/react';
 
 export default function Home() {
   return (
-    <div>
+    <main>
       <h1>My Canton dApp</h1>
       <ConnectButton />
-    </div>
-  );
-}`,
-        },
-      ]} />
-
-      <P>
-        That{"'"}s it! Your app now has a complete wallet connection flow with a polished modal,
-        wallet auto-discovery, and session management.
-      </P>
-
-      <H2 id="complete-example">Complete Example</H2>
-      <P>Here{"'"}s the full setup in a single file:</P>
-      <TabGroup tabs={[
-        {
-          label: 'Vite + React',
-          language: 'tsx',
-          content: `// src/main.tsx
-import { StrictMode } from 'react';
-import { createRoot } from 'react-dom/client';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { PartyLayerKit, ConnectButton } from '@partylayer/react';
-
-const queryClient = new QueryClient();
-
-function App() {
-  return (
-    <>
-      <nav>
-        <h1>My dApp</h1>
-        <ConnectButton />
-      </nav>
-      <main>
-        <p>Your app content here</p>
-      </main>
-    </>
-  );
-}
-
-createRoot(document.getElementById('root')!).render(
-  <StrictMode>
-    <QueryClientProvider client={queryClient}>
-      <PartyLayerKit network="mainnet" appName="My dApp">
-        <App />
-      </PartyLayerKit>
-    </QueryClientProvider>
-  </StrictMode>,
-);`,
-        },
-        {
-          label: 'Next.js',
-          language: 'tsx',
-          content: `// app/providers.tsx
-'use client';
-
-import { useState } from 'react';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { PartyLayerKit, ConnectButton } from '@partylayer/react';
-
-export function Providers({ children }: { children: React.ReactNode }) {
-  const [queryClient] = useState(() => new QueryClient());
-  return (
-    <QueryClientProvider client={queryClient}>
-      <PartyLayerKit network="mainnet" appName="My dApp">
-        <nav>
-          <h1>My dApp</h1>
-          <ConnectButton />
-        </nav>
-        {children}
-      </PartyLayerKit>
-    </QueryClientProvider>
-  );
-}`,
-        },
-      ]} />
-
-      <H2 id="whats-happening">What{"'"}s Happening Under the Hood?</H2>
-      <P>When <Code>{'PartyLayerKit'}</Code> mounts, it:</P>
-      <OL>
-        <LI><Strong>Creates a PartyLayerClient</Strong>: the core SDK instance that manages all wallet operations</LI>
-        <LI><Strong>Registers built-in adapters</Strong>: Console, Loop, Cantor8, and Nightly wallet adapters (Send is served through the CIP-0103 announce path)</LI>
-        <LI><Strong>Fetches the wallet registry</Strong>: verified wallet metadata from <Code>{'registry.partylayer.xyz'}</Code></LI>
-        <LI><Strong>Groups CIP-0103 native wallets</Strong>: those flagged <Code>{'cip0103.native: true'}</Code> in the registry render in a dedicated picker section</LI>
-        <LI><Strong>Restores existing sessions</Strong>: if a user was previously connected, the session is restored automatically</LI>
-      </OL>
-
-      <H2 id="using-hooks">Using Session Data</H2>
-      <P>
-        Once connected, read the session reactively from any component with <Code>{'useAccount'}</Code>:
-      </P>
-      <CodeBlock language="tsx">{`import { useAccount } from '@partylayer/react';
-
-function Profile() {
-  const { isConnected, status, party, networkId } = useAccount();
-
-  if (!isConnected) return <p>Not connected ({status})</p>;
-
-  return (
-    <div>
-      <p>Party ID: {party}</p>
-      <p>Network: {networkId}</p>
-    </div>
+    </main>
   );
 }`}</CodeBlock>
-
-      <H2 id="verify">Verify it actually works</H2>
       <P>
-        Three checks, in order. Each one fails differently, so knowing which passed tells you where to
-        look.
+        Users choose a wallet and approve its connection. The connected button opens the account
+        menu. The modal shows <Strong>Powered by PartyLayer</Strong> by default. Hosted login and
+        extension installation remain wallet prerequisites.
       </P>
+
+      <H2 id="using-hooks">Read the connected account</H2>
+      <CodeBlock language="tsx">{`import { useAccount } from '@partylayer/react';
+
+export function Account() {
+  const { isConnected, status, party, networkId } = useAccount();
+  if (!isConnected) return <p>Wallet: {status}</p>;
+  return <p>{party} · {networkId}</p>;
+}`}</CodeBlock>
+      <P>
+        Render this inside the kit. A wallet session is not application authentication; use the{' '}
+        <A href="/docs/authentication">authentication guide</A> for server-verified sign-in.
+        For optional data hooks, wrap the kit in <Code>QueryClientProvider</Code>. In a Next.js client
+        provider, create its stable client with <Code>useState(() =&gt; new QueryClient())</Code> rather
+        than sharing it across server requests. See <A href="/docs/hooks#query-hooks">data hooks</A>.
+      </P>
+
+      <H2 id="wallet-config">Configure wallets</H2>
+      <UL>
+        <LI><Strong>Network:</Strong> set <Code>network</Code> to <Code>devnet</Code>, <Code>testnet</Code> or <Code>mainnet</Code>. The catalog follows network support.</LI>
+        <LI><Strong>Vala:</Strong> set <Code>network="devnet" channel="beta"</Code>.</LI>
+        <LI><Strong>Send:</Strong> Mainnet-only in the catalog; it is absent on Devnet.</LI>
+        <LI><Strong>WalletConnect:</Strong> supply your own project ID through <Code>walletConnect</Code>.</LI>
+        <LI><Strong>Bron:</Strong> supply your OAuth/API configuration through <Code>bron</Code>.</LI>
+        <LI><Strong>Custom integrations:</Strong> <Code>additionalAdapters</Code> extends the catalog; <Code>adapters</Code> replaces it.</LI>
+        <LI><Strong>Appearance:</Strong> use <Code>theme="auto" locale="en"</Code>; Turkish and explicit RTL are also supported.</LI>
+      </UL>
+      <CodeBlock language="tsx">{`const walletConnect = { projectId: 'YOUR_PROJECT_ID' };
+
+<PartyLayerKit network="devnet" appName="My dApp" walletConnect={walletConnect}>
+  <ConnectButton />
+</PartyLayerKit>`}</CodeBlock>
+      <P>
+        Runtimes ship with the kit and load as needed. A listing or capability declaration is not
+        proof of completed live testing. See <A href="/docs/wallets">wallet capabilities</A> and the{' '}
+        <A href="https://github.com/PartyLayer/PartyLayer/blob/main/docs/wallet-acceptance.md">acceptance evidence</A>.
+      </P>
+
+      <H2 id="verify">Verify the connection</H2>
       <OL>
-        <LI>
-          <Strong>The modal opens and lists wallets.</Strong> If it opens empty, the registry did not
-          load. Check the browser console for a registry fetch error; the SDK falls back to
-          adapter-only discovery, so an empty list means neither the registry nor any adapter
-          produced a wallet.
-        </LI>
-        <LI>
-          <Strong>Selecting a wallet starts its flow.</Strong> An extension wallet prompts, a QR
-          wallet opens a window. If nothing happens for a relay wallet, you probably have not wired
-          its pairing URI; see the per-wallet notes on the{' '}
-          <A href="/wallets">wallet directory</A>.
-        </LI>
-        <LI>
-          <Strong>
-            <Code>{'useAccount()'}</Code> reports a party id.
-          </Strong>{' '}
-          This is the one that matters. A connection that resolves without a party id is not a usable
-          session, and the SDK now throws rather than inventing one, so you will see an error rather
-          than a silent half-state.
-        </LI>
+        <LI>Open Connect Wallet and check the list against your network and channel.</LI>
+        <LI>Select a wallet from the button flow; complete login, installation and approval if needed.</LI>
+        <LI>Confirm <Code>useAccount()</Code> reports the party and actual wallet network.</LI>
+        <LI>Disconnect and confirm the account clears. Test reload/restoration separately; a cached hint alone is not a live connection.</LI>
       </OL>
+      <Callout type="note">
+        Connection or message signing does not verify a transfer or swap. Those need valid
+        commands, test balance and independent ledger confirmation. See{' '}
+        <A href="/docs/transaction-lifecycle">transaction lifecycle</A>.
+      </Callout>
 
-      <H2 id="troubleshooting">If it does not work</H2>
-      <div style={{ overflowX: 'auto', marginBottom: 24 }}>
-        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 14, border: '1px solid rgba(15,23,42,0.10)' }}>
-          <thead>
-            <tr style={{ background: '#F5F6F8' }}>
-              <th style={{ textAlign: 'left', padding: '9px 12px', borderBottom: '1px solid rgba(15,23,42,0.10)' }}>Symptom</th>
-              <th style={{ textAlign: 'left', padding: '9px 12px', borderBottom: '1px solid rgba(15,23,42,0.10)' }}>Cause and fix</th>
-            </tr>
-          </thead>
-          <tbody>
-            {[
-              [
-                'Modal lists no wallets',
-                'The registry fetch failed and no adapter was registered. PartyLayerKit registers the built-in set by default; if you passed your own adapters prop you have replaced it, not added to it.',
-              ],
-              [
-                'A wallet is missing from the list',
-                'Some adapters need configuration and are skipped without it. Bron needs OAuth config and WalletConnect needs a project id, and both are simply absent when unconfigured rather than shown as broken.',
-              ],
-              [
-                'Hydration mismatch in Next.js',
-                'Wallet detection reads window. Render the connect UI on the client. The ConnectButton handles this; a custom picker built on useWallets has to.',
-              ],
-              [
-                'useSignMessage rejects on some wallets',
-                'Not every adapter implements it. Three registry wallets declare signMessage: false, so an app that gates login on a signed message has no path through them. Check the capability matrix before offering a wallet.',
-              ],
-              [
-                'Signature does not verify against my backend',
-                'Console Wallet base64-encodes the message bytes before signing. If your backend verifies raw bytes the signatures will not match.',
-              ],
-            ].map(([sym, fix]) => (
-              <tr key={sym}>
-                <td style={{ padding: '10px 12px', borderBottom: '1px solid rgba(15,23,42,0.06)', verticalAlign: 'top', fontWeight: 600 }}>{sym}</td>
-                <td style={{ padding: '10px 12px', borderBottom: '1px solid rgba(15,23,42,0.06)' }}>{fix}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+      <H2 id="troubleshooting">Troubleshooting</H2>
+      <UL>
+        <LI><Strong>Missing wallet:</Strong> check network/channel, WalletConnect/Bron settings and whether <Code>adapters</Code> replaced defaults.</LI>
+        <LI><Strong>Empty picker:</Strong> check registry/discovery errors, filters and custom adapter configuration.</LI>
+        <LI><Strong>Popup blocked:</Strong> start from a user click; use the default button to preserve the supported popup flow.</LI>
+        <LI><Strong>Signing rejected:</Strong> check session capabilities, actual network and wallet authentication. Inspect the vendor error.</LI>
+        <LI><Strong>Signature verification failed:</Strong> verify exact challenge bytes/encoding, nonce, origin and independently authorized key. There is no universal vendor algorithm.</LI>
+        <LI><Strong>Old native session:</Strong> caches without an official provider hint need one reconnect. Live party/network checks still apply.</LI>
+        <LI><Strong>Next.js hydration:</Strong> keep the kit in a client boundary. SSR cookie state is a UI hint; protect server content with backend authentication.</LI>
+      </UL>
 
-      <H2 id="next-steps">Next Steps</H2>
-      <P>Now that you have basic connectivity, explore more:</P>
-      <OL>
-        <LI><A href="/docs/partylayer-kit">PartyLayerKit</A>: Configuration options (network, adapters, theme)</LI>
-        <LI><A href="/docs/connect-button">ConnectButton</A>: Customize the button appearance and behavior</LI>
-        <LI><A href="/docs/hooks">React Hooks</A>: Use <Code>{'useSignMessage'}</Code>, <Code>{'useSubmitTransaction'}</Code>, and the <Code>{'/query'}</Code> data hooks (<Code>{'useDamlContract'}</Code>, <Code>{'useChoice'}</Code>, cost hooks)</LI>
-        <LI><A href="/docs/cookbook">Pattern Cookbook</A>: Copy-paste recipes for the data hooks, optimistic updates, and Suspense</LI>
-        <LI><A href="/docs/theming">Theming</A>: Switch between light, dark, and custom themes</LI>
-        <LI><A href="/docs/wallets">Wallets & Adapters</A>: Add custom wallet adapters or the Bron enterprise wallet</LI>
-      </OL>
-
+      <H2 id="next-steps">Next steps</H2>
+      <UL>
+        <LI><A href="/docs/partylayer-kit">Kit configuration</A> and <A href="/docs/connect-button">ConnectButton</A>.</LI>
+        <LI><A href="/docs/authentication">Authentication</A>, <A href="/docs/transaction-lifecycle">transaction lifecycle</A> and <A href="/docs/wallet-balances">wallet balances</A>.</LI>
+        <LI><A href="/docs/token-transfers">Token transfers</A> and their wallet-specific command requirements.</LI>
+        <LI><A href="https://github.com/PartyLayer/PartyLayer/blob/main/docs/protocol-ownership.md">Protocol ownership and migration</A> for existing apps.</LI>
+        <LI><A href="/docs/vanilla-js">Framework-independent SDK</A> for a custom application stack.</LI>
+      </UL>
       <PrevNext />
     </>
   );

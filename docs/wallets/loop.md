@@ -1,156 +1,81 @@
-# Loop Wallet Integration
+# Loop wallet integration
 
-**References:**
-- [Loop SDK](https://github.com/fivenorth-io/loop-sdk)
-- [Wallet Integration Guide](https://docs.digitalasset.com/integrate/devnet/index.html)
-
-## Overview
-
-5N Loop is a mobile-first wallet for Canton Network. The adapter integrates with Loop SDK which uses QR code scanning or popup flows for connection.
-
-## Installation
-
-Loop SDK must be loaded before using the adapter.
-
-### Option 1: NPM Package
+Loop is included in the default PartyLayer catalog. Install the React kit and
+its React Query peer in one command; no separate Loop package, script tag or
+`window.loop` setup is required.
 
 ```bash
-npm install @fivenorth/loop-sdk
+npm install @partylayer/react @tanstack/react-query
 ```
 
-```typescript
-import { loop } from '@fivenorth/loop-sdk';
-// Loop SDK is now available on window.loop
+```tsx
+import { PartyLayerKit, ConnectButton } from '@partylayer/react';
+
+export function WalletUI() {
+  return <PartyLayerKit network="devnet" appName="My dApp">
+    <ConnectButton />
+  </PartyLayerKit>;
+}
 ```
 
-### Option 2: Script Tag
+PartyLayer supplies its existing compatibility integration with the official
+`@fivenorth/loop-sdk`. This is a popup/QR connection, not the generic CIP-0103
+announce path. The reviewed runtime is recorded in the
+[wallet matrix](../wallet-cip0103-matrix.md).
 
-```html
-<script src="https://unpkg.com/@fivenorth/loop-sdk@0.10.0/dist"></script>
-```
+## Supported behavior
 
-## Usage
+The integration exposes connect, disconnect, conditional restoration, message
+signing, combined transaction submission, transaction events, supported Ledger API
+operations and optional intent-level `requestTransfer`. Check the active session's
+capabilities rather than assuming a wallet supports a separate `signTransaction`.
+Loop combines approval/signing and submission; it has no separate sign-only path
+in this integration.
 
-```typescript
-import { createPartyLayer } from '@partylayer/sdk';
-import { LoopAdapter } from '@partylayer/adapter-loop';
+The Ledger API compatibility mapping supports active-contract queries and the
+implemented command submission endpoints. Unsupported endpoints throw rather than
+being silently rerouted. See [transports](../transports.md) and
+[typed transfer support](../typed-transfer-support.md) for the exact boundary.
 
-const client = createPartyLayer({
-  registryUrl: '...',
-  network: 'devnet',
-  app: { name: 'My dApp' },
-});
+Restoration uses the vendor's saved session when it remains valid; an expired or
+missing authorization requires an explicit reconnect. The wallet's connect result
+does not independently report the effective network, so check the network in the
+wallet as well as selecting it in the kit. The shipped catalog offers Devnet and
+Mainnet; the Loop compatibility mapper does not support Testnet.
 
-// Register adapter (in production, auto-registered via registry)
-client.registerAdapter(new LoopAdapter());
+## Submission outcomes
 
-// Connect (opens QR code modal)
-const session = await client.connect({ walletId: 'loop' });
-```
+An accepted request or acknowledgement is not a confirmed ledger operation.
+Preserve the actual wallet update identifier, reconcile the intended operation
+independently and keep timeouts unknown. Do not automatically replay writes to get
+a better receipt. See [transaction lifecycle](../transaction-lifecycle.md).
 
-## Connection Flow
+A successful message signature tests message signing only. Valid token commands,
+instrument issuer/admin, disclosures and protocol-specific swap settlement need
+separate acceptance.
 
-1. **Initialize**: Adapter calls `loop.init()` with app name and network
-2. **Connect**: Adapter calls `loop.connect()` which opens QR code modal
-3. **Scan**: User scans QR code with Loop mobile app OR approves in popup
-4. **Provider**: `onAccept` callback receives provider with `party_id`
-5. **Session**: Adapter creates session with party ID
+## Devnet and troubleshooting
 
-## Capabilities
+The official [Devnet wallet](https://wallet.devnet.looptech.io) uses a separate
+account and balance from Mainnet. Loop's
+[integration guide](https://support.looptech.io/en/articles/16925385-how-to-integrate-your-app-with-loop)
+states there is no public Devnet/Testnet faucet; request test funding from Loop
+with the target network and party ID.
 
-Loop Wallet supports:
-- Connect/Disconnect
-- Sign Message
-- Submit Transaction (signs and submits in one call)
-- Ledger API (partial: ACS queries and command submission)
-- Events
-- Popup (QR code flow)
+If the popup is blocked, retry from an explicit user click. If approval is
+rejected, show rejection without automatically reopening the wallet. If
+restoration fails, offer reconnect. An SDK-loading failure should surface as an
+integration error; do not ask users to inject an old CDN script.
 
-**Note**: Loop SDK combines signing and submission. `signTransaction()` is not supported, use `submitTransaction()` instead.
+The observed `Could not unlock private key` error was also reproduced using the
+official SDK alone. The reviewed 0.15.1 runtime was current on 2026-10-24. That
+establishes the version check and reproduction, not the wallet's underlying key
+recovery cause. PartyLayer never asks users to export/import private keys to fix
+this issue. Retest with Loop after their wallet/account issue is resolved.
 
-### Ledger API Support
+## References
 
-Loop supports a subset of Canton Ledger API endpoints via its native SDK methods:
-
-| Endpoint | Supported | Loop SDK Method |
-|---|---|---|
-| `POST /v2/state/acs` | Yes | `getActiveContracts()` |
-| `POST /v2/state/active-contracts` | Yes | `getActiveContracts()` |
-| `POST /v2/commands/submit` | Yes | `submitTransaction()` |
-| `POST /v2/commands/submit-and-wait` | Yes | `submitAndWaitForTransaction()` |
-| Other endpoints | No | Throws `CapabilityNotSupportedError` |
-
-This covers the most common use cases: querying token balances (ACS) and submitting commands. For full Ledger API access (events, packages, parties, etc.), use Console, Nightly, or Bron wallet.
-
-## Limitations
-
-- **Session Restoration**: Supported, but conditional. `restore()` calls Loop's `autoConnect()`, which reconnects when a valid auth token is still in `localStorage`. If the token is missing or expired, the user must reconnect via QR code.
-- **Sign Transaction Only**: Loop SDK doesn't expose separate signing - use `submitTransaction()` which signs and submits.
-- **Network Switching**: Not supported. Requires reconnection.
-- **Multi-Party**: Not supported.
-
-## Party ID
-
-Party ID is obtained from `provider.party_id` after successful connection. This is the user's Canton Network party identifier.
-
-## Common Errors
-
-### WALLET_NOT_INSTALLED
-
-**Cause**: Loop SDK not loaded.
-
-**Solution**: 
-- Include Loop SDK script tag, OR
-- Import `@fivenorth/loop-sdk` package
-
-### USER_REJECTED
-
-**Cause**: User rejected connection or transaction.
-
-**Solution**: User action required - no programmatic fix.
-
-### TIMEOUT
-
-**Cause**: User didn't complete QR scan within timeout (default 5 minutes).
-
-**Solution**: Retry connection.
-
-## Troubleshooting
-
-### SDK Not Detected
-
-1. Ensure Loop SDK is loaded (script tag or import)
-2. Check `window.loop` exists in browser console
-3. Verify SDK version compatibility
-
-### QR Code Not Appearing
-
-1. Check browser popup blocker settings
-2. Ensure `loop.init()` was called before `loop.connect()`
-3. Check browser console for errors
-
-### Connection Timeout
-
-1. Increase timeout in connect options
-2. Ensure user has Loop mobile app installed
-3. Check network connectivity
-
-### Transaction Submission Fails
-
-1. Verify DAML command structure matches Loop SDK expectations
-2. Check that user approved transaction in Loop app
-3. Review Loop SDK documentation for command format
-
-## Reconnect Required
-
-Loop restores automatically via `autoConnect()` when a valid auth token is present. A user must reconnect (via QR code) when:
-- The stored auth token has expired
-- The browser storage was cleared
-- `autoConnect()` does not complete within the restore timeout
-
-The demo app should clearly indicate when reconnect is required.
-
-## See Also
-
-- [Loop SDK Repository](https://github.com/fivenorth-io/loop-sdk)
-- [Error Codes Reference](../errors.md)
+- [Official Loop SDK](https://github.com/fivenorth-io/loop-sdk)
+- [Official API reference](https://github.com/fivenorth-io/loop-sdk/blob/main/docs/api-reference.md)
+- [Acceptance environments and evidence](../wallet-acceptance.md)
+- [Error codes](../errors.md)

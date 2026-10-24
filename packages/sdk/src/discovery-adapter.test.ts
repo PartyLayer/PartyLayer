@@ -37,7 +37,7 @@ function makeOfficial(
     getPrimaryAccount: { partyId: 'party::demo-1', networkId: 'canton:da-devnet' },
     status: { connection: { isConnected: true }, network: { networkId: 'canton:da-devnet' } },
     disconnect: null,
-    signMessage: { signature: 'sig', message: 'm' },
+    signMessage: { signature: 'sig' },
     // Was: `prepareExecute: { transactionHash: '0xabc' }` — a mock more generous
     // than the standard, which types prepareExecute as returning Null. The
     // adapter now prefers the awaited verb, so the fixture models what a real
@@ -63,6 +63,17 @@ const ctx = { network: 'canton:da-devnet' } as unknown as AdapterContext;
 const session = {} as Session;
 
 describe('GenericDiscoveryAdapter', () => {
+  it.each([false, { isConnected: false }])('rejects an explicit failed handshake even when a cached account exists: %j', async result => {
+    const { official, providerFactory } = makeOfficial({}, { connect: result });
+    const adapter = new GenericDiscoveryAdapter({ official });
+    await expect(adapter.connect(ctx)).rejects.toThrow(/did not establish a connection/);
+    const provider = providerFactory.mock.results[0].value;
+    expect(vi.mocked(provider.request).mock.calls.map(call => call[0].method)).toEqual(['connect']);
+  });
+  it.each([undefined, { partyId: '' }, { partyId: ' ' }])('does not publish a missing/empty primary party: %j', async account => {
+    const { official } = makeOfficial({}, { getPrimaryAccount: account });
+    await expect(new GenericDiscoveryAdapter({ official }).connect(ctx)).rejects.toThrow(/primary party/);
+  });
   it('derives walletId from the provider id by default', () => {
     const { official } = makeOfficial();
     const a = new GenericDiscoveryAdapter({ official });
@@ -88,6 +99,20 @@ describe('GenericDiscoveryAdapter', () => {
     const caps = new GenericDiscoveryAdapter({ official }).getCapabilities();
     expect(caps).not.toContain('events');
     expect(caps).toEqual(['connect', 'disconnect', 'signMessage', 'submitTransaction']);
+  });
+
+  it('reports only implemented declared capabilities and normalizes ledgerApi requests', async () => {
+    const { official, providerFactory } = makeOfficial({}, { ledgerApi: { response: '{"ok":true}' } });
+    const adapter = new GenericDiscoveryAdapter({ official, capabilities: {
+      signMessage: false, submitTransaction: false, ledgerApi: true, events: true,
+    } });
+    expect(adapter.getCapabilities()).toEqual(['connect', 'disconnect', 'ledgerApi']);
+    expect(await adapter.ledgerApi!(ctx, session, {
+      requestMethod: 'GET', resource: '/v2/version', body: '{"test":1}',
+    })).toEqual({ response: '{"ok":true}' });
+    expect(providerFactory.mock.results[0].value.request).toHaveBeenCalledWith({
+      method: 'ledgerApi', params: { requestMethod: 'get', resource: '/v2/version', body: { test: 1 } },
+    });
   });
 
   it('does NOT call official.provider() at construction (SSR-safe / lazy)', () => {
@@ -210,8 +235,8 @@ describe('GenericDiscoveryAdapter', () => {
 
     expect(req).toHaveBeenCalledWith(expect.objectContaining({ method: 'prepareExecuteAndWait' }));
     expect(req).toHaveBeenCalledWith(expect.objectContaining({ method: 'prepareExecute' }));
-    // Byte-for-byte what today's code returns for this wallet.
-    expect(receipt).toEqual({ transactionHash: '0xabc', updateId: 'oneswap-update' });
+    // Preserve identifiers and complete the public receipt contract.
+    expect(receipt).toEqual({ transactionHash: '0xabc', updateId: 'oneswap-update', submittedAt: expect.any(Number) });
   });
 
   it('asks the wallet for the awaited verb only once', async () => {

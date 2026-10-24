@@ -161,12 +161,21 @@ describe('discovery-adapter session survives reload (unit: before vs after)', ()
     });
   });
 
-  it('no official restore: falls through to as-is, first request still throws (unchanged)', async () => {
+  it('refuses an expired official restore and a different live party', async () => {
+    const { official } = makeOfficial({ withRestore: true });
+    official.restore = async () => null;
+    expect(await new GenericDiscoveryAdapter({ official }).restore(ctx, persisted)).toBeNull();
+    const { official: other } = makeOfficial({ withRestore: true });
+    expect(await new GenericDiscoveryAdapter({ official: other }).restore(ctx, {
+      ...persisted, partyId: toPartyId('party::somebody-else'),
+    })).toBeNull();
+  });
+
+  it('no official restore: refuses a session-less provider', async () => {
     const { official } = makeOfficial({ withRestore: false });
     const a = new GenericDiscoveryAdapter({ official });
     const restored = await a.restore(ctx, persisted);
-    expect(restored).not.toBeNull(); // revived as-is, as before
-    await expect(a.signMessage(ctx, restored as Session, { message: 'm' })).rejects.toThrow(/not connected/i);
+    expect(restored).toBeNull();
   });
 });
 
@@ -205,7 +214,7 @@ describe('discovery-adapter session survives reload (through the SDK reload path
     await b.destroy();
   });
 
-  it('a no-restore official adapter is unchanged: appears connected but the first request throws', async () => {
+  it('a session-less official adapter refuses reload instead of displaying a false connection', async () => {
     const storage = makeStorage();
     const { official: seedAdapter } = makeOfficial({ withRestore: false });
     await seed(storage, seedAdapter);
@@ -220,8 +229,7 @@ describe('discovery-adapter session survives reload (through the SDK reload path
     });
     await new Promise((r) => setTimeout(r, 60));
 
-    expect(await b.getActiveSession()).not.toBeNull(); // revived as-is (looks connected)
-    await expect(b.signMessage({ message: 'm' })).rejects.toThrow(/not connected/i); // today's failure shape
+    expect(await b.getActiveSession()).toBeNull();
     await b.destroy();
   });
 
@@ -244,5 +252,18 @@ describe('discovery-adapter session survives reload (through the SDK reload path
     expect(await b.getActiveSession()).toBeNull(); // refused by the gate
     expect(restoreSpy).not.toHaveBeenCalled(); // gate runs before any adapter handoff
     await b.destroy();
+  });
+
+  it('refuses a restored wallet that moved networks even when the persisted party is unchanged', async () => {
+    const storage = makeStorage();
+    const { official: first } = makeOfficial({ withRestore: true, network: 'devnet' });
+    await seed(storage, first, 'devnet');
+    const { official: moved, restoreSpy } = makeOfficial({ withRestore: true, network: 'mainnet' });
+    const client = createPartyLayer({ network: 'devnet', app: { name: 'network-move', origin: ORIGIN },
+      registryUrl: 'https://unused.invalid', adapters: [moved as never], storage });
+    await new Promise(resolve => setTimeout(resolve, 60));
+    expect(await client.getActiveSession()).toBeNull();
+    expect(restoreSpy).toHaveBeenCalled();
+    client.destroy();
   });
 });

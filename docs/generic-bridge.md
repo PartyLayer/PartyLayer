@@ -35,7 +35,7 @@ opens a popup, Path B.**
 | Wallet shape | Path | Why |
 | --- | --- | --- |
 | Browser extension | A | It runs in the page, so it announces and PartyLayer drives it with no adapter object. |
-| Remote or gateway service | B | It is out of the page, so it ships an official adapter and the dApp supplies it. Its `detect()` returns `true` because a gateway is always reachable. |
+| Remote or gateway service | B | It is out of the page, so it ships an official adapter that PartyLayer includes after review. Its `detect()` returns `true` because a gateway is always reachable. |
 | Mobile wallet (deep link) | A or B | A deep link is how the wallet is opened, not a third path. If the wallet presents an in-page surface, Path A; if it is reached as a remote or gateway, Path B. |
 | Desktop app | usually B | Typically reached as a local gateway or service, so Path B. Path A only if it injects into the page. |
 
@@ -255,8 +255,13 @@ calls `request(args)`.
 
 ### How the dApp wires it
 
-The dApp passes your adapter instance in the SDK config. The SDK detects the official
-shape and wraps it through the generic discovery bridge automatically:
+Supported, reviewed official SDKs are included in PartyLayer's default catalog. A dApp
+sets its network and channel; no wallet-specific import or installation is required.
+New Path B SDKs enter that catalog through a reviewed, pinned SDK dependency and lazy loader,
+not an executable package name fetched from registry metadata.
+
+For an advanced custom integration before catalog inclusion, the dApp can pass your adapter
+instance explicitly. This replaces the defaults; `additionalAdapters` extends them instead:
 
 ```ts
 import { createPartyLayer } from '@partylayer/sdk';
@@ -332,9 +337,10 @@ One constraint: `restore` runs on the reload path, outside any user gesture, so 
 gesture-free, a storage read rather than a popup. If a wallet genuinely needs a fresh
 interaction to reconnect, it falls back to a fresh connect.
 
-A wallet whose official adapter has no `restore` revives as-is: the app shows it as
-connected, but the first real request throws until the user reconnects. Implementing
-`restore` is what closes that gap.
+The bridge silently probes the primary account and checks it against the saved party.
+An expired restore, unavailable provider, or different account requires reconnection.
+A provider without an adapter `restore` can still survive reload if its own persistence
+passes that same live probe. A saved PartyLayer record alone never proves a live connection.
 
 ### Popup policy
 
@@ -456,8 +462,8 @@ request and result shape of every method and event.
 
 ## A note on the five wallets with a PartyLayer-specific adapter
 
-The stable registry today has eight wallets: two on announce (Console, Send), one on the
-discovery adapter (Walley), and five with no declared transport that still ship a
+The catalog combines announce and discovery-adapter wallets with five legacy
+integrations (Loop, Cantor8, Bron, Nightly and WalletConnect) that still ship a
 PartyLayer-specific adapter package (5N Loop, Cantor8, Bron, Nightly, WalletConnect).
 
 Read plainly, that list could suggest that writing a PartyLayer-specific package is the

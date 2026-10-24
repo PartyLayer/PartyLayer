@@ -2,7 +2,7 @@ import { createPartyLayer, type Session } from '@partylayer/sdk';
 import './style.css';
 
 // The PartyLayer client — the dApp connect API (listWallets / connect / session).
-// All built-in wallet adapters are auto-registered.
+// The public SDK supplies the supported default wallet catalog.
 const client = createPartyLayer({ network: 'devnet', app: { name: '{{PROJECT_NAME}}' } });
 
 const app = document.querySelector<HTMLDivElement>('#app')!;
@@ -13,6 +13,7 @@ app.innerHTML = `
     <div id="status" class="status"></div>
     <button id="connect" class="btn">Connect Wallet</button>
     <ul id="wallets" class="wallets" hidden></ul>
+    <p><a href="https://partylayer.xyz" target="_blank" rel="noopener noreferrer">Powered by PartyLayer</a></p>
   </main>
 `;
 

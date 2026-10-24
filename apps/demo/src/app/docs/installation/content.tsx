@@ -4,113 +4,88 @@ import { useDocs } from '../layout';
 
 export default function InstallationPage() {
   const { H1, H2, H3, P, Code, CodeBlock, TabGroup, Callout, PrevNext, A, UL, LI, Strong } = useDocs();
-
   return (
     <>
       <H1>Installation</H1>
-      <P>
-        Get up and running with PartyLayer in your project. The SDK supports React 18+ and Node.js 18+.
-      </P>
+      <P>Install once to get the React connection kit, SDK and supported wallet runtimes. Choose an existing app integration or generate a new project.</P>
+      <Callout type="note" title="Version scope">
+        This guide requires React 3.1.0+ / SDK 0.20.0+ and CLI 0.6.0+ for the listed templates.
+        See <A href="https://github.com/PartyLayer/PartyLayer/blob/main/docs/releasing.md#default-wallet-release-validation">release validation</A>{' '}
+        for publication and acceptance evidence.
+      </Callout>
 
       <H2 id="prerequisites">Prerequisites</H2>
       <UL>
-        <LI><Strong>Node.js</Strong> 18 or later</LI>
-        <LI><Strong>React</Strong> 18 or later (for React integration)</LI>
-        <LI>A <Strong>Canton Network</Strong> dApp (PartyLayer works with devnet, testnet, and mainnet)</LI>
+        <LI><Strong>React 18+</Strong> for the connection kit.</LI>
+        <LI><Strong>Node.js:</Strong> package minimum 18; use a supported LTS version that also meets your framework requirements.</LI>
+        <LI><Strong>Wallet access:</Strong> a supported account/extension on your target network for an actual connection.</LI>
       </UL>
 
-      <H2 id="install-packages">Install Packages</H2>
-      <P>
-        Install the core SDK, the React bindings, and the TanStack Query peer:
-      </P>
-
+      <H2 id="install-packages">Existing React application</H2>
       <TabGroup tabs={[
-        { label: 'npm', content: 'npm install @partylayer/sdk @partylayer/react @tanstack/react-query', language: 'bash' },
-        { label: 'pnpm', content: 'pnpm add @partylayer/sdk @partylayer/react @tanstack/react-query', language: 'bash' },
-        { label: 'yarn', content: 'yarn add @partylayer/sdk @partylayer/react @tanstack/react-query', language: 'bash' },
+        { label: 'npm', content: 'npm install @partylayer/react @tanstack/react-query', language: 'bash' },
+        { label: 'pnpm', content: 'pnpm add @partylayer/react @tanstack/react-query', language: 'bash' },
+        { label: 'yarn', content: 'yarn add @partylayer/react @tanstack/react-query', language: 'bash' },
       ]} />
+      <CodeBlock language="tsx">{`import { PartyLayerKit, ConnectButton } from '@partylayer/react';
 
-      <Callout type="note" title="Why @tanstack/react-query">
-        It is a required peer dependency of <Code>{'@partylayer/react'}</Code> v2. The data
-        hooks in the <Code>{'@partylayer/react/query'}</Code> entrypoint (DAML reads/writes,
-        cost estimation) are built on TanStack Query, and you supply the <Code>{'QueryClient'}</Code> via
-        {' '}<Code>{'QueryClientProvider'}</Code>. The base session and connect surface works without
-        it; the provider is required only for the <Code>{'/query'}</Code> hooks. See the
-        {' '}<A href="/docs/quick-start">Quick Start</A> for the setup.
-      </Callout>
-
-      <Callout type="note">
-        <Code>{'@partylayer/core'}</Code> is installed automatically as a dependency of <Code>{'@partylayer/sdk'}</Code>.
-        You don{"'"}t need to install it separately.
-      </Callout>
-
-      <H2 id="vanilla-js">Vanilla JS Only</H2>
+export default function App() {
+  return (
+    <PartyLayerKit network="devnet" appName="My dApp">
+      <ConnectButton />
+    </PartyLayerKit>
+  );
+}`}</CodeBlock>
       <P>
-        If you{"'"}re not using React, you only need the core SDK:
+        No separate SDK, core or wallet installation is needed. No stylesheet import is required.
+        In Next.js, mount the kit in a client provider boundary; the{' '}
+        <A href="/docs/quick-start#step-2">quick start</A> includes the root layout.
+      </P>
+      <Callout type="note" title="TanStack Query">
+        TanStack Query is a required peer. The base connection UI works without its provider.
+        Add <Code>QueryClientProvider</Code> when using <Code>@partylayer/react/query</Code> data hooks;
+        your app owns that client and the authorized data sources.
+      </Callout>
+
+      <H2 id="new-app">Create a new app</H2>
+      <CodeBlock language="bash">{`npm create partylayer-app@latest my-dapp -- --template react-vite --pm npm
+cd my-dapp
+npm run dev`}</CodeBlock>
+      <P>
+        The CLI creates the project and installs dependencies. Use <Code>next-ssr</Code> for Next.js.
+        Vue/Nuxt, vanilla TypeScript and two demo vertical templates are also available; see the{' '}
+        <A href="https://github.com/PartyLayer/PartyLayer/tree/main/packages/create-partylayer-app">CLI guide</A>.
       </P>
 
+      <H2 id="wallet-setup">Wallet setup</H2>
+      <UL>
+        <LI>Default runtimes are included and load as needed. Network and registry channel filter the catalog.</LI>
+        <LI><Strong>Vala:</Strong> Devnet with <Code>channel="beta"</Code>.</LI>
+        <LI><Strong>Send:</Strong> Mainnet-only in the catalog.</LI>
+        <LI><Strong>WalletConnect:</Strong> your project ID through <Code>walletConnect</Code>.</LI>
+        <LI><Strong>Bron:</Strong> your OAuth/API configuration through <Code>bron</Code>.</LI>
+        <LI>Use <Code>additionalAdapters</Code> to extend the catalog; <Code>adapters</Code> replaces it.</LI>
+      </UL>
+      <P>Accounts, wallet login, approval and test funding remain separate prerequisites. See <A href="/docs/partylayer-kit">kit configuration</A> for complete options.</P>
+
+      <H2 id="vanilla-js">Other application stacks</H2>
+      <H3>Framework-independent TypeScript</H3>
       <TabGroup tabs={[
         { label: 'npm', content: 'npm install @partylayer/sdk', language: 'bash' },
         { label: 'pnpm', content: 'pnpm add @partylayer/sdk', language: 'bash' },
         { label: 'yarn', content: 'yarn add @partylayer/sdk', language: 'bash' },
       ]} />
-
-      <H2 id="optional-packages">Optional Packages</H2>
-
-      <H3>CIP-0103 Native Provider</H3>
+      <P>Build your own interface and manage the client lifecycle with the <A href="/docs/vanilla-js">SDK</A>. The React ConnectButton is available from the React kit.</P>
+      <H3>Provider infrastructure</H3>
       <P>
-        For direct CIP-0103 provider integration (e.g., wrapping your PartyLayer client as a
-        CIP-0103 compliant provider):
-      </P>
-      <TabGroup tabs={[
-        { label: 'npm', content: 'npm install @partylayer/provider', language: 'bash' },
-        { label: 'pnpm', content: 'pnpm add @partylayer/provider', language: 'bash' },
-        { label: 'yarn', content: 'yarn add @partylayer/provider', language: 'bash' },
-      ]} />
-
-      <H3>Enterprise Wallet (Bron)</H3>
-      <P>
-        The Bron adapter requires explicit configuration and is not auto-registered:
-      </P>
-      <CodeBlock language="tsx">{`import { BronAdapter } from '@partylayer/adapter-bron';
-import { getBuiltinAdapters } from '@partylayer/sdk';
-
-<PartyLayerKit
-  network="mainnet"
-  appName="My dApp"
-  adapters={[
-    ...getBuiltinAdapters(),
-    new BronAdapter({
-      auth: {
-        clientId: '...',
-        redirectUri: 'https://your-app.com/auth/callback',
-        authorizationUrl: 'https://auth.bron.example/authorize',
-        tokenUrl: 'https://auth.bron.example/token',
-      },
-      api: {
-        baseUrl: 'https://api.bron.example',
-        getAccessToken: async () => getStoredAccessToken(),
-      },
-    }),
-  ]}
->
-  {/* ... */}
-</PartyLayerKit>`}</CodeBlock>
-
-      <H2 id="verify">Verify Installation</H2>
-      <P>
-        After installing, verify everything works by importing the SDK:
-      </P>
-      <CodeBlock language="tsx">{`import { createPartyLayer } from '@partylayer/sdk';
-import { PartyLayerKit, ConnectButton } from '@partylayer/react';
-
-// If these imports resolve without errors, you're good to go!
-console.log('PartyLayer installed successfully');`}</CodeBlock>
-
-      <P>
-        Next, follow the <A href="/docs/quick-start">Quick Start</A> guide to build your first wallet integration.
+        The client already exposes <Code>asProvider()</Code>. You do not need a separate provider
+        package to use the default kit. Advanced provider implementors can use{' '}
+        <Code>@partylayer/provider</Code>; see <A href="/docs/generic-bridge">the provider integration guide</A>.
       </P>
 
+      <H2 id="verify">Verify installation</H2>
+      <P>Run your app, open Connect Wallet, select a supported wallet and complete approval. Confirm the connected party and actual network with <Code>useAccount()</Code>. An import resolving proves installation only; connection and ledger outcomes require their own checks.</P>
+      <P>Continue with the <A href="/docs/quick-start">quick start</A>, then <A href="/docs/authentication">authentication</A> or <A href="/docs/transaction-lifecycle">transactions</A>.</P>
       <PrevNext />
     </>
   );

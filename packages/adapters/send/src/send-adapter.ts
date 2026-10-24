@@ -320,6 +320,8 @@ export class SendAdapter implements WalletAdapter {
         submittedAt: Date.now(),
         commandId: tx.commandId,
         updateId: tx.payload.updateId,
+        ...(typeof tx.payload.completionOffset === 'number' && Number.isSafeInteger(tx.payload.completionOffset) && tx.payload.completionOffset >= 0
+          ? { completionOffset: tx.payload.completionOffset } : {}),
       };
     } catch (err) {
       const baseHint = templateIdHint(payload);

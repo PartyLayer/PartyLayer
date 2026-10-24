@@ -54,7 +54,7 @@ export default function SendContent() {
         <A href="https://sigilry.org">sigilry.org</A> for current installation instructions before
         they can connect.
       </P>
-      <CodeBlock language="bash">{`npm install @partylayer/sdk @partylayer/react @partylayer/adapter-send`}</CodeBlock>
+      <CodeBlock language="bash">{`npm install @partylayer/react @tanstack/react-query`}</CodeBlock>
       <P>
         With <Code>{'PartyLayerKit'}</Code>{' '}there is no further wiring: Send is served through the
         CIP-0103 announce path, so it appears in the wallet picker automatically when the user has Send
@@ -69,7 +69,7 @@ const client = createPartyLayer({
   adapters: [...getBuiltinAdapters(), new SendAdapter()],
 });`}</CodeBlock>
       <Callout type="note">
-        Send is <Strong>not</Strong> in <Code>{'getBuiltinAdapters()'}</Code> (that returns Console, Loop,
+        Send is <Strong>not</Strong> in <Code>{'getBuiltinAdapters()'}</Code> (that returns Loop,
         Cantor8, and Nightly). By default Send is discovered through the CIP-0103 announce path, so the
         explicit <Code>{'SendAdapter'}</Code> above is only needed if you want the bespoke adapter instead
         of the announce path.

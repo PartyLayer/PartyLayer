@@ -23,15 +23,8 @@
  * both places is caught automatically and must be classified here, so the guard cannot
  * silently miss a fifth pair.
  *
- * Not every shared slug is two copies of one document. `quick-start` is a documented
- * exception: `docs/quick-start.md` is a full multi-framework reference (Zero Config,
- * Custom UI with Hooks, Vanilla JavaScript, Manual Client Setup) while the site page is
- * a three-step getting-started tutorial. They share a slug but are different documents,
- * so heading agreement is not a meaningful signal for them. Rather than pretend parity
- * (the framework-consistency guard makes the same honest call about the three framework
- * packages), this test records that divergence explicitly and asserts it still holds,
- * so if someone later reconciles the two the guard fails and tells them to promote the
- * pair to `enforce`.
+ * The quick-start pair now follows the same installation, framework setup, wallet
+ * configuration and verification journey in both renderings.
  */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
@@ -46,6 +39,31 @@ const PAGES_DIR = join(ROOT, 'apps', 'demo', 'src', 'app', 'docs');
 const mdPath = (slug) => join(DOCS_DIR, `${slug}.md`);
 const pagePath = (slug) => join(PAGES_DIR, slug, 'content.tsx');
 
+test('public React entry guides share the one-command wallet installation contract', () => {
+  for (const file of ['README.md', 'packages/sdk/README.md', 'packages/react/README.md',
+    'docs/quick-start.md', 'apps/demo/src/app/content.tsx', 'apps/demo/src/app/docs/installation/content.tsx',
+    'apps/demo/src/app/docs/quick-start/content.tsx']) {
+    const source = readFileSync(join(ROOT, file), 'utf8');
+    assert.ok(source.includes('npm install @partylayer/react @tanstack/react-query'), file);
+    assert.ok(!source.includes('@tanstack/react-query @tanstack/react-query'), file);
+    assert.ok(!source.includes('npm install @partylayer/sdk @partylayer/react'), file);
+  }
+});
+
+test('generated apps retain the branded default connection experience', () => {
+  for (const template of ['react-vite', 'next-ssr', 'react-tokenization', 'react-dvp']) {
+    const entry = template === 'next-ssr' ? 'components/ConnectButton.tsx' : 'src/App.tsx';
+    const source = readFileSync(join(ROOT, 'packages/create-partylayer-app/templates', template, entry), 'utf8');
+    assert.ok(source.includes('ConnectButton'), `${template} must use the PartyLayer button`);
+    assert.doesNotMatch(source, /showAttribution\s*=\s*\{false\}/);
+  }
+  for (const [template, entry] of [['vanilla', 'src/main.ts'], ['vue-nuxt-pinia', 'app.vue']]) {
+    const source = readFileSync(join(ROOT, 'packages/create-partylayer-app/templates', template, entry), 'utf8');
+    assert.ok(source.includes('Powered by PartyLayer'), template);
+    assert.ok(source.includes('https://partylayer.xyz'), template);
+  }
+});
+
 /**
  * How each shared-slug pair is treated. `enforce` pairs must have identical heading
  * sets. A `known-divergence` pair is two different documents that share a slug; its
@@ -54,6 +72,9 @@ const pagePath = (slug) => join(PAGES_DIR, slug, 'content.tsx');
  */
 const CLASSIFICATION = {
   'generic-bridge': { mode: 'enforce' },
+  'authentication': { mode: 'enforce' },
+  'transaction-lifecycle': { mode: 'enforce' },
+  'wallet-balances': { mode: 'enforce' },
   'partylayer-and-canton-topology': { mode: 'enforce' },
   'dev-and-staging': { mode: 'enforce' },
   'production-checklist': { mode: 'enforce' },
@@ -61,15 +82,7 @@ const CLASSIFICATION = {
   'observability': { mode: 'enforce' },
   'multi-party-patterns': { mode: 'enforce' },
   'privacy-and-reads': { mode: 'enforce' },
-  'quick-start': {
-    mode: 'known-divergence',
-    reason:
-      'docs/quick-start.md is a full multi-framework reference (Zero Config, Custom UI with ' +
-      'Hooks, Vanilla JavaScript, Manual Client Setup); the site page is a three-step ' +
-      'getting-started tutorial. They share a slug but are different documents, not two copies ' +
-      'of one doc. Decide the canonical form (reconcile them, delete the stale markdown, or keep ' +
-      'them intentionally separate) before promoting this pair to enforce.',
-  },
+  'quick-start': { mode: 'enforce' },
 };
 
 const FIX = (slug) =>

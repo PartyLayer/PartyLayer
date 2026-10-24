@@ -15,9 +15,7 @@ import {
   themes,
   type SynchronizerOption,
 } from '@partylayer/react';
-// Every wallet this app registers comes from the shared set, so adding a wallet
-// is one edit there rather than one per app. Wallet SDK pins live there too.
-import { buildWalletAdapters, type BronAdapterConfig } from '@partylayer/demo-adapters';
+import type { BronAdapterConfig } from '@partylayer/sdk';
 import { DemoProvider } from './context/DemoContext';
 import { demoBackend } from './lib/backend';
 import { createLiveBackend, fetchGatewayParties } from './lib/liveBackend';
@@ -32,22 +30,7 @@ import { RetryBanner } from './ui/RetryBanner';
 import { CopyId } from './ui/primitives';
 import './App.css';
 
-// Every stable wallet gets its adapter so the connect surface can genuinely
-// connect each one, not merely list it. The SDK hides any wallet whose adapter is
-// absent (a click could only fail), so registering all of them is what makes the
-// picker complete. The set itself lives in @partylayer/demo-adapters; this app
-// takes it whole and excludes nothing. Console and Send are announce-native
-// (installing the extension is enough), but the shared set registers their
-// adapters too so a direct connect works here without relying on the announce
-// event. Walley and Cauri are registered in factory form, so the SDK resolves each
-// host from its registry entry's networkHosts for the active network and no wallet
-// URL appears in app code. The demo-party switcher, not this connection, drives the
-// section data; the app is fixed to devnet (see network="devnet" below).
-//
-// WalletConnect needs a WalletConnect Cloud project id. It reads one from the env
-// and falls back to the shared public dev id (project ids are client identifiers,
-// not secrets) so the demo shows a real pairing QR out of the box; override with
-// VITE_WALLETCONNECT_PROJECT_ID.
+// The public SDK supplies every wallet; this app only supplies application credentials.
 const WC_PROJECT_ID =
   (import.meta.env.VITE_WALLETCONNECT_PROJECT_ID as string | undefined) ||
   '577414f6b46f09a7383d3c306c013a57';
@@ -73,12 +56,7 @@ function makeBronConfig(): BronAdapterConfig | undefined {
 
 const BRON_CONFIG = makeBronConfig();
 
-const ADAPTERS = buildWalletAdapters({
-  // Same value this app passes to PartyLayerKit below.
-  network: 'devnet',
-  walletConnectProjectId: WC_PROJECT_ID,
-  bron: BRON_CONFIG,
-});
+const WALLET_CONNECT = { projectId: WC_PROJECT_ID };
 
 // The demo only ever talks to Canton DevNet: live mode routes to the DevNet gateway and
 // demo mode simulates it. List DevNet alone so the switcher cannot offer a network the app
@@ -121,7 +99,7 @@ export default function App() {
   const theme = mode === 'dark' ? themes.teal.dark : themes.teal.light;
 
   return (
-    <PartyLayerKit network="devnet" channel="beta" appName="PartyLayer Tokenization" theme={theme} adapters={ADAPTERS}>
+    <PartyLayerKit network="devnet" channel="beta" appName="PartyLayer Tokenization" theme={theme} walletConnect={WALLET_CONNECT} bron={BRON_CONFIG}>
       <DemoProvider value={{ party, setParty, backend, mode }}>
         <div className={'app app-' + mode}>
           <a className="skip-link" href="#main">

@@ -1,5 +1,28 @@
 # @partylayer/provider
 
+## 0.6.1
+
+- Forward same-window, same-origin, target-scoped wallet notifications through
+  extension channels. Attach listeners lazily, release idle listeners, pool SDK
+  channels per target and support explicit teardown of pending RPCs.
+
+### Patch Changes
+
+- Route combined-only transaction wallets directly to submission. Keep separate
+  signing for wallets that advertise it, bind submission to the same session and
+  reject duplicate pending command ids. Emit signed/executed events only from
+  actual signature metadata and ledger update/offset evidence. Lost submit
+  responses remain unknown; never retry or manufacture failed/completed events.
+  A disconnected bridge no longer invents an active Devnet network.
+
+- Updated dependencies [817d357]
+- Updated dependencies [2e07185]
+- Updated dependencies [882752f]
+- Updated dependencies [0ebd598]
+- Updated dependencies [8cb0f09]
+- Updated dependencies [8e08da9]
+  - @partylayer/core@0.15.0
+
 ## 0.6.0
 
 ### Minor Changes

@@ -1,5 +1,16 @@
 # create-partylayer-app
 
+## 0.6.0
+
+### Minor Changes
+
+- Document all six shipped templates, automatic dependency installation, wallet configuration
+  and the limits of SSR UI cookies and in-memory vertical demos.
+
+- Include the reviewed, pinned Walley, Cauri, OneSwap and Vala official SDKs in the existing SDK with lazy loading through the generic CIP-0103 bridge. React and generated projects use the same default catalog without wallet-specific imports or installation. WalletConnect and Bron use shared application configuration; custom adapters can replace or extend defaults.
+
+  Filter wallets by the configured network and channel, align discovery capabilities with implemented methods, warm popup connections before returning the picker list, and validate restored official providers instead of reviving expired sessions. Vala remains Devnet beta.
+
 ## 0.5.4
 
 ### Patch Changes

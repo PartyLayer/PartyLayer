@@ -13,9 +13,9 @@ dependency-free for non-Query consumers.
 ## A. Mock CIP-0103 wallet: `createMockWallet(config?)`
 
 Returns a real `CIP0103Provider`, built by wrapping a configurable in-memory
-client in the repo's canonical `createProviderBridge`. **The default/happy
-config passes `runCIP0103ConformanceTests` by construction** (it is the
-conformance reference implementation with a mock backend).
+client in the repo's canonical `createProviderBridge`, with explicitly supplied
+mock signature and ledger-offset evidence. The default fixture passes the local
+conformance suite; this does not certify a live wallet or external standard compliance.
 
 ```ts
 import { createMockWallet } from '@partylayer/testing';
@@ -38,7 +38,7 @@ invented. You may also pass a raw `ProviderRpcError` or a `{ code, message }`.
 | `userRejected` | `4001` (USER_REJECTED) | `userRejected()` |
 | `insufficientTraffic` | `-32002` (RESOURCE_UNAVAILABLE) | `resourceUnavailable()` |
 | `synchronizerError` | `4901` (CHAIN_DISCONNECTED) | `chainDisconnected()` |
-| `transactionTimeout` | `-32003` (TRANSACTION_REJECTED) | `transactionRejected()` |
+| `transactionTimeout` | `-32603` (INTERNAL_ERROR, outcome unknown) | `internalError()` with timeout data |
 | `genericError` | `-32603` (INTERNAL_ERROR) | `internalError()` |
 
 `createMockWalletClient(config?)` exposes the underlying `BridgeableClient` as

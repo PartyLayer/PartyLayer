@@ -69,6 +69,14 @@ function make(config?: AnnounceAdapterConfig, handlers?: Handlers) {
 }
 
 describe('GenericAnnounceAdapter — opt-in config', () => {
+  it.each([false, { isConnected: false }])('rejects a negative handshake before reading a cached primary account: %j', async connect => {
+    const { adapter } = make(undefined, { connect });
+    await expect(adapter.connect(ctx)).rejects.toThrow(/did not establish a connection/);
+  });
+  it('rejects an empty primary party instead of reporting a connected session', async () => {
+    const { adapter } = make(undefined, { getPrimaryAccount: { ...ACCOUNT, partyId: '' } });
+    await expect(adapter.connect(ctx)).rejects.toThrow(/primary party/);
+  });
   it('(a) NO config → byte-identical baseline (3 caps, minimal session, no optional methods)', async () => {
     const { adapter } = make();
     expect(adapter.getCapabilities()).toEqual(['connect', 'signMessage', 'submitTransaction']);
@@ -116,6 +124,14 @@ describe('GenericAnnounceAdapter — opt-in config', () => {
     expect(adapter.getCapabilities()).toContain('ledgerApi');
     const r = await adapter.ledgerApi!(ctx, session, { requestMethod: 'GET', resource: '/v2/state' });
     expect(r).toEqual({ response: '{"ok":true}' });
+  });
+
+  it('does not revive the same party on a different live network', async () => {
+    const { adapter } = make({ restore: true }, {
+      status: { connection: { isConnected: true }, network: { networkId: 'canton:da-mainnet' } },
+      getPrimaryAccount: { ...ACCOUNT, networkId: 'canton:da-mainnet' },
+    });
+    expect(await adapter.restore!(ctx, { partyId: ACCOUNT.partyId, network: 'devnet' } as never)).toBeNull();
   });
 
   it('(e) metadata: populated when configured + provider returns it; minimal otherwise', async () => {

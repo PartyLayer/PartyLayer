@@ -11,7 +11,7 @@ function createMockClient(overrides: Partial<BridgeableClient> = {}): Bridgeable
       partyId: 'party-123' as unknown,
       network: 'devnet',
       expiresAt: Date.now() + 3600000,
-      capabilitiesSnapshot: ['connect', 'signMessage'],
+      capabilitiesSnapshot: ['connect', 'signMessage', 'signTransaction', 'submitTransaction'],
     })),
     disconnect: vi.fn(async () => {}),
     getActiveSession: vi.fn(async () => ({
@@ -20,17 +20,20 @@ function createMockClient(overrides: Partial<BridgeableClient> = {}): Bridgeable
       partyId: 'party-123' as unknown,
       network: 'devnet',
       expiresAt: Date.now() + 3600000,
-      capabilitiesSnapshot: ['connect', 'signMessage'],
+      capabilitiesSnapshot: ['connect', 'signMessage', 'signTransaction', 'submitTransaction'],
     })),
     signMessage: vi.fn(async () => ({
       signature: 'sig-abc' as unknown,
     })),
     signTransaction: vi.fn(async () => ({
+      signature: 'actual-signature-fixture',
+      signedBy: 'party-123',
       transactionHash: 'tx-hash-1' as unknown,
       signedTx: { encoded: 'signed-data' },
       partyId: 'party-123' as unknown,
     })),
     submitTransaction: vi.fn(async () => ({
+      completionOffset: 37,
       transactionHash: 'tx-hash-1' as unknown,
       submittedAt: Date.now(),
       commandId: 'cmd-1',
@@ -232,7 +235,7 @@ describe('createProviderBridge', () => {
         commandId,
         payload: {
           updateId: 'update-1',
-          completionOffset: 0,
+          completionOffset: 37,
         },
       });
     });
@@ -262,10 +265,10 @@ describe('createProviderBridge', () => {
       expect(handler.mock.calls[1][0].status).toBe('failed');
     });
 
-    it('should emit pending, signed, then failed when submitTransaction fails', async () => {
+    it('should emit pending, signed, then failed when submission is explicitly rejected', async () => {
       const client = createMockClient({
         submitTransaction: vi.fn(async () => {
-          throw new Error('submission error');
+          throw Object.assign(new Error('user rejected'), { code: 4001 });
         }),
       });
       const provider = createProviderBridge(client);
