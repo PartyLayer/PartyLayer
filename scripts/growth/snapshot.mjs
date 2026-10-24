@@ -1,6 +1,7 @@
 import { mkdir, writeFile, appendFile } from 'node:fs/promises';
 import { resolve, join } from 'node:path';
 import { pathToFileURL } from 'node:url';
+import { siteHealth, healthMarkdown } from './site-health.mjs';
 
 // Aggregate public data only. No SDK telemetry or end-user identifiers.
 export const PACKAGES = ['@partylayer/react', '@partylayer/sdk', 'create-partylayer-app'];
@@ -68,5 +69,11 @@ if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1]
   await writeFile(join(output, 'summary.md'), text);
   if (process.env.GITHUB_STEP_SUMMARY) await appendFile(process.env.GITHUB_STEP_SUMMARY, text);
   console.log(text);
-  if (!report.complete) process.exitCode = 1;
+  const health = await siteHealth();
+  await writeFile(join(output, 'site-health.json'), JSON.stringify(health, null, 2) + '\n');
+  const healthText = healthMarkdown(health);
+  await writeFile(join(output, 'site-health.md'), healthText);
+  if (process.env.GITHUB_STEP_SUMMARY) await appendFile(process.env.GITHUB_STEP_SUMMARY, '\n' + healthText);
+  console.log(healthText);
+  if (!report.complete || !health.passed) process.exitCode = 1;
 }

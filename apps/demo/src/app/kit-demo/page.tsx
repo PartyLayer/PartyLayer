@@ -792,19 +792,26 @@ export default function KitDemoPage() {
   ] as const;
 
   if (!mounted) return (
-    <div style={{
+    <main style={{
       minHeight: '100vh', display: 'flex', flexDirection: 'column',
       alignItems: 'center', justifyContent: 'center', gap: 16,
-      background: '#FFFFFF', fontFamily: font,
+      background: '#FFFFFF', color: '#0B0F1A', fontFamily: font,
+      padding: '32px 24px', textAlign: 'center',
     }}>
-      <img src="/favicon-new.svg" alt="" width={48} height={48} style={{ opacity: 0.7 }} />
-      <div style={{
-        width: 32, height: 32, border: '3px solid #EEF0F4',
-        borderTopColor: '#FFCC00', borderRadius: '50%',
-        animation: 'plSpin .7s linear infinite',
-      }} />
-      <style>{`@keyframes plSpin { to { transform: rotate(360deg); } }`}</style>
-    </div>
+      <img src="/favicon-new.svg" alt="" width={48} height={48} />
+      <h1 style={{ margin: 0, fontSize: 'clamp(1.5rem, 4vw, 2.5rem)', lineHeight: 1.2 }}>
+        Canton wallet connection playground
+      </h1>
+      <p style={{ maxWidth: 560, margin: 0, lineHeight: 1.6, color: '#475569' }}>
+        Explore PartyLayerKit themes, the Connect Wallet button and supported Canton wallet integrations.
+        This demo uses Devnet and includes beta wallets. Real connections require your own wallet account and approval.
+      </p>
+      <nav aria-label="Playground setup guides" style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: 20 }}>
+        <a href="/docs/quick-start" style={{ color: '#806000' }}>React and Next.js quick start</a>
+        <a href="/wallets" style={{ color: '#806000' }}>Wallet networks and capabilities</a>
+      </nav>
+      <p role="status" style={{ color: '#475569', margin: 0 }}>Loading interactive controls…</p>
+    </main>
   );
 
   return (

@@ -4,7 +4,7 @@ PartyLayer aims to become the default wallet connection kit for Canton applicati
 
 ## Launch scope
 
-The first implementation includes npm metadata for the five public developer entry points, a linked [RainbowKit for Canton guide](https://partylayer.xyz/docs/rainbowkit-for-canton), [integration support](https://partylayer.xyz/docs/integration-support), an issue form, improved landing/directory entry points and a daily public growth snapshot. Its read-only workflow is installed at `.github/workflows/growth-snapshot.yml` and becomes active after merge to the default branch. Package metadata changes need a new npm publication; merging source alone does not change an existing npm version.
+The first implementation includes npm metadata for the five public developer entry points, a linked [RainbowKit for Canton guide](https://partylayer.xyz/docs/rainbowkit-for-canton), [integration support](https://partylayer.xyz/docs/integration-support), an issue form, improved landing/directory entry points and a daily public growth snapshot. Its read-only workflow is installed at `.github/workflows/growth-snapshot.yml` and is active on the default branch; the 2026-10-24 post-publication run passed. Package metadata changes need a new npm publication; merging source alone does not change an existing npm version.
 
 ## Workstreams and acceptance
 
@@ -35,7 +35,7 @@ Improve one useful primary page for each intent instead of publishing near-dupli
 
 ## Measurement contract
 
-Run `pnpm growth:snapshot` locally, or use the **Public growth snapshot** workflow after this change reaches the default branch. The daily job uses only public npm and GitHub APIs and creates no SDK telemetry, user profiles or ledger data collection. It does not install packages to inflate downloads.
+Run `pnpm growth:snapshot` locally, or use the **Public growth snapshot** workflow on the default branch. The daily job uses only public npm and GitHub APIs and creates no SDK telemetry, user profiles or ledger data collection. It does not install packages to inflate downloads.
 
 Primary outcome: independently verified production applications using PartyLayer. Supporting indicators: per-package npm weekly/monthly downloads, public dependents where observable, non-branded Search Console clicks/impressions, installation-guide engagement, integration requests and documented onboarding completion. Public source dependencies undercount private applications; neither download counts nor stars are user counts.
 
@@ -62,3 +62,13 @@ Weekly maintainer review: inspect query/page performance in Search Console; revi
 Maintainers send the reviewed messages in [distribution drafts](./distribution-drafts.md). Wallet teams own publication in their documentation, test access and fixes to their deployments. PartyLayer owns the kit, reproducible examples, support and accurate capability reporting. Search Console indexing requests are requests, not promises that Google will index or rank a page.
 
 No paid acquisition, external message sending, partner logo publication or claim of official endorsement is implied by this implementation.
+
+## Continuous technical checks
+
+The daily command also writes `site-health.json` and `site-health.md` alongside the npm/GitHub snapshot. It checks the public robots policy, sitemap format and critical entry points, then fetches up to 100 same-origin sitemap pages with bounded concurrency, timeouts and redirects disabled. HTTP failures, missing titles, incorrect canonicals, noindex directives and policy changes make the job fail while preserving partial evidence. Heading observations are separate content warnings.
+
+This verifies our public HTTP responses. It does not impersonate or verify Googlebot, read Search Console, establish indexing, or measure search rank. A changed robots policy is conservatively flagged for review rather than claiming to implement Google's complete robots parser. The 100-URL bound keeps the existing five-minute workflow budget predictable; review batching before raising it.
+
+`pnpm gate:docs-snippets` compiles the actual README, quick-start, SSR, landing and RainbowKit-for-Canton examples against the public package declarations. It runs inside the required documentation gate, uses temporary module fixtures for documented adjacent application files and deletes them after the check. Installation examples cannot silently pass solely because a copied test fixture is current.
+
+Sitemap entries omit optional modification dates until reliable content dates are available. A fresh build is not evidence that every page changed. Google also ignores priority and change frequency; see the [official sitemap guidance](https://developers.google.com/search/docs/crawling-indexing/sitemaps/build-sitemap). These improvements do not diagnose the outstanding Search Console fetch report by themselves.
