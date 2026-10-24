@@ -320,6 +320,16 @@ function BookIcon({ size = 20 }: { size?: number }) {
 
 const INSTALL_CMD = 'npm install @partylayer/react @tanstack/react-query';
 
+const LANDING_INTEGRATION_EXAMPLE = `import { PartyLayerKit, ConnectButton } from '@partylayer/react';
+
+export default function App() {
+  return (
+    <PartyLayerKit network="devnet" appName="My dApp">
+      <ConnectButton />
+    </PartyLayerKit>
+  );
+}`;
+
 function CopyInstallButton() {
   const [copied, setCopied] = useState(false);
   const handleCopy = async (e: React.MouseEvent) => {
@@ -848,7 +858,7 @@ type ArchNodeId = 'dapp' | 'hooks' | 'sdk' | 'adapters' | 'wallets';
 
 const archNodes: { id: ArchNodeId; label: string; sub: string; icon: ReactNode; detail: ReactNode }[] = [
   {
-    id: 'dapp', label: 'Your dApp', sub: '3 lines to integrate',
+    id: 'dapp', label: 'Your dApp', sub: 'Kit + ConnectButton',
     icon: (
       <svg width={28} height={28} fill="none" viewBox="0 0 24 24" stroke="#818CF8" strokeWidth={1.5}>
         <path strokeLinecap="round" strokeLinejoin="round" d="M17.25 6.75L22.5 12l-5.25 5.25m-10.5 0L1.5 12l5.25-5.25m7.5-3l-4.5 16.5" />
@@ -861,12 +871,7 @@ const archNodes: { id: ArchNodeId; label: string; sub: string; icon: ReactNode; 
           margin: 0, padding: 12, borderRadius: 8, background: '#0F172A', fontSize: 12,
           fontFamily: t.mono, lineHeight: 1.6, overflowX: 'auto', color: '#CBD5E1',
         }}>
-          <span style={{ color: '#C084FC' }}>import</span>{' { PartyLayerKit }'} <span style={{ color: '#C084FC' }}>from</span> <span style={{ color: '#4ADE80' }}>{`'@partylayer/react'`}</span>{'\n'}
-          {'\n'}
-          <span style={{ color: '#64748B' }}>{'// Wrap your app, done.'}</span>{'\n'}
-          {'<'}<span style={{ color: '#F87171' }}>PartyLayerKit</span> <span style={{ color: '#FDBA74' }}>network</span>{'='}<span style={{ color: '#4ADE80' }}>{`"mainnet"`}</span>{'>'}{'\n'}
-          {'  <'}<span style={{ color: '#F87171' }}>App</span>{' />'}{'\n'}
-          {'</'}<span style={{ color: '#F87171' }}>PartyLayerKit</span>{'>'}
+          <code>{LANDING_INTEGRATION_EXAMPLE}</code>
         </pre>
       </div>
     ),
