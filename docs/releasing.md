@@ -199,7 +199,7 @@ Next.js and Vite apps. These are automated integration checks, not proof of a
 successful live wallet approval or ledger commit.
 
 The 2026-10-24 code review also adds four axe accessibility scenarios to the PR
-browser suite, plus six docs axe/reflow cases across desktop and 320 px mobile.
+browser suite, plus ten docs axe/reflow cases across desktop and 320 px mobile.
 It rejects contradictory execution command IDs in both normalized
 receipts and the native provider facade. The installed Vala runtime is covered
 with controlled HTTP/popup tests. See [acceptance evidence](./wallet-acceptance.md)
@@ -294,3 +294,9 @@ network support, capability limits and completed live acceptance.
 - [ ] Verify packages published to npm
 - [ ] Update demo app if needed
 - [ ] Announce release (if major/minor)
+
+## Public entry-guide and discovery checks
+
+`pnpm gate:docs-drift` includes `pnpm gate:docs-snippets`, which compiles actual installation, quick-start, landing, SSR and Canton migration snippets against the public declarations. Run it after changing a public example; building the docs page alone only checks its string rendering. The browser discovery suite also checks that the playground serves useful initial HTML and still hydrates into the connection UI.
+
+The daily public growth workflow includes bounded HTTP/canonical/robots checks for the sitemap URLs. Its technical health results are separate from Search Console processing, Googlebot access and search ranking. See the [growth roadmap](./growth/roadmap.md).

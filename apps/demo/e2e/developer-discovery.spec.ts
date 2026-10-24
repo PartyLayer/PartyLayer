@@ -33,3 +33,21 @@ test('support request uses the published integration form and guides enter the s
   const xml = await response.text();
   for (const route of guides) expect(xml).toContain(`<loc>https://partylayer.xyz${route}</loc>`);
 });
+
+test('playground exposes useful initial HTML and hydrates into the working connection UI', async ({ page, request }) => {
+  const response = await request.get('/kit-demo');
+  expect(response.ok()).toBe(true);
+  const html = await response.text();
+  expect(html).toMatch(/<h1\b[^>]*>\s*Canton wallet connection playground\s*<\/h1>/);
+  expect(html).toContain('href="/docs/quick-start"');
+  expect(html).toContain('This demo uses Devnet');
+  const errors: string[] = [];
+  page.on('pageerror', error => errors.push(error.message));
+  await page.goto('/kit-demo');
+  await expect(page.getByRole('heading', { level: 1, name: /One SDK for every/ })).toBeVisible();
+  await page.getByRole('button', {name: /Connect Wallet/i}).first().click();
+  await expect(page.getByRole('dialog')).toBeVisible();
+  expect(errors.filter(message => /hydrat|server.render|did not match/i.test(message))).toEqual([]);
+  const sitemap = await request.get('/sitemap.xml');
+  expect(await sitemap.text()).not.toMatch(/<lastmod>|<priority>|<changefreq>/);
+});
