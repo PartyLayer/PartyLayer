@@ -9,6 +9,7 @@ import type {
   CIP0103Provider,
   NetworkId,
   OfficialProviderAdapter,
+  WalletAdapter,
 } from '@partylayer/core';
 import { detectNetworkMismatch, isRecognizedNetwork } from '@partylayer/core';
 import { assertConnectionAccepted, assertPrimaryParty } from './connection-result';
@@ -502,3 +503,6 @@ export class NativeConnectionOwner {
 
 /** Internal binding; public custom adapters retain their compatibility contract. */
 export const nativeOwnerBindings = new WeakMap<object, NativeConnectionOwner>();
+
+/** Copy generic wrapper state when a configuration instance is reused by clients. */
+export const nativeAdapterCopies = new WeakMap<object, () => WalletAdapter>();

@@ -9,6 +9,7 @@ import type {
 import { WalletNotFoundError, toPartyId, toWalletId } from '@partylayer/core';
 import { createPartyLayer } from './client';
 import { GenericAnnounceAdapter } from './announce-adapter';
+import { GenericDiscoveryAdapter } from './discovery-adapter';
 
 vi.mock('@console-wallet/dapp-sdk', () => ({ consoleWallet: {} }));
 const clients: ReturnType<typeof createPartyLayer>[] = [];
@@ -141,6 +142,27 @@ function fixture() {
 }
 
 describe('public SDK native-owner integration', () => {
+  it.each(['discovery', 'announce'] as const)(
+    'keeps a reused %s configuration attached to each client owner',
+    async (kind) => {
+      const f = fixture();
+      const adapter = kind === 'discovery'
+        ? new GenericDiscoveryAdapter({ official: f.source })
+        : new GenericAnnounceAdapter({
+            announceId: 'native-test', walletId: toWalletId('native-test'),
+            provider: f.provider, config: { restore: true, events: true },
+          });
+      const first = f.client([adapter]);
+      const second = f.client([adapter]);
+      expect(second.getAdapter('native-test')).not.toBe(first.getAdapter('native-test'));
+      await first.connect({ walletId: toWalletId('native-test') });
+      expect((await first.getActiveSession())?.partyId).toBe('party::alice');
+      // A discarded second render/client must not remove the committed owner.
+      second.destroy();
+      expect((await first.signMessage({ message: 'first client' })).signature).toBe('test-signature');
+    }
+  );
+
   it('does not attribute a bare signature to the old party when an eventless wallet changes its primary during approval', async () => {
     const f = fixture();
     const c = f.client();

@@ -1114,14 +1114,14 @@ export default function KitDemoPage() {
                 lineHeight: 1.6,
                 maxWidth: '520px',
               }}>
-                CIP-0103 native wallet discovery with automatic registry fallback.
-                Connect any Canton wallet in 3 lines of code.
+                Discover supported wallets through CIP-0103 and the PartyLayer registry.
+                Reviewed wallet runtimes and a branded connection UI come with the kit.
               </p>
 
               {/* Feature badges */}
               <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                 {[
-                  { label: 'CIP-0103 Compliant', hasIcon: true },
+                  { label: 'CIP-0103 Integration', hasIcon: true },
                   { label: 'Auto-Discovery', hasIcon: false },
                   { label: 'Devnet', hasIcon: false },
                 ].map((badge) => (

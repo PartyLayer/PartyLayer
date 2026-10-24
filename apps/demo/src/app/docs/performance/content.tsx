@@ -59,8 +59,8 @@ export default function PerformancePage() {
       </P>
 
       <H2 id="what-each-import-scenario-costs">What each import scenario costs</H2>
-      <P>The current candidate measures approximately 52.5 kB gzip for the SDK (52.75 kB budget),
-        52.8 kB for React Native headless (53 kB budget), and 36.85 kB for the React connection
+      <P>The current candidate measures approximately 52.7 kB gzip for the SDK (52.75 kB budget),
+        53.0 kB for React Native headless (53 kB budget), and 36.85 kB for the React connection
         surface (37 kB budget). Approved wallet runtimes and official discovery remain lazy chunks. The kit lists wallets on mount, so eligible chunks may load before the picker opens; these budgets exclude async chunks and do not measure total first-load bytes. Native ownership, abort/identity guards and the stable provider facade add about 3.5 kB. Complete transaction
         evidence, combined-only routing and signature echo checks add about 0.34 kB to the shared
         client. Server authentication helpers live in the separate core/authentication subpath.

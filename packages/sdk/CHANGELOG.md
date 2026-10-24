@@ -2,6 +2,9 @@
 
 ## 0.20.0
 
+- Isolate generic wrapper state when an application reuses an adapter configuration
+  across SDK clients; a second client can no longer replace the first native owner.
+
 - Recheck live native identity after message approval, so a bare signature is not
   attributed to an old primary party after an eventless account change.
 

@@ -57,7 +57,7 @@ import { toPartyId, toWalletId, isRecognizedNetwork, normalizeLedgerMethodLower,
 import { submitViaPrepareExecute, type ExecuteVerbState } from './prepare-execute';
 import { normalizeSignedMessage } from './sign-message';
 import { assertConnectionAccepted, assertPrimaryParty } from './connection-result';
-import { nativeOwnerBindings } from './native-owner';
+import { nativeAdapterCopies, nativeOwnerBindings } from './native-owner';
 
 export interface GenericDiscoveryAdapterArgs {
   /**
@@ -132,6 +132,10 @@ export class GenericDiscoveryAdapter implements WalletAdapter {
   readonly ledgerApi?: WalletAdapter['ledgerApi'];
 
   constructor(args: GenericDiscoveryAdapterArgs) {
+    const configuration = { ...args, capabilities: args.capabilities && { ...args.capabilities } };
+    nativeAdapterCopies.set(this, () => new GenericDiscoveryAdapter({
+      ...configuration, networkHosts: { ...this.networkHosts },
+    }));
     this.capabilities = getDiscoveryCapabilities(args.capabilities);
     if (args.capabilities?.ledgerApi) {
       this.ledgerApi = async (_ctx, _session, params: LedgerApiParams): Promise<LedgerApiResult> => {

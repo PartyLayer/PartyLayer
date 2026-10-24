@@ -42,7 +42,10 @@ an identity consistency check, not independent cryptographic signature verificat
 Destroy removes subscriptions and locally tears down transport resources without
 issuing a wallet logout. Explicit disconnect uses the official lifecycle. React
 construction defers external subscriptions until the committed effect, and effect
-replay keeps the committed client/store alive.
+replay keeps the committed client/store alive. Reusing a generic wrapper configuration
+in another client creates separate wrapper state instead of replacing the first
+client's owner. A pre-constructed vendor adapter still shares its underlying vendor
+runtime; use the official adapter factory form for independent transport instances.
 
 The public official extension transport was also reviewed. Its current request wait
 has no timeout/cleanup handle; its public provider does not expose the notification

@@ -10,8 +10,8 @@ export default function IntroductionPage() {
       <H1>Introduction</H1>
       <P>
         <Strong>PartyLayer</Strong> is an open-source SDK for integrating Canton Network wallets into your dApp.
-        It provides a unified interface across every Canton wallet, registry-backed, verified, and type-safe,
-        so you can focus on building your application, not wrestling with wallet APIs.
+        It provides a typed interface and a branded connection UI for supported Canton wallets,
+        with registry discovery and capability checks for the selected network.
       </P>
 
       <P>
@@ -35,9 +35,9 @@ export default function IntroductionPage() {
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 16, marginBottom: 32 }}>
         {[
           { title: 'Zero-Config React', desc: 'PartyLayerKit + ConnectButton for instant wallet integration. No boilerplate needed.' },
-          { title: 'CIP-0103 Compliant', desc: 'Full implementation of the Canton dApp Standard: 10 methods, 4 events, typed errors.' },
-          { title: 'Multi-Wallet', desc: 'Console, Loop, Cantor8, and Nightly auto-registered. Send is discovered via the CIP-0103 announce path. Bron available for enterprise.' },
-          { title: 'Registry Discovery', desc: 'Verified wallets fetched from the PartyLayer registry with signature verification.' },
+          { title: 'CIP-0103 Integration', desc: 'Official discovery owns native connections. Accounts, events and Ledger API requests use the connected provider; capabilities vary by wallet.' },
+          { title: 'Wallets Included', desc: 'Reviewed wallet runtimes ship with the kit. Console and Send use extension discovery; Walley, Cauri and OneSwap use official adapters. Vala requires Devnet beta opt-in. WalletConnect and Bron require application credentials.' },
+          { title: 'Registry Discovery', desc: 'Registry metadata controls wallet availability by network and channel. Registry signatures are verified when configured; a listing is not proof of live operation.' },
           { title: 'Type-Safe', desc: 'Branded types, strict TypeScript, and 14 typed error classes with stable error codes.' },
           { title: 'Themes & Customization', desc: 'Light, dark, and auto themes. Full theme customization with PartyLayerTheme.' },
         ].map(f => (
@@ -60,7 +60,7 @@ export default function IntroductionPage() {
       </P>
 
       <P>
-        With PartyLayer, you get a single, consistent interface that works with every Canton wallet.
+        With PartyLayer, you get a single, consistent interface for the supported wallet catalog.
         The SDK handles registry discovery, adapter negotiation, session management, and provides
         ready-to-use React components, all with TypeScript types and meaningful error messages.
       </P>

@@ -50,7 +50,7 @@ import { toPartyId, toWalletId, normalizeLedgerMethodLower, ledgerApiBodyToObjec
 import { submitViaPrepareExecute, type ExecuteVerbState } from './prepare-execute';
 import { normalizeSignedMessage } from './sign-message';
 import { assertConnectionAccepted, assertPrimaryParty } from './connection-result';
-import { nativeOwnerBindings } from './native-owner';
+import { nativeAdapterCopies, nativeOwnerBindings } from './native-owner';
 
 /** Capabilities of the generic announce bridge, including before installation. */
 export function getAnnounceCapabilities(config: AnnounceAdapterConfig = {}): CapabilityKey[] {
@@ -208,6 +208,10 @@ export class GenericAnnounceAdapter implements WalletAdapter {
   signMessage?: WalletAdapter['signMessage'];
 
   constructor(args: GenericAnnounceAdapterArgs) {
+    const configuration = { ...args, config: args.config && {
+      ...args.config, staticMetadata: args.config.staticMetadata && { ...args.config.staticMetadata },
+    } };
+    nativeAdapterCopies.set(this, () => new GenericAnnounceAdapter(configuration));
     this.walletId = args.walletId ?? announcedWalletId(args.announceId);
     this.name =
       args.name && args.name.length > 0

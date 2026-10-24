@@ -161,6 +161,29 @@ pnpm run web-smoke
 It must exit 0 (wallet list opens, react-native-svg and Image renderers both work, no
 uncaught page error). If it fails, the module loading regressed; do not publish.
 
+## Local production UI acceptance
+
+A hosting account or Vercel preview login is not required for code, package or UI
+validation. From the repository root:
+
+```bash
+pnpm build
+pnpm --filter partylayer-demo start --port 43173 --hostname 127.0.0.1
+```
+
+Open `http://127.0.0.1:43173/kit-demo`. Check the actual supported wallet list,
+Vala's Devnet beta label, default PartyLayer attribution, search, language/RTL,
+keyboard focus containment and Escape restoration, and mobile overflow. Rebuild
+and restart the local server after changing production code; reload the browser
+before collecting evidence. Record the commit and checks separately from the
+live wallet matrix. Production UI acceptance uses the real catalog, without a
+mock connected account.
+
+Use `pnpm gate` for the automated workspace, packed-consumer and controlled
+browser checks. Wallet approval and ledger tests may require an origin allowed
+by the vendor; localhost UI checks do not establish that a production-origin
+wallet authorization, transfer or swap works.
+
 ## Default wallet release validation
 
 The broader product milestones and completion criteria are tracked in the

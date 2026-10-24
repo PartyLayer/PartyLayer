@@ -52,7 +52,7 @@ import { findMatchingWalletInfo } from '@partylayer/core';
 import { GenericAnnounceAdapter, getAnnounceCapabilities, type AnnounceAdapterConfig } from './announce-adapter';
 import { normalizeSignedMessage } from './sign-message';
 import { GenericDiscoveryAdapter } from './discovery-adapter';
-import { NativeConnectionOwner, nativeOwnerBindings, type NativeIdentity } from './native-owner';
+import { NativeConnectionOwner, nativeAdapterCopies, nativeOwnerBindings, type NativeIdentity } from './native-owner';
 import { createSessionProvider } from './session-provider';
 import {
   DEFAULT_REGISTRY_URL,
@@ -388,6 +388,12 @@ export class PartyLayerClient {
    * In production, adapters would be auto-registered via registry.
    */
   registerAdapter(adapter: WalletAdapter): void {
+    // A shared app configuration must not move another client's live wrapper
+    // to this owner (including a discarded framework render).
+    const boundOwner = nativeOwnerBindings.get(adapter);
+    if (this.nativeOwner && boundOwner && boundOwner !== this.nativeOwner) {
+      adapter = nativeAdapterCopies.get(adapter)!();
+    }
     this.adapters.set(adapter.walletId, adapter);
     if (this.nativeOwner && (adapter instanceof GenericDiscoveryAdapter || adapter instanceof GenericAnnounceAdapter)) {
       nativeOwnerBindings.set(adapter, this.nativeOwner);
