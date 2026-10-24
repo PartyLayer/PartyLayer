@@ -1,8 +1,9 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { snapshot, markdown, PACKAGES } from './snapshot.mjs';
+import { readFileSync } from 'node:fs';
+import { snapshot, markdown, PACKAGES, SEARCH_QUERIES, readSearchResults } from './snapshot.mjs';
 
-function fakeFetch({ unavailable = false, mismatchedPackage = false } = {}) {
+function fakeFetch({ unavailable = false, mismatchedPackage = false, unavailableSearch = false } = {}) {
   return async input => {
     const url = new URL(input);
     let data;
@@ -11,7 +12,10 @@ function fakeFetch({ unavailable = false, mismatchedPackage = false } = {}) {
       if (unavailable && name === PACKAGES[0] && url.pathname.includes('last-week')) return { ok: false, status: 503 };
       data = { package: mismatchedPackage ? 'another-package' : name, downloads: 12, start: '2026-10-01', end: '2026-10-07' };
     } else if (url.hostname === 'registry.npmjs.org') {
-      data = { name: decodeURIComponent(url.pathname.split('/')[1]), version: '1.0.0', keywords: ['canton'] };
+      if (url.pathname === '/-/v1/search') {
+        if (unavailableSearch && url.searchParams.get('text') === SEARCH_QUERIES[0]) return {ok:false,status:503};
+        data = {total:3,objects:[{package:{name:'another-package'}},{package:{name:PACKAGES[0]}},{package:{name:PACKAGES[1]}}]};
+      } else data = { name: decodeURIComponent(url.pathname.split('/')[1]), version: '1.0.0', keywords: ['canton'] };
     } else data = { full_name: 'PartyLayer/PartyLayer', stargazers_count: 5, forks_count: 2, open_issues_count: 1 };
     return { ok: true, json: async () => data };
   };
@@ -44,13 +48,38 @@ test('reported date windows and separate package counts survive unchanged', asyn
   assert.doesNotMatch(markdown(report), /36 downloads|unique users: 36/);
 });
 
-import { siteHealth, inspectPage, REQUIRED_PATHS } from './site-health.mjs';
+test('search samples distinguish observed positions, absent entry points and unavailable sources', async () => {
+  const report = await snapshot({fetcher:fakeFetch({unavailableSearch:true})});
+  assert.equal(report.complete,false);
+  assert.equal(report.npmSearch[0].result,null);
+  const second = report.npmSearch[1].result;
+  assert.equal(second.entryPoints[0].position,2);
+  assert.equal(second.entryPoints[2].position,null);
+  assert.equal(second.entryPoints[2].notFoundInSample,true);
+  assert.ok(report.packages.every(item => item.latest !== null));
+  assert.match(markdown(report), /not observed in 3 returned results/);
+  assert.match(markdown(report), /not npm website ordering/);
+  assert.ok(report.failures.some(item => item.source === `npm:search:${SEARCH_QUERIES[0]}`));
+});
 
-function siteFixture({badCanonical = false, noindex = false, external = false, unavailable = false, blocked = false, missing = false} = {}) {
+test('malformed or repeated npm search rows cannot produce a trustworthy position', () => {
+  assert.throws(() => readSearchResults({total:2,objects:[{package:{name:PACKAGES[0]}},{package:{name:PACKAGES[0]}}]},SEARCH_QUERIES[0]),/Invalid npm search/);
+  assert.throws(() => readSearchResults({total:1,objects:[{package:{}}]},SEARCH_QUERIES[0]),/Invalid npm search/);
+});
+
+import { siteHealth, inspectPage, REQUIRED_PATHS, AI_REFERENCE_PATHS, healthMarkdown } from './site-health.mjs';
+
+function siteFixture({badCanonical = false, noindex = false, external = false, unavailable = false, blocked = false, missing = false, staleReference = false, unavailableReference = false, challengeReference = false} = {}) {
   const calls = [];
   const fetcher = async (url, options) => {
     calls.push(url);
     assert.equal(options.redirect, 'manual');
+    const referencePath = new URL(url).pathname;
+    if (AI_REFERENCE_PATHS.includes(referencePath)) {
+      if (unavailableReference && referencePath === '/llms-full.txt') return new Response('Unavailable',{status:503});
+      const body = readFileSync(new URL(`../../apps/demo/public${referencePath}`, import.meta.url),'utf8');
+      return new Response(challengeReference ? '<html>Please wait</html>' : staleReference ? '# Old installation guide' : body, {headers:{'content-type':challengeReference ? 'text/html' : 'text/plain'}});
+    }
     if (url.endsWith('/robots.txt')) return new Response(`User-Agent: *\n${blocked ? 'Disallow: /docs' : 'Allow: /\nDisallow:'}\nSitemap: https://partylayer.xyz/sitemap.xml\n`, {headers:{'content-type':'text/plain'}});
     if (url.endsWith('/sitemap.xml')) {
       const paths = REQUIRED_PATHS.filter(path => !missing || path !== '/docs/quick-start');
@@ -101,4 +130,26 @@ test('healthy sitemap routes pass without implying Google index or ranking resul
   assert.equal(report.pageCount,REQUIRED_PATHS.length);
   assert.equal(report.pages[0].title,'Canton & React');
   assert.match(report.interpretation,/not Googlebot verification/);
+  assert.ok(report.references.every(reference => reference.matchesRepository));
+  assert.match(healthMarkdown(report), /2\/2 AI references match/);
+});
+
+test('HTTP 200 with outdated AI installation instructions fails the deployed-reference check', async () => {
+  const report = await siteHealth(siteFixture({staleReference:true}));
+  assert.equal(report.passed,false);
+  assert.equal(report.references[0].matchesRepository,false);
+  assert.notEqual(report.references[0].sha256,report.references[0].expectedSha256);
+  assert.ok(report.failures.some(item => /AI reference differs/.test(item.error)));
+  assert.ok(report.pages.every(page => page.failures.length === 0));
+});
+
+test('missing or challenged AI references stay visible while page evidence survives', async () => {
+  const unavailable = await siteHealth(siteFixture({unavailableReference:true}));
+  assert.equal(unavailable.passed,false);
+  assert.equal(unavailable.references.find(reference => reference.url.endsWith('/llms-full.txt')).sha256,null);
+  assert.equal(unavailable.references[0].matchesRepository,true);
+  assert.match(healthMarkdown(unavailable), /1\/2 AI references match/);
+  const challenged = await siteHealth(siteFixture({challengeReference:true}));
+  assert.equal(challenged.passed,false);
+  assert.ok(challenged.failures.some(item => /Unexpected content type/.test(item.error)));
 });

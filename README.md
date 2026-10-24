@@ -164,6 +164,7 @@ Upgrading an existing app? Native cached sessions may require one explicit recon
 | [SDK API](./docs/api.md) | Framework-independent client and types |
 | [Wallet integrations](./docs/wallet-cip0103-matrix.md) | Per-wallet paths, versions and capability limits |
 | [Documentation index](./docs/README.md) | All repository guides |
+| [AI coding reference](https://partylayer.xyz/llms-full.txt) | Plain-text React setup, SDK usage and wallet network requirements |
 
 ## Try it live
 

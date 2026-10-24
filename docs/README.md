@@ -20,6 +20,7 @@ These guides cover React 3.1.0+ / SDK 0.20.0+. See [release status](./releasing.
 
 - [RainbowKit for Canton](https://partylayer.xyz/docs/rainbowkit-for-canton): React connection UI and Canton-specific requirements.
 - [Integration support](https://partylayer.xyz/docs/integration-support): application help, wallet-provider contributions and verified references.
+- [AI coding reference](https://partylayer.xyz/llms-full.txt) and [documentation index](https://partylayer.xyz/llms.txt): generated plain-text setup, SDK usage and wallet network requirements for coding assistants.
 
 ## Build your application
 

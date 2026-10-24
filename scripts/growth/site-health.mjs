@@ -1,6 +1,11 @@
+import { readFileSync } from 'node:fs';
+import { createHash } from 'node:crypto';
+
 const ORIGIN = 'https://partylayer.xyz';
 const LIMIT = 100;
 export const REQUIRED_PATHS = ['', '/docs', '/docs/installation', '/docs/quick-start', '/docs/rainbowkit-for-canton', '/docs/integration-support', '/wallets', '/kit-demo'];
+export const AI_REFERENCE_PATHS = ['/llms.txt', '/llms-full.txt'];
+const hash = text => createHash('sha256').update(text).digest('hex');
 
 function attributes(tag) {
   const result = {};
@@ -45,6 +50,14 @@ export async function siteHealth({fetcher = fetch, now = new Date()} = {}) {
     } catch (error) { failures.push({url,error:error.message}); return null; }
   };
   const [robots, sitemap] = await Promise.all([read(`${ORIGIN}/robots.txt`,'text/plain'),read(`${ORIGIN}/sitemap.xml`,'xml')]);
+  const references = await Promise.all(AI_REFERENCE_PATHS.map(async path => {
+    const url = ORIGIN + path;
+    const expected = readFileSync(new URL(`../../apps/demo/public${path}`, import.meta.url), 'utf8');
+    const body = await read(url, 'text/plain');
+    const matchesRepository = body !== null && hash(body) === hash(expected);
+    if (body !== null && !matchesRepository) failures.push({url,error:'AI reference differs from the current repository output; check deployment or documentation drift'});
+    return {url,sha256:body === null ? null : hash(body),expectedSha256:hash(expected),matchesRepository};
+  }));
   // This monitors our deliberate public allow-all policy, not Google's full robots parser.
   if (robots !== null && (!/^User-agent:\s*\*\s*$/im.test(robots) || /^Disallow:[ \t]*[^\s#]/im.test(robots) || !robots.includes(`Sitemap: ${ORIGIN}/sitemap.xml`))) {
     failures.push({url:`${ORIGIN}/robots.txt`,error:'Public crawl policy changed; review robots rules and sitemap declaration'});
@@ -84,12 +97,12 @@ export async function siteHealth({fetcher = fetch, now = new Date()} = {}) {
     pages.push(...batch);
   }
   for (const page of pages) for (const error of page.failures) failures.push({url:page.url,error});
-  return {schemaVersion:1,collectedAt:now.toISOString(),passed:failures.length===0 && pages.length>0,pageCount:pages.length,pages,failures,
-    interpretation:'HTTP, title, canonical and public crawl-policy checks only. This is not Googlebot verification, Search Console data, indexing confirmation or a search-ranking measurement. H1 observations are separate content warnings.'};
+  return {schemaVersion:2,collectedAt:now.toISOString(),passed:failures.length===0 && pages.length>0,pageCount:pages.length,pages,references,failures,
+    interpretation:'HTTP, title, canonical, public crawl-policy and deployed AI-reference checks only. This is not Googlebot verification, Search Console data, indexing confirmation, AI citation evidence or a search-ranking measurement. H1 observations are separate content warnings.'};
 }
 
 export function healthMarkdown(report) {
   const failures = report.failures.map(item => `- ${item.url}: ${item.error.replace(/[\r\n|]/g,' ')}`).join('\n');
   const warnings = report.pages.filter(page => page.warnings?.length).map(page => `- ${page.url}: ${page.warnings.join('; ')}`).join('\n');
-  return `# Website technical health\n\nCollected: ${report.collectedAt}. Status: ${report.passed ? 'passed' : 'needs review'}. Audited ${report.pageCount} sitemap URLs.\n\n${report.interpretation}\n\n${failures || 'No technical availability/indexability failures observed.'}\n${warnings ? `\nContent observations:\n${warnings}\n` : ''}`;
+  return `# Website technical health\n\nCollected: ${report.collectedAt}. Status: ${report.passed ? 'passed' : 'needs review'}. Audited ${report.pageCount} sitemap URLs and ${report.references.filter(reference => reference.matchesRepository).length}/${report.references.length} AI references match the repository.\n\n${report.interpretation}\n\n${failures || 'No technical availability/indexability failures observed.'}\n${warnings ? `\nContent observations:\n${warnings}\n` : ''}`;
 }

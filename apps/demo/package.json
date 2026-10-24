@@ -5,7 +5,7 @@
   "scripts": {
     "predev": "node scripts/copy-registry.mjs",
     "dev": "rm -rf .next && next dev",
-    "prebuild": "node scripts/copy-registry.mjs",
+    "prebuild": "node scripts/copy-registry.mjs && node ../../scripts/gen-ai-docs.mjs",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",

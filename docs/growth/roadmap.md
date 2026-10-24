@@ -41,6 +41,8 @@ Primary outcome: independently verified production applications using PartyLayer
 
 Keep React, SDK and CLI downloads separate: transitive installation and CI can count the same application repeatedly. Preserve the API's actual reporting dates, including publication lag. An unavailable source is missing data, never zero. GitHub open issue counts include pull requests. Search Console data and private integration conversations are not automatically exported into the public workflow.
 
+The snapshot also records the first 50 public npm registry API results for `canton wallet` and `canton react wallet`, with positions for the React, SDK and CLI entry points. This measures a repeatable API sample, not npm website ordering. A successful response with an absent package means "not observed in the returned sample"; a failed request remains unavailable and makes the report partial. Neither measure establishes a Google position, AI recommendation or unique application adoption.
+
 A verified application record needs a maintainer-confirmed or observable production URL, version/network evidence, verified functionality, last review date and permission to name/link the project. A mock demo, registry entry, package download or integration discussion is not production adoption. Publish logos only with explicit permission. Keep unapproved partner conversations private.
 
 ## Baseline and weekly review
@@ -72,3 +74,13 @@ This verifies our public HTTP responses. It does not impersonate or verify Googl
 `pnpm gate:docs-snippets` compiles the actual README, quick-start, SSR, landing and RainbowKit-for-Canton examples against the public package declarations. It runs inside the required documentation gate, uses temporary module fixtures for documented adjacent application files and deletes them after the check. Installation examples cannot silently pass solely because a copied test fixture is current.
 
 Sitemap entries omit optional modification dates until reliable content dates are available. A fresh build is not evidence that every page changed. Google also ignores priority and change frequency; see the [official sitemap guidance](https://developers.google.com/search/docs/crawling-indexing/sitemaps/build-sitemap). These improvements do not diagnose the outstanding Search Console fetch report by themselves.
+
+## AI reference maintenance
+
+`/llms.txt` links to the maintained integration routes; `/llms-full.txt` is generated from the React quick start, SDK README, package versions and stable/beta registry channels. Stable wallet facts come from the stable catalog rather than beta overrides. The reference preserves network/configuration restrictions and separates wallet declarations from live acceptance. It is linked from the docs introduction and repository documentation for developers using coding assistants.
+
+Run `pnpm gen:ai-docs` after updating those sources. The required documentation gate and production prebuild reject output drift, compile the generated React examples and reject broken source/route links. The daily technical report fetches both deployed plain-text references and compares their SHA-256 hashes with the current checkout, exposing unavailable, challenged or old output alongside the HTML page results. A report during deployment can flag a previous deployed version; inspect the release before rerunning.
+
+This is a developer reference, not a guarantee of AI search inclusion. Google's [AI features guidance](https://developers.google.com/search/docs/appearance/ai-features) requires no special AI text file or schema; its underlying SEO and indexability requirements still apply. Measure actual referrals and cited links separately before claiming AI visibility increased.
+
+The conventional `/favicon.ico` URL serves the existing PartyLayer icon asset as well as the SVG icon declared in page metadata. This closes a reproducible 404 observed in Google crawl examples; it is separate from the unresolved sitemap fetch report. The browser discovery suite checks the actual icon response and metadata declaration.

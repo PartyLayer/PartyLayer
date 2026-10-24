@@ -32,7 +32,10 @@ export const metadata: Metadata = {
     'wallet registry',
   ],
   icons: {
-    icon: '/favicon-new.svg',
+    icon: [
+      { url: '/favicon-new.svg', type: 'image/svg+xml' },
+      { url: '/favicon.ico', type: 'image/x-icon' },
+    ],
   },
   openGraph: {
     type: 'website',
