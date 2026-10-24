@@ -4,7 +4,7 @@ PartyLayer aims to become the default wallet connection kit for Canton applicati
 
 ## Launch scope
 
-The first implementation includes npm metadata for the five public developer entry points, a linked [RainbowKit for Canton guide](https://partylayer.xyz/docs/rainbowkit-for-canton), [integration support](https://partylayer.xyz/docs/integration-support), an issue form, improved landing/directory entry points and a public growth snapshot collector. The daily workflow is prepared in `scripts/growth/workflow.yml`; activating it requires installing that file at `.github/workflows/growth-snapshot.yml` with workflow-authorized GitHub access. Package metadata changes need a new npm publication; merging source alone does not change an existing npm version.
+The first implementation includes npm metadata for the five public developer entry points, a linked [RainbowKit for Canton guide](https://partylayer.xyz/docs/rainbowkit-for-canton), [integration support](https://partylayer.xyz/docs/integration-support), an issue form, improved landing/directory entry points and a daily public growth snapshot. Its read-only workflow is installed at `.github/workflows/growth-snapshot.yml` and becomes active after merge to the default branch. Package metadata changes need a new npm publication; merging source alone does not change an existing npm version.
 
 ## Workstreams and acceptance
 
@@ -35,7 +35,7 @@ Improve one useful primary page for each intent instead of publishing near-dupli
 
 ## Measurement contract
 
-Run `pnpm growth:snapshot` locally, or, after activation, use the **Public growth snapshot** workflow. The daily job uses only public npm and GitHub APIs and creates no SDK telemetry, user profiles or ledger data collection. It does not install packages to inflate downloads.
+Run `pnpm growth:snapshot` locally, or use the **Public growth snapshot** workflow after this change reaches the default branch. The daily job uses only public npm and GitHub APIs and creates no SDK telemetry, user profiles or ledger data collection. It does not install packages to inflate downloads.
 
 Primary outcome: independently verified production applications using PartyLayer. Supporting indicators: per-package npm weekly/monthly downloads, public dependents where observable, non-branded Search Console clicks/impressions, installation-guide engagement, integration requests and documented onboarding completion. Public source dependencies undercount private applications; neither download counts nor stars are user counts.
 
