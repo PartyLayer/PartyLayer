@@ -139,7 +139,7 @@ export default function PerformancePage() {
       <P>
         The ui entrypoint imports <Code>{'react-native'}</Code> and <Code>{'react-native-svg'}</Code>, which
         only resolve inside a React Native bundler (Metro), not a web bundler. The size-limit config marks those
-        and the other React Native peers as external, so the current 5.07 kB figure is the cost of PartyLayer{"'"}s own
+        and the other React Native peers as external, so the current 5.04 kB figure is the cost of PartyLayer{"'"}s own
         ui code, not a runnable React Native bundle. The Expo web smoke exercises Metro&apos;s web export;
         native iOS/Android device acceptance is separate. The smoke is described in <Code>{'demos/expo-connect/README.md'}</Code> and in{' '}
         <Code>{'docs/releasing.md'}</Code>.
@@ -173,7 +173,7 @@ export default function PerformancePage() {
               { scenario: 'One token hook', measured: '455 B', budget: '700 B', headroom: '~54%' },
               { scenario: 'Matching helper', measured: '283 B', budget: '500 B', headroom: '~77%' },
               { scenario: 'RN headless', measured: '52.97 kB', budget: '53 kB', headroom: '<0.1%' },
-              { scenario: 'RN ui', measured: '5.07 kB', budget: '5.5 kB', headroom: '~8%' },
+              { scenario: 'RN ui', measured: '5.04 kB', budget: '5.5 kB', headroom: '~9%' },
               { scenario: 'SDK client', measured: '52.73 kB', budget: '52.75 kB', headroom: '<0.1%' },
             ].map(r => (
               <tr key={r.scenario} style={{ borderBottom: '1px solid rgba(15,23,42,0.10)' }}>

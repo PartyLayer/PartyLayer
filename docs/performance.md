@@ -82,7 +82,7 @@ Reading of the numbers:
 
 The ui entrypoint imports `react-native` and `react-native-svg`, which only resolve inside
 a React Native bundler (Metro), not a web bundler. The size-limit config marks those and
-the other React Native peers as external, so the current 5.07 kB figure is the cost of PartyLayer's
+the other React Native peers as external, so the current 5.04 kB figure is the cost of PartyLayer's
 own ui code, not a runnable React Native bundle. The Expo demo web smoke exercises the Metro web export;
 native iOS/Android device acceptance is separate. The smoke is described in `demos/expo-connect/README.md` and in
 `docs/releasing.md`.
@@ -101,7 +101,7 @@ in CI rather than reaching a consumer.
 | One token hook | 455 B | 700 B | ~54% |
 | Matching helper | 283 B | 500 B | ~77% |
 | RN headless | 52.97 kB | 53 kB | <0.1% |
-| RN ui | 5.07 kB | 5.5 kB | ~8% |
+| RN ui | 5.04 kB | 5.5 kB | ~9% |
 | SDK client | 52.73 kB | 52.75 kB | <0.1% |
 
 The large entrypoints currently carry less than 1 percent headroom. Budget changes

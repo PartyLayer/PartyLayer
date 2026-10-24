@@ -4,6 +4,9 @@
 
 ### Patch Changes
 
+- Match the web kit's accessible theme palettes and accent foreground/pressed-state
+  contrast rules without importing DOM code. Preserve palette drift checks.
+
 - Updated dependencies [817d357]
 - Updated dependencies [2e07185]
 - Updated dependencies
