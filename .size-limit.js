@@ -52,8 +52,9 @@ module.exports = [
     // live in a separate core subpath so ordinary SDK/RN consumers do not pay for them.
     // In-memory recent activity, ledger-status labels and network guidance add ~1.5 kB.
     // Exact-decimal, issuer-separated holdings UI adds ~1.2 kB.
-    // Measured 36.59 kB gzip; keep ~0.41 kB of headroom.
-    limit: '37 kB',
+    // WCAG luminance/hover checks and scoped readable placeholders add ~0.17 kB.
+    // Measured 37.02 kB gzip; retain ~0.23 kB of headroom.
+    limit: '37.25 kB',
   },
   {
     name: 'react/query: useTokenHoldings',

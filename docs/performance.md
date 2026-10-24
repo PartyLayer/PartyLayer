@@ -31,8 +31,8 @@ SDK contribution is about 52.7 kB gzip (52.75 kB budget); React Native headless 
 eligible wallet/discovery chunks can start loading before the picker opens;
 these numbers are not total first-load bytes. Connecting WalletConnect loads
 its underlying transport. Run `pnpm gate:size`
-for the current numbers. The React connection surface measures about 36.85 kB gzip with
-a 37 kB budget after adding keyboard behavior, English/Turkish UI, optional
+for the current numbers. The React connection surface measures about 37.02 kB gzip with
+a 37.25 kB budget after adding keyboard behavior, English/Turkish UI, optional
 authentication actions, scoped recent activity, network guidance and exact-decimal
 holdings UI. Server challenge/verification helpers use a separate
 `@partylayer/core/authentication` subpath; ordinary wallet clients do not import them.
@@ -82,9 +82,9 @@ Reading of the numbers:
 
 The ui entrypoint imports `react-native` and `react-native-svg`, which only resolve inside
 a React Native bundler (Metro), not a web bundler. The size-limit config marks those and
-the other React Native peers as external, so the 2,970 B figure is the cost of PartyLayer's
-own ui code, not a runnable React Native bundle. The genuine on device runtime is verified
-separately by the Expo demo web smoke described in `demos/expo-connect/README.md` and in
+the other React Native peers as external, so the current 5.07 kB figure is the cost of PartyLayer's
+own ui code, not a runnable React Native bundle. The Expo demo web smoke exercises the Metro web export;
+native iOS/Android device acceptance is separate. The smoke is described in `demos/expo-connect/README.md` and in
 `docs/releasing.md`.
 
 ## Budgets and where they are enforced
@@ -97,15 +97,15 @@ in CI rather than reaching a consumer.
 
 | Scenario | Measured | Budget | Headroom |
 |---|---|---|---|
-| Connect surface | 29.22 KB | 30 KB | ~5% |
+| Connect surface | 37.02 kB | 37.25 kB | ~0.6% |
 | One token hook | 455 B | 700 B | ~54% |
 | Matching helper | 283 B | 500 B | ~77% |
-| RN headless | 42.22 KB | 43 KB | ~4% |
-| RN ui | 2.97 KB | 3.5 KB | ~18% |
-| SDK client | 42.02 KB | 43 KB | ~5% |
+| RN headless | 52.97 kB | 53 kB | <0.1% |
+| RN ui | 5.07 kB | 5.5 kB | ~8% |
+| SDK client | 52.73 kB | 52.75 kB | <0.1% |
 
-The large entrypoints carry roughly 5 percent headroom, tight enough to catch a real
-regression. The tiny helper entrypoints carry more relative headroom because a few hundred
+The large entrypoints currently carry less than 1 percent headroom. Budget changes
+require an explicit review of the behavior and measured cost. The tiny helper entrypoints carry more relative headroom because a few hundred
 bytes of normal churn swing their percentage sharply.
 
 Run the check on its own with `pnpm gate:size`, or `pnpm size` during development.

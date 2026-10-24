@@ -2,6 +2,10 @@
 
 ## 3.1.0
 
+- Improve built-in theme text/status contrast, accent foreground and hover contrast,
+  native/beta labels and search placeholder/focus visibility. Guard normal text
+  pairs at 4.5:1 across built-in families and presets; custom overrides still need review.
+
 - Keep the shared session store as an in-memory live provider projection by
   default. Defer external subscriptions until committed effects, preserve them
   across StrictMode replay and reject late initial snapshots after a new connection.

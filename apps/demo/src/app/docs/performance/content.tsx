@@ -60,8 +60,8 @@ export default function PerformancePage() {
 
       <H2 id="what-each-import-scenario-costs">What each import scenario costs</H2>
       <P>The current candidate measures approximately 52.7 kB gzip for the SDK (52.75 kB budget),
-        53.0 kB for React Native headless (53 kB budget), and 36.85 kB for the React connection
-        surface (37 kB budget). Approved wallet runtimes and official discovery remain lazy chunks. The kit lists wallets on mount, so eligible chunks may load before the picker opens; these budgets exclude async chunks and do not measure total first-load bytes. Native ownership, abort/identity guards and the stable provider facade add about 3.5 kB. Complete transaction
+        53.0 kB for React Native headless (53 kB budget), and 37.02 kB for the React connection
+        surface (37.25 kB budget). Approved wallet runtimes and official discovery remain lazy chunks. The kit lists wallets on mount, so eligible chunks may load before the picker opens; these budgets exclude async chunks and do not measure total first-load bytes. Native ownership, abort/identity guards and the stable provider facade add about 3.5 kB. Complete transaction
         evidence, combined-only routing and signature echo checks add about 0.34 kB to the shared
         client. Server authentication helpers live in the separate core/authentication subpath.
         Run pnpm gate:size for current results; the comparisons below are dated historical measurements.</P>
@@ -139,9 +139,9 @@ export default function PerformancePage() {
       <P>
         The ui entrypoint imports <Code>{'react-native'}</Code> and <Code>{'react-native-svg'}</Code>, which
         only resolve inside a React Native bundler (Metro), not a web bundler. The size-limit config marks those
-        and the other React Native peers as external, so the 2,970 B figure is the cost of PartyLayer{"'"}s own
-        ui code, not a runnable React Native bundle. The genuine on device runtime is verified separately by the
-        Expo demo web smoke described in <Code>{'demos/expo-connect/README.md'}</Code> and in{' '}
+        and the other React Native peers as external, so the current 5.07 kB figure is the cost of PartyLayer{"'"}s own
+        ui code, not a runnable React Native bundle. The Expo web smoke exercises Metro&apos;s web export;
+        native iOS/Android device acceptance is separate. The smoke is described in <Code>{'demos/expo-connect/README.md'}</Code> and in{' '}
         <Code>{'docs/releasing.md'}</Code>.
       </P>
 
@@ -169,12 +169,12 @@ export default function PerformancePage() {
           </thead>
           <tbody>
             {[
-              { scenario: 'Connect surface', measured: '29.22 KB', budget: '30 KB', headroom: '~5%' },
+              { scenario: 'Connect surface', measured: '37.02 kB', budget: '37.25 kB', headroom: '~0.6%' },
               { scenario: 'One token hook', measured: '455 B', budget: '700 B', headroom: '~54%' },
               { scenario: 'Matching helper', measured: '283 B', budget: '500 B', headroom: '~77%' },
-              { scenario: 'RN headless', measured: '42.22 KB', budget: '43 KB', headroom: '~4%' },
-              { scenario: 'RN ui', measured: '2.97 KB', budget: '3.5 KB', headroom: '~18%' },
-              { scenario: 'SDK client', measured: '42.02 KB', budget: '43 KB', headroom: '~5%' },
+              { scenario: 'RN headless', measured: '52.97 kB', budget: '53 kB', headroom: '<0.1%' },
+              { scenario: 'RN ui', measured: '5.07 kB', budget: '5.5 kB', headroom: '~8%' },
+              { scenario: 'SDK client', measured: '52.73 kB', budget: '52.75 kB', headroom: '<0.1%' },
             ].map(r => (
               <tr key={r.scenario} style={{ borderBottom: '1px solid rgba(15,23,42,0.10)' }}>
                 <td style={{ padding: '10px 14px', color: '#0B0F1A', fontSize: 13, fontWeight: 500 }}>{r.scenario}</td>
@@ -188,7 +188,8 @@ export default function PerformancePage() {
       </div>
 
       <P>
-        The large entrypoints carry roughly 5 percent headroom, tight enough to catch a real regression. The
+        The large entrypoints currently carry less than 1 percent headroom. Budget changes require explicit
+        review of the behavior and measured cost. The
         tiny helper entrypoints carry more relative headroom because a few hundred bytes of normal churn swing
         their percentage sharply.
       </P>

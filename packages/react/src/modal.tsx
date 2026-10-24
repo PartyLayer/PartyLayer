@@ -924,6 +924,7 @@ export function WalletModal({
     // variable, so it drives BOTH the static value and the entrance/exit blur
     // animations below (which ramp to var(--pl-overlay-blur)). Default 5px = today's look.
     ['--pl-overlay-blur' as string]: theme.overlayBlur ?? '5px',
+    ['--pl-placeholder-color' as string]: theme.colors.textSecondary,
     position: 'fixed',
     top: 0,
     left: 0,
@@ -1146,7 +1147,7 @@ export function WalletModal({
                 style={{
                   fontSize: '10px',
                   padding: '2px 6px',
-                  background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
+                  background: 'linear-gradient(135deg, #4f46e5, #7c3aed)',
                   color: '#FFFFFF',
                   borderRadius: '5px',
                   fontWeight: 600,
@@ -1165,7 +1166,7 @@ export function WalletModal({
                 fontSize: '10px',
                 padding: '2px 6px',
                 background: isDark ? 'rgba(245,158,11,0.18)' : 'rgba(245,158,11,0.12)',
-                color: isDark ? '#fbbf24' : '#b45309',
+                color: isDark ? '#fbbf24' : '#92400e',
                 border: `1px solid ${isDark ? 'rgba(245,158,11,0.35)' : 'rgba(245,158,11,0.25)'}`,
                 borderRadius: '5px',
                 fontWeight: 600,
@@ -1282,6 +1283,7 @@ export function WalletModal({
               <SearchIcon size={16} color={theme.colors.textSecondary} />
             </span>
             <input
+              className="pl-wallet-search"
               type="text"
               value={walletQuery}
               onChange={(e) => setWalletQuery(e.target.value)}
@@ -1301,7 +1303,7 @@ export function WalletModal({
                 transition: 'border-color 150ms, box-shadow 150ms',
               }}
               onFocus={(e) => {
-                e.currentTarget.style.borderColor = theme.colors.primary;
+                e.currentTarget.style.borderColor = theme.colors.text;
                 e.currentTarget.style.boxShadow = `0 0 0 3px ${theme.colors.primary}22`;
               }}
               onBlur={(e) => {
@@ -2508,6 +2510,10 @@ export function WalletModal({
       </div>
 
       <style>{`
+        .pl-wallet-search::placeholder {
+          color: var(--pl-placeholder-color);
+          opacity: 1;
+        }
         @keyframes partylayer-spin {
           to { transform: rotate(360deg); }
         }
