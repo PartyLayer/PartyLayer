@@ -52,7 +52,10 @@ test('playground exposes useful initial HTML and hydrates into the working conne
   expect(await sitemap.text()).not.toMatch(/<lastmod>|<priority>|<changefreq>/);
 });
 
-test('AI references expose the current installation and wallet scope as plain text', async ({ request }) => {
+test('AI references expose the current installation and wallet scope as plain text', async ({ page, request }) => {
+  await page.goto('/docs');
+  await expect(page.getByRole('link',{name:'plain-text integration reference'})).toHaveAttribute('href','/llms-full.txt');
+  await expect(page.getByRole('link',{name:'documentation index',exact:true})).toHaveAttribute('href','/llms.txt');
   const index = await request.get('/llms.txt');
   expect(index.ok()).toBe(true);
   expect(index.headers()['content-type']).toContain('text/plain');
@@ -67,6 +70,15 @@ test('AI references expose the current installation and wallet scope as plain te
   expect(text).toContain('| Send | mainnet | stable |');
   expect(text).toContain('single-use nonce');
   expect(text).toContain('independently confirms ledger settlement');
+});
+
+test('the conventional favicon URL serves a real icon and is declared in the page', async ({ request, page }) => {
+  const icon = await request.get('/favicon.ico');
+  expect(icon.status()).toBe(200);
+  expect(icon.headers()['content-type']).toMatch(/image\/(?:x-icon|vnd\.microsoft\.icon)/);
+  expect((await icon.body()).subarray(0,4)).toEqual(Buffer.from([0,0,1,0]));
+  await page.goto('/docs');
+  await expect(page.locator('link[rel="icon"][href="/favicon.ico"]')).toHaveCount(1);
 });
 
 test('wallet search previews describe the included kit rather than a separate wallet installation', async ({ page }) => {
