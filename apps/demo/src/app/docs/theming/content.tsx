@@ -26,6 +26,15 @@ export default function ThemingPage() {
 // Auto, follows system preference (prefers-color-scheme)
 <PartyLayerKit theme="auto" network="mainnet" appName="My dApp">`}</CodeBlock>
 
+      <P>
+        Built-in theme families and accent presets have automated 4.5:1 checks for normal
+        text, button labels and status text on their paired backgrounds. Hex accent overrides
+        choose a readable foreground; a hover shade that reduces its contrast below 4.5:1
+        retains the base accent. Explicit foregrounds and custom color tokens remain your
+        application&apos;s responsibility. These checks do not replace screen reader and
+        complete interaction testing.
+      </P>
+
       <H2 id="custom-theme">Custom Theme</H2>
       <P>
         Create a custom theme by providing a <Code>{'PartyLayerTheme'}</Code> object.
@@ -39,6 +48,7 @@ const myTheme = {
     ...lightTheme.colors,
     primary: '#7C3AED',       // Purple primary
     primaryHover: '#6D28D9',  // Darker purple on hover
+    primaryForeground: '#FFFFFF', // Readable on the purple background
     background: '#FAFAFA',    // Slightly off-white background
   },
   borderRadius: '12px',
@@ -58,6 +68,7 @@ function App() {
   colors: {
     primary: string;        // Brand color (default: #FFCC00)
     primaryHover: string;   // Brand hover state
+    primaryForeground?: string; // Text on the primary background
     background: string;     // Page/modal background
     surface: string;        // Card/surface background
     text: string;           // Primary text color
@@ -88,7 +99,7 @@ function App() {
 // background: '#FFFFFF'
 // surface: '#F5F6F8'
 // text: '#0B0F1A'
-// textSecondary: '#64748B'
+// textSecondary: '#5D6B82'
 // border: 'rgba(15, 23, 42, 0.10)'
 // overlay: 'rgba(15, 23, 42, 0.20)'`}</CodeBlock>
 

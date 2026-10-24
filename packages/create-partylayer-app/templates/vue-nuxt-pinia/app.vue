@@ -33,6 +33,7 @@ const sessionStore = useSessionStore();
       <code>{{ truncateParty(sessionStore.party ?? '') }}</code>
       <button class="btn" @click="sessionStore.disconnect()">Disconnect</button>
     </div>
+    <p><a href="https://partylayer.xyz" target="_blank" rel="noopener noreferrer">Powered by PartyLayer</a></p>
   </main>
 </template>
 

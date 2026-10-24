@@ -43,7 +43,7 @@ interface SessionDiff { readonly field: 'account' | 'networkId'; readonly persis
 interface SessionState { readonly status: SessionStatus; readonly account: SessionAccount | null; readonly accounts: readonly SessionAccount[]; readonly networkId: string | null; readonly lastError: Error | null; }
 interface SessionStorage { getItem(key: string): MaybePromise<string | null>; setItem(key: string, value: string): MaybePromise<void>; removeItem(key: string): MaybePromise<void>; }
 interface SessionStore { getSnapshot(): SessionState; subscribe(listener: () => void): () => void; connect(params?: Record<string, unknown>): Promise<SessionState>; disconnect(): Promise<void>; restore(): Promise<SessionState>; init(): Promise<SessionState>; getProvider(): CIP0103Provider; on(event: SessionEvent['type'], handler: (event: SessionEvent) => void): () => void; enqueue<T>(op: () => Promise<T>): Promise<T>; destroy(): void; }
-interface SessionStoreOptions { storage?: SessionStorage; storageKey?: string; reconnect?: RetryPolicy | false; expiry?: ExpiryOptions; broadcast?: boolean | BroadcastOptions; persistSnapshot?: boolean; onInvalidate?: (event: InvalidationEvent) => void | Promise<void>; }
+interface SessionStoreOptions { deferInitialization?: boolean; storage?: SessionStorage; storageKey?: string; reconnect?: RetryPolicy | false; expiry?: ExpiryOptions; broadcast?: boolean | BroadcastOptions; persistSnapshot?: boolean; onInvalidate?: (event: InvalidationEvent) => void | Promise<void>; }
 interface SyncChannel { readonly active: boolean; post(env: BroadcastEnvelope): void; onMessage(handler: (env: BroadcastEnvelope) => void): void; close(): void; }
 type ChannelFactory = (name: string) => BroadcastChannelLike | null;
 type MaybePromise<T> = T | Promise<T>;

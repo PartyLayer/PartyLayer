@@ -23,13 +23,9 @@ test('the generated directory includes the beta Vala page without stable promoti
   assert.equal(new Set(snapshot.wallets.map(w => w.id)).size, snapshot.wallets.length);
 });
 
-test('the real shared Vala factory lists the beta wallet and resolves only its Devnet host', async () => {
-  const { buildWalletAdapters } = await import('@partylayer/demo-adapters');
-  const factory = buildWalletAdapters({ network: 'devnet', walletConnectProjectId: 'test' })
-    .find(a => 'providerId' in a && a.providerId === 'vala');
-  assert.ok(factory);
+test('the public default Vala factory lists the beta wallet and resolves only its Devnet host', async () => {
   const client = createPartyLayer({
-    network: 'devnet', channel: 'beta', adapters: [factory],
+    network: 'devnet', channel: 'beta',
     app: { name: 'Vala beta test', origin: 'https://test.example' }, discovery: { announce: false },
   });
   client.registryClient.getWallets = async () => [registryEntryToWalletInfo(vala, 'beta')];

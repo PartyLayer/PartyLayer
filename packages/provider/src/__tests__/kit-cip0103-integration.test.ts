@@ -2,11 +2,11 @@
  * Kit → CIP-0103 Integration Test
  *
  * Validates that the code path used by PartyLayerKit (createPartyLayer → asProvider)
- * produces a fully compliant CIP-0103 Provider. This ensures that the high-level
+ * exposes the expected provider request/event contract. This ensures that the high-level
  * Kit component never silently breaks CIP-0103 compliance.
  *
- * Note: This test creates a real PartyLayerClient (same way Kit does) and calls
- * asProvider() to get a bridge. It does NOT render React components.
+ * Note: This test supplies a controlled BridgeableClient and exercises the real
+ * bridge. It does not create a real wallet client or render React components.
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
@@ -40,11 +40,13 @@ function createKitStyleClient(): BridgeableClient {
     })),
     signMessage: vi.fn(async () => ({ signature: 'kit-sig' as unknown })),
     signTransaction: vi.fn(async () => ({
+      signature: 'actual-signature-fixture', signedBy: 'party-kit-user',
       transactionHash: 'kit-tx-hash' as unknown,
       signedTx: { data: 'kit-signed' },
       partyId: 'party-kit-user' as unknown,
     })),
     submitTransaction: vi.fn(async () => ({
+      completionOffset: 37,
       transactionHash: 'kit-tx-hash' as unknown,
       submittedAt: Date.now(),
       commandId: 'kit-cmd-1',

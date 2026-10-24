@@ -1,15 +1,5 @@
 // @vitest-environment jsdom
-/**
- * Restore re-probe hardening (Phase 2): a configured-announce session revived
- * AS-IS at ctor (no live probe, because its adapter is born lazily in
- * listWallets) is re-validated by a LIVE status() probe the moment that adapter
- * is created — matching bespoke Send's ctor-time probe.
- *
- * Real bridge + real GenericAnnounceAdapter + real extension-channel provider,
- * driven by a fake-wallet postMessage responder. The as-is precondition is set
- * by seeding a persisted session (clientA connect) and reviving it on clientB
- * (no 'send' adapter at ctor → as-is → needsProbe=true).
- */
+/** Native restoration requires a live official owner, never a cached party alone. */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 vi.mock('@console-wallet/dapp-sdk', () => ({
@@ -117,52 +107,40 @@ function makeClientB(storage: StorageAdapter) {
 const STATUS_OK = { isConnected: true, kernel: { id: 'k-live' }, network: { networkId: 'canton:mainnet', ledgerApi: { baseUrl: 'https://api.example' } } };
 const ACCOUNT = { primary: true, partyId: PARTY, status: 'allocated', hint: 'h', publicKey: 'PK', namespace: 'NS', networkId: 'canton:mainnet', signingProviderId: 'webauthn-prf' };
 
-describe('restore re-probe on configured-announce adapter creation', () => {
-  beforeEach(() => vi.clearAllMocks());
+describe('native announced-wallet cache migration', () => {
+  beforeEach(() => { vi.clearAllMocks(); localStorage.clear(); });
 
-  it('(a) as-is session + matching announce adapter → LIVE re-probe refreshes it + session:connected, flag cleared', async () => {
+  it('discards a legacy cached native identity until the user explicitly reconnects', async () => {
     const storage = memStorage();
     await seedAsIsSession(storage);
     const off = installResponder({ status: STATUS_OK, getPrimaryAccount: ACCOUNT });
     const client = makeClientB(storage);
-
-    const before = await client.getActiveSession(); // ctor as-is restore (needsProbe=true)
-    expect(before).not.toBeNull();
-    expect(before!.metadata?.kernelId).toBeUndefined(); // as-is: NOT yet probed
-
-    const connected = vi.fn();
-    client.on('session:connected', connected);
+    const expired = vi.fn(); client.on('session:expired', expired);
     announce(SEND_ANNOUNCE_ID);
-    await new Promise((r) => setTimeout(r, 50));
-    await client.listWallets({ includeExperimental: true }); // bridge creates adapter → re-probe
-
-    expect(connected).toHaveBeenCalledTimes(1); // re-probe emitted session:connected
-    const after = await client.getActiveSession();
-    expect(after!.metadata?.kernelId).toBe('k-live'); // refreshed by the LIVE probe
-
-    // (f) exactly once: a second listWallets does NOT re-probe (flag cleared + adapter now registered).
-    connected.mockClear();
-    await client.listWallets({ includeExperimental: true });
-    expect(connected).not.toHaveBeenCalled();
+    expect(await client.getActiveSession()).toBeNull();
+    expect(expired).toHaveBeenCalledTimes(1);
+    expect(await storage.get('active_session')).toBeNull();
     off(); client.destroy();
   });
 
-  it('(b) re-probe returns null (wallet disconnected) → stale session cleared + session:expired', async () => {
+  it('restores an announced wallet through the official owner after a real native connection', async () => {
     const storage = memStorage();
-    await seedAsIsSession(storage);
-    const off = installResponder({ status: { isConnected: false }, getPrimaryAccount: ACCOUNT });
-    const client = makeClientB(storage);
-    await client.getActiveSession();
-
-    const expired = vi.fn();
-    client.on('session:expired', expired);
+    const off = installResponder({ connect: { isConnected: true }, status: STATUS_OK, getPrimaryAccount: ACCOUNT });
+    const first = makeClientB(storage);
     announce(SEND_ANNOUNCE_ID);
-    await new Promise((r) => setTimeout(r, 50));
-    await client.listWallets({ includeExperimental: true });
-
-    expect(expired).toHaveBeenCalledTimes(1);
-    expect(await client.getActiveSession()).toBeNull(); // stale as-is session cleared
-    off(); client.destroy();
+    await first.listWallets({ includeExperimental: true });
+    const original = await first.connect({ walletId: toWalletId('send') });
+    first.destroy();
+    const restored = makeClientB(storage);
+    const connected = vi.fn(); restored.on('session:connected', connected);
+    announce(SEND_ANNOUNCE_ID);
+    const session = await restored.getActiveSession();
+    expect(session?.partyId).toBe(PARTY);
+    expect(session?.sessionId).toBe(original.sessionId);
+    expect(connected).toHaveBeenCalledTimes(1);
+    await restored.listWallets({ includeExperimental: true });
+    expect(connected).toHaveBeenCalledTimes(1);
+    off(); restored.destroy();
   });
 
   it('(d) no active session → adapter creation does NOT re-probe (guard no-op)', async () => {
@@ -182,23 +160,23 @@ describe('restore re-probe on configured-announce adapter creation', () => {
     off(); client.destroy();
   });
 
-  it('(e) re-probe throws → caught, listWallets unaffected, session left as-is', async () => {
+  it('never leaves a native cached identity connected when the live account probe fails', async () => {
     const storage = memStorage();
-    await seedAsIsSession(storage);
-    // status ok (best-effort), but getPrimaryAccount errors → adapter.restore rejects.
-    const off = installResponder({ status: STATUS_OK, getPrimaryAccount: { __error: { code: -32603, message: 'boom' } } });
-    const client = makeClientB(storage);
-    await client.getActiveSession();
-
-    const expired = vi.fn();
-    client.on('session:expired', expired);
+    const responses: RespHandlers = { connect: { isConnected: true }, status: STATUS_OK, getPrimaryAccount: ACCOUNT };
+    const off = installResponder(responses);
+    const first = makeClientB(storage);
     announce(SEND_ANNOUNCE_ID);
-    await new Promise((r) => setTimeout(r, 50));
-    const wallets = await client.listWallets({ includeExperimental: true }); // must NOT throw
-
-    expect(wallets.some((w) => String(w.walletId) === 'send')).toBe(true); // listing unaffected
-    expect(expired).not.toHaveBeenCalled(); // probe error ≠ disconnect; session left as-is
-    expect(await client.getActiveSession()).not.toBeNull();
+    await first.listWallets({ includeExperimental: true });
+    await first.connect({ walletId: toWalletId('send') });
+    first.destroy();
+    responses.getPrimaryAccount = { __error: { code: -32603, message: 'Account unavailable' } };
+    const client = makeClientB(storage);
+    const expired = vi.fn(); client.on('session:expired', expired);
+    announce(SEND_ANNOUNCE_ID);
+    expect(await client.getActiveSession()).toBeNull();
+    expect(expired).toHaveBeenCalledTimes(1);
+    const wallets = await client.listWallets({ includeExperimental: true });
+    expect(wallets.some(wallet => String(wallet.walletId) === 'send')).toBe(true);
     off(); client.destroy();
   });
 

@@ -10,6 +10,9 @@ export * from './modal';
 // PartyLayerKit: zero-config wrapper
 export { PartyLayerKit, useWalletIcons, resolveWalletIcon } from './kit';
 export type { PartyLayerKitProps, WalletIconMap } from './kit';
+export { PartyLayerAuthenticationProvider, useAuthentication } from './authentication';
+export type { PartyLayerAuthenticationProviderProps, PartyLayerAuthenticationAdapter, UseAuthenticationReturn } from './authentication';
+export type { AuthenticationIdentity, AuthenticationChallenge } from '@partylayer/core';
 
 // ConnectButton: RainbowKit-style connection button
 export { ConnectButton, truncatePartyId, PartyAvatar } from './connect-button';
@@ -28,6 +31,11 @@ export type { CostEstimation, TrafficCost } from '@partylayer/core';
 // TransactionToast: presentational transaction-status toast (dApp passes mutation state as props)
 export { TransactionToast } from './transaction-toast';
 export type { TransactionToastProps, TransactionToastStatus } from './transaction-toast';
+export { useTransactionFlow } from './use-transaction-flow';
+export type { UseTransactionFlowParameters, UseTransactionFlowReturn, TransactionFlowRecord, TransactionFlowStatus, TransactionConfirmation } from './use-transaction-flow';
+export { RecentTransactions, useRecentTransactions } from './transaction-history';
+export { TokenBalances } from './token-balances';
+export type { TokenBalancesProps, AccountHoldings } from './token-balances';
 
 // SynchronizerSwitcher: presentational synchronizer picker (dApp handles onSwitch)
 export { SynchronizerSwitcher } from './synchronizer-switcher';
@@ -91,3 +99,7 @@ export { usePartyLayer as useCantonConnect } from './hooks';
 
 // Re-export registry status type
 export type { RegistryStatus } from '@partylayer/registry-client';
+
+// UI localization for PartyLayerKit and advanced provider compositions.
+export { PartyLayerLocaleProvider } from './localization';
+export type { PartyLayerLocale, PartyLayerDirection, PartyLayerLocaleProviderProps } from './localization';

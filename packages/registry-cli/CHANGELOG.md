@@ -1,5 +1,13 @@
 # @partylayer/registry-cli
 
+## 0.1.14
+
+### Patch Changes
+
+- Updated dependencies [2e07185]
+- Updated dependencies [8e08da9]
+  - @partylayer/registry-client@0.7.0
+
 ## 0.1.13
 
 ### Patch Changes

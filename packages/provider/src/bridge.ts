@@ -22,13 +22,12 @@ import type {
   CIP0103Account,
   CIP0103Network,
   CIP0103TxChangedEvent,
-  CIP0103TxStatus,
   CIP0103LedgerApiResponse,
   LedgerApiMethod,
 } from '@partylayer/core';
 import { CIP0103_EVENTS } from '@partylayer/core';
 import { CIP0103EventBus } from './event-bus';
-import { unsupportedMethod, disconnected } from './errors';
+import { unsupportedMethod, disconnected, resourceUnavailable } from './errors';
 import { toProviderRpcError } from './error-map';
 import { toCAIP2Network } from './network';
 
@@ -73,6 +72,9 @@ export interface BridgeableClient {
     transactionHash?: unknown;
     signedTx?: unknown;
     partyId?: unknown;
+    /** Actual signature metadata, never a transaction hash. */
+    signature?: unknown;
+    signedBy?: unknown;
   }>;
   submitTransaction(params: {
     signedTx: unknown;
@@ -81,6 +83,7 @@ export interface BridgeableClient {
     submittedAt?: number;
     commandId?: string;
     updateId?: string;
+    completionOffset?: number;
   }>;
   ledgerApi?(params: {
     requestMethod: string;
@@ -187,9 +190,8 @@ async function handleRequest(
 
       case 'getActiveNetwork': {
         const session = await client.getActiveSession();
-        return toCAIP2Network(
-          session?.network ?? 'devnet',
-        ) satisfies CIP0103Network;
+        if (!session) throw disconnected('No active session');
+        return toCAIP2Network(session.network) satisfies CIP0103Network;
       }
 
       case 'listAccounts': {
@@ -218,78 +220,48 @@ async function handleRequest(
 
       case 'prepareExecute': {
         const p = normalizeParams(params);
-        const cmdId = `cmd_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
-
-        // 1. Emit 'pending'
+        const session = await client.getActiveSession();
+        if (!session) throw disconnected('No active session');
+        const cmdId = nonempty(p.commandId) ? p.commandId : `cmd_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
+        if (pendingEmitted.has(cmdId)) throw resourceUnavailable('This commandId is already pending');
+        const payload = { ...p, commandId: cmdId };
+        // This is the request's correlation id, not a fabricated ledger update.
         pendingEmitted.add(cmdId);
-        eventBus.emit<CIP0103TxChangedEvent>(CIP0103_EVENTS.TX_CHANGED, {
-          status: 'pending',
-          commandId: cmdId,
-        } as CIP0103TxChangedEvent);
-
-        // 2. Sign transaction
+        eventBus.emit<CIP0103TxChangedEvent>(CIP0103_EVENTS.TX_CHANGED, { status: 'pending', commandId: cmdId });
+        let submitting = false;
         try {
-          const signResult = await client.signTransaction({ tx: p });
-
-          // 3. Emit 'signed' with signature metadata
-          const session = await client.getActiveSession();
-          const partyId = String(signResult.partyId ?? session?.partyId ?? 'unknown');
-          // `transactionHash` is optional now, so `String(...)` would render the
-          // literal "undefined" here — a placeholder created by the very change
-          // that removed the others. The `signed` event is emitted only when
-          // there is something real to report as its signature.
-          if (signResult.transactionHash !== undefined) {
-            eventBus.emit<CIP0103TxChangedEvent>(CIP0103_EVENTS.TX_CHANGED, {
-              status: 'signed',
-              commandId: cmdId,
-              payload: {
-                signature: String(signResult.transactionHash),
-                signedBy: partyId,
-                party: partyId,
-              },
-            } as CIP0103TxChangedEvent);
+          let signedTx: unknown = payload;
+          // Missing capability snapshots retain compatibility with older clients.
+          // A known combined-only wallet must never receive signTransaction first.
+          if (!session.capabilitiesSnapshot || session.capabilitiesSnapshot.includes('signTransaction')) {
+            const signed = await client.signTransaction({ tx: payload });
+            if (signed.partyId !== undefined && signed.partyId !== session.partyId) {
+              throw disconnected('Wallet account changed during signing');
+            }
+            signedTx = signed.signedTx;
+            if (signedTx === undefined) throw new Error('Wallet returned no signed transaction');
+            const event = signedEvent({ signature: signed.signature, signedBy: signed.signedBy, party: signed.partyId }, cmdId);
+            if (event) eventBus.emit<CIP0103TxChangedEvent>(CIP0103_EVENTS.TX_CHANGED, event);
           }
-
-          // 4. Submit transaction
-          try {
-            const receipt = await client.submitTransaction({
-              signedTx: signResult.signedTx ?? signResult.transactionHash,
-            });
-
-            // 5. Emit 'executed' with real receipt data
-            pendingEmitted.delete(cmdId);
-            eventBus.emit<CIP0103TxChangedEvent>(CIP0103_EVENTS.TX_CHANGED, {
-              status: 'executed',
-              commandId: cmdId,
-              payload: {
-                // All three are real identifiers — the receipt's update id, the
-                // wallet's command id, or the bridge's own command id for this
-                // operation. `String(receipt.transactionHash)` was the old tail
-                // and would now stringify `undefined`.
-                updateId: receipt.updateId ?? receipt.commandId ?? cmdId,
-                completionOffset: 0,
-              },
-            } as CIP0103TxChangedEvent);
-          } catch (submitErr) {
-            pendingEmitted.delete(cmdId);
-            eventBus.emit<CIP0103TxChangedEvent>(CIP0103_EVENTS.TX_CHANGED, {
-              status: 'failed',
-              commandId: cmdId,
-            } as CIP0103TxChangedEvent);
-            throw submitErr;
+          const current = await client.getActiveSession();
+          if (!current || current.sessionId !== session.sessionId || current.partyId !== session.partyId || current.network !== session.network) {
+            throw disconnected('Wallet session changed before submission');
           }
-        } catch (signErr) {
-          // Only emit 'failed' if not already emitted by submit catch above
-          if (pendingEmitted.has(cmdId)) {
-            pendingEmitted.delete(cmdId);
-            eventBus.emit<CIP0103TxChangedEvent>(CIP0103_EVENTS.TX_CHANGED, {
-              status: 'failed',
-              commandId: cmdId,
-            } as CIP0103TxChangedEvent);
+          submitting = true;
+          const receipt = await client.submitTransaction({ signedTx });
+          const event = executedEvent(receipt, cmdId);
+          // Acknowledgement or updateId without an actual completion offset cannot
+          // become a complete CIP-0103 executed event. Never synthesize one.
+          if (event) eventBus.emit<CIP0103TxChangedEvent>(CIP0103_EVENTS.TX_CHANGED, event);
+        } catch (reason) {
+          const code = (reason as { code?: unknown } | null)?.code;
+          // A lost submit response has an unknown ledger outcome. Only a failure
+          // before the write, or explicit user/transaction rejection, establishes failure here.
+          if (!submitting || code === 4001 || code === 'USER_REJECTED' || code === -32003) {
+            eventBus.emit<CIP0103TxChangedEvent>(CIP0103_EVENTS.TX_CHANGED, { status: 'failed', commandId: cmdId });
           }
-          throw signErr;
-        }
-
+          throw reason;
+        } finally { pendingEmitted.delete(cmdId); }
         return undefined;
       }
 
@@ -386,77 +358,52 @@ function wireEvents(
     } satisfies CIP0103StatusEvent);
   });
 
-  // tx:status → txChanged
+  // Forward only states with the real fields required by the CIP-0103 union.
   client.on('tx:status', (event: unknown) => {
-    const e = event as {
-      type: string;
-      status: string;
-      txId: unknown;
-      raw?: unknown;
-    };
-    if (!e || typeof e !== 'object' || !('status' in e)) return;
-
-    const statusMap: Record<string, CIP0103TxStatus> = {
-      pending: 'pending',
-      submitted: 'pending',
-      signed: 'signed',
-      committed: 'executed',
-      rejected: 'failed',
-      failed: 'failed',
-    };
-
-    const mappedStatus = statusMap[e.status] ?? 'pending';
-    const commandId = String(e.txId);
-
-    // Deduplicate: skip 'pending' if already emitted by prepareExecute handler
-    if (mappedStatus === 'pending' && pendingEmitted.has(commandId)) {
-      return;
-    }
-
-    // Clean up dedup tracking on terminal states
-    if (mappedStatus === 'executed' || mappedStatus === 'failed') {
-      pendingEmitted.delete(commandId);
-    }
-
-    // Build spec-compliant txChanged payload per CIP-0103 discriminated union
-    let txEvent: CIP0103TxChangedEvent;
-    switch (mappedStatus) {
-      case 'signed':
-        txEvent = {
-          status: 'signed',
-          commandId,
-          payload: {
-            signature: '',
-            signedBy: '',
-            party: '',
-          },
-        };
-        break;
-      case 'executed': {
-        const raw = e.raw as { updateId?: string; commandId?: string } | undefined;
-        txEvent = {
-          status: 'executed',
-          commandId,
-          payload: {
-            updateId: raw?.updateId ?? raw?.commandId ?? commandId,
-            completionOffset: 0,
-          },
-        };
-        break;
-      }
-      case 'failed':
-        txEvent = { status: 'failed', commandId };
-        break;
-      default:
+    const e = record(event);
+    if (!e) return;
+    const raw = record(e.raw);
+    const tx = record(raw?.tx) ?? raw;
+    const commandId = nonempty(tx?.commandId) ? tx.commandId : e.txId;
+    if (!nonempty(commandId)) return;
+    let txEvent: CIP0103TxChangedEvent | null;
+    switch (e.status) {
+      case 'pending':
+      case 'submitted':
+        if (pendingEmitted.has(commandId)) return;
         txEvent = { status: 'pending', commandId };
         break;
+      case 'signed': txEvent = signedEvent(tx, commandId); break;
+      case 'committed': txEvent = executedEvent(tx, commandId); break;
+      case 'rejected':
+      case 'failed': txEvent = { status: 'failed', commandId }; break;
+      default: return;
     }
-
-    eventBus.emit<CIP0103TxChangedEvent>(CIP0103_EVENTS.TX_CHANGED, txEvent);
+    if (txEvent) eventBus.emit<CIP0103TxChangedEvent>(CIP0103_EVENTS.TX_CHANGED, txEvent);
   });
 }
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
+
+function record(value: unknown): Record<string, unknown> | null {
+  return value && typeof value === 'object' && !Array.isArray(value) ? value as Record<string, unknown> : null;
+}
+function nonempty(value: unknown): value is string {
+  return typeof value === 'string' && value.trim().length > 0;
+}
+function signedEvent(value: unknown, commandId: string): CIP0103TxChangedEvent | null {
+  const tx = record(value);
+  const p = record(tx?.payload) ?? tx;
+  return nonempty(p?.signature) && nonempty(p?.signedBy) && nonempty(p?.party)
+    ? { status: 'signed', commandId, payload: { signature: p.signature, signedBy: p.signedBy, party: p.party } } : null;
+}
+function executedEvent(value: unknown, commandId: string): CIP0103TxChangedEvent | null {
+  const tx = record(value);
+  const p = record(tx?.payload) ?? tx;
+  return nonempty(p?.updateId) && typeof p.completionOffset === 'number' &&
+    Number.isSafeInteger(p.completionOffset) && p.completionOffset >= 0
+    ? { status: 'executed', commandId, payload: { updateId: p.updateId, completionOffset: p.completionOffset } } : null;
+}
 
 function normalizeParams(
   params?: CIP0103RequestParams,

@@ -38,10 +38,6 @@ import {
   type SignedMessage,
   type WalletAdapter,
 } from '@partylayer/core';
-import { type OfficialProviderAdapter, type OfficialAdapterFactory } from '@partylayer/sdk';
-import { buildWalletAdapters } from '@partylayer/demo-adapters';
-import { WC_METADATA, wcProjectId } from './walletconnect-demo';
-import { sortByCanonicalOrder } from './wallet-order';
 
 const WALLET_ID = 'canton-demo';
 const WALLET_NAME = 'Canton Demo Wallet';
@@ -193,35 +189,7 @@ export class CantonDemoWalletAdapter implements WalletAdapter {
   }
 }
 
-/**
- * Demo's canonical adapter list: the shared set from `@partylayer/demo-adapters`,
- * plus the fixture-backed test wallet in dev / Playwright, in the demo's own
- * canonical order.
- */
-export function buildDemoAdapters(): (WalletAdapter | OfficialProviderAdapter | OfficialAdapterFactory)[] {
-  const adapters: (WalletAdapter | OfficialProviderAdapter | OfficialAdapterFactory)[] =
-    buildWalletAdapters({
-      // Same value both demo surfaces pass to PartyLayerKit.
-      network: 'devnet',
-      // WalletConnect is opt-in (live mobile-wallet scan). Registering it surfaces
-      // "WalletConnect" in the picker; its dapp-sdk barrel only loads at connect.
-      walletConnectProjectId: wcProjectId(),
-      walletConnectMetadata: WC_METADATA,
-      // Console and Send reach this surface over the CIP-0103 announce transport
-      // (their registry entries carry transport:'announce'), which is how the demo
-      // has always listed them. Registering explicit adapters would change how this
-      // app CONNECTS them, and that is a separate decision from moving code, so
-      // they stay excluded here. The two verticals do register them, deliberately,
-      // so a direct connect works there without waiting on the announce event.
-      exclude: ['console', 'send'],
-      // Bron is absent: it needs real OAuth credentials a public demo cannot ship,
-      // and omitting the config means it is never registered.
-    });
-  if (process.env.NODE_ENV !== 'production') {
-    adapters.push(new CantonDemoWalletAdapter());
-  }
-  // Canonical order shared across every demo-rendered wallet list.
-  return sortByCanonicalOrder(adapters, (a) =>
-    String((a as { walletId?: unknown }).walletId ?? (a as OfficialProviderAdapter).providerId),
-  );
+/** Only the local fixture extends the same public default catalog used by consumers. */
+export function buildDemoAdapters(): WalletAdapter[] {
+  return process.env.NODE_ENV !== 'production' ? [new CantonDemoWalletAdapter()] : [];
 }

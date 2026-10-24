@@ -20,22 +20,6 @@ signal it should have a decision made instead.
 
 ---
 
-## 1. Nothing filters on `supportedNetworks`
-
-**Reproduces** on `55ff8d1`. Send declares `supportedNetworks: ["mainnet"]` and is
-offered in the demo's picker, which runs `network="devnet"`.
-
-The field is validated in `packages/registry-client/src/schema.ts` and mapped to
-`WalletInfo.networks`, and then **read by nothing**: zero consumers across
-`packages/sdk`, `packages/react` and `packages/core`. It is populated and dead.
-
-**What would close it** is a decision, not code. Either the picker filters by
-declared network, or the app does. Filtering in the picker hides wallets a dApp
-may deliberately want to offer — a devnet demo listing a mainnet-only wallet is
-arguably correct for a demo. Leaving it to the app means every consumer
-reimplements the same filter. Until that is settled the honest state is a dead
-field, which is better than filtering on a default nobody chose.
-
 ## 2. No way to observe an in-progress wait
 
 **Reproduces** on `55ff8d1`. The client emits `session:connected`,
@@ -51,29 +35,6 @@ question: bounded is not observable.
 **What would close it** is an event we have not designed. Our event surface is
 public API, so this needs a defined vocabulary and stable semantics rather than a
 debug hook bolted on — which is why it is not a patch.
-
-## 3. `GenericDiscoveryAdapter` reports a hard-coded capability list
-
-**Reproduces** on `55ff8d1`.
-`packages/sdk/src/discovery-adapter.ts` returns
-`['connect', 'disconnect', 'signMessage', 'submitTransaction']` regardless of
-what the wallet's SDK exposes. That list is returned from `connect()` and stored
-as `session.capabilitiesSnapshot` — which `client.ts`'s own JSDoc tells consumers
-to query (`session.capabilitiesSnapshot.includes('transfer')`).
-
-Walley's SDK documents a bearer token "for `ledgerApi` calls" and implements both
-`prepareExecute` verbs. A consumer following our documented guidance is told
-neither exists.
-
-**READ THIS BEFORE ASSUMING THE REGISTRY WORK CLOSED IT.** The `connect` field
-and the four added capabilities (`transfer`, `ledgerApi`, `popup`, `restore`)
-improve `WalletInfo.capabilities` — what the **picker** shows. They do not touch
-the adapter's hard-coded list, so `capabilitiesSnapshot` will still say
-`ledgerApi` is absent for Walley after the registry entries land. Two surfaces;
-one of them is fixed.
-
-**What would close it** is the adapter deriving its capabilities from the same
-source the picker reads, rather than returning a constant.
 
 ## 4. Presence is established on one channel, connect is attempted on another
 

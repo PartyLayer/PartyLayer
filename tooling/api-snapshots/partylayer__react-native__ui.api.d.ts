@@ -20,7 +20,7 @@ declare function useReducedMotion(): boolean;
 export { BackIcon, CloseIcon, ConnectButton, type ConnectButtonProps, ConnectModal, type ConnectModalInsets, type ConnectModalProps, ErrorIcon, Spinner, WalletIcon, type WalletIconProps, WalletList, type WalletListProps, truncateParty, useReducedMotion };
 import * as react_jsx_runtime from 'react/jsx-runtime';
 import { PartyLayerClient } from '@partylayer/sdk';
-import { R as ReactNativeTheme, I as IconFormat } from './icons-aZXHJrwj.js';
+import { R as ReactNativeTheme, I as IconFormat } from './icons-DbFeyS0A.js';
 interface ConnectButtonProps { client?: PartyLayerClient; theme?: ReactNativeTheme; label?: string; testID?: string; }
 interface ConnectModalInsets { top?: number; bottom?: number; }
 interface ConnectModalProps { client?: PartyLayerClient; theme?: ReactNativeTheme; visible: boolean; onClose: () => void; insets?: ConnectModalInsets; testID?: string; }

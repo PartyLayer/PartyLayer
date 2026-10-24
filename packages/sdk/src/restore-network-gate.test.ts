@@ -262,6 +262,19 @@ async function seedHasRestore(storage: Storage, network: string) {
 }
 
 describe('restore network-gate — has-restore branch (injected-style adapters)', () => {
+  it.each(['network', 'party'] as const)('refuses a changed live %s returned by a legacy/custom restore', async change => {
+    const storage = makeStorage();
+    await seedHasRestore(storage, 'devnet');
+    const adapter = new RestoreSpyAdapter('devnet');
+    adapter.restore = async (_ctx, persisted) => ({ ...persisted,
+      ...(change === 'network' ? { network: 'mainnet' } : { partyId: toPartyId('party::different') }),
+    } as Session);
+    const client = createPartyLayer({ network: 'devnet', app: { name: 'live-restore-change', origin: ORIGIN },
+      registryUrl: 'https://unused.invalid', adapters: [adapter], storage });
+    await new Promise(resolve => setTimeout(resolve, 50));
+    expect(await client.getActiveSession()).toBeNull();
+    client.destroy();
+  });
   it('REFUSES a cross-network restore BEFORE calling adapter.restore()', async () => {
     const storage = makeStorage();
     await seedHasRestore(storage, 'devnet');

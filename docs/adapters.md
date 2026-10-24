@@ -4,7 +4,7 @@
 - [OpenRPC dApp API spec](https://github.com/hyperledger-labs/splice-wallet-kernel/blob/main/api-specs/openrpc-dapp-api.json)
 - [Wallet Integration Guide](https://docs.digitalasset.com/integrate/devnet/index.html)
 
-This document describes the contract that all wallet adapters must implement.
+This is the existing WalletAdapter contract reference for advanced application integrations. New wallet teams should use CIP-0103 Path A or Path B in [the generic bridge guide](generic-bridge.md); no new PartyLayer-specific adapter package is needed. Ordinary dApps use the default wallet catalog without manual registration.
 
 ## WalletAdapter Interface
 
@@ -208,15 +208,9 @@ capabilityGuard(adapter, ['signMessage', 'signTransaction']);
 
 ## Built-in Adapters
 
-The SDK ships with 5 wallet adapters. Four are auto-registered via `getBuiltinAdapters()`:
+The full default catalog combines existing adapters, CIP-0103 announced providers, and reviewed official SDKs loaded lazily through the generic bridge. It is selected automatically by network and channel. Vala is Devnet beta; WalletConnect uses `config.walletConnect`, and Bron uses `config.bron`.
 
-| Adapter | Wallet | Transport | Auto-registered |
-|---------|--------|-----------|-----------------|
-| `ConsoleAdapter` | Console Wallet | PostMessage / QR / Deep Link | Yes |
-| `LoopAdapter` | 5N Loop | QR Code / Popup | Yes |
-| `Cantor8Adapter` | Cantor8 | Deep Link | Yes |
-| `NightlyAdapter` | Nightly | Injected (`window.nightly.canton`) | Yes |
-| `BronAdapter` | Bron | OAuth2 / API | No (requires config) |
+`getBuiltinAdapters()` is the synchronous legacy subset: Loop, Cantor8 and Nightly. It does not enumerate the full catalog. Omit `adapters` for the recommended defaults, use `additionalAdapters` to extend them, or supply `adapters` only when deliberately replacing them.
 
 ### Nightly Adapter
 

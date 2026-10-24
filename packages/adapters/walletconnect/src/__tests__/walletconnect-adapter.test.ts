@@ -115,7 +115,7 @@ function makeMockOfficial(cfg: { onUri?: (u: string) => void }, opts: MockOffici
             session: { userId: 'wc-user', expiresAt: 9_999_999_999_999 },
           };
         case 'prepareExecuteAndWait':
-          return { tx: { commandId: 'cmd-2', payload: { updateId: 'update-2' } } };
+          return { tx: { commandId: 'cmd-2', payload: { updateId: 'update-2', completionOffset: 42 } } };
         case 'signMessage':
           return { signature: 'wc-signature-deadbeef' };
         case 'ledgerApi':
@@ -327,6 +327,46 @@ describe('WalletConnectAdapter — events (delegation + buffering)', () => {
 });
 
 describe('WalletConnectAdapter — disconnect / restore / submit', () => {
+  it.each([false, { isConnected: false }])('rejects a declined handshake even if a cached account exists: %j', async result => {
+    const official = makeMockOfficial({});
+    official.request.mockResolvedValueOnce(result as never);
+    const adapter = new WalletConnectAdapter({ projectId: 'p' }, { createOfficialAdapter: () => official });
+    await expect(adapter.connect(createMockContext())).rejects.toThrow(/did not establish/);
+    expect(official.request).not.toHaveBeenCalledWith({ method: 'getPrimaryAccount' });
+  });
+
+  it('rejects an empty primary account at connection time', async () => {
+    const official = makeMockOfficial({});
+    official.request.mockResolvedValueOnce({ isConnected: true } as never).mockResolvedValueOnce({ partyId: '' } as never);
+    const adapter = new WalletConnectAdapter({ projectId: 'p' }, { createOfficialAdapter: () => official });
+    await expect(adapter.connect(createMockContext())).rejects.toThrow(/primary party/);
+  });
+
+  it.each([
+    { account: { partyId: 'other::party', networkId: 'canton:da-mainnet' }, status: {} },
+    { account: { partyId: 'party::wc-1', networkId: 'canton:da-devnet' }, status: {} },
+    { account: { partyId: 'party::wc-1' }, status: { network: { networkId: 'canton:da-devnet' } } },
+    { account: { partyId: '' }, status: {} },
+    { account: { partyId: 'party::wc-1' }, status: { isConnected: false } },
+    { account: { partyId: 'party::wc-1' }, status: { session: { expiresAt: 1 } } },
+  ])('does not restore a stale identity/network or inactive session: %j', async ({ account, status }) => {
+    const official = makeMockOfficial({}, { restoreReturns: true });
+    official.request.mockImplementation(async ({ method }) => (method === 'getPrimaryAccount' ? account : status) as never);
+    const adapter = new WalletConnectAdapter({ projectId: 'p' }, { createOfficialAdapter: () => official });
+    expect(await adapter.restore(createMockContext(), createMockSession())).toBeNull();
+  });
+
+  it.each([
+    { signature: '' }, { signature: '   ' },
+    { signature: 'opaque', partyId: 'other::party' },
+    { signature: 'opaque', message: 'different bytes' },
+  ])('rejects invalid or explicitly mismatched signature responses: %j', async result => {
+    const official = makeMockOfficial({});
+    official.request.mockResolvedValueOnce(result as never);
+    const adapter = new WalletConnectAdapter({ projectId: 'p' }, { createOfficialAdapter: () => official });
+    await expect(adapter.signMessage(createMockContext(), createMockSession(), { message: 'Hello Canton' })).rejects.toThrow(/signature|unexpected/);
+  });
+
   it('disconnect() requests disconnect then teardown()s', async () => {
     const official = makeMockOfficial({});
     const adapter = new WalletConnectAdapter(
@@ -369,6 +409,7 @@ describe('WalletConnectAdapter — disconnect / restore / submit', () => {
       signedTx: { commands: [] },
     });
     expect(String(receipt.transactionHash)).toBe('update-2');
+    expect(receipt.completionOffset).toBe(42);
   });
 
   it('signMessage() issues canton_signMessage and maps the result to SignedMessage', async () => {

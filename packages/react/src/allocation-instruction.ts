@@ -107,6 +107,8 @@ export interface UseAllocationInstructionParameters<R = unknown> {
   submit: (request: AllocationInstructionRequest, signal?: AbortSignal) => Promise<R>;
   /**
    * Pass-through TanStack `useMutation` options (e.g. `onSuccess`, `onError`).
+   * Automatic retry is always disabled, including global/per-mutation retry settings.
+   * Reconcile an unknown ledger result before an explicit new submission.
    * `mutationFn` and `mutationKey` are managed by the hook and cannot be overridden.
    */
   mutation?: Omit<UseMutationOptions<R, Error, AllocationInstructionRequest>, 'mutationFn' | 'mutationKey'>;
@@ -128,6 +130,8 @@ export function useAllocationInstruction<R = unknown>(
     ...mutation,
     mutationKey: partyLayerKeys.allocationInstruction(),
     // mutationFn is the dApp's fetcher. PartyLayer does not own ledger transport.
+    // A lost response can follow a successful ledger write. Never replay automatically.
+    retry: false,
     mutationFn: (request) => submit(request),
   });
 

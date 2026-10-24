@@ -69,7 +69,7 @@ binding for your framework and wrap your app:
 
 ```bash
 # React
-npm install @partylayer/react
+npm install @partylayer/react @tanstack/react-query
 # Vue
 npm install @partylayer/vue
 # Vanilla / custom
@@ -126,12 +126,12 @@ staging if your dApp uses your own templates.
 
 ## Current versions
 
-This guide targets the current release line:
-
-- `@partylayer/react@2.0.0`: TanStack Query v5 integration, the `/query` entrypoint with
-  the query backed hooks and their Suspense twins.
-- `@partylayer/vue@1.0.0`: the first stable Vue 3 release, with API parity to React.
-- Both depend on `@partylayer/core@0.10.0`, which carries the CIP-0104 cost types.
+Repository candidates can contain unpublished package versions. Check the
+[release process and validation status](./releasing.md) and your application's
+lockfile before selecting a version. The React `/query` entrypoint uses TanStack
+Query v5; install the documented peer and use the migration guide for your
+installed major version. Framework packages share the core contract, but their
+ready-made UI features can differ.
 
 If you are upgrading a React integration from the v1 line, see the
 [React v2 migration guide](./react-v2-migration.md).

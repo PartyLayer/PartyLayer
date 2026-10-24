@@ -22,6 +22,7 @@
  */
 
 import { useTheme } from './theme';
+import { useLocale } from './localization';
 
 export interface SynchronizerOption {
   /** CAIP-2 network id, e.g. `canton:da-devnet`. */
@@ -51,6 +52,7 @@ export function SynchronizerSwitcher({
   style,
 }: SynchronizerSwitcherProps) {
   const theme = useTheme();
+  const { t, locale, direction } = useLocale();
 
   // Render nothing when there are no options to switch between.
   if (!options || options.length === 0) {
@@ -59,8 +61,10 @@ export function SynchronizerSwitcher({
 
   return (
     <select
+      lang={locale}
+      dir={direction}
       className={className}
-      aria-label="Synchronizer"
+      aria-label={t('synchronizer')}
       value={networkId ?? undefined}
       onChange={(event) => {
         // Presentational: report the selection; the consumer performs the switch.

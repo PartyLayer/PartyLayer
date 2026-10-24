@@ -1,12 +1,22 @@
 {
   "name": "@partylayer/core",
-  "version": "0.14.0",
+  "version": "0.15.0",
   "sideEffects": false,
   "description": "Core types, errors, and abstractions for PartyLayer",
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",
   "types": "./dist/index.d.ts",
   "exports": {
+    "./amounts": {
+      "types": "./dist/amounts.d.ts",
+      "import": "./dist/amounts.mjs",
+      "require": "./dist/amounts.js"
+    },
+    "./authentication": {
+      "types": "./dist/authentication.d.ts",
+      "import": "./dist/authentication.mjs",
+      "require": "./dist/authentication.js"
+    },
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/index.mjs",

@@ -106,7 +106,7 @@ function consoleWalletInfo(): WalletInfo {
     capabilities: ['connect', 'signMessage', 'submitTransaction'],
     adapter: { packageName: '@partylayer/adapter-console', versionRange: '*' },
     docs: [],
-    networks: ['devnet'],
+    networks: ['devnet', 'mainnet'],
     channel: 'stable',
     providerDetection: {
       transport: 'window.canton',
@@ -156,7 +156,7 @@ function walleyWalletInfo(): WalletInfo {
     capabilities: ['connect', 'signMessage', 'submitTransaction'],
     adapter: { packageName: '@k2flabs/walley-dapp-sdk', versionRange: '*' },
     docs: [],
-    networks: ['devnet'],
+    networks: ['devnet', 'mainnet'],
     channel: 'stable',
   } as unknown as WalletInfo;
 }
@@ -220,7 +220,7 @@ function makeClientWithRegistry(
   opts: RegistryOpts = {},
 ) {
   const client = createPartyLayer({
-    network: 'devnet',
+    network: opts.wallets?.some(w => w.walletId === 'send') ? 'mainnet' : 'devnet',
     app: { name: 'console-regression', origin: 'https://test.example.com' },
     discovery: { announceTimeoutMs: 0 },
     adapters,
@@ -368,7 +368,7 @@ describe('ConsoleAdapter behavior unchanged (smoke, no live extension)', () => {
     mockConsoleWallet.getActiveNetwork.mockResolvedValue({ id: 'devnet' });
     mockConsoleWallet.status.mockResolvedValue({ provider: { id: CONSOLE_ID, providerType: 'extension' } });
     mockConsoleWallet.signMessage.mockResolvedValue('0xsignature');
-    mockConsoleWallet.submitCommands.mockResolvedValue({ signature: '0xupdateid' });
+    mockConsoleWallet.submitCommands.mockResolvedValue({ status: true, signature: '0xsignature' });
 
     const adapter = new ConsoleAdapter({ target: 'remote' });
     expect(String(adapter.walletId)).toBe('console');
@@ -401,7 +401,7 @@ describe('ConsoleAdapter behavior unchanged (smoke, no live extension)', () => {
 
     // submitTransaction: SDK submitCommands with waitForFinalization; returns a TxReceipt.
     const receipt = await adapter.submitTransaction(ctx, session, { signedTx: { commands: [] } } as never);
-    expect(String(receipt.transactionHash)).toBe('0xupdateid');
+    expect(receipt.transactionHash).toBeUndefined();
     expect(typeof receipt.submittedAt).toBe('number');
     expect(mockConsoleWallet.submitCommands).toHaveBeenCalledWith(
       expect.objectContaining({ waitForFinalization: 5000 }),

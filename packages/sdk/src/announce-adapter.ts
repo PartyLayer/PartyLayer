@@ -46,8 +46,22 @@ import type {
   WalletAdapter,
   WalletId,
 } from '@partylayer/core';
-import { toPartyId, toWalletId, toSignature, normalizeLedgerMethodLower, ledgerApiBodyToObject, isRecognizedNetwork } from '@partylayer/core';
+import { toPartyId, toWalletId, normalizeLedgerMethodLower, ledgerApiBodyToObject, isRecognizedNetwork, detectNetworkMismatch } from '@partylayer/core';
 import { submitViaPrepareExecute, type ExecuteVerbState } from './prepare-execute';
+import { normalizeSignedMessage } from './sign-message';
+import { assertConnectionAccepted, assertPrimaryParty } from './connection-result';
+import { nativeAdapterCopies, nativeOwnerBindings } from './native-owner';
+
+/** Capabilities of the generic announce bridge, including before installation. */
+export function getAnnounceCapabilities(config: AnnounceAdapterConfig = {}): CapabilityKey[] {
+  const caps: CapabilityKey[] = ['connect'];
+  if (config.signMessage !== false) caps.push('signMessage');
+  caps.push('submitTransaction');
+  if (config.restore) caps.push('restore');
+  if (config.ledgerApi) caps.push('ledgerApi');
+  if (config.events) caps.push('events');
+  return caps;
+}
 
 /** Canonical providerId prefix for an announced extension (provider.md: `browser:ext:<id>`). */
 export const ANNOUNCED_WALLET_ID_PREFIX = 'browser:ext:';
@@ -172,7 +186,7 @@ export class GenericAnnounceAdapter implements WalletAdapter {
   readonly name: string;
   /** Icon surfaced to the picker (announce detail). */
   readonly icon?: string;
-  private readonly provider: CIP0103Provider;
+  private readonly rawProvider: CIP0103Provider;
   private readonly metadataEnabled: boolean;
   private readonly staticMetadata?: Record<string, string>;
   private readonly mapError?: (err: unknown) => Error | undefined;
@@ -194,13 +208,17 @@ export class GenericAnnounceAdapter implements WalletAdapter {
   signMessage?: WalletAdapter['signMessage'];
 
   constructor(args: GenericAnnounceAdapterArgs) {
+    const configuration = { ...args, config: args.config && {
+      ...args.config, staticMetadata: args.config.staticMetadata && { ...args.config.staticMetadata },
+    } };
+    nativeAdapterCopies.set(this, () => new GenericAnnounceAdapter(configuration));
     this.walletId = args.walletId ?? announcedWalletId(args.announceId);
     this.name =
       args.name && args.name.length > 0
         ? args.name
         : `Canton Wallet (${args.announceId.slice(0, 6)}…)`;
     this.icon = args.icon;
-    this.provider = args.provider;
+    this.rawProvider = args.provider;
 
     const config = args.config;
     this.metadataEnabled = config?.metadata === true;
@@ -215,6 +233,20 @@ export class GenericAnnounceAdapter implements WalletAdapter {
     if (config?.signMessage !== false) this.signMessage = this.signMessageImpl.bind(this);
   }
 
+  private get provider(): CIP0103Provider {
+    return nativeOwnerBindings.get(this)?.getProvider(String(this.walletId)) ?? this.rawProvider;
+  }
+
+  /** @internal Register the discovered transport with the one official owner. */
+  async prepareNativeConnection(network: NetworkId): Promise<void> {
+    const owner = nativeOwnerBindings.get(this);
+    if (!owner) return;
+    await owner.prepare(String(this.walletId), {
+      providerId: String(this.walletId), name: this.name, type: 'browser', icon: this.icon,
+      provider: () => this.rawProvider, detect: async () => true,
+    }, network);
+  }
+
   /**
    * Capabilities derived from actual presence: connect and submitTransaction are
    * always present; signMessage, restore, ledgerApi, and events are each included
@@ -222,13 +254,8 @@ export class GenericAnnounceAdapter implements WalletAdapter {
    * beyond what the adapter can do.
    */
   getCapabilities(): CapabilityKey[] {
-    const caps: CapabilityKey[] = ['connect'];
-    if (this.signMessage) caps.push('signMessage');
-    caps.push('submitTransaction');
-    if (this.restore) caps.push('restore');
-    if (this.ledgerApi) caps.push('ledgerApi');
-    if (this.on) caps.push('events');
-    return caps;
+    return getAnnounceCapabilities({ signMessage: !!this.signMessage, restore: !!this.restore,
+      ledgerApi: !!this.ledgerApi, events: !!this.on });
   }
 
   /**
@@ -247,18 +274,21 @@ export class GenericAnnounceAdapter implements WalletAdapter {
     };
   }
 
-  async connect(ctx: AdapterContext): Promise<AdapterConnectResult> {
+  async connect(ctx: AdapterContext, options?: { signal?: AbortSignal }): Promise<AdapterConnectResult> {
     return this.guarded(async () => {
       // CIP-0103 connect handshake over the target-scoped channel.
-      await this.provider.request({ method: 'connect' });
-      const account = await this.provider.request<CIP0103Account>({
+      const owner = nativeOwnerBindings.get(this);
+      const native = owner ? await owner.connect(String(this.walletId), options?.signal) : undefined;
+      if (!owner) assertConnectionAccepted(await this.provider.request({ method: 'connect' }));
+      const account = native?.account ?? await this.provider.request<CIP0103Account>({
         method: 'getPrimaryAccount',
       });
+      assertPrimaryParty(account);
 
       // Wallet-reported network (truthful), per A1b — fall back to dApp config.
       let status: AnnounceStatus | undefined;
       try {
-        status = await this.provider.request<AnnounceStatus>({ method: 'status' });
+        status = native?.status ?? await this.provider.request<AnnounceStatus>({ method: 'status' });
       } catch {
         // status is optional for some wallets — fall through to account/config.
       }
@@ -292,6 +322,8 @@ export class GenericAnnounceAdapter implements WalletAdapter {
   }
 
   async disconnect(): Promise<void> {
+    const owner = nativeOwnerBindings.get(this);
+    if (owner) { await owner.disconnect(); return; }
     try {
       await this.provider.request({ method: 'disconnect' });
     } catch {
@@ -319,19 +351,7 @@ export class GenericAnnounceAdapter implements WalletAdapter {
 
       const res = await this.provider.request<unknown>({ method: 'signMessage', params: rpcParams });
 
-      // Response normalization (universal): the provider may return a bare
-      // signature string OR `{ signature }`; synthesize the full SignedMessage
-      // from session + params (matches ConsoleAdapter and SendAdapter). Additive
-      // for Send — adds partyId/message, removes nothing.
-      const sig =
-        typeof res === 'string' ? res : (res as { signature?: unknown } | null)?.signature ?? '';
-      return {
-        signature: toSignature(String(sig)),
-        partyId: session.partyId,
-        message: params.message,
-        nonce: params.nonce,
-        domain: params.domain,
-      };
+      return normalizeSignedMessage(res, session, params);
     });
   }
 
@@ -376,6 +396,12 @@ export class GenericAnnounceAdapter implements WalletAdapter {
   private makeRestore(): WalletAdapter['restore'] {
     return (_ctx: AdapterContext, persisted: PersistedSession): Promise<Session | null> =>
       this.guarded(async () => {
+        const owner = nativeOwnerBindings.get(this);
+        if (owner) {
+          await this.prepareNativeConnection(_ctx.network);
+          const restored = await owner.restore({ id: String(this.walletId), partyId: persisted.partyId, network: persisted.network });
+          return restored?.id === String(this.walletId) ? { ...persisted, capabilitiesSnapshot: this.getCapabilities() } as Session : null;
+        }
         if (persisted.expiresAt && Date.now() >= persisted.expiresAt) return null;
         let status: AnnounceStatus | undefined;
         try {
@@ -392,6 +418,11 @@ export class GenericAnnounceAdapter implements WalletAdapter {
           method: 'getPrimaryAccount',
         });
         if (account.partyId !== persisted.partyId) return null;
+
+        const network = [status?.network?.networkId, account.networkId].find(
+          (value): value is string => typeof value === 'string' && isRecognizedNetwork(value),
+        );
+        if (network && detectNetworkMismatch(persisted.network, network)) return null;
 
         return {
           ...persisted,

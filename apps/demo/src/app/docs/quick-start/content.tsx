@@ -93,7 +93,7 @@ export default function QuickStartPage() {
         Add the PartyLayer packages to your existing React project. If you{"'"}re starting fresh with
         Vite, run <Code>{'npm create vite@latest my-dapp -- --template react-ts'}</Code> first.
       </P>
-      <CodeBlock language="bash">{`npm install @partylayer/sdk @partylayer/react @tanstack/react-query`}</CodeBlock>
+      <CodeBlock language="bash">{`npm install @partylayer/react @tanstack/react-query`}</CodeBlock>
 
       <H2 id="step-2">Step 2: Wrap Your App</H2>
       <P>
@@ -148,9 +148,9 @@ export function Providers({ children }: { children: React.ReactNode }) {
       ]} />
 
       <Callout type="tip">
-        <Code>{'PartyLayerKit'}</Code> automatically registers all built-in wallet adapters
-        (Console, Loop, Cantor8, Nightly), fetches the wallet registry, and sets up session persistence.
-        Send is discovered through the CIP-0103 announce path, so it appears in the picker without being registered.
+        <Code>{'PartyLayerKit'}</Code> supplies the supported wallet catalog, fetches the registry,
+        filters wallets by network and channel, and manages session persistence. Official wallet SDKs
+        are included; no per-wallet imports or installation are needed.
       </Callout>
 
       <Callout type="note" title="Why QueryClientProvider">

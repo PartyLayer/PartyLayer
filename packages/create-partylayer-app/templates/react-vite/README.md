@@ -8,7 +8,7 @@ A [PartyLayer](https://partylayer.xyz) dApp: React + Vite, with Canton wallet in
 npm run dev
 ```
 
-Open the app and click **Connect Wallet**. The modal lists every verified Canton wallet from the registry.
+Open the app and click **Connect Wallet**. The modal lists supported wallets for the configured network and channel.
 
 ## How it's wired
 
@@ -20,7 +20,7 @@ import { PartyLayerKit, ConnectButton } from '@partylayer/react';
 </PartyLayerKit>
 ```
 
-`<PartyLayerKit>` creates the client, registers all built-in wallet adapters, and provides session context. `<ConnectButton>` handles the full connect flow. Read the connected session with `useAccount()`.
+`<PartyLayerKit>` creates the client, loads the supported default wallet catalog, and provides session context. `<ConnectButton>` handles the full connect flow. Read the connected session with `useAccount()`.
 
 Switch networks by changing `network` to `"testnet"` or `"mainnet"` in `src/App.tsx`.
 
@@ -34,3 +34,5 @@ npm run build && npm run preview
 
 - [PartyLayer docs](https://partylayer.xyz/docs)
 - [@partylayer/react](https://www.npmjs.com/package/@partylayer/react)
+
+Wallet SDKs are included. Vala requires Devnet with `channel="beta"`. WalletConnect requires your project id through `walletConnect`; Bron requires OAuth/API configuration through `bron`. No separate wallet SDK installation or registration is needed.

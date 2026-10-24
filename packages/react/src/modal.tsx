@@ -17,6 +17,8 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useWallets, useConnect } from './hooks';
 import { useTheme } from './theme';
+import { useLocale, type Translate } from './localization';
+import { useDialogFocus } from './dialog-focus';
 import { useWalletIcons, useWalletOrder, useAttribution, resolveWalletIcon } from './kit';
 import type { WalletInfo } from '@partylayer/sdk';
 import { isCip0103Native } from '@partylayer/sdk';
@@ -205,21 +207,21 @@ function getWalletAbsentAction(wallet: WalletInfo): WalletAbsentAction {
   return 'unavailable';
 }
 
-function getErrorMessage(error: Error): string {
+function getErrorMessage(error: Error, t: Translate): string {
   const code = 'code' in error ? (error as { code: string }).code : '';
   switch (code) {
     case 'WALLET_NOT_INSTALLED':
-      return 'Wallet not detected. Please ensure it is installed and set up.';
+      return t('notDetected');
     case 'TIMEOUT':
-      return 'Connection timed out. Please try again.';
+      return t('connectionTimeout');
     case 'USER_REJECTED':
-      return 'Connection was cancelled.';
+      return t('cancelled');
     case 'ORIGIN_NOT_ALLOWED':
-      return 'This website is not authorized to connect.';
+      return t('originDenied');
     case 'NETWORK_MISMATCH': {
       const e = error as { expected?: string; actual?: string };
       if (e.actual && e.expected) {
-        return `Your wallet is on ${e.actual}. This app requires ${e.expected}. Switch your wallet's network, then reconnect.`;
+        return t('networkMismatch', { actual: e.actual, expected: e.expected });
       }
       return error.message;
     }
@@ -260,31 +262,31 @@ function getWalletUrl(wallet: WalletInfo): string | null {
  * has nothing on the machine) is what makes these labels safe to derive here,
  * with no probe on the render path.
  */
-const TRANSPORT_LABELS: Record<string, string> = {
-  extension: 'Browser Extension',
-  extensionMobile: 'Extension + Mobile',
-  mobile: 'Mobile wallet',
-  popup: 'Opens in a popup — nothing to install',
+const TRANSPORT_LABELS: Record<string, Parameters<Translate>[0]> = {
+  extension: 'extensionTransport',
+  extensionMobile: 'extensionMobileTransport',
+  mobile: 'mobileTransport',
+  popup: 'popupTransport',
   // `relay` is Loop AND WalletConnect: a QR scanned by a phone app, and a
   // mobile pairing. One label covers both because the axis is WHERE THE
   // CONNECTION HAPPENS, not what the UI looks like. If a future wallet makes
   // this read badly, the fix is not a fourth label — it is that the wallet's
   // `connect` value is wrong.
-  relay: 'Connect from another device — nothing to install',
+  relay: 'remoteTransport',
   // Retained for registry entries that have not declared `connect` yet. `scan`
   // was derived from `scriptTag`, which says how the SDK is LOADED, so it
   // mislabelled Cantor8 — script-loaded, but it opens a popup.
-  scan: 'Scan to connect — nothing to install',
-  enterprise: 'Enterprise — configured by this app',
+  scan: 'scanTransport',
+  enterprise: 'enterpriseTransport',
 };
 
-function getWalletTransportLabel(wallet: WalletInfo): string {
+function getWalletTransportLabel(wallet: WalletInfo, t: Translate): string {
   // Primary: the registry-derived transport class, surfaced on metadata by the
   // registry read (installation hints + adapter transport). This is the correct
   // source; the old code read the capability method list and leaked raw method
   // names (e.g. "connect, disconnect, signMessage") for wallets like Walley.
   const key = wallet.metadata?.transport;
-  if (key && TRANSPORT_LABELS[key]) return TRANSPORT_LABELS[key];
+  if (key && TRANSPORT_LABELS[key]) return t(TRANSPORT_LABELS[key]);
 
   // Fallback for registry snapshots without the transport metadata: infer from
   // the transport capability tokens the conversion adds (injected/deeplink/
@@ -292,14 +294,14 @@ function getWalletTransportLabel(wallet: WalletInfo): string {
   const hasInjected = wallet.capabilities.includes('injected');
   const hasDeeplink = wallet.capabilities.includes('deeplink');
   const hasRemoteSigner = wallet.capabilities.includes('remoteSigner');
-  if (hasInjected && (hasDeeplink || hasRemoteSigner)) return TRANSPORT_LABELS.extensionMobile;
-  if (hasInjected) return TRANSPORT_LABELS.extension;
-  if (hasDeeplink) return TRANSPORT_LABELS.mobile;
-  if (hasRemoteSigner) return TRANSPORT_LABELS.enterprise;
+  if (hasInjected && (hasDeeplink || hasRemoteSigner)) return t(TRANSPORT_LABELS.extensionMobile);
+  if (hasInjected) return t(TRANSPORT_LABELS.extension);
+  if (hasDeeplink) return t(TRANSPORT_LABELS.mobile);
+  if (hasRemoteSigner) return t(TRANSPORT_LABELS.enterprise);
 
   // Safe generic. NEVER a raw capability/method join; no wallet, present or
   // future, should surface method names as its subtitle.
-  return 'Canton wallet';
+  return t('cantonWallet');
 }
 
 /**
@@ -576,6 +578,7 @@ export function WalletModal({
   const { wallets, isLoading } = useWallets();
   const { connect, error, reset: resetConnect } = useConnect();
   const theme = useTheme();
+  const { t, locale, direction } = useLocale();
 
   let contextIcons: WalletIconMap = {};
   try { contextIcons = useWalletIcons(); } catch { /* no Kit context */ }
@@ -681,16 +684,6 @@ export function WalletModal({
   // Cleanup on unmount
   useEffect(() => cleanupConnectResources, [cleanupConnectResources]);
 
-  // Handle ESC key
-  useEffect(() => {
-    if (!isOpen) return;
-    const handler = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') handleClose();
-    };
-    document.addEventListener('keydown', handler);
-    return () => document.removeEventListener('keydown', handler);
-  }, [isOpen]);
-
   // Transition to error/not-installed view when connect fails
   useEffect(() => {
     if (error && view === 'connecting') {
@@ -734,6 +727,8 @@ export function WalletModal({
       onClose();
     }, 150);
   }, [onClose, resetConnect, cleanupConnectResources]);
+
+  useDialogFocus(modalRef, isOpen || closing, displayedView, handleClose);
 
   /**
    * Start a MutationObserver that watches for the Console SDK's QR code
@@ -929,6 +924,7 @@ export function WalletModal({
     // variable, so it drives BOTH the static value and the entrance/exit blur
     // animations below (which ramp to var(--pl-overlay-blur)). Default 5px = today's look.
     ['--pl-overlay-blur' as string]: theme.overlayBlur ?? '5px',
+    ['--pl-placeholder-color' as string]: theme.colors.textSecondary,
     position: 'fixed',
     top: 0,
     left: 0,
@@ -1045,20 +1041,22 @@ export function WalletModal({
   const renderSubHeader = (backAction: () => void) => (
     <div style={headerStyle}>
       <button
+        type="button"
         onClick={backAction}
         style={{ ...closeBtnBase, width: 'auto', padding: '0 10px', gap: '4px' }}
         onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = hoverBg; }}
         onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = theme.colors.surface; }}
       >
-        <BackIcon size={14} color={theme.colors.textSecondary} />
-        <span style={{ fontSize: '12px', color: theme.colors.textSecondary, fontWeight: 500 }}>Back</span>
+        <span style={{ display: 'inline-flex', transform: direction === 'rtl' ? 'scaleX(-1)' : undefined }}><BackIcon size={14} color={theme.colors.textSecondary} /></span>
+        <span style={{ fontSize: '12px', color: theme.colors.textSecondary, fontWeight: 500 }}><bdi dir="auto">{t('back')}</bdi></span>
       </button>
       <button
+        type="button"
         onClick={handleClose}
         style={closeBtnStyle}
         onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = hoverBg; }}
         onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = theme.colors.surface; }}
-        aria-label="Close"
+        aria-label={t('close')}
       >
         <CloseIcon size={16} color={theme.colors.textSecondary} />
       </button>
@@ -1076,6 +1074,7 @@ export function WalletModal({
 
     return (
       <button
+        type="button"
         key={wallet.walletId}
         className="pl-wallet-row pl-stagger-item"
         onClick={() => handleWalletClick(wallet)}
@@ -1089,7 +1088,7 @@ export function WalletModal({
             : theme.colors.border}`,
           borderRadius: '12px',
           cursor: view === 'connecting' ? 'wait' : 'pointer',
-          textAlign: 'left',
+          textAlign: 'start',
           display: 'flex',
           alignItems: 'center',
           gap: '14px',
@@ -1119,7 +1118,7 @@ export function WalletModal({
             : theme.colors.border;
         }}
       >
-        <span className="pl-wallet-row-icon">
+        <span className="pl-wallet-row-icon" aria-hidden="true">
           <ModalWalletIcon wallet={wallet} size={48} iconUrl={iconUrl} />
         </span>
 
@@ -1148,7 +1147,7 @@ export function WalletModal({
                 style={{
                   fontSize: '10px',
                   padding: '2px 6px',
-                  background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
+                  background: 'linear-gradient(135deg, #4f46e5, #7c3aed)',
                   color: '#FFFFFF',
                   borderRadius: '5px',
                   fontWeight: 600,
@@ -1167,7 +1166,7 @@ export function WalletModal({
                 fontSize: '10px',
                 padding: '2px 6px',
                 background: isDark ? 'rgba(245,158,11,0.18)' : 'rgba(245,158,11,0.12)',
-                color: isDark ? '#fbbf24' : '#b45309',
+                color: isDark ? '#fbbf24' : '#92400e',
                 border: `1px solid ${isDark ? 'rgba(245,158,11,0.35)' : 'rgba(245,158,11,0.25)'}`,
                 borderRadius: '5px',
                 fontWeight: 600,
@@ -1197,7 +1196,7 @@ export function WalletModal({
             overflow: 'hidden',
             textOverflow: 'ellipsis',
           }}>
-            {getWalletTransportLabel(wallet)}
+            <bdi dir="auto">{getWalletTransportLabel(wallet, t)}</bdi>
           </div>
         </div>
 
@@ -1231,7 +1230,7 @@ export function WalletModal({
         textTransform: 'uppercase',
         letterSpacing: '0.5px',
       }}>
-        {title}
+        <bdi dir="auto">{title}</bdi>
       </span>
       <span style={{
         fontSize: '11px',
@@ -1261,14 +1260,15 @@ export function WalletModal({
           color: theme.colors.text,
           letterSpacing: '-0.01em',
         }}>
-          Connect Wallet
+          <bdi dir="auto">{t('connectWallet')}</bdi>
         </h2>
         <button
+          type="button"
           onClick={handleClose}
           style={closeBtnStyle}
           onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = hoverBg; }}
           onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = theme.colors.surface; }}
-          aria-label="Close"
+          aria-label={t('close')}
         >
           <CloseIcon size={16} color={theme.colors.textSecondary} />
         </button>
@@ -1279,19 +1279,20 @@ export function WalletModal({
       {showSearch && !isLoading && wallets.length > 0 && (
         <div style={{ padding: '0 24px 12px', flexShrink: 0 }}>
           <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
-            <span style={{ position: 'absolute', left: '12px', display: 'inline-flex', pointerEvents: 'none' }}>
+            <span style={{ position: 'absolute', insetInlineStart: '12px', display: 'inline-flex', pointerEvents: 'none' }}>
               <SearchIcon size={16} color={theme.colors.textSecondary} />
             </span>
             <input
+              className="pl-wallet-search"
               type="text"
               value={walletQuery}
               onChange={(e) => setWalletQuery(e.target.value)}
-              placeholder="Search wallets"
-              aria-label="Search wallets"
+              placeholder={t('searchWallets')}
+              aria-label={t('searchWallets')}
               style={{
                 width: '100%',
                 boxSizing: 'border-box',
-                padding: '10px 12px 10px 38px',
+                padding: '10px 12px', paddingInlineStart: '38px',
                 fontSize: '14px',
                 fontFamily: theme.fontFamily,
                 color: theme.colors.text,
@@ -1302,7 +1303,7 @@ export function WalletModal({
                 transition: 'border-color 150ms, box-shadow 150ms',
               }}
               onFocus={(e) => {
-                e.currentTarget.style.borderColor = theme.colors.primary;
+                e.currentTarget.style.borderColor = theme.colors.text;
                 e.currentTarget.style.boxShadow = `0 0 0 3px ${theme.colors.primary}22`;
               }}
               onBlur={(e) => {
@@ -1338,7 +1339,7 @@ export function WalletModal({
               margin: '0 auto 16px',
             }} />
             <div style={{ fontSize: '14px', color: theme.colors.textSecondary }}>
-              Loading wallets...
+              <bdi dir="auto">{t('loadingWallets')}</bdi>
             </div>
           </div>
         ) : wallets.length === 0 ? (
@@ -1356,16 +1357,16 @@ export function WalletModal({
               <ShieldIcon size={24} color={theme.colors.textSecondary} />
             </div>
             <div style={{ fontSize: '15px', fontWeight: 600, color: theme.colors.text, marginBottom: '8px' }}>
-              No wallets found
+              <bdi dir="auto">{t('noWallets')}</bdi>
             </div>
             <div style={{ fontSize: '13px', color: theme.colors.textSecondary, lineHeight: 1.5 }}>
-              Install a CIP-0103 compatible Canton wallet to get started.
+              <bdi dir="auto">{t('installCompatible')}</bdi>
             </div>
           </div>
         ) : noMatches ? (
           <div style={{ padding: '36px 20px', textAlign: 'center' }}>
             <div style={{ fontSize: '13px', color: theme.colors.textSecondary }}>
-              No wallets match &ldquo;{walletQuery.trim()}&rdquo;
+              <bdi dir="auto">{t('noMatches', { query: walletQuery.trim() })}</bdi>
             </div>
           </div>
         ) : (
@@ -1373,7 +1374,7 @@ export function WalletModal({
             {/* CIP-0103 Native */}
             {nativeShown.length > 0 && (
               <>
-                {renderSectionHeader('CIP-0103 Native', nativeShown.length, '#6366f1')}
+                <bdi dir="auto">{renderSectionHeader(t('native'), nativeShown.length, '#6366f1')}</bdi>
                 {nativeShown.map(renderWalletItem)}
               </>
             )}
@@ -1382,11 +1383,11 @@ export function WalletModal({
             {registryShown.length > 0 && (
               <>
                 {nativeShown.length > 0 && <div style={{ height: '8px' }} />}
-                {renderSectionHeader(
-                  nativeShown.length > 0 ? 'Available' : 'Wallets',
+                <bdi dir="auto">{renderSectionHeader(
+                  nativeShown.length > 0 ? t('available') : t('wallets'),
                   registryShown.length,
                   theme.colors.primary,
-                )}
+                )}</bdi>
                 {registryShown.map(renderWalletItem)}
               </>
             )}
@@ -1396,6 +1397,7 @@ export function WalletModal({
                 while searching so it never competes with results. */}
             {showWalletGuide && !query && (
               <button
+                type="button"
                 onClick={() => setView('wallet-guide')}
                 style={{
                   marginTop: '4px',
@@ -1425,7 +1427,7 @@ export function WalletModal({
                 }}
               >
                 <HelpIcon size={15} color="currentColor" />
-                New to Canton wallets?
+                <bdi dir="auto">{t('guideTitle')}</bdi>
               </button>
             )}
           </div>
@@ -1476,7 +1478,7 @@ export function WalletModal({
             >
               <PartyLayerMark size={16} />
               <span>
-                Powered by <span style={{ fontWeight: 600, color: theme.colors.text }}>PartyLayer</span>
+                <bdi dir="auto">{t('poweredBy')}</bdi> <span style={{ fontWeight: 600, color: theme.colors.text }}>PartyLayer</span>
               </span>
             </a>
           )}
@@ -1514,7 +1516,7 @@ export function WalletModal({
           color: theme.colors.text,
           letterSpacing: '-0.01em',
         }}>
-          New to Canton wallets?
+          <bdi dir="auto">{t('guideTitle')}</bdi>
         </h2>
         <p style={{
           margin: '0 auto 20px',
@@ -1523,11 +1525,10 @@ export function WalletModal({
           lineHeight: 1.6,
           color: theme.colors.textSecondary,
         }}>
-          A wallet is an app that holds your Canton account and approves actions on
-          your behalf. You pick one from the list to connect this app. It keeps your
-          keys, so only you can sign, and this app never sees them.
+          <bdi dir="auto">{t('guideText')}</bdi>
         </p>
         <button
+          type="button"
           onClick={handleBackToList}
           style={{
             display: 'inline-flex',
@@ -1547,7 +1548,7 @@ export function WalletModal({
           onMouseEnter={(e) => { e.currentTarget.style.borderColor = isDark ? 'rgba(255,255,255,0.15)' : 'rgba(15,23,42,0.18)'; }}
           onMouseLeave={(e) => { e.currentTarget.style.borderColor = theme.colors.border; }}
         >
-          Browse wallets
+          <bdi dir="auto">{t('browseWallets')}</bdi>
         </button>
       </div>
     </>
@@ -1627,7 +1628,7 @@ export function WalletModal({
             color: theme.colors.text,
             marginBottom: '8px',
           }}>
-            Opening {selectedWallet.name}
+            <bdi dir="auto">{t('openingWallet', { wallet: selectedWallet.name })}</bdi>
           </div>
           <div style={{
             fontSize: '14px',
@@ -1635,16 +1636,17 @@ export function WalletModal({
             lineHeight: 1.5,
             marginBottom: '32px',
           }}>
-            Confirm the connection in your wallet
+            <bdi dir="auto">{t('confirmWallet')}</bdi>
           </div>
 
           <button
+            type="button"
             onClick={handleBackToList}
             style={ghostBtnStyle}
             onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = theme.colors.surface; }}
             onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; }}
           >
-            Cancel
+            <bdi dir="auto">{t('cancel')}</bdi>
           </button>
         </div>
       </>
@@ -1715,7 +1717,7 @@ export function WalletModal({
             color: theme.colors.text,
             marginBottom: '8px',
           }}>
-            Opening {selectedWallet.name}...
+            <bdi dir="auto">{t('openingWallet', { wallet: selectedWallet.name })}</bdi>
           </div>
           <div style={{
             fontSize: '14px',
@@ -1723,28 +1725,30 @@ export function WalletModal({
             lineHeight: 1.5,
             marginBottom: '28px',
           }}>
-            Confirm the connection in your wallet extension
+            <bdi dir="auto">{t('confirmExtension')}</bdi>
           </div>
 
           <button
+            type="button"
             onClick={handleBackToList}
             style={ghostBtnStyle}
             onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = theme.colors.surface; }}
             onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; }}
           >
-            Cancel
+            <bdi dir="auto">{t('cancel')}</bdi>
           </button>
 
           {/* Mobile fallback link */}
           <div style={{ marginTop: '20px' }}>
             <button
+              type="button"
               onClick={handleSwitchToMobile}
               style={linkStyle}
               onMouseEnter={(e) => { e.currentTarget.style.color = theme.colors.text; }}
               onMouseLeave={(e) => { e.currentTarget.style.color = theme.colors.textSecondary; }}
             >
               <SmartphoneIcon size={12} color="currentColor" />
-              Can&apos;t connect? Try mobile
+              <bdi dir="auto">{t('tryMobile')}</bdi>
               <ArrowIcon size={10} color="currentColor" />
             </button>
           </div>
@@ -1798,7 +1802,7 @@ export function WalletModal({
             color: theme.colors.text,
             marginBottom: '8px',
           }}>
-            Connection timed out
+            <bdi dir="auto">{t('timedOut')}</bdi>
           </div>
           <div style={{
             fontSize: '13px',
@@ -1807,11 +1811,12 @@ export function WalletModal({
             maxWidth: '300px',
             margin: '0 auto 24px',
           }}>
-            The wallet extension didn&apos;t respond. You can try again or connect via mobile.
+            <bdi dir="auto">{t('extensionNoResponse')}</bdi>
           </div>
 
           <div style={{ display: 'flex', gap: '10px', justifyContent: 'center' }}>
             <button
+              type="button"
               onClick={handleRetry}
               style={primaryBtnStyle}
               onMouseEnter={(e) => {
@@ -1824,17 +1829,18 @@ export function WalletModal({
               }}
             >
               <RefreshIcon size={13} color="#0B0F1A" />
-              {' '}Try Again
+              {' '}<bdi dir="auto">{t('tryAgain')}</bdi>
             </button>
 
             <button
+              type="button"
               onClick={handleSwitchToMobile}
               style={ghostBtnStyle}
               onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = theme.colors.surface; }}
               onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; }}
             >
               <QrCodeIcon size={14} color="currentColor" />
-              {' '}Connect via Mobile
+              {' '}<bdi dir="auto">{t('connectMobile')}</bdi>
             </button>
           </div>
         </div>
@@ -1855,9 +1861,9 @@ export function WalletModal({
     // QR works with any Canton WC wallet, so don't name a specific wallet.
     const isGenericRemote = isPureRemoteWallet(selectedWallet);
     const scanCopy = isGenericRemote
-      ? 'Scan with your Canton wallet'
-      : `Scan with ${selectedWallet.name} mobile app`;
-    const openCopy = isGenericRemote ? 'Open wallet' : `Open in ${selectedWallet.name}`;
+      ? t('scanWallet')
+      : t('scanNamedWallet', { wallet: selectedWallet.name });
+    const openCopy = isGenericRemote ? t('openWallet') : t('openNamedWallet', { wallet: selectedWallet.name });
 
     return (
       <>
@@ -1915,7 +1921,7 @@ export function WalletModal({
                   margin: '0 auto 12px',
                 }} />
                 <div style={{ fontSize: '13px', color: theme.colors.textSecondary }}>
-                  Generating QR code...
+                  <bdi dir="auto">{t('generatingQr')}</bdi>
                 </div>
               </div>
             )}
@@ -1926,7 +1932,7 @@ export function WalletModal({
             color: theme.colors.textSecondary,
             marginBottom: '20px',
           }}>
-            {scanCopy}
+            <bdi dir="auto">{scanCopy}</bdi>
           </div>
 
           {/* Deep link button for mobile browsers */}
@@ -1945,7 +1951,7 @@ export function WalletModal({
               }}
             >
               <SmartphoneIcon size={14} color="#0B0F1A" />
-              {openCopy}
+              <bdi dir="auto">{openCopy}</bdi>
             </a>
           )}
 
@@ -1962,7 +1968,7 @@ export function WalletModal({
                 }}
               >
                 <DownloadIcon size={11} color="currentColor" />
-                Install browser extension
+                <bdi dir="auto">{t('installExtension')}</bdi>
                 <ExternalLinkIcon size={10} color="currentColor" />
               </a>
             </div>
@@ -1982,7 +1988,7 @@ export function WalletModal({
       <>
         <div style={headerStyle}>
           <div />
-          <button onClick={handleClose} style={closeBtnStyle} aria-label="Close">
+          <button type="button" onClick={handleClose} style={closeBtnStyle} aria-label={t('close')}>
             <CloseIcon size={16} color={theme.colors.textSecondary} />
           </button>
         </div>
@@ -2039,10 +2045,10 @@ export function WalletModal({
             color: theme.colors.text,
             marginBottom: '6px',
           }}>
-            Connected
+            <bdi dir="auto">{t('connected')}</bdi>
           </div>
           <div style={{ fontSize: '14px', color: theme.colors.success }}>
-            {selectedWallet.name} is ready
+            <bdi dir="auto">{t('readyWallet', { wallet: selectedWallet.name })}</bdi>
           </div>
         </div>
       </>
@@ -2108,7 +2114,7 @@ export function WalletModal({
             color: theme.colors.text,
             marginBottom: '8px',
           }}>
-            {isAuthTimeout ? 'Authentication timed out' : 'Connection Failed'}
+            <bdi dir="auto">{isAuthTimeout ? t('authTimedOut') : t('connectionFailed')}</bdi>
           </div>
 
           {surfacedError && (
@@ -2119,9 +2125,9 @@ export function WalletModal({
               maxWidth: '320px',
               margin: '0 auto 16px',
             }}>
-              {isAuthTimeout
-                ? "This is a known intermittent issue with Send's authentication backend, not your dApp. Try again in a moment."
-                : getErrorMessage(surfacedError)}
+              <bdi dir="auto">{isAuthTimeout
+                ? t('sendAuthExplanation')
+                : getErrorMessage(surfacedError, t)}</bdi>
             </div>
           )}
 
@@ -2138,20 +2144,16 @@ export function WalletModal({
                 color: isDark ? '#fbbf24' : '#92400E',
                 fontSize: '12px',
                 lineHeight: 1.5,
-                textAlign: 'left',
+                textAlign: 'start',
               }}
             >
-              Send is intermittently unable to reach{' '}
-              <code style={{ fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace', fontSize: '11px' }}>
-                auth.cantonwallet.com
-              </code>
-              . Click <strong>Try Again</strong> to retry, or check the Send status page for
-              up-to-date service info.
+              <bdi dir="auto">{t('sendAuthNotice', { host: 'auth.cantonwallet.com', retry: t('tryAgain') })}</bdi>
             </div>
           )}
 
           <div style={{ display: 'flex', gap: '10px', justifyContent: 'center', flexWrap: 'wrap' }}>
             <button
+              type="button"
               onClick={handleRetry}
               style={primaryBtnStyle}
               onMouseEnter={(e) => {
@@ -2163,7 +2165,7 @@ export function WalletModal({
                 e.currentTarget.style.transform = 'translateY(0)';
               }}
             >
-              Try Again
+              <bdi dir="auto">{t('tryAgain')}</bdi>
             </button>
             {isAuthTimeout && (
               <a
@@ -2174,16 +2176,17 @@ export function WalletModal({
                 onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = theme.colors.surface; }}
                 onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; }}
               >
-                Visit Send Status
+                <bdi dir="auto">{t('visitSendStatus')}</bdi>
               </a>
             )}
             <button
+              type="button"
               onClick={handleBackToList}
               style={ghostBtnStyle}
               onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = theme.colors.surface; }}
               onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; }}
             >
-              All Wallets
+              <bdi dir="auto">{t('allWallets')}</bdi>
             </button>
           </div>
         </div>
@@ -2207,29 +2210,31 @@ export function WalletModal({
             </div>
           )}
           <div style={{ fontSize: '17px', fontWeight: 600, color: theme.colors.text, marginBottom: '8px' }}>
-            Wrong network
+            <bdi dir="auto">{t('wrongNetwork')}</bdi>
           </div>
           <div style={{ fontSize: '13px', color: theme.colors.textSecondary, lineHeight: 1.5, maxWidth: '320px', margin: '0 auto 20px' }}>
-            {mismatchInfo
-              ? `Your wallet is on ${mismatchInfo.actual}. This app requires ${mismatchInfo.expected}. Switch your wallet's network, then reconnect.`
-              : "Your wallet is on a different network than this app requires. Switch your wallet's network, then reconnect."}
+            <bdi dir="auto">{mismatchInfo
+              ? t('networkMismatch', { actual: mismatchInfo.actual, expected: mismatchInfo.expected })
+              : t('networkDifferent')}</bdi>
           </div>
           <div style={{ display: 'flex', gap: '10px', justifyContent: 'center', flexWrap: 'wrap' }}>
             <button
+              type="button"
               onClick={handleRetry}
               style={primaryBtnStyle}
               onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = theme.colors.primaryHover; e.currentTarget.style.transform = 'translateY(-1px)'; }}
               onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = theme.colors.primary; e.currentTarget.style.transform = 'translateY(0)'; }}
             >
-              Reconnect
+              <bdi dir="auto">{t('reconnect')}</bdi>
             </button>
             <button
+              type="button"
               onClick={handleBackToList}
               style={ghostBtnStyle}
               onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = theme.colors.surface; }}
               onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; }}
             >
-              All Wallets
+              <bdi dir="auto">{t('allWallets')}</bdi>
             </button>
           </div>
         </div>
@@ -2252,27 +2257,21 @@ export function WalletModal({
     const action = getWalletAbsentAction(selectedWallet);
     const site = getWalletUrl(selectedWallet);
     const name = selectedWallet.name;
-    const t = selectedWallet.metadata?.transport;
+    const transport = selectedWallet.metadata?.transport;
 
     let title: string;
     let body: string;
     if (action === 'deeplink') {
-      title = `${name} is a mobile wallet`;
-      body = `${name} has no browser extension. Open ${name} on your phone to connect.`;
+      title = t('mobileWallet', { wallet: name });
+      body = t('mobileWalletBody', { wallet: name });
     } else if (action === 'pairing') {
-      title = `Pair with ${name}`;
-      body = `${name} connects remotely by pairing. A pairing code appears when ${name} is set up for this app; if none appeared, this app has not configured ${name}.`;
+      title = t('pairWallet', { wallet: name });
+      body = t('pairWalletBody', { wallet: name });
     } else {
-      const how =
-        t === 'scan'
-          ? 'loads through its own SDK'
-          : t === 'enterprise'
-            ? 'connects through a hosted sign-in this app configures'
-            : t === 'popup'
-              ? "is supplied by this app's configuration"
-              : 'is configured by this app';
-      title = `${name} is not available here`;
-      body = `${name} ${how}. Its absence is an app configuration issue, not something you can install.`;
+      title = t('notAvailable', { wallet: name });
+      const key = transport === 'scan' ? 'missingSdkBody' : transport === 'enterprise'
+        ? 'missingHostedBody' : transport === 'popup' ? 'missingPopupBody' : 'missingConfigBody';
+      body = t(key, { wallet: name });
     }
 
     return (
@@ -2292,7 +2291,7 @@ export function WalletModal({
             <ModalWalletIcon wallet={selectedWallet} size={80} iconUrl={iconUrl} />
           </div>
           <div style={{ fontSize: '17px', fontWeight: 600, color: theme.colors.text, marginBottom: '8px' }}>
-            {title}
+            <bdi dir="auto">{title}</bdi>
           </div>
           <div
             style={{
@@ -2303,7 +2302,7 @@ export function WalletModal({
               margin: '0 auto 28px',
             }}
           >
-            {body}
+            <bdi dir="auto">{body}</bdi>
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', alignItems: 'center' }}>
             {site && (
@@ -2325,11 +2324,12 @@ export function WalletModal({
                   fontFamily: theme.fontFamily,
                 }}
               >
-                About {name}
+                <bdi dir="auto">{t('aboutWallet', { wallet: name })}</bdi>
                 <ExternalLinkIcon size={11} color={theme.colors.textSecondary} />
               </a>
             )}
             <button
+              type="button"
               onClick={handleBackToList}
               style={{ ...ghostBtnStyle, fontSize: '13px' }}
               onMouseEnter={(e) => {
@@ -2339,7 +2339,7 @@ export function WalletModal({
                 e.currentTarget.style.backgroundColor = 'transparent';
               }}
             >
-              Choose another wallet
+              <bdi dir="auto">{t('chooseWallet')}</bdi>
             </button>
           </div>
         </div>
@@ -2396,7 +2396,7 @@ export function WalletModal({
             color: theme.colors.text,
             marginBottom: '8px',
           }}>
-            {selectedWallet.name} not found
+            <bdi dir="auto">{t('walletNotFound', { wallet: selectedWallet.name })}</bdi>
           </div>
 
           <div style={{
@@ -2406,7 +2406,7 @@ export function WalletModal({
             maxWidth: '300px',
             margin: '0 auto 28px',
           }}>
-            The {selectedWallet.name} browser extension isn&apos;t installed. Install it, then refresh this page to connect.
+            <bdi dir="auto">{t('extensionMissing', { wallet: selectedWallet.name })}</bdi>
           </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', alignItems: 'center' }}>
@@ -2441,27 +2441,29 @@ export function WalletModal({
                 }}
               >
                 <DownloadIcon size={15} color="#0B0F1A" />
-                Install {selectedWallet.name}
+                <bdi dir="auto">{t('installWallet', { wallet: selectedWallet.name })}</bdi>
                 <ExternalLinkIcon size={11} color="#0B0F1A" />
               </a>
             )}
 
             <div style={{ display: 'flex', gap: '10px' }}>
               <button
+                type="button"
                 onClick={handleRetry}
                 style={{ ...ghostBtnStyle, fontSize: '13px' }}
                 onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = theme.colors.surface; }}
                 onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; }}
               >
-                Try Again
+                <bdi dir="auto">{t('tryAgain')}</bdi>
               </button>
               <button
+                type="button"
                 onClick={handleBackToList}
                 style={{ ...ghostBtnStyle, fontSize: '13px' }}
                 onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = theme.colors.surface; }}
                 onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; }}
               >
-                All Wallets
+                <bdi dir="auto">{t('allWallets')}</bdi>
               </button>
             </div>
           </div>
@@ -2474,15 +2476,18 @@ export function WalletModal({
 
   return (
     <div
+      lang={locale}
+      dir={direction}
       className="pl-overlay"
       style={overlayStyle}
       onClick={handleClose}
       role="dialog"
       aria-modal="true"
-      aria-label="Connect Wallet"
+      aria-label={t('connectWallet')}
     >
       <div
         ref={modalRef}
+        tabIndex={-1}
         className="pl-panel"
         style={panelStyle}
         onClick={(e) => e.stopPropagation()}
@@ -2505,6 +2510,10 @@ export function WalletModal({
       </div>
 
       <style>{`
+        .pl-wallet-search::placeholder {
+          color: var(--pl-placeholder-color);
+          opacity: 1;
+        }
         @keyframes partylayer-spin {
           to { transform: rotate(360deg); }
         }
@@ -2579,9 +2588,8 @@ export function WalletModal({
            handlers set on the row (otherwise the inline transform would win). */
         .pl-wallet-row:active { transform: translateY(0) scale(0.985) !important; }
 
-        /* Footer "Powered by PartyLayer": muted, subtle hover (raise opacity). */
-        .pl-attribution { opacity: 0.72; transition: opacity 150ms cubic-bezier(0.2, 0.8, 0.2, 1); }
-        .pl-attribution:hover { opacity: 1; }
+        /* Keep footer text at its readable theme contrast, including on hover. */
+        .pl-attribution:hover { text-decoration: underline; }
 
         /* Connecting: a soft, diffuse breathing halo behind the wallet icon. The
            element is a large blurred radial gradient (see the inline style); this

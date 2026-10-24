@@ -38,8 +38,8 @@ import { TransportError } from './errors';
 /**
  * A CIP-0056 instrument identifier: the instrument and the party that issues it.
  *
- * Structurally identical to `TokenInstrumentId` in `@partylayer/react`'s holdings
- * hook (and to Nightly's `Instrument { id, admin }` and Loop's
+ * Shared by `@partylayer/react`'s holdings hook (and structurally identical to
+ * Nightly's `Instrument { id, admin }` and Loop's
  * `{ instrument_id, instrument_admin }`), so a value read from `useTokenHoldings`
  * can be passed straight into a {@link TransferIntent} with no conversion.
  *

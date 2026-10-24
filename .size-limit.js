@@ -25,7 +25,17 @@ const RN_PEERS = ['react', 'react-native', 'react-native-svg', '@react-native-as
 // INITIAL-bundle contribution (the same reason assets and peers are excluded above).
 // @cantor8/wallet-connect-sdk is lazily imported by the Cantor8 adapter, loaded only
 // when a user selects Cantor8.
-const LAZY_WALLET_SDKS = ['@cantor8/wallet-connect-sdk'];
+const LAZY_WALLET_SDKS = [
+  '@cantor8/wallet-connect-sdk',
+  '@k2flabs/walley-dapp-sdk',
+  '@lithiumdigital/cauri-dapp-sdk',
+  '@oneswap/wallet-cip0103-adapter',
+  '@vala-wallet/dapp-sdk',
+  '@canton-network/dapp-sdk',
+  '@canton-network/core-wallet-discovery',
+  '@partylayer/adapter-walletconnect',
+  '@partylayer/adapter-bron',
+];
 
 // Numbers are minified plus gzipped, the size a dApp downloads over the wire.
 module.exports = [
@@ -36,7 +46,15 @@ module.exports = [
     ignore: REACT_PEERS,
     modifyEsbuildConfig: assetsAsEmpty,
     gzip: true,
-    limit: '30 kB',
+    // Keyboard focus containment/restore and account menu navigation add ~0.9 kB.
+    // English/Turkish UI dictionaries and SSR-safe locale/direction context add ~2.8 kB.
+    // Optional authentication actions add ~0.42 kB. Backend challenge helpers
+    // live in a separate core subpath so ordinary SDK/RN consumers do not pay for them.
+    // In-memory recent activity, ledger-status labels and network guidance add ~1.5 kB.
+    // Exact-decimal, issuer-separated holdings UI adds ~1.2 kB.
+    // WCAG luminance/hover checks and scoped readable placeholders add ~0.17 kB.
+    // Measured 37.02 kB gzip; retain ~0.23 kB of headroom.
+    limit: '37.25 kB',
   },
   {
     name: 'react/query: useTokenHoldings',
@@ -255,7 +273,15 @@ module.exports = [
     // QR built as SVG through DOM APIs (fivenorth-io/loop-sdk#91). The Loop SDK
     // is not lazy-loaded (LAZY_WALLET_SDKS names Cantor8 only), so it is in this
     // bundle. Measured 47.22 kB; 47.75 kB leaves about 0.5 kB of headroom.
-    limit: '47.75 kB',
+    // Default wallet catalog: measured 48.42 kB after lazy-loading optional transports.
+    // Revision guards and serialized session writes add ~0.45 kB; measured ~48.8 kB.
+    // Complete provider transaction evidence, combined-only routing, duplicate
+    // command guards and exact signature echoes add ~0.34 kB to the shared client.
+    // Measured 49.23 kB; retain ~0.27 kB of headroom without dropping these checks.
+    // Official native ownership, abort/identity guards and the stable provider
+    // facade add ~3.5 kB. Discovery runtime stays a separately loaded chunk.
+    // Shared request/receipt command correlation adds ~0.12 kB; measured 53.09 kB.
+    limit: '53.25 kB',
   },
   {
     name: 'react-native: ui (ConnectButton)',
@@ -466,6 +492,17 @@ module.exports = [
     // QR built as SVG through DOM APIs (fivenorth-io/loop-sdk#91). The Loop SDK
     // is not lazy-loaded (LAZY_WALLET_SDKS names Cantor8 only), so it is in this
     // bundle. Measured 47.00 kB; 47.5 kB leaves about 0.5 kB of headroom.
-    limit: '47.5 kB',
+    // Default wallet catalog and contract validation add about 1.2 kB gzip.
+    // Official SDKs and configured transports remain separate lazy chunks. Measured 48.2 kB.
+    // Revision guards and serialized session writes add ~0.45 kB; measured ~48.6 kB.
+    // The bridge previously emitted executed with a command id as updateId and
+    // completionOffset=0, treated a hash as a signature, and called sign-only on
+    // combined-only wallets. Real payload validation and no-retry/session guards
+    // add ~0.34 kB. Provider 249 / SDK 268 tests cover the corrected boundaries.
+    // Measured 49.00 kB after concise error messages; retain ~0.25 kB of headroom.
+    // Official native ownership, abort/identity guards and the stable provider
+    // facade add ~3.5 kB. Discovery runtime stays a separately loaded chunk.
+    // Shared request/receipt command correlation adds ~0.12 kB; measured 52.85 kB.
+    limit: '53 kB',
   },
 ];

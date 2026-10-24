@@ -12,10 +12,12 @@
 
 import { useMemo, useEffect, useRef, createContext, useContext } from 'react';
 import { createPartyLayer } from '@partylayer/sdk';
-import type { PartyLayerClient, WalletAdapter, AdapterClass, OfficialProviderAdapter, OfficialAdapterFactory, NetworkId } from '@partylayer/sdk';
+import type { PartyLayerClient, WalletAdapter, AdapterClass, OfficialProviderAdapter, OfficialAdapterFactory, PartyLayerConfig, NetworkId } from '@partylayer/sdk';
 import type { SessionStoreOptions } from '@partylayer/session';
 import { PartyLayerProvider } from './context';
 import { ThemeProvider } from './theme';
+import { PartyLayerLocaleProvider, type PartyLayerDirection } from './localization';
+import { PartyLayerAuthenticationProvider, type PartyLayerAuthenticationAdapter } from './authentication';
 import type { ThemeInput } from './theme';
 
 // ─── Wallet Icons Context ─────────────────────────────────────────────────────
@@ -86,32 +88,30 @@ export interface PartyLayerKitProps {
   /** Application name shown to wallets during connection */
   appName: string;
   children: React.ReactNode;
+  /** Connection UI language (en/tr tags); unsupported languages fall back to English. */
+  locale?: string;
+  /** UI layout direction. Defaults to ltr. */
+  direction?: PartyLayerDirection;
+  /** Optional application-backend authentication; wallet connection alone is not sign-in. */
+  authentication?: PartyLayerAuthenticationAdapter;
 
   /** Registry URL override (default: https://registry.partylayer.xyz) */
   registryUrl?: string;
   /** Registry channel (default: 'stable') */
   channel?: 'stable' | 'beta';
-  /**
-   * Custom wallet adapters. If not provided, uses the no-config built-in
-   * adapters: 5N Loop, Cantor8, and Nightly. Console and Send are CIP-0103
-   * native and appear through the announce path.
-   *
-   * For Bron (enterprise OAuth), pass explicitly:
-   *   adapters={[...getBuiltinAdapters(), new BronAdapter(config)]}
-   *
-   * Also accepts an official @canton-network ProviderAdapter
-   * (`OfficialProviderAdapter`, e.g. `new WalleyAdapter({ host })`), the SDK
-   * auto-bridges it via GenericDiscoveryAdapter (popup/remote wallets), or an
-   * `OfficialAdapterFactory` (`{ providerId, create(host) }`), whose host the SDK
-   * resolves from the registry entry's `networkHosts[network]` so you set
-   * `network="…"` and never hardcode a wallet URL.
-   */
+  /** Replace the default wallet catalog. Omit to enable all supported wallets. */
   adapters?: (
     | WalletAdapter
     | AdapterClass
     | OfficialProviderAdapter
     | OfficialAdapterFactory
   )[];
+  /** Extend the default catalog without replacing it. */
+  additionalAdapters?: PartyLayerConfig['additionalAdapters'];
+  /** WalletConnect Cloud project id and optional pairing metadata. */
+  walletConnect?: PartyLayerConfig['walletConnect'];
+  /** Bron OAuth/API configuration; omitted means Bron is hidden. */
+  bron?: PartyLayerConfig['bron'];
   /**
    * Theme: a preset ('light' | 'dark' | 'auto'), a custom `PartyLayerTheme` object,
    * a callable theme result (`darkTheme({ accentColor, borderRadius, ... })`), or a
@@ -153,7 +153,13 @@ export function PartyLayerKit({
   registryUrl,
   channel,
   adapters,
+  additionalAdapters,
+  walletConnect,
+  bron,
   theme = 'light',
+  locale,
+  direction,
+  authentication,
   walletIcons = {},
   walletOrder,
   sessionOptions,
@@ -166,6 +172,7 @@ export function PartyLayerKit({
 
   const client = useMemo((): PartyLayerClient => {
     return createPartyLayer({
+      deferInitialization: true,
       network: network as NetworkId,
       app: {
         name: appName,
@@ -174,14 +181,24 @@ export function PartyLayerKit({
       registryUrl,
       channel,
       adapters: adaptersRef.current,
+      additionalAdapters, walletConnect, bron,
     });
-  // Only re-create client when these primitive values change
-  }, [network, appName, registryUrl, channel]);
+  // Keep configuration objects stable; changing them rebuilds the client.
+  }, [network, appName, registryUrl, channel, additionalAdapters, walletConnect, bron]);
 
-  // Cleanup on unmount or when client is re-created
+  // StrictMode replays effects with the same client in development. Defer
+  // disposal by one microtask so that replay does not destroy the live client
+  // while its official wallet SDKs are still loading. A replaced client and a
+  // real unmount still dispose normally.
+  const mountedClientRef = useRef<PartyLayerClient | null>(null);
   useEffect(() => {
+    mountedClientRef.current = client;
+    client.initialize();
     return () => {
-      client.destroy();
+      mountedClientRef.current = null;
+      queueMicrotask(() => {
+        if (mountedClientRef.current !== client) client.destroy();
+      });
     };
   }, [client]);
 
@@ -189,16 +206,18 @@ export function PartyLayerKit({
   const attribution = useMemo<AttributionConfig>(() => ({ showAttribution, disclaimer }), [showAttribution, disclaimer]);
 
   return (
+    <PartyLayerLocaleProvider locale={locale} direction={direction}>
     <WalletIconsContext.Provider value={walletIcons}>
       <WalletOrderContext.Provider value={walletOrder}>
         <AttributionContext.Provider value={attribution}>
           <ThemeProvider theme={themeValue}>
             <PartyLayerProvider client={client} network={network} sessionOptions={sessionOptions}>
-              {children}
+              {authentication ? <PartyLayerAuthenticationProvider adapter={authentication}>{children}</PartyLayerAuthenticationProvider> : children}
             </PartyLayerProvider>
           </ThemeProvider>
         </AttributionContext.Provider>
       </WalletOrderContext.Provider>
     </WalletIconsContext.Provider>
+    </PartyLayerLocaleProvider>
   );
 }

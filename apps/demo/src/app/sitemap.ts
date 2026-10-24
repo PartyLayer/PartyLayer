@@ -27,6 +27,8 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: `${base}/docs/wallet-modal`, lastModified: new Date(), changeFrequency: 'monthly', priority: 0.8 },
     { url: `${base}/docs/theming`, lastModified: new Date(), changeFrequency: 'monthly', priority: 0.7 },
     { url: `${base}/docs/hooks`, lastModified: new Date(), changeFrequency: 'monthly', priority: 0.9 },
+    { url: `${base}/docs/authentication`, lastModified: new Date(), changeFrequency: 'monthly', priority: 0.8 },
+    { url: `${base}/docs/transaction-lifecycle`, lastModified: new Date(), changeFrequency: 'monthly', priority: 0.8 },
     { url: `${base}/docs/vanilla-js`, lastModified: new Date(), changeFrequency: 'monthly', priority: 0.8 },
     { url: `${base}/docs/wallets`, lastModified: new Date(), changeFrequency: 'monthly', priority: 0.9 },
     { url: `${base}/docs/wallets/send`, lastModified: new Date(), changeFrequency: 'monthly', priority: 0.7 },

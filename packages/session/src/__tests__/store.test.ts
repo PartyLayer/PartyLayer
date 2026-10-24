@@ -19,6 +19,40 @@ import {
 } from './local-mock';
 import { createSessionStore } from '../store';
 
+describe('deferred framework lifecycle', () => {
+  it('creates no provider or broadcast subscriptions for a discarded render', async () => {
+    const provider = createMockWallet();
+    const on = vi.spyOn(provider, 'on');
+    const channelFactory = vi.fn(() => null);
+    const discarded = createSessionStore(provider, { deferInitialization: true, broadcast: { channelFactory } });
+    expect(on).not.toHaveBeenCalled(); expect(channelFactory).not.toHaveBeenCalled();
+    discarded.destroy();
+    expect(channelFactory).not.toHaveBeenCalled();
+    const committed = createSessionStore(provider, { deferInitialization: true, broadcast: { channelFactory } });
+    await committed.init(); await committed.init();
+    expect(on).toHaveBeenCalledTimes(3);
+    expect(channelFactory).toHaveBeenCalledTimes(1);
+    committed.destroy();
+  });
+
+  it('does not persist a late restore after its framework owner has unmounted', async () => {
+    const provider = createMockWallet({ connected: true });
+    let resolve!: (value: unknown) => void;
+    const status = new Promise(done => { resolve = done; });
+    const original = provider.request;
+    provider.request = vi.fn(args => args.method === 'status' ? status : original(args)) as CIP0103Provider['request'];
+    const persisted = { getItem: async () => null, setItem: vi.fn(), removeItem: vi.fn() };
+    const store = createSessionStore(provider, { deferInitialization: true, storage: persisted });
+    const restore = store.init();
+    await Promise.resolve(); store.destroy();
+    resolve({ connection: { isConnected: true }, network: { networkId: 'canton:da-devnet' } });
+    await restore;
+    expect(store.getSnapshot().status).not.toBe('connected');
+    expect(persisted.setItem).not.toHaveBeenCalled();
+    await expect(store.enqueue(async () => 'write')).rejects.toThrow(/destroyed/);
+  });
+});
+
 function account(partyId: string, primary = true): CIP0103Account {
   return {
     primary,

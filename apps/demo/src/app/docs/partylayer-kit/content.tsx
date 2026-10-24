@@ -29,15 +29,39 @@ function App() {
       <PropsTable data={[
         { prop: 'network', type: '"devnet" | "testnet" | "mainnet"', description: 'Canton network to connect to. Determines which wallets and registry entries are available.' },
         { prop: 'appName', type: 'string', description: 'Your application name, shown to wallets during connection requests.' },
+        { prop: 'locale', type: 'string', default: '"en"', description: 'Connection UI language: English/Turkish language tags; unsupported tags fall back to English.' },
+        { prop: 'direction', type: '"ltr" | "rtl"', default: '"ltr"', description: 'Text and layout direction for PartyLayer UI.' },
+        { prop: 'authentication', type: 'PartyLayerAuthenticationAdapter', description: 'Application backend integration for server-verified sign-in. Omitted means wallet connection only.' },
         { prop: 'children', type: 'ReactNode', description: 'Your application component tree.' },
         { prop: 'registryUrl', type: 'string', default: '"https://registry.partylayer.xyz"', description: 'Override the wallet registry URL. Useful for self-hosted registries.' },
         { prop: 'channel', type: '"stable" | "beta"', default: '"stable"', description: 'Registry channel. Use "beta" to include wallets in beta testing.' },
-        { prop: 'adapters', type: '(WalletAdapter | AdapterClass | OfficialProviderAdapter | OfficialAdapterFactory)[]', default: 'Built-in adapters', description: 'Custom wallet adapter list. Overrides the default built-in adapters if provided. Also accepts official provider adapters and adapter factories.' },
+        { prop: 'adapters', type: '(WalletAdapter | AdapterClass | OfficialProviderAdapter | OfficialAdapterFactory)[]', default: 'Default wallet catalog', description: 'Custom wallet adapter list. Overrides the default built-in adapters if provided. Also accepts official provider adapters and adapter factories.' },
+        { prop: 'walletConnect', type: 'WalletConnectAdapterConfig', description: 'Your Cloud project id and optional pairing metadata. No separate wallet package needed.' },
+        { prop: 'bron', type: 'BronAdapterConfig', description: 'Your Bron OAuth/API configuration. Hidden when omitted.' },
+        { prop: 'additionalAdapters', type: 'PartyLayerConfig["adapters"]', description: 'Extend the default catalog with custom adapters.' },
         { prop: 'theme', type: '"light" | "dark" | "auto" | PartyLayerTheme', default: '"light"', description: 'Theme preset or a custom theme object. "auto" follows system preference.' },
         { prop: 'walletIcons', type: 'Record<string, string>', default: '{}', description: 'Custom wallet icon URLs keyed by walletId. Overrides registry icons.' },
         { prop: 'walletOrder', type: 'readonly string[]', description: 'Wallet ids in display order for the connect modal. Unlisted wallets fall to the end; sorting applies within the CIP-0103 Native and Available sections.' },
         { prop: 'sessionOptions', type: 'Partial<SessionStoreOptions>', description: 'Session-store options forwarded to PartyLayerProvider (reconnect, expiry, broadcast, persistSnapshot, storage, onInvalidate) for encrypted persistence, auto-reconnect, and multi-tab sync.' },
       ]} />
+
+      <H2 id="localization">UI Language and Direction</H2>
+      <CodeBlock language="tsx">{`<PartyLayerKit network="devnet" appName="My dApp" locale="tr-TR" direction="rtl">
+  <ConnectButton />
+</PartyLayerKit>`}</CodeBlock>
+      <P>
+        English is the default; Turkish tags such as <Code>tr</Code> and <Code>tr-TR</Code>
+        select Turkish. Unsupported language tags fall back to English. Changing language
+        or direction preserves the client and wallet connection. The explicit setting is
+        shared by server and client; browser language is not guessed automatically.
+      </P>
+      <P>
+        This translates PartyLayer connection, account, cost and transaction UI, including
+        accessible labels. Your application content, custom labels, wallet names, identifiers,
+        provider error details and vendor approval screens retain their own language settings.
+        Advanced provider compositions can use <Code>PartyLayerLocaleProvider</Code> with
+        the same <Code>locale</Code> and <Code>direction</Code> props.
+      </P>
 
       <H2 id="network-config">Network Configuration</H2>
       <P>
@@ -55,43 +79,30 @@ function App() {
 
       <H2 id="custom-adapters">Custom Adapters</H2>
       <P>
-        By default, <Code>{'PartyLayerKit'}</Code> auto-registers all built-in adapters: Console,
-        Loop, Cantor8, and Nightly. To add additional adapters (like Bron) or use a custom set:
+        By default, <Code>{'PartyLayerKit'}</Code> supplies the supported wallet catalog for your network
+        and channel. Configure WalletConnect and Bron through application options:
       </P>
-      <CodeBlock language="tsx">{`import { PartyLayerKit } from '@partylayer/react';
-import { getBuiltinAdapters } from '@partylayer/sdk';
-import { BronAdapter } from '@partylayer/adapter-bron';
+      <CodeBlock language="tsx">{`import { PartyLayerKit, ConnectButton } from '@partylayer/react';
 
-function App() {
-  return (
-    <PartyLayerKit
-      network="mainnet"
-      appName="My dApp"
-      adapters={[
-        ...getBuiltinAdapters(),
-        new BronAdapter({
-          auth: {
-            clientId: 'your-client-id',
-            redirectUri: 'https://your-app.com/auth/callback',
-            authorizationUrl: 'https://auth.bron.example/authorize',
-            tokenUrl: 'https://auth.bron.example/token',
-          },
-          api: {
-            baseUrl: 'https://api.bron.example',
-            getAccessToken: async () => getStoredAccessToken(),
-          },
-        }),
-      ]}
-    >
-      {children}
-    </PartyLayerKit>
-  );
-}`}</CodeBlock>
+const walletConnect = { projectId: 'your-walletconnect-project-id' };
+const bron = {
+  auth: {
+    clientId: 'your-client-id',
+    redirectUri: 'https://your-app.com/auth/callback',
+    authorizationUrl: 'https://auth.bron.example/authorize',
+    tokenUrl: 'https://auth.bron.example/token',
+  },
+  api: { baseUrl: 'https://api.bron.example' },
+};
+
+<PartyLayerKit network="mainnet" appName="My dApp" walletConnect={walletConnect} bron={bron}>
+  <ConnectButton />
+</PartyLayerKit>`}</CodeBlock>
 
       <Callout type="warning">
         When you provide the <Code>{'adapters'}</Code> prop, it <Strong>replaces</Strong> the
-        default set entirely. Always include <Code>{'getBuiltinAdapters()'}</Code> if you want to
-        keep the built-in wallets alongside your custom adapter.
+        default catalog entirely. Use <Code>{'additionalAdapters'}</Code> to extend it while retaining
+        the official SDKs and CIP-0103 discovery.
       </Callout>
 
       <H2 id="custom-icons">Custom Wallet Icons</H2>

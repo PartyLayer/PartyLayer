@@ -96,27 +96,44 @@ function shade(hex: string, pct: number): string {
   return '#' + mixed.map((c) => c.toString(16).padStart(2, '0')).join('');
 }
 
-/** Choose a readable on-accent text color from the accent's luminance. */
-function autoForeground(hex: string): string {
+/** WCAG relative luminance; non-hex overrides remain the application's choice. */
+function luminance(hex: string): number | null {
   const rgb = parseHex(hex);
-  if (!rgb) return '#FFFFFF';
-  const lum = 0.299 * rgb[0] + 0.587 * rgb[1] + 0.114 * rgb[2];
-  return lum > 150 ? '#0B0F1A' : '#FFFFFF';
+  if (!rgb) return null;
+  const linear = rgb.map((c) => {
+    const value = c / 255;
+    return value <= 0.04045 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4;
+  });
+  return linear[0] * 0.2126 + linear[1] * 0.7152 + linear[2] * 0.0722;
+}
+
+function contrast(a: string, b: string): number {
+  const x = luminance(a), y = luminance(b);
+  if (x === null || y === null) return Infinity;
+  return (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05);
+}
+
+/** Pick the higher-contrast foreground, with pure black for middle luminance. */
+function autoForeground(hex: string): string {
+  const white = contrast(hex, '#FFFFFF');
+  const dark = contrast(hex, DEFAULT_FOREGROUND);
+  if (white >= dark && white >= 4.5) return '#FFFFFF';
+  return dark >= 4.5 ? DEFAULT_FOREGROUND : '#000000';
 }
 
 // ─── Accent presets (spreadable option fragments, RainbowKit-style) ──────────
 
 export const accentPresets = {
   partyYellow: { accentColor: '#FFCC00', accentColorForeground: '#0B0F1A' },
-  blue: { accentColor: '#3B82F6', accentColorForeground: '#FFFFFF' },
+  blue: { accentColor: '#3B82F6', accentColorForeground: '#0B0F1A' },
   green: { accentColor: '#10B981', accentColorForeground: '#052E16' },
   purple: { accentColor: '#7B3FE4', accentColorForeground: '#FFFFFF' },
-  orange: { accentColor: '#F97316', accentColorForeground: '#FFFFFF' },
-  pink: { accentColor: '#EC4899', accentColorForeground: '#FFFFFF' },
-  red: { accentColor: '#EF4444', accentColorForeground: '#FFFFFF' },
+  orange: { accentColor: '#F97316', accentColorForeground: '#0B0F1A' },
+  pink: { accentColor: '#EC4899', accentColorForeground: '#0B0F1A' },
+  red: { accentColor: '#EF4444', accentColorForeground: '#0B0F1A' },
 } as const satisfies Record<string, ThemeOverrides>;
 
-// ─── Base token objects (the defaults; unchanged look) ───────────────────────
+// ─── Base token objects (the defaults) ───────────────────────
 
 const lightBase: PartyLayerTheme = {
   mode: 'light',
@@ -127,13 +144,13 @@ const lightBase: PartyLayerTheme = {
     background: '#FFFFFF',
     surface: '#F5F6F8',
     text: '#0B0F1A',
-    textSecondary: '#64748B',
+    textSecondary: '#5D6B82',
     border: 'rgba(15, 23, 42, 0.10)',
-    success: '#10B981',
+    success: '#047857',
     successBg: '#ecfdf5',
-    error: '#EF4444',
+    error: '#B91C1C',
     errorBg: '#fef2f2',
-    warning: '#F59E0B',
+    warning: '#92400E',
     warningBg: '#FFFBEB',
     overlay: 'rgba(15, 23, 42, 0.20)',
   },
@@ -177,6 +194,11 @@ function applyOverrides(base: PartyLayerTheme, o?: ThemeOverrides): PartyLayerTh
     t.colors.primaryForeground = o.accentColorForeground ?? autoForeground(o.accentColor);
   }
   if (o.accentColorForeground) t.colors.primaryForeground = o.accentColorForeground;
+  const foreground = t.colors.primaryForeground ?? DEFAULT_FOREGROUND;
+  if (o.accentColor && contrast(foreground, t.colors.primaryHover) < 4.5 &&
+      contrast(foreground, t.colors.primary) >= 4.5) {
+    t.colors.primaryHover = t.colors.primary;
+  }
   if (o.borderRadius) t.borderRadius = RADIUS_SCALE[o.borderRadius] ?? o.borderRadius;
   if (o.overlayBlur) t.overlayBlur = BLUR_SCALE[o.overlayBlur] ?? o.overlayBlur;
   if (o.fontStack) t.fontFamily = FONT_STACKS[o.fontStack] ?? o.fontStack;
@@ -204,13 +226,12 @@ export const darkTheme: CallableTheme = makeCallableTheme(darkBase);
 //
 // Five enterprise/fintech inspired families, each with a light and a dark
 // variant (ten variants total). Original palettes, NOT Canton's brand marks or
-// colors. Every variant is WCAG AA verified for text/bg, textSecondary/bg,
-// text/surface, textSecondary/surface, primaryForeground/primary, and
-// primary/bg. Each shares the same DEFAULT_RADIUS/DEFAULT_FONT/DEFAULT_BLUR as
+// colors. Normal text, surface text, button labels and status text pairs are
+// guarded at 4.5:1 in theme.test.tsx. Custom color overrides need their own review.
+// Each shares the same DEFAULT_RADIUS/DEFAULT_FONT/DEFAULT_BLUR as
 // the default bases, and each is wrapped with makeCallableTheme so it works both
 // as a plain object and as a callable for overrides, exactly like
-// lightTheme/darkTheme. These are purely additive: the default theme is
-// unchanged.
+// lightTheme/darkTheme.
 
 const midnightLightBase: PartyLayerTheme = {
   mode: 'light',
@@ -223,11 +244,11 @@ const midnightLightBase: PartyLayerTheme = {
     text: '#0F172A',
     textSecondary: '#475569',
     border: 'rgba(15, 23, 42, 0.10)',
-    success: '#059669',
+    success: '#047857',
     successBg: '#ECFDF5',
-    error: '#DC2626',
+    error: '#B91C1C',
     errorBg: '#FEF2F2',
-    warning: '#D97706',
+    warning: '#92400E',
     warningBg: '#FFFBEB',
     overlay: 'rgba(15, 23, 42, 0.25)',
   },
@@ -269,13 +290,13 @@ const slateLightBase: PartyLayerTheme = {
     background: '#FFFFFF',
     surface: '#F8FAFC',
     text: '#1E293B',
-    textSecondary: '#64748B',
+    textSecondary: '#5D6B82',
     border: 'rgba(30, 41, 59, 0.10)',
-    success: '#10B981',
+    success: '#047857',
     successBg: '#ECFDF5',
-    error: '#EF4444',
+    error: '#B91C1C',
     errorBg: '#FEF2F2',
-    warning: '#F59E0B',
+    warning: '#92400E',
     warningBg: '#FFFBEB',
     overlay: 'rgba(30, 41, 59, 0.25)',
   },
@@ -311,19 +332,19 @@ const slateDarkBase: PartyLayerTheme = {
 const tealLightBase: PartyLayerTheme = {
   mode: 'light',
   colors: {
-    primary: '#0D9488',
-    primaryHover: '#0F766E',
+    primary: '#0F766E',
+    primaryHover: '#115E59',
     primaryForeground: '#FFFFFF',
     background: '#FFFFFF',
     surface: '#F0FDFA',
     text: '#134E4A',
     textSecondary: '#5F6B6A',
     border: 'rgba(19, 78, 74, 0.12)',
-    success: '#10B981',
+    success: '#047857',
     successBg: '#ECFDF5',
-    error: '#EF4444',
+    error: '#B91C1C',
     errorBg: '#FEF2F2',
-    warning: '#F59E0B',
+    warning: '#92400E',
     warningBg: '#FFFBEB',
     overlay: 'rgba(19, 78, 74, 0.25)',
   },
@@ -367,11 +388,11 @@ const goldLightBase: PartyLayerTheme = {
     text: '#1C1917',
     textSecondary: '#57534E',
     border: 'rgba(28, 25, 23, 0.12)',
-    success: '#059669',
+    success: '#047857',
     successBg: '#ECFDF5',
-    error: '#DC2626',
+    error: '#B91C1C',
     errorBg: '#FEF2F2',
-    warning: '#D97706',
+    warning: '#92400E',
     warningBg: '#FFFBEB',
     overlay: 'rgba(28, 25, 23, 0.25)',
   },
@@ -415,11 +436,11 @@ const warmLightBase: PartyLayerTheme = {
     text: '#1F1315',
     textSecondary: '#6B5658',
     border: 'rgba(31, 19, 21, 0.12)',
-    success: '#059669',
+    success: '#047857',
     successBg: '#ECFDF5',
-    error: '#DC2626',
+    error: '#B91C1C',
     errorBg: '#FEF2F2',
-    warning: '#D97706',
+    warning: '#92400E',
     warningBg: '#FFFBEB',
     overlay: 'rgba(31, 19, 21, 0.25)',
   },

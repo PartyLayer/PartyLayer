@@ -26,3 +26,5 @@ npm run build && npm start
 
 - [PartyLayer docs](https://partylayer.xyz/docs)
 - [@partylayer/session: createCookieStorage](https://www.npmjs.com/package/@partylayer/session)
+
+Wallet SDKs are included. Vala requires Devnet with `channel="beta"`. WalletConnect requires your project id through `walletConnect`; Bron requires OAuth/API configuration through `bron`. No separate wallet SDK installation or registration is needed.

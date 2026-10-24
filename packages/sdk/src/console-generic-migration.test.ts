@@ -204,7 +204,7 @@ describe('Console served by the generic announce bridge (no ConsoleAdapter)', ()
       capabilities: ['connect', 'signMessage', 'submitTransaction'],
       adapter: { packageName: '@partylayer/adapter-console', versionRange: '*' },
       docs: [],
-      networks: ['devnet'],
+      networks: ['devnet', 'mainnet'],
       channel: 'stable',
       providerDetection: {
         transport: 'window.canton',
@@ -271,7 +271,7 @@ describe('Console served by the generic announce bridge (no ConsoleAdapter)', ()
     };
 
     const client = createPartyLayer({
-      network: 'devnet',
+      network: 'mainnet',
       app: { name: 'faz2-both', origin: 'https://test.example.com' },
       discovery: { announceTimeoutMs: 0 },
       adapters: [], // NEITHER bespoke adapter — both via the generic path

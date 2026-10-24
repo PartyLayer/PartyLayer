@@ -38,7 +38,8 @@ describe('offline example — connect → submit → finalize', () => {
       await connectMock(provider);
       const submit = provider.request({ method: 'prepareExecute', params: { tx: {} } });
 
-      // 'pending' fires immediately; 'signed' waits for the signTransaction delay
+      // Session validation resolves first; signing still waits for its own delay.
+      await vi.advanceTimersByTimeAsync(0);
       expect(rec.statuses()).toEqual(['pending']);
       await vi.advanceTimersByTimeAsync(100);
       expect(rec.statuses()).toEqual(['pending', 'signed']);
@@ -52,9 +53,9 @@ describe('offline example — connect → submit → finalize', () => {
     }
   });
 
-  it('a mid-flight submission failure terminates the stream with failed', async () => {
+  it('an explicit submission rejection terminates the stream with failed', async () => {
     const provider = createMockWallet({
-      scenarios: { submitTransaction: 'insufficientTraffic' },
+      scenarios: { submitTransaction: 'userRejected' },
     });
     const rec = recordTxEvents(provider);
 
@@ -64,6 +65,15 @@ describe('offline example — connect → submit → finalize', () => {
     ).rejects.toThrow();
 
     expect(rec.statuses()).toEqual(['pending', 'signed', 'failed']);
+    rec.stop();
+  });
+
+  it('a timeout never invents a terminal failure or ledger completion', async () => {
+    const provider = createMockWallet({ scenarios: { submitTransaction: 'transactionTimeout' } });
+    const rec = recordTxEvents(provider);
+    await connectMock(provider);
+    await expect(provider.request({ method: 'prepareExecute', params: { tx: {} } })).rejects.toMatchObject({ code: -32603 });
+    expect(rec.statuses()).toEqual(['pending', 'signed']);
     rec.stop();
   });
 });

@@ -27,7 +27,8 @@ import type {
   Session,
   WalletInfo,
 } from '@partylayer/sdk';
-import { createSessionStore, type SessionStore, type SessionStoreOptions } from '@partylayer/session';
+import { createSessionStore, createMemoryStorage, type SessionStore, type SessionStoreOptions } from '@partylayer/session';
+import { TransactionHistoryProvider } from './transaction-history';
 
 interface PartyLayerContextValue {
   client: PartyLayerClient | null;
@@ -98,21 +99,23 @@ export function PartyLayerProvider({
     sessionOptionsRef.current = sessionOptions;
     storeRef.current = {
       client,
-      // 1.0: no pinned storage, inherit the session default (encrypted
-      // IndexedDB where supported, in-memory otherwise). Apps can still pass an
-      // explicit `storage` (e.g. `createLocalStorage()` or `createMemoryStorage()`)
-      // via `sessionOptions`, which is respected.
+      // This store is a live UI projection of the SDK's provider, with no
+      // independent persisted native identity. Explicit storage overrides remain
+      // view caches: restoration still reads the live provider.
       store: createSessionStore(client.asProvider(), {
+        storage: createMemoryStorage(),
+        persistSnapshot: false,
         ...sessionOptions,
+        deferInitialization: true,
       }),
     };
   }
   const store = storeRef.current.store;
+  const mountedStoreRef = useRef<SessionStore | null>(null);
 
   useEffect(() => {
-    // Best-effort: when on the default storage (no explicit override), sweep the
-    // pre-1.0 plain-localStorage marker now that the default moved to encrypted
-    // IndexedDB. One removeItem; swallow errors; SSR-safe.
+    // Sweep the old UI-store marker; the framework now projects SDK state in
+    // memory and never uses this marker to establish a native connection.
     if (!sessionOptionsRef.current?.storage && typeof window !== 'undefined') {
       try {
         window.localStorage?.removeItem('partylayer.session.connected');
@@ -120,19 +123,25 @@ export function PartyLayerProvider({
         /* ignore */
       }
     }
-    // Restore/reconnect on mount; tear down on unmount.
+    mountedStoreRef.current = store;
     void store.init();
     return () => {
-      store.destroy();
-      if (storeRef.current?.store === store) storeRef.current = null;
+      mountedStoreRef.current = null;
+      queueMicrotask(() => {
+        if (mountedStoreRef.current === store) return;
+        store.destroy();
+        if (storeRef.current?.store === store) storeRef.current = null;
+      });
     };
   }, [store]);
 
   useEffect(() => {
     let mounted = true;
+    let sessionRevision = 0;
 
     async function load() {
       try {
+        const revision = sessionRevision;
         // Registry list + active session in parallel. listWallets() is
         // resilient: if the registry is unreachable, the SDK falls back
         // to generating WalletInfo entries from the adapters that are
@@ -144,7 +153,7 @@ export function PartyLayerProvider({
 
         if (!mounted) return;
 
-        setSession(sessionData);
+        if (revision === sessionRevision) setSession(sessionData);
         setWallets(registryWallets);
         setIsLoading(false);
       } catch (err) {
@@ -162,17 +171,20 @@ export function PartyLayerProvider({
     const unsubscribeConnect = client.on('session:connected', (event) => {
       if (!mounted) return;
       if (event.type === 'session:connected') {
+        ++sessionRevision;
         setSession(event.session);
       }
     });
 
     const unsubscribeDisconnect = client.on('session:disconnected', () => {
       if (!mounted) return;
+      ++sessionRevision;
       setSession(null);
     });
 
     const unsubscribeExpired = client.on('session:expired', () => {
       if (!mounted) return;
+      ++sessionRevision;
       setSession(null);
     });
 
@@ -221,7 +233,7 @@ export function PartyLayerProvider({
         store,
       }}
     >
-      {children}
+      <TransactionHistoryProvider client={client} session={session}>{children}</TransactionHistoryProvider>
     </PartyLayerContext.Provider>
   );
 }

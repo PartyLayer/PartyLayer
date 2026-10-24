@@ -1,0 +1,32 @@
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: cron
+      cronjob: '0 9 * * *'
+      timezone: Europe/Istanbul
+    cooldown:
+      default-days: 0
+    open-pull-requests-limit: 10
+    versioning-strategy: increase
+    allow:
+      - dependency-name: '@canton-network/*'
+      - dependency-name: '@console-wallet/dapp-sdk'
+      - dependency-name: '@fivenorth/loop-sdk'
+      - dependency-name: '@cantor8/wallet-connect-sdk'
+      - dependency-name: '@k2flabs/walley-dapp-sdk'
+      - dependency-name: '@lithiumdigital/cauri-dapp-sdk'
+      - dependency-name: '@oneswap/wallet-cip0103-adapter'
+      - dependency-name: '@vala-wallet/dapp-sdk'
+      - dependency-name: '@walletconnect/*'
+    groups:
+      wallet-sdk-patches:
+        patterns: ['*']
+        update-types: [patch]
+      wallet-sdk-minors:
+        patterns: ['*']
+        update-types: [minor]
+    commit-message:
+      prefix: chore
+      include: scope

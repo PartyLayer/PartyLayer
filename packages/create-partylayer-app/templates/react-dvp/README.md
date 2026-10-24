@@ -132,3 +132,5 @@ disclosed contract and choice context types (`TokenDisclosedContract`,
 `TokenChoiceContext`, `TokenTransferFactory`, `TokenAllocationFactory`) plus
 `mergeDisclosedContracts` for combining the disclosures of several registry contexts
 into one submission.
+
+Wallet SDKs are included. Vala requires Devnet with `channel="beta"`. WalletConnect requires your project id through `walletConnect`; Bron requires OAuth/API configuration through `bron`. No separate wallet SDK installation or registration is needed.

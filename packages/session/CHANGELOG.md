@@ -1,5 +1,20 @@
 # @partylayer/session
 
+## 1.1.9
+
+- Allow frameworks to defer provider/BroadcastChannel subscriptions until init.
+  Prevent a destroyed store from persisting late restores or starting queued writes.
+
+### Patch Changes
+
+- Updated dependencies [817d357]
+- Updated dependencies [2e07185]
+- Updated dependencies [882752f]
+- Updated dependencies [0ebd598]
+- Updated dependencies [8cb0f09]
+- Updated dependencies [8e08da9]
+  - @partylayer/core@0.15.0
+
 ## 1.1.8
 
 ### Patch Changes
