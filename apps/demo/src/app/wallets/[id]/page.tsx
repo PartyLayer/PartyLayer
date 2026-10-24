@@ -53,7 +53,7 @@ export function generateMetadata({ params }: { params: { id: string } }): Metada
   }
 
   const title = `${baseName(w.name)} wallet integration for Canton dApps`;
-  const description = `Connect ${w.name} in a Canton dApp with PartyLayer: install ${w.adapterPackage}, construct the adapter, and know which calls it supports and which it does not.`;
+  const description = `Connect ${w.name} on Canton with PartyLayer's React kit. Wallet runtimes are included; check supported networks, application setup and capability limits.`;
 
   return {
     title: { absolute: `${title} · PartyLayer` },
@@ -121,10 +121,9 @@ export default function WalletIntegrationPage({ params }: { params: { id: string
         '@context': 'https://schema.org',
         '@type': 'TechArticle',
         headline: `${baseName(w.name)} wallet integration for Canton dApps`,
-        description: `How to connect ${w.name} in a Canton dApp using PartyLayer's ${w.adapterPackage} adapter.`,
+        description: `Connect ${w.name} with PartyLayer's React wallet kit, included wallet runtimes and explicit network and capability requirements.`,
         url: `https://partylayer.xyz/wallets/${w.id}`,
         proficiencyLevel: 'Beginner',
-        dateModified: snapshot.publishedAt,
         author: { '@type': 'Organization', name: 'PartyLayer', url: 'https://partylayer.xyz/' },
         publisher: { '@type': 'Organization', name: 'PartyLayer', url: 'https://partylayer.xyz/' },
         about: { '@type': 'SoftwareApplication', name: w.name, url: w.homepage || undefined },

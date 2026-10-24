@@ -289,6 +289,13 @@ the registry plus actual SDK capabilities; use `pnpm gen:readme` instead of edit
 its marked sections. Document runtime inclusion separately from wallet login,
 network support, capability limits and completed live acceptance.
 
+After changing the quick start, SDK README, registry or entry-point package versions,
+run `pnpm gen:readme` first when wallet metadata changes, then `pnpm gen:ai-docs`.
+Commit both generated AI references. `pnpm gate:ai-docs`, the required docs gate and
+the demo production prebuild reject stale output. `llms-full.txt` includes the actual
+React guide examples, which are compiled by the same snippet gate as the public site.
+Do not hand-edit generated files or introduce a separate AI-only API example.
+
 ## Post-Release
 
 - [ ] Verify packages published to npm
@@ -299,4 +306,4 @@ network support, capability limits and completed live acceptance.
 
 `pnpm gate:docs-drift` includes `pnpm gate:docs-snippets`, which compiles actual installation, quick-start, landing, SSR and Canton migration snippets against the public declarations. Run it after changing a public example; building the docs page alone only checks its string rendering. The browser discovery suite also checks that the playground serves useful initial HTML and still hydrates into the connection UI.
 
-The daily public growth workflow includes bounded HTTP/canonical/robots checks for the sitemap URLs. Its technical health results are separate from Search Console processing, Googlebot access and search ranking. See the [growth roadmap](./growth/roadmap.md).
+The daily public growth workflow includes bounded HTTP/canonical/robots checks for the sitemap URLs and compares both deployed AI references against the repository output. Its technical health results are separate from Search Console processing, Googlebot access, AI citations and search ranking. See the [growth roadmap](./growth/roadmap.md).

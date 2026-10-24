@@ -1,21 +1,34 @@
 # PartyLayer
 
-> CIP-0103 compliant wallet integration SDK for Canton Network — registry-backed, verified wallets, one unified API.
+> CIP-0103 compliant Canton Network wallet connection kit. One React installation includes the SDK, supported wallet runtimes and a branded Connect Wallet UI.
 
-## Docs
+Start with the quick start for the complete installation and provider/button examples. Wallet support depends on the selected network, channel and application configuration.
+
+## Documentation
 
 - [Introduction](https://partylayer.xyz/docs)
-- [Installation](https://partylayer.xyz/docs/installation)
-- [Quick Start](https://partylayer.xyz/docs/quick-start)
-- [PartyLayer Kit](https://partylayer.xyz/docs/partylayer-kit)
-- [Connect Button](https://partylayer.xyz/docs/connect-button)
-- [Wallet Modal](https://partylayer.xyz/docs/wallet-modal)
+- [Installation and new-app CLI](https://partylayer.xyz/docs/installation)
+- [React and Next.js quick start](https://partylayer.xyz/docs/quick-start)
+- [Coming from RainbowKit](https://partylayer.xyz/docs/rainbowkit-for-canton)
+- [PartyLayerKit configuration](https://partylayer.xyz/docs/partylayer-kit)
+- [ConnectButton](https://partylayer.xyz/docs/connect-button)
+- [Wallet modal](https://partylayer.xyz/docs/wallet-modal)
 - [Theming](https://partylayer.xyz/docs/theming)
-- [Hooks](https://partylayer.xyz/docs/hooks)
-- [Send Wallet](https://partylayer.xyz/docs/wallets/send)
+- [React hooks and optional data hooks](https://partylayer.xyz/docs/hooks)
+- [Framework-independent TypeScript SDK](https://partylayer.xyz/docs/vanilla-js)
+- [Wallet networks and configuration](https://partylayer.xyz/docs/wallets)
+- [CIP-0103 provider](https://partylayer.xyz/docs/cip-0103)
+- [Generic provider bridge](https://partylayer.xyz/docs/generic-bridge)
+- [Server-verified authentication](https://partylayer.xyz/docs/authentication)
+- [Transaction lifecycle](https://partylayer.xyz/docs/transaction-lifecycle)
+- [Token transfers and command requirements](https://partylayer.xyz/docs/token-transfers)
+- [Production checklist](https://partylayer.xyz/docs/production-checklist)
+- [Integration support](https://partylayer.xyz/docs/integration-support)
 
 ## Resources
 
+- [Wallet directory](https://partylayer.xyz/wallets)
+- [Interactive Devnet demo](https://partylayer.xyz/kit-demo)
 - [GitHub](https://github.com/PartyLayer/PartyLayer)
-- [npm (@partylayer)](https://www.npmjs.com/org/partylayer)
-- [X](https://x.com/partylayerkit)
+- [npm React kit](https://www.npmjs.com/package/@partylayer/react)
+- [Full text reference](https://partylayer.xyz/llms-full.txt)

@@ -30,6 +30,8 @@ const groups = [
   ['docs/quick-start.md',quickStart],
   ['README.md',markdown('README.md')],
   ['docs/react-cookie-ssr.md',markdown('docs/react-cookie-ssr.md')],
+  ['apps/demo/public/llms-full.txt',markdown('apps/demo/public/llms-full.txt')],
+  ['apps/demo/src/app/docs/introduction/content.tsx',website('apps/demo/src/app/docs/introduction/content.tsx')],
   ['apps/demo/src/app/docs/quick-start/content.tsx',website('apps/demo/src/app/docs/quick-start/content.tsx')],
   ['apps/demo/src/app/content.tsx',website('apps/demo/src/app/content.tsx')],
   ['apps/demo/src/app/docs/rainbowkit-for-canton/content.tsx',website('apps/demo/src/app/docs/rainbowkit-for-canton/content.tsx')],

@@ -26,7 +26,7 @@ export default function App() {
         <A href="/docs/quick-start">Follow the quick start</A> for complete Vite and Next.js setup,
         or <A href="/docs/installation#new-app">generate a new app</A>. The{' '}
         <A href="/docs/installation">installation guide</A> records the target release versions
-        and current candidate status.
+        and release verification.
       </P>
 
       <H2 id="features">What comes with the kit</H2>
@@ -81,6 +81,13 @@ export default function App() {
       <P>
         Coming from Ethereum? <A href="/docs/wagmi-for-canton">The Canton comparison guide</A>{' '}
         explains familiar concepts and where Canton party, ledger and authentication models differ.
+      </P>
+      <H2 id="ai-reference">Build with an AI coding assistant</H2>
+      <P>
+        Give your assistant the <A href="/llms-full.txt">plain-text integration reference</A> for
+        complete React setup, SDK usage and wallet network requirements, or start with the{' '}
+        <A href="/llms.txt">documentation index</A>. These references follow the maintained guides;
+        check your installed version and the selected wallet&apos;s capabilities when applying an example.
       </P>
       <PrevNext />
     </>
