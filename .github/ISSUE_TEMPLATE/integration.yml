@@ -1,0 +1,49 @@
+name: Integration support
+description: Get help connecting a Canton dApp or share a verified live integration.
+title: "[Integration]: "
+body:
+ - type: markdown
+   attributes:
+     value: |
+       Requests are public. Never include private keys, seed phrases, access tokens, session cookies, API credentials or private ledger data. Report vulnerabilities through https://github.com/PartyLayer/PartyLayer/blob/main/docs/security-production.md instead.
+ - type: dropdown
+   id: request
+   attributes:
+     label: Request type
+     options:
+       - Application integration help
+       - Wallet provider integration
+       - Share a live integration
+   validations:
+     required: true
+ - type: input
+   id: versions
+   attributes:
+     label: Package versions and framework
+     description: Include PartyLayer React/SDK versions and your framework/browser.
+   validations:
+     required: true
+ - type: input
+   id: network-wallet
+   attributes:
+     label: Network and wallet
+     description: For example, Devnet with Vala beta or Mainnet with Send.
+   validations:
+     required: true
+ - type: textarea
+   id: details
+   attributes:
+     label: Expected and observed behavior
+     description: Include steps to reproduce and the failing stage. For a live integration, describe the verified functionality.
+   validations:
+     required: true
+ - type: input
+   id: reproduction
+   attributes:
+     label: Public reproduction or application URL
+     description: Remove credentials and private data before sharing. Optional if the application is private.
+ - type: textarea
+   id: attribution
+   attributes:
+     label: Reference and logo permission (optional)
+     description: For live integrations, specify whether we may publicly name/link the project and whether logo use is permitted. Nothing is published automatically.

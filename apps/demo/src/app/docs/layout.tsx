@@ -60,6 +60,8 @@ const SIDEBAR_NAV = [
       { label: 'Introduction', href: '/docs' },
       { label: 'Installation', href: '/docs/installation' },
       { label: 'Quick Start', href: '/docs/quick-start' },
+      { label: 'RainbowKit for Canton', href: '/docs/rainbowkit-for-canton' },
+      { label: 'Integration Support', href: '/docs/integration-support' },
     ],
   },
   {
@@ -135,6 +137,9 @@ const SEARCH_INDEX: SearchEntry[] = [
   { title: 'Quick Start', href: '/docs/quick-start', keywords: ['quickstart', 'tutorial', 'hello world', 'first app', 'setup', 'one command'] },
   { title: 'Create a new app', section: 'Quick Start', href: '/docs/quick-start#new-app', keywords: ['cli', 'npm create', 'starter', 'vite', 'next'] },
   { title: 'Configure wallets', section: 'Quick Start', href: '/docs/quick-start#wallet-config', keywords: ['vala', 'send', 'walletconnect', 'bron', 'beta', 'mainnet'] },
+
+  { title: 'RainbowKit for Canton', href: '/docs/rainbowkit-for-canton', keywords: ['rainbowkit', 'react wallet', 'connect wallet', 'ethereum', 'migration'] },
+  { title: 'Integration Support', href: '/docs/integration-support', keywords: ['help', 'support', 'integration', 'reproduction', 'showcase', 'wallet provider'] },
 
   // Components
   { title: 'PartyLayerKit', href: '/docs/partylayer-kit', keywords: ['kit', 'provider', 'wrapper', 'zero-config', 'component'] },

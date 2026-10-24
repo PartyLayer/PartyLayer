@@ -15,7 +15,9 @@
 
 ## Overview
 
-`@partylayer/react` provides React hooks and components for integrating Canton Network wallet connectivity into your React application. Built on top of `@partylayer/sdk`, it offers a declarative API with built-in state management.
+`@partylayer/react` provides React hooks and components for integrating Canton Network wallet connectivity into your React application. Built on top of `@partylayer/sdk`, it offers a declarative API with built-in state management and CIP-0103 wallet integrations.
+
+Coming from RainbowKit? Read the [Canton React wallet guide](https://partylayer.xyz/docs/rainbowkit-for-canton). PartyLayer is independent from RainbowKit and uses Canton party identity and transaction semantics. [Get integration help](https://partylayer.xyz/docs/integration-support).
 
 > This guide covers **3.1.0+**. See [release validation](https://github.com/PartyLayer/PartyLayer/blob/main/docs/releasing.md#default-wallet-release-validation) for acceptance scope and release status.
 

@@ -4,7 +4,7 @@ import './globals.css';
 export const metadata: Metadata = {
   metadataBase: new URL('https://partylayer.xyz'),
   title: {
-    default: 'PartyLayer — The Canton Wallet Connection Kit',
+    default: 'PartyLayer — Canton Wallet SDK & React Connect Kit',
     template: '%s | PartyLayer',
   },
   description:
@@ -41,7 +41,7 @@ export const metadata: Metadata = {
     // No `url` here on purpose. openGraph.url is inherited by every descendant
     // route, so a value set at the root makes each page announce the homepage's
     // identity. Each route sets its own alongside its canonical.
-    title: 'PartyLayer — The Canton Wallet Connection Kit',
+    title: 'PartyLayer — Canton Wallet SDK & React Connect Kit',
     description:
       'CIP-0103 compliant Canton wallet integration with included supported wallet runtimes and a branded React connection UI.',
     images: [
@@ -49,14 +49,14 @@ export const metadata: Metadata = {
         url: '/opengraph-image',
         width: 1200,
         height: 630,
-        alt: 'PartyLayer — The Canton Wallet Connection Kit',
+        alt: 'PartyLayer — Canton Wallet SDK & React Connect Kit',
       },
     ],
   },
   twitter: {
     card: 'summary_large_image',
     site: '@partylayerkit',
-    title: 'PartyLayer — The Canton Wallet Connection Kit',
+    title: 'PartyLayer — Canton Wallet SDK & React Connect Kit',
     description:
       'CIP-0103 compliant Canton wallet integration with included supported wallet runtimes and a branded React connection UI.',
     images: ['/opengraph-image'],

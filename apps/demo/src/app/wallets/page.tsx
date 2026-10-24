@@ -126,6 +126,13 @@ export default function WalletsDirectoryPage() {
         not native, and {undeclaredCount} declare nothing either way.
       </p>
 
+      <section style={{ border: `1px solid ${t.border}`, padding: '20px', marginBottom: 28 }}>
+        <h2 style={{ fontSize: 22, marginTop: 0 }}>Connect Canton wallets in your React app</h2>
+        <p style={{ color: t.slate600, lineHeight: 1.7 }}>Install the PartyLayer kit once and add ConnectButton. Supported wallet runtimes are included; network selection, beta opt-in and wallet credentials control availability.</p>
+        <pre tabIndex={0} style={{ overflowX: 'auto', padding: 14, background: t.muted, fontSize: 13 }}><code>npm install @partylayer/react @tanstack/react-query</code></pre>
+        <p><Link href="/docs/quick-start" style={{ color: '#806000' }}>React and Next.js quick start</Link>{' · '}<Link href="/docs/rainbowkit-for-canton" style={{ color: '#806000' }}>Coming from RainbowKit</Link>{' · '}<Link href="/docs/integration-support" style={{ color: '#806000' }}>Integration help</Link></p>
+      </section>
+
       {/* Provenance. Deliberately states what verification does and does not mean. */}
       <section
         style={{

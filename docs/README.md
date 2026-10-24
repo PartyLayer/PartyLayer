@@ -18,6 +18,9 @@ These guides cover React 3.1.0+ / SDK 0.20.0+. See [release status](./releasing.
 | [Framework-independent SDK](../packages/sdk/README.md) | Application-owned wallet picker and client lifecycle |
 | [Wallet integration matrix](./wallet-cip0103-matrix.md) | Network, provider, version and capability limits |
 
+- [RainbowKit for Canton](https://partylayer.xyz/docs/rainbowkit-for-canton): React connection UI and Canton-specific requirements.
+- [Integration support](https://partylayer.xyz/docs/integration-support): application help, wallet-provider contributions and verified references.
+
 ## Build your application
 
 - [Authentication](./authentication.md): backend challenges and independent signature/key verification.
@@ -36,5 +39,7 @@ These guides cover React 3.1.0+ / SDK 0.20.0+. See [release status](./releasing.
 - [Production checklist](./production-checklist.md): application responsibilities before launch.
 - [Observability](./observability.md) and [performance](./performance.md): diagnose and measure an integration.
 - [Release process](./releasing.md), [acceptance evidence](./wallet-acceptance.md) and [roadmap](./platform-roadmap.md): published versus candidate status, automated checks and outstanding manual/live work.
+
+[Developer discovery and adoption roadmap](./growth/roadmap.md) covers npm/GitHub/search visibility, public measurement and verified integration references.
 
 The website at [partylayer.xyz/docs](https://partylayer.xyz/docs) provides the same installation contract and task-oriented guides. English is the documentation language; the wallet UI supports explicit English/Turkish locale settings separately.

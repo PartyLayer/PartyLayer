@@ -39,7 +39,7 @@
     "gate:test-skips": "node --test scripts/gate/test-skips.test.mjs",
     "//gate:workflow-scripts": "The nightly failure sink decides whether to open, update, or close the tracking issue that is the ONLY place a scheduled-workflow failure surfaces. It runs exclusively inside a GitHub Actions job, so nothing else would ever execute it: a bug there is invisible until the night it matters, and its whole purpose is to be reliable on that night. Hence a unit test against a fake Octokit, wired into the gate.",
     "gate:workflow-scripts": "node --test .github/scripts/nightly-failure-sink.test.mjs",
-    "//gate:dead-env-vars": "A NEXT_PUBLIC_* variable set in CI or scripts but read by no product code. Setting one cannot fail, so it silently licenses the belief that a mechanism exists: NEXT_PUBLIC_MOCK_WALLETS was set in six places, read in none, and left four e2e tests switched off waiting for a switch that had been deleted. Scoped to NEXT_PUBLIC_* on purpose — those exist only to be read by app code, so the rule needs no allowlist and is always right.",
+    "//gate:dead-env-vars": "A NEXT_PUBLIC_* variable set in CI or scripts but read by no product code. Setting one cannot fail, so it silently licenses the belief that a mechanism exists: NEXT_PUBLIC_MOCK_WALLETS was set in six places, read in none, and left four e2e tests switched off waiting for a switch that had been deleted. Scoped to NEXT_PUBLIC_* on purpose \u2014 those exist only to be read by app code, so the rule needs no allowlist and is always right.",
     "gate:dead-env-vars": "node --test scripts/gate/dead-env-vars.test.mjs",
     "gate:conformance": "node scripts/gate/conformance-native.mjs",
     "gate:api": "node --test scripts/gate/api-normalize.test.mjs && node scripts/gate/api-snapshot.mjs",
@@ -67,7 +67,9 @@
     "gate:verify-e2e": "CI=true pnpm verify:e2e",
     "//gate:_ci-steps-deliberately-not-in-the-gate": "One CI step is intentionally absent. ci.yml's 'Verify Registry Signatures' runs registry:verify for each channel, but every one of its guards is a file-existence test and none of those files exist in the repo: registry/v1/stable/registry.sig, registry/v1/beta/registry.sig and registry/keys/dev.pub are all absent, so the step is a no-op in CI as well. Adding it to the gate would add a stage that verifies nothing. If signing is ever turned on and those files start shipping, add `pnpm gate:registry-signatures` wrapping registry:verify to the chain at that time, or this gap becomes real. The remaining ci.yml entries that are not gate stages are environment setup (checkout, pnpm/node setup, Playwright browser install) and artifact upload, none of which are checks.",
     "verify:packed-wallets": "node scripts/verify/packed-wallets.mjs",
-    "gate:packed-wallets": "pnpm verify:packed-wallets"
+    "gate:packed-wallets": "pnpm verify:packed-wallets",
+    "growth:snapshot": "node scripts/growth/snapshot.mjs",
+    "growth:test": "node --test scripts/growth/snapshot.test.mjs"
   },
   "keywords": [
     "canton",

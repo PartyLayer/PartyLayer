@@ -2,7 +2,7 @@
   "name": "@partylayer/react-native",
   "version": "1.0.2",
   "sideEffects": false,
-  "description": "React Native client for PartyLayer: shared core client factory, AsyncStorage session storage, hooks, and UI components including ConnectButton and WalletList",
+  "description": "Canton Network wallet integration for React Native: PartyLayer client, CIP-0103 integrations, session storage, hooks and optional Connect Wallet UI.",
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",
   "types": "./dist/index.d.ts",
@@ -38,7 +38,11 @@
     "wallet",
     "cip-0103",
     "react-native",
-    "mobile"
+    "mobile",
+    "canton-network",
+    "wallet-integration",
+    "typescript",
+    "dapp"
   ],
   "author": "PartyLayer Contributors",
   "license": "MIT",
@@ -47,7 +51,7 @@
     "url": "https://github.com/PartyLayer/PartyLayer.git",
     "directory": "packages/react-native"
   },
-  "homepage": "https://partylayer.xyz",
+  "homepage": "https://partylayer.xyz/docs",
   "bugs": {
     "url": "https://github.com/PartyLayer/PartyLayer/issues"
   },
