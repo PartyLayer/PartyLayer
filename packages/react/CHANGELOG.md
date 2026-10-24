@@ -2,6 +2,9 @@
 
 ## 3.1.0
 
+- Announce an empty wallet search through a persistent polite status region,
+  retaining focus in the search field and preserving translated messages.
+
 - Keep attribution text at its readable theme contrast and hide decorative picker
   icons from assistive technology to avoid repeating wallet names. Add automated
   axe acceptance for light/dark, search/help, mobile Turkish RTL and account UI.

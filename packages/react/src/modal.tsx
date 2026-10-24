@@ -1323,6 +1323,17 @@ export function WalletModal({
         minHeight: 0,
         overflowY: 'auto',
       }}>
+        {/* Mount before the search changes so assistive technology can announce
+            the empty-result message without moving focus out of the input. */}
+        <div role="status" aria-atomic="true">
+          {!isLoading && wallets.length > 0 && noMatches && (
+            <div style={{ padding: '36px 20px', textAlign: 'center' }}>
+              <div style={{ fontSize: '13px', color: theme.colors.textSecondary }}>
+                <bdi dir="auto">{t('noMatches', { query: walletQuery.trim() })}</bdi>
+              </div>
+            </div>
+          )}
+        </div>
         {isLoading ? (
           // Prompt 7.6: spinner now only covers the registry HTTP fetch
           // (which can briefly delay the very first modal open). All
@@ -1363,13 +1374,7 @@ export function WalletModal({
               <bdi dir="auto">{t('installCompatible')}</bdi>
             </div>
           </div>
-        ) : noMatches ? (
-          <div style={{ padding: '36px 20px', textAlign: 'center' }}>
-            <div style={{ fontSize: '13px', color: theme.colors.textSecondary }}>
-              <bdi dir="auto">{t('noMatches', { query: walletQuery.trim() })}</bdi>
-            </div>
-          </div>
-        ) : (
+        ) : noMatches ? null : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
             {/* CIP-0103 Native */}
             {nativeShown.length > 0 && (

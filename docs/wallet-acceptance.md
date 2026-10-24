@@ -27,20 +27,38 @@ These tests use a development-only wallet. They do not prove vendor approval,
 cryptographic verification or live transaction execution. They do not cover every
 possible custom theme, browser/assistive technology or dynamic application state.
 
-### VoiceOver acceptance remains open
+### VoiceOver: basic reading confirmed; full acceptance remains open
 
-The maintainer authorized temporary VoiceOver activation. Its initial system
-setting was off. Activation through System Settings showed on, but the application
-inventory continued to show VoiceOver not running, direct launch timed out, and
-VoiceOver navigation produced no observed speech/caption or cursor response.
-The setting was returned to off and verified. VoiceOver Utility alone is not the
-screen reader, and inspecting Chrome's accessibility tree is not a VoiceOver pass.
+On 2026-10-24 the maintainer enabled VoiceOver and confirmed that the local
+Connect Wallet screen was being read aloud. This is user-assisted speech evidence;
+the automation's application inventory/launch probe did not reliably establish
+whether the reader was running. Do not use that probe alone as an acceptance result.
 
-Resume with a functioning VoiceOver session and record the spoken dialog name,
-search and wallet labels, connection progress/error announcements, focus
-containment, Escape/return focus, help/back navigation and connected account menu.
-Also cover equivalent mobile assistive-technology behavior before claiming broad
-screen-reader acceptance.
+With that session active, native keyboard checks observed:
+
+- Tab from the search input focuses a wallet button with a single wallet name.
+- Escape closes the picker and returns focus to Connect Wallet.
+- The education view focuses Back; keyboard activation returns to the picker,
+  and Escape again restores the trigger.
+
+The empty-search message was visible but had no status semantics. The new browser
+regression reproduced the missing region before the fix. The picker now mounts a
+persistent `role="status"` region before the query changes, preserving the
+translated empty-result message and focus in the input. This lets assistive
+technology announce the message politely; it is not an assertive alert.
+See [WCAG 2.2 status messages](https://www.w3.org/WAI/WCAG22/Understanding/status-messages.html).
+
+After the fix, all 24 PR browser tests and 339 React unit tests pass. The
+light/dark browser cases assert the initially empty region, its empty-search
+message, retained input focus and clearing when results return. Automated
+semantics do not establish that an individual reader spoke the announcement.
+
+Spoken confirmation of the new empty-search announcement remains open, along with
+connection progress/error announcements, connected account actions and equivalent
+mobile assistive-technology acceptance. Basic reading alone is not a complete
+VoiceOver or WCAG conformance pass. Earlier temporary activation attempts were
+returned to their original off setting; the maintainer subsequently enabled the
+reader for this user-assisted run.
 
 Reproduce automated acceptance locally:
 

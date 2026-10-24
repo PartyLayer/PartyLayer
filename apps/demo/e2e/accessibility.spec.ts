@@ -65,11 +65,15 @@ for (const mode of ['Light', 'Dark'] as const) {
     await expect(dialog.getByRole('button', { name: /Vala Wallet/ })).toHaveAccessibleName(
       /^Vala Wallet (?!Vala Wallet)/
     );
+    const searchStatus = dialog.getByRole('status');
+    await expect(searchStatus).toBeEmpty();
     await scan(page, testInfo, '[role="dialog"]');
     await dialog.getByRole('textbox', { name: 'Search wallets' }).fill('No matching wallet');
-    await expect(dialog.getByText(/No wallets match/)).toBeVisible();
+    await expect(searchStatus).toHaveText('No wallets match “No matching wallet”');
+    await expect(dialog.getByRole('textbox', { name: 'Search wallets' })).toBeFocused();
     await scan(page, testInfo, '[role="dialog"]');
     await dialog.getByRole('textbox', { name: 'Search wallets' }).fill('');
+    await expect(searchStatus).toBeEmpty();
     await dialog.getByRole('button', { name: 'New to Canton wallets?' }).click();
     await expect(dialog.getByRole('button', { name: 'Browse wallets', exact: true })).toBeVisible();
     await scan(page, testInfo, '[role="dialog"]');

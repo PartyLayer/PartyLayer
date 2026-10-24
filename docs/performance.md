@@ -31,7 +31,7 @@ SDK contribution is about 52.85 kB gzip (53 kB budget); React Native headless is
 eligible wallet/discovery chunks can start loading before the picker opens;
 these numbers are not total first-load bytes. Connecting WalletConnect loads
 its underlying transport. Run `pnpm gate:size`
-for the current numbers. The React connection surface measures about 37.02 kB gzip with
+for the current numbers. The React connection surface measures about 37.03 kB gzip with
 a 37.25 kB budget after adding keyboard behavior, English/Turkish UI, optional
 authentication actions, scoped recent activity, network guidance and exact-decimal
 holdings UI. Server challenge/verification helpers use a separate
@@ -97,7 +97,7 @@ in CI rather than reaching a consumer.
 
 | Scenario | Measured | Budget | Headroom |
 |---|---|---|---|
-| Connect surface | 37.02 kB | 37.25 kB | ~0.6% |
+| Connect surface | 37.03 kB | 37.25 kB | ~0.6% |
 | One token hook | 455 B | 700 B | ~54% |
 | Matching helper | 283 B | 500 B | ~77% |
 | RN headless | 53.09 kB | 53.25 kB | ~0.3% |
