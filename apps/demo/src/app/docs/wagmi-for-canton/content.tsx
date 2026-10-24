@@ -77,7 +77,7 @@ import { PartyLayerKit, ConnectButton, useAccount, useConnect } from '@partylaye
 
 function App() {
   return (
-    <PartyLayerKit network="devnet">
+    <PartyLayerKit network="devnet" appName="My Canton dApp">
       <Profile />
       <ConnectButton />
     </PartyLayerKit>

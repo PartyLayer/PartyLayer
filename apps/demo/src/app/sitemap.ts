@@ -49,6 +49,8 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: `${base}/docs/observability`, lastModified: new Date(), changeFrequency: 'monthly', priority: 0.7 },
     { url: `${base}/docs/performance`, lastModified: new Date(), changeFrequency: 'monthly', priority: 0.7 },
     { url: `${base}/docs/production-checklist`, lastModified: new Date(), changeFrequency: 'monthly', priority: 0.7 },
+    { url: `${base}/docs/rainbowkit-for-canton`, changeFrequency: 'monthly', priority: 0.8 },
+    { url: `${base}/docs/integration-support`, changeFrequency: 'monthly', priority: 0.7 },
     ...walletPages,
   ];
 }

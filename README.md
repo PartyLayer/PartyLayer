@@ -9,7 +9,7 @@ One installation. Supported wallet runtimes included. A ready-made Connect Walle
 [![npm](https://img.shields.io/npm/v/@partylayer/react.svg?style=flat-square)](https://www.npmjs.com/package/@partylayer/react)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=flat-square)](./LICENSE)
 
-[Documentation](https://partylayer.xyz/docs) · [Quick start](./docs/quick-start.md) · [Wallets](https://partylayer.xyz/wallets) · [Live demo](https://partylayer.xyz/kit-demo) · [Contributing](./CONTRIBUTING.md)
+[Documentation](https://partylayer.xyz/docs) · [Quick start](./docs/quick-start.md) · [Wallets](https://partylayer.xyz/wallets) · [Live demo](https://partylayer.xyz/kit-demo) · [Integration help](https://partylayer.xyz/docs/integration-support) · [Contributing](./CONTRIBUTING.md)
 
 </div>
 
@@ -59,6 +59,10 @@ npm create partylayer-app@latest my-dapp -- --template react-vite --pm npm
 ```
 
 The CLI creates the project and installs its dependencies. Then run `cd my-dapp` and `npm run dev`. Also available: `next-ssr`, `vue-nuxt-pinia`, `vanilla`, `react-tokenization` and `react-dvp`. See [the CLI guide](./packages/create-partylayer-app/README.md) for each template's scope.
+
+## Coming from RainbowKit?
+
+Read the [Canton React wallet connection guide](https://partylayer.xyz/docs/rainbowkit-for-canton) for installation, familiar UI patterns and Canton-specific requirements. PartyLayer is independent from RainbowKit; the comparison concerns developer experience, not EVM compatibility or complete feature parity.
 
 ## Wallet configuration
 

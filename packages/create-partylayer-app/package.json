@@ -1,7 +1,7 @@
 {
   "name": "create-partylayer-app",
-  "version": "0.6.0",
-  "description": "Scaffold a PartyLayer dApp (Canton wallet integration) in seconds.",
+  "version": "0.6.1",
+  "description": "Create a Canton Network dApp with PartyLayer: React, Next.js, Vue and TypeScript starters with wallet integration and ready-made React Connect Wallet UI.",
   "type": "module",
   "bin": {
     "create-partylayer-app": "./dist/index.js"
@@ -33,7 +33,7 @@
     "url": "https://github.com/PartyLayer/PartyLayer.git",
     "directory": "packages/create-partylayer-app"
   },
-  "homepage": "https://github.com/PartyLayer/PartyLayer/tree/main/packages/create-partylayer-app",
+  "homepage": "https://partylayer.xyz/docs/installation",
   "bugs": {
     "url": "https://github.com/PartyLayer/PartyLayer/issues"
   },
@@ -46,6 +46,14 @@
     "scaffold",
     "cli",
     "dapp",
-    "starter"
+    "starter",
+    "canton-network",
+    "cip-0103",
+    "react",
+    "nextjs",
+    "vite",
+    "vue",
+    "typescript",
+    "connect-wallet"
   ]
 }

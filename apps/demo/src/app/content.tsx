@@ -1642,6 +1642,10 @@ function DemoCTA({ onConnect }: { onConnect: () => void }) {
 
 const faqItems = [
   {
+    question: 'Is there a RainbowKit-style wallet kit for Canton?',
+    answer: 'PartyLayer provides a ready-made React Connect Wallet button, picker, account menu, themes and supported wallet runtimes in one installation. It follows CIP-0103 for Canton wallet integration. PartyLayer is independent from RainbowKit; EVM methods and complete feature parity are not implied. Start with the RainbowKit for Canton guide in our documentation.',
+  },
+  {
     question: 'Is PartyLayer open source?',
     answer: 'Yes! PartyLayer is fully open source under the MIT license. You can view the source code, submit issues, and contribute on GitHub. We believe in transparency and community-driven development.',
   },
@@ -1871,6 +1875,10 @@ function LandingContent() {
           <ProofBar />
           <WalletGrid />
           <DeveloperQuickstart />
+          <div style={{ maxWidth: 1100, margin: '0 auto', padding: '0 24px 32px', display: 'flex', flexWrap: 'wrap', gap: 20 }}>
+            <a href="/docs/rainbowkit-for-canton" style={{ color: '#806000' }}>Coming from RainbowKit? Build on Canton →</a>
+            <a href="/docs/integration-support" style={{ color: '#806000' }}>Get integration help →</a>
+          </div>
           <DemoCTA onConnect={openModal} />
           <FAQ />
         </main>

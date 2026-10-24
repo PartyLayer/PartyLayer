@@ -1,8 +1,8 @@
 {
   "name": "@partylayer/sdk",
-  "version": "0.20.0",
+  "version": "0.20.1",
   "sideEffects": false,
-  "description": "Main SDK for PartyLayer - Unified wallet integration for Canton Network",
+  "description": "TypeScript wallet integration SDK for Canton Network, with CIP-0103 provider access, wallet discovery, sessions and supported wallet runtimes.",
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",
   "types": "./dist/index.d.ts",
@@ -27,7 +27,13 @@
     "canton",
     "wallet",
     "sdk",
-    "dapp"
+    "dapp",
+    "canton-network",
+    "cip-0103",
+    "wallet-integration",
+    "wallet-discovery",
+    "typescript",
+    "web3"
   ],
   "author": "PartyLayer Contributors",
   "license": "MIT",
@@ -36,7 +42,7 @@
     "url": "https://github.com/PartyLayer/PartyLayer.git",
     "directory": "packages/sdk"
   },
-  "homepage": "https://partylayer.xyz",
+  "homepage": "https://partylayer.xyz/docs/vanilla-js",
   "bugs": {
     "url": "https://github.com/PartyLayer/PartyLayer/issues"
   },

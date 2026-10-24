@@ -1,0 +1,40 @@
+name: Public growth snapshot
+
+on:
+  schedule:
+    - cron: '20 7 * * *'
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - 'scripts/growth/**'
+      - '.github/workflows/growth-snapshot.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: growth-snapshot-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  snapshot:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Verify missing-data handling
+        run: node --test scripts/growth/snapshot.test.mjs
+      - name: Collect public npm and GitHub metrics
+        if: github.event_name != 'pull_request'
+        run: node scripts/growth/snapshot.mjs
+      - name: Preserve dated snapshot
+        if: always() && github.event_name != 'pull_request'
+        uses: actions/upload-artifact@v4
+        with:
+          name: public-growth-${{ github.run_id }}
+          path: artifacts/growth/
+          retention-days: 90
+          if-no-files-found: error
