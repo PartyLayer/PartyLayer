@@ -126,3 +126,16 @@ test.describe('PartyLayer Demo Smoke Tests', () => {
     await expect(page.locator('h1, h2').first()).toBeVisible({ timeout: 10_000 });
   });
 });
+
+
+test('mobile landing keeps brand, navigation and connect controls inside the viewport', async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 844 });
+  await page.goto('/');
+  const nav = page.getByRole('navigation');
+  const connect = nav.getByRole('button', { name: 'Connect', exact: true });
+  await expect(nav.getByRole('link', { name: 'PartyLayer', exact: true })).toBeInViewport({ ratio: 1 });
+  await expect(nav.getByRole('button', { name: 'Toggle navigation' })).toBeInViewport({ ratio: 1 });
+  await expect(connect).toBeInViewport({ ratio: 1 });
+  await connect.click();
+  await expect(page.getByRole('dialog', { name: 'Connect Wallet' })).toBeVisible();
+});

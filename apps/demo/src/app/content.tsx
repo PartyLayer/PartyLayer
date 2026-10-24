@@ -266,7 +266,7 @@ function Background({ children }: { children: ReactNode }) {
 
 function Logo({ size = 'md' }: { size?: 'sm' | 'md' | 'lg' }) {
   const sizeMap = {
-    sm: { height: 96, my: -35, ml: -9 },
+    sm: { height: 80, my: -29, ml: -7 },
     md: { height: 132, my: -48, ml: -13 },
     lg: { height: 180, my: -66, ml: -18 },
   };
@@ -568,7 +568,7 @@ function Nav({ onConnect }: { onConnect: () => void }) {
         height: 64, display: 'flex', alignItems: 'center', justifyContent: 'space-between',
         fontFamily: t.font,
       }}>
-        <Logo size="md" />
+        <Logo size={bp === 'mobile' ? 'sm' : 'md'} />
 
         {/* Desktop/Tablet nav links */}
         {bp !== 'mobile' && (
@@ -595,7 +595,7 @@ function Nav({ onConnect }: { onConnect: () => void }) {
           /* ── Connected: the shipped ConnectButton (real upgraded component:
                 PartyAvatar + wallet-badge identity header, Copy address, Disconnect).
                 It self-manages its dropdown, so the demo no longer hand-rolls one. ── */
-          <ConnectButton accountStatus="full" />
+          <ConnectButton accountStatus={bp === 'mobile' ? 'avatar' : 'full'} />
         ) : (
           /* ── Disconnected: connect button ── */
           <button onClick={onConnect}
@@ -619,11 +619,11 @@ function Nav({ onConnect }: { onConnect: () => void }) {
 
         {/* Mobile hamburger */}
         {bp === 'mobile' && (
-          <button onClick={() => setMobileMenuOpen(o => !o)} style={{
+          <button aria-label="Toggle navigation" aria-expanded={mobileMenuOpen} onClick={() => setMobileMenuOpen(o => !o)} style={{
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             width: 36, height: 36, borderRadius: t.radius.sm,
             border: `1px solid ${t.border}`, background: 'transparent', cursor: 'pointer',
-            order: -1, marginRight: 'auto', marginLeft: 12,
+            order: -1, flexShrink: 0,
           }}>
             <svg width={18} height={18} fill="none" viewBox="0 0 24 24" stroke={t.slate600} strokeWidth={2} strokeLinecap="round">
               {mobileMenuOpen
