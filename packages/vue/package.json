@@ -1,6 +1,6 @@
 {
   "name": "@partylayer/vue",
-  "version": "2.0.1",
+  "version": "2.0.2",
   "sideEffects": false,
   "description": "Vue 3 wallet integration for Canton Network: PartyLayer composables, CIP-0103 wallet sessions and optional TanStack Query and Pinia bindings.",
   "main": "./dist/index.js",

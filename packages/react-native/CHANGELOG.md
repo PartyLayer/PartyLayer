@@ -1,5 +1,13 @@
 # @partylayer/react-native
 
+## 1.0.3
+
+### Patch Changes
+
+- ea0de53: Describe Canton Network wallet integration, CIP-0103 support and framework-specific entry points in npm metadata. Link packages to the relevant setup guides and improve discovery with relevant keywords. Runtime APIs and wallet capability contracts are unchanged.
+- Updated dependencies [ea0de53]
+  - @partylayer/sdk@0.20.1
+
 ## 1.0.2
 
 ### Patch Changes

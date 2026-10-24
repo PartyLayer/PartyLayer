@@ -1,5 +1,11 @@
 # create-partylayer-app
 
+## 0.6.1
+
+### Patch Changes
+
+- ea0de53: Describe Canton Network wallet integration, CIP-0103 support and framework-specific entry points in npm metadata. Link packages to the relevant setup guides and improve discovery with relevant keywords. Runtime APIs and wallet capability contracts are unchanged.
+
 ## 0.6.0
 
 ### Minor Changes

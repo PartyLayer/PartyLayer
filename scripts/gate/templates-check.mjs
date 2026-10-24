@@ -25,8 +25,9 @@
 
 import { fileURLToPath } from 'node:url';
 import { dirname, resolve, join, basename } from 'node:path';
-import { readFileSync, existsSync, readdirSync, statSync } from 'node:fs';
+import { readFileSync, existsSync, readdirSync } from 'node:fs';
 import { createRequire } from 'node:module';
+import { workspaceVersions as readWorkspaceVersions } from './workspace-versions.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const repoRoot = resolve(__dirname, '..', '..');
@@ -42,32 +43,10 @@ try {
   process.exit(1);
 }
 
-// Build the source-of-truth map: every workspace @partylayer/* package name to
-// its current version. We walk packages/ and apps/ for package.json files.
+// pnpm defines workspace membership. A recursive filesystem walk also sees
+// .next/standalone copies and can overwrite current versions with stale builds.
 function collectWorkspaceVersions() {
-  const map = new Map();
-  const roots = [join(repoRoot, 'packages'), join(repoRoot, 'apps')];
-  const walk = (dir) => {
-    for (const entry of readdirSync(dir)) {
-      if (entry === 'node_modules') continue;
-      const full = join(dir, entry);
-      const st = statSync(full);
-      if (st.isDirectory()) {
-        walk(full);
-      } else if (entry === 'package.json') {
-        try {
-          const pkg = JSON.parse(readFileSync(full, 'utf-8'));
-          if (typeof pkg.name === 'string' && pkg.name.startsWith('@partylayer/') && pkg.version) {
-            map.set(pkg.name, pkg.version);
-          }
-        } catch {
-          /* ignore unreadable package.json */
-        }
-      }
-    }
-  };
-  for (const root of roots) if (existsSync(root)) walk(root);
-  return map;
+  return readWorkspaceVersions(repoRoot);
 }
 
 const TEMPLATES_DIR = join(repoRoot, 'packages', 'create-partylayer-app', 'templates');
