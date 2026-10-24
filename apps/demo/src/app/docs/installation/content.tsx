@@ -9,9 +9,9 @@ export default function InstallationPage() {
       <H1>Installation</H1>
       <P>Install once to get the React connection kit, SDK and supported wallet runtimes. Choose an existing app integration or generate a new project.</P>
       <Callout type="note" title="Version scope">
-        This guide targets React 3.1.0 / SDK 0.20.0 and CLI 0.6.0. These are release candidates;
-        npm <Code>@latest</Code> remains the previous release until publication. Check the{' '}
-        <A href="https://github.com/PartyLayer/PartyLayer/pull/343">release status</A> before relying on candidate features.
+        This guide requires React 3.1.0+ / SDK 0.20.0+ and CLI 0.6.0+ for the listed templates.
+        See <A href="https://github.com/PartyLayer/PartyLayer/blob/main/docs/releasing.md#default-wallet-release-validation">release validation</A>{' '}
+        for publication and acceptance evidence.
       </Callout>
 
       <H2 id="prerequisites">Prerequisites</H2>

@@ -6,7 +6,7 @@ Start with the ready-made React connection kit. Supported wallet runtimes are in
 npm install @partylayer/react @tanstack/react-query
 ```
 
-This checkout documents the unpublished React 3.1.0 / SDK 0.20.0 candidate. See [release status](./releasing.md#default-wallet-release-validation) before treating candidate behavior as available from npm `@latest`.
+These guides cover React 3.1.0+ / SDK 0.20.0+. See [release status](./releasing.md#default-wallet-release-validation) for publication and acceptance evidence.
 
 ## Get started
 

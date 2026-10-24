@@ -17,7 +17,7 @@
 
 `@partylayer/react` provides React hooks and components for integrating Canton Network wallet connectivity into your React application. Built on top of `@partylayer/sdk`, it offers a declarative API with built-in state management.
 
-> This checkout documents the unpublished **3.1.0** candidate. Until the coordinated release is published, npm `@latest` remains the previous release. See [release status](https://github.com/PartyLayer/PartyLayer/pull/343).
+> This guide covers **3.1.0+**. See [release validation](https://github.com/PartyLayer/PartyLayer/blob/main/docs/releasing.md#default-wallet-release-validation) for acceptance scope and release status.
 
 ### Features
 

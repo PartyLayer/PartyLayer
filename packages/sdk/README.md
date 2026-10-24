@@ -4,7 +4,7 @@ The framework-independent Canton wallet client. Discover supported wallets, conn
 
 [Documentation](https://partylayer.xyz/docs/vanilla-js) · [API reference](https://github.com/PartyLayer/PartyLayer/blob/main/docs/api.md) · [Wallets](https://partylayer.xyz/wallets)
 
-> This checkout targets the unpublished **0.20.0** candidate. Until publication, npm `@latest` remains the previous release. See the repository's [release status](https://github.com/PartyLayer/PartyLayer/pull/343).
+> This guide covers **0.20.0+**. See [release validation](https://github.com/PartyLayer/PartyLayer/blob/main/docs/releasing.md#default-wallet-release-validation) for acceptance scope and release status.
 
 ## Installation
 

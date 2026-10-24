@@ -14,9 +14,9 @@ export default function QuickStartPage() {
         import are required.
       </P>
       <Callout type="note" title="Version scope">
-        This guide targets the React 3.1.0 / SDK 0.20.0 release candidate. Until the coordinated
-        release is published, npm <Code>@latest</Code> still selects the previous release.
-        See the <A href="https://github.com/PartyLayer/PartyLayer/pull/343">release candidate</A> for status.
+        This guide requires React 3.1.0+ / SDK 0.20.0+. See{' '}
+        <A href="https://github.com/PartyLayer/PartyLayer/blob/main/docs/releasing.md#default-wallet-release-validation">release validation</A>{' '}
+        for publication and acceptance evidence.
       </Callout>
       <P>
         Use React 18+ and a supported Node LTS version that meets your framework requirements.

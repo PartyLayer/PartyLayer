@@ -2,7 +2,7 @@
 
 Add PartyLayer's branded wallet picker and account menu to a React app. One npm command installs the kit, SDK and reviewed wallet runtimes. No wallet-specific imports or stylesheet import are required.
 
-> **Version scope:** This guide targets the unpublished React **3.1.0** / SDK **0.20.0** candidate. Until the coordinated release is published, npm `@latest` still returns the previous release. See [release status](./releasing.md#default-wallet-release-validation).
+> **Version scope:** This guide requires React **3.1.0+** / SDK **0.20.0+**. See [release status](./releasing.md#default-wallet-release-validation) for publication and acceptance evidence.
 
 Use React 18+ in an existing application. Use a supported Node LTS version that meets your framework's requirements. Users need a wallet account or extension for the selected network to finish a real connection.
 
@@ -166,7 +166,7 @@ A successful connection or message signature does not verify a token transfer or
 | Popup does not open | Start the flow directly from a user click and check popup blocking. Use the default button to preserve the supported popup flow. |
 | Wallet rejects signing | Check the connected session's capabilities, network and current wallet authentication. Preserve the wallet's error when diagnosing a deployment problem. |
 | Backend rejects a signature | Verify the exact challenged message/encoding, nonce, origin and independently authorized key. Do not infer a universal wallet algorithm. |
-| Old native session is not restored | This candidate requires one reconnect for old caches without an official provider hint. Live party/network checks still apply. |
+| Old native session is not restored | This release requires one reconnect for old caches without an official provider hint. Live party/network checks still apply. |
 | Next.js hydration differs | Keep the kit in a client boundary. Treat SSR cookie state as a UI hint; use backend-verified sessions for protected server content. |
 
 ## Next steps

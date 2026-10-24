@@ -17,7 +17,7 @@ npm run dev
 
 For an interactive setup, run `npm create partylayer-app@latest` and choose a directory, template and package manager. pnpm and Yarn are also supported.
 
-> This checkout documents CLI **0.6.0** and its coordinated, unpublished wallet-kit release. Until publication, `@latest` selects the previous published CLI and its templates.
+> This guide covers CLI **0.6.0+** and its coordinated wallet-kit templates. See [release validation](https://github.com/PartyLayer/PartyLayer/blob/main/docs/releasing.md#default-wallet-release-validation) for release status.
 
 ## Templates
 

@@ -19,7 +19,7 @@ PartyLayer connects Canton dApps to supported wallets through a shared TypeScrip
 
 Reviewed wallet runtimes are dependencies of the kit and load as needed. Developers do not install or register a PartyLayer package for each wallet. Network support, the registry channel, application credentials and each wallet's actual capabilities determine what is available.
 
-> **Release status:** This branch documents the coordinated React **3.1.0** / SDK **0.20.0** candidate. It has not been published to npm yet. `@latest` resolves to the currently published release until publication. See [release validation](./docs/releasing.md#default-wallet-release-validation) for current automated and live acceptance evidence.
+> **Version scope:** This guide covers React **3.1.0+** / SDK **0.20.0+**. See [release validation](./docs/releasing.md#default-wallet-release-validation) for automated checks, outstanding manual/live acceptance and release status.
 
 ## Quick start
 

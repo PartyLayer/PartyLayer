@@ -277,11 +277,10 @@ See the [Dependabot configuration reference](https://docs.github.com/en/code-sec
 
 ## Documentation release alignment
 
-The candidate README and installation guides identify React 3.1.0, SDK 0.20.0 and
-CLI 0.6.0 as unpublished. Before publishing the coordinated package set, replace
-those candidate notes with the actual release/version scope and recheck the same
-commands against the public npm registry after publication. Do not claim that
-`@latest` installs candidate-only behavior before those versions are available.
+README and installation guides state their minimum version scope: React 3.1.0,
+SDK 0.20.0 and CLI 0.6.0 for this coordinated release. Confirm those versions are
+available before claiming a public-registry installation passed. Recheck the same
+commands against npm after publication; an `@latest` tag alone is not evidence.
 
 Keep the homepage, site installation/quick-start pages, root/SDK/React/CLI READMEs
 and generated template guides aligned. Run `pnpm gate:docs-drift`,
