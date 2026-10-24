@@ -58,6 +58,13 @@ function opts(state: ExecuteVerbState = {}, logger?: LoggerAdapter) {
 }
 
 describe('submitViaPrepareExecute', () => {
+  it.each(['awaited', 'plain'] as const)('rejects an unrelated %s receipt without resubmitting', async (verb) => {
+    const { provider, calls } = makeProvider(() => EXECUTED);
+    await expect(submitViaPrepareExecute(provider, { signedTx: { commandId: 'different-command', commands: [] } },
+      opts({ verb }))).rejects.toThrow(/commandId.*outcome.*unknown/i);
+    expect(calls).toEqual([verb === 'plain' ? 'prepareExecute' : 'prepareExecuteAndWait']);
+  });
+
   describe('it never submits twice', () => {
     it('does not fall back after a user rejection', async () => {
       // The wallet DID show the transaction and the user declined. Falling back

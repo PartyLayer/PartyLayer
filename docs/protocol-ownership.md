@@ -90,6 +90,11 @@ transaction events delegate to that provider; no fabricated lifecycle fields are
 added. Message signing retains the reviewed encoding/normalization boundary,
 including Console's registry-declared base64 encoding.
 
+Execution responses retain their native shape, but a returned command ID that
+contradicts the requested ID is rejected as an unknown outcome. The same check
+protects normalized SDK receipts. It does not resubmit or turn an omitted ID into
+proof; callers still reconcile the intended ledger transaction independently.
+
 `createProviderBridge(client)` remains an explicit compatibility API, as do
 `client.ledgerApi()` and existing SDK ledger hooks returning `{ response: string }`.
 Applications moving a native `asProvider().request({ method: 'ledgerApi' })` call

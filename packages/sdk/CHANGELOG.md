@@ -2,6 +2,10 @@
 
 ## 0.20.0
 
+- Reject contradictory command IDs in normalized execution receipts and native
+  provider execution results without resubmitting. Cover the published Vala
+  runtime with controlled HTTP/popup integration tests; reconcile unknown outcomes.
+
 - Bound native disconnect acknowledgement to ten seconds, clear the local session
   on timeout and prevent a late vendor reply from clearing a newer connection.
 

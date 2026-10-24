@@ -198,6 +198,13 @@ clean npm consumer, checks ESM/CommonJS/SSR, and builds packed CLI-generated
 Next.js and Vite apps. These are automated integration checks, not proof of a
 successful live wallet approval or ledger commit.
 
+The 2026-10-24 code review also adds four axe accessibility scenarios to the PR
+browser suite and rejects contradictory execution command IDs in both normalized
+receipts and the native provider facade. The installed Vala runtime is covered
+with controlled HTTP/popup tests. See [acceptance evidence](./wallet-acceptance.md)
+for the exact scope, the outstanding VoiceOver run and actual Devnet test areas.
+These checks do not complete the live matrix below.
+
 Live observations in this review (2026-10-23, production `33898ef`; the candidate
 in PR #343 has separate automated coverage and has not inherited these live results):
 

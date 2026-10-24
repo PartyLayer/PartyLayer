@@ -1,6 +1,6 @@
 # Devnet run: verifying `requestTransfer`
 
-Follow this top to bottom. You should not need to open any source file.
+This is the legacy optional `requestTransfer` runbook. For current generic wallet paths, test environments and acceptance requirements, start with [wallet acceptance](./wallet-acceptance.md). The optional Console wrapper below is not the default native connection path.
 
 Three things are being checked, in this order of importance:
 
@@ -209,12 +209,10 @@ which is the correct outcome for a decline.
 
 ### 6a. Shape check (do this first, it takes five seconds)
 
-**A Canton update id is a 64-character hexadecimal string.** Anything else is not
-an update id.
-
-This one check catches every fake value this codebase has ever produced:
-`tx_1735…`, `pending`, an empty string, a UUID-shaped command id, a base64
-signature. If `updateId` is not 64 hex characters, stop and report it.
+Preserve the wallet's exact update identifier. Do not accept a command ID,
+placeholder, UUID or a value that merely looks like a hash as confirmation.
+Identifier syntax alone does not prove that an intended transaction exists; the
+independent ledger lookup below is required.
 
 ### 6b. Ledger lookup
 
@@ -284,7 +282,7 @@ which one you are sending. Record what it actually displays.
 
 For each of the three wallets:
 
-- the `updateId` returned, and whether it was 64 hex characters;
+- the exact `updateId` returned, separately from any command ID;
 - whether it resolved on the ledger;
 - a screenshot of the approval screen;
 - what happened when you declined;

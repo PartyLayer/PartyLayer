@@ -1,5 +1,6 @@
 import type { CIP0103Provider } from '@partylayer/core';
 import { CIP0103EventBus, toProviderRpcError } from '@partylayer/provider';
+import { assertExecuteCorrelation } from './prepare-execute';
 
 interface SessionProviderOptions {
   bridge: CIP0103Provider;
@@ -48,7 +49,10 @@ export function createSessionProvider(options: SessionProviderOptions): {
           ].includes(args.method)
         )
           options.guardNetwork();
-        return await native.request<T>(args);
+        const result = await native.request<T>(args);
+        if (args.method === 'prepareExecute' || args.method === 'prepareExecuteAndWait')
+          assertExecuteCorrelation(result, args.params);
+        return result;
       } catch (error) {
         throw toProviderRpcError(error);
       }

@@ -80,6 +80,18 @@ interface ExecutedTxResponse {
   tx?: { commandId?: unknown; payload?: { updateId?: unknown; completionOffset?: unknown } };
 }
 
+/** Reject contradictory wallet receipts; never retry an already accepted write. */
+export function assertExecuteCorrelation(result: unknown, request: unknown): void {
+  const expected = (request as { commandId?: unknown } | null)?.commandId;
+  if (typeof expected !== 'string' || !expected) return;
+  const value = result as (ExecutedTxResponse & { commandId?: unknown }) | null;
+  for (const actual of [value?.commandId, value?.tx?.commandId]) {
+    if (typeof actual === 'string' && actual && actual !== expected) {
+      throw new TransportError('Wallet returned a different commandId; transaction outcome is unknown. Reconcile before retrying.');
+    }
+  }
+}
+
 /**
  * Build a receipt from an executed-transaction response, or `null` when the
  * response does not carry a real update id.
@@ -104,6 +116,7 @@ function receiptFromExecutedTx(result: unknown): TxReceipt | null {
 
 /** Acknowledgement is not confirmation: missing identifiers remain absent. */
 function normalizeReceipt(result: unknown, request: Record<string, unknown>): TxReceipt {
+  assertExecuteCorrelation(result, request);
   const executed = receiptFromExecutedTx(result);
   if (executed) return executed;
   const value = result && typeof result === 'object' ? result as Record<string, unknown> : {};
@@ -172,8 +185,8 @@ export async function submitViaPrepareExecute(
       });
       state.verb = 'awaited';
 
-      const receipt = receiptFromExecutedTx(result);
-      if (receipt) return receipt;
+      const receipt = normalizeReceipt(result, rpcParams);
+      if (receipt.updateId) return receipt;
 
       // The wallet accepted the awaited verb but did not return an update id.
       // Do NOT retry the other verb: the transaction has already been submitted,
@@ -184,7 +197,7 @@ export async function submitViaPrepareExecute(
         'prepareExecuteAndWait returned no updateId.',
         logger,
       );
-      return normalizeReceipt(result, rpcParams);
+      return receipt;
     } catch (err) {
       if (!isUnsupportedMethod(err)) throw err;
       // The wallet rejected the METHOD, so nothing was submitted and falling

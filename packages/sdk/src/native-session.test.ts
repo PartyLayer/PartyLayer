@@ -253,6 +253,16 @@ describe('public SDK native-owner integration', () => {
     expect([...f.listeners.values()].reduce((sum, set) => sum + set.size, 0)).toBe(0);
   });
 
+  it('rejects a contradictory native receipt through the public provider without resubmitting', async () => {
+    const f = fixture();
+    const c = f.client();
+    await c.connect({ walletId: toWalletId('native-test') });
+    f.request.mockClear();
+    await expect(c.asProvider().request({ method: 'prepareExecuteAndWait',
+      params: { commandId: 'another-command', commands: [] } })).rejects.toThrow(/commandId.*outcome.*unknown/i);
+    expect(f.request.mock.calls.filter(([args]) => args.method.startsWith('prepareExecute'))).toHaveLength(1);
+  });
+
   it('blocks transactions after a live network change and releases the rejected strict connection', async () => {
     const f = fixture();
     const c = f.client();

@@ -1118,7 +1118,7 @@ export function WalletModal({
             : theme.colors.border;
         }}
       >
-        <span className="pl-wallet-row-icon">
+        <span className="pl-wallet-row-icon" aria-hidden="true">
           <ModalWalletIcon wallet={wallet} size={48} iconUrl={iconUrl} />
         </span>
 
@@ -2588,9 +2588,8 @@ export function WalletModal({
            handlers set on the row (otherwise the inline transform would win). */
         .pl-wallet-row:active { transform: translateY(0) scale(0.985) !important; }
 
-        /* Footer "Powered by PartyLayer": muted, subtle hover (raise opacity). */
-        .pl-attribution { opacity: 0.72; transition: opacity 150ms cubic-bezier(0.2, 0.8, 0.2, 1); }
-        .pl-attribution:hover { opacity: 1; }
+        /* Keep footer text at its readable theme contrast, including on hover. */
+        .pl-attribution:hover { text-decoration: underline; }
 
         /* Connecting: a soft, diffuse breathing halo behind the wallet icon. The
            element is a large blurred radial gradient (see the inline style); this

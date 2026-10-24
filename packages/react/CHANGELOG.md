@@ -2,6 +2,10 @@
 
 ## 3.1.0
 
+- Keep attribution text at its readable theme contrast and hide decorative picker
+  icons from assistive technology to avoid repeating wallet names. Add automated
+  axe acceptance for light/dark, search/help, mobile Turkish RTL and account UI.
+
 - Improve built-in theme text/status contrast, accent foreground and hover contrast,
   native/beta labels and search placeholder/focus visibility. Guard normal text
   pairs at 4.5:1 across built-in families and presets; custom overrides still need review.

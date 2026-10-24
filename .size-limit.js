@@ -280,7 +280,8 @@ module.exports = [
     // Measured 49.23 kB; retain ~0.27 kB of headroom without dropping these checks.
     // Official native ownership, abort/identity guards and the stable provider
     // facade add ~3.5 kB. Discovery runtime stays a separately loaded chunk.
-    limit: '53 kB',
+    // Shared request/receipt command correlation adds ~0.12 kB; measured 53.09 kB.
+    limit: '53.25 kB',
   },
   {
     name: 'react-native: ui (ConnectButton)',
@@ -501,6 +502,7 @@ module.exports = [
     // Measured 49.00 kB after concise error messages; retain ~0.25 kB of headroom.
     // Official native ownership, abort/identity guards and the stable provider
     // facade add ~3.5 kB. Discovery runtime stays a separately loaded chunk.
-    limit: '52.75 kB',
+    // Shared request/receipt command correlation adds ~0.12 kB; measured 52.85 kB.
+    limit: '53 kB',
   },
 ];
