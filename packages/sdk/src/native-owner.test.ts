@@ -158,6 +158,41 @@ describe('native owner with the installed official DiscoveryClient', () => {
     expect(owner.busy).toBe(false);
   });
 
+  it('bounds an unresponsive disconnect and ignores its late reply after reconnection', async () => {
+    const { owner, source, request } = fixture();
+    await owner.prepare('native-fixture', source, 'devnet');
+    await owner.connect('native-fixture');
+    const reply = deferred<unknown>();
+    request.mockReturnValueOnce(reply.promise);
+    vi.useFakeTimers();
+    try {
+      let settled = false;
+      let failure: unknown;
+      const closing = owner.disconnect().catch((error: unknown) => {
+        failure = error;
+      }).finally(() => { settled = true; });
+      await vi.advanceTimersByTimeAsync(10_001);
+      expect(settled).toBe(true);
+      await closing;
+      expect(failure).toBeInstanceOf(Error);
+      expect(request).toHaveBeenCalledWith({ method: 'disconnect' });
+      expect(owner.busy).toBe(false);
+      expect(owner.getSession()).toBeNull();
+      expect(source.teardown).toHaveBeenCalledTimes(1);
+      await owner.prepare('native-fixture', source, 'devnet');
+      await owner.connect('native-fixture');
+      const hint = { ...localStorage };
+      expect(Object.keys(hint).length).toBeGreaterThan(0);
+      reply.resolve(undefined);
+      await vi.advanceTimersByTimeAsync(0);
+      expect(owner.getSession()?.identity.account.partyId).toBe('party::alice');
+      expect({ ...localStorage }).toEqual(hint);
+      expect(source.teardown).toHaveBeenCalledTimes(1);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it('restores only through the official persisted provider hint and validates the live identity', async () => {
     const { owner, source, request } = fixture();
     await owner.prepare('native-fixture', source, 'devnet');

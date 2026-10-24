@@ -207,7 +207,9 @@ export class NativeConnectionOwner {
           ) {
             throw new Error('Native wallet identity is being refreshed');
           }
-          const result = await raw.request<T>(args);
+          const result = await (args.method === 'disconnect' && this.operation
+            ? abortable(raw.request<T>(args), this.operation.abort.signal)
+            : raw.request<T>(args));
           if (args.method === 'status') {
             const status = result as NativeIdentity['status'];
             if (status?.isConnected === false || status?.connection?.isConnected === false) {
@@ -463,9 +465,11 @@ export class NativeConnectionOwner {
       this.projection = null;
       const operation: Operation = { abort: new AbortController() };
       this.operation = operation;
+      const timeout = setTimeout(() => operation.abort.abort(), SILENT_PROBE_TIMEOUT_MS);
       try {
         await this.client?.disconnect();
       } finally {
+        clearTimeout(timeout);
         if (this.client?.getActiveSession()) {
           this.client.destroy();
           this.client = null;

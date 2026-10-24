@@ -40,7 +40,10 @@ signature from being attributed to an old account in an eventless wallet. This i
 an identity consistency check, not independent cryptographic signature verification.
 
 Destroy removes subscriptions and locally tears down transport resources without
-issuing a wallet logout. Explicit disconnect uses the official lifecycle. React
+issuing a wallet logout. Explicit disconnect uses the official lifecycle with a
+ten-second acknowledgement deadline. A timeout reports an error and clears the
+local session; it does not claim the remote wallet acknowledged logout. Its late
+reply cannot clear a newer official session or provider hint. React
 construction defers external subscriptions until the committed effect, and effect
 replay keeps the committed client/store alive. Reusing a generic wrapper configuration
 in another client creates separate wrapper state instead of replacing the first

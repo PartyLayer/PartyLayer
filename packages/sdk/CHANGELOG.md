@@ -2,6 +2,9 @@
 
 ## 0.20.0
 
+- Bound native disconnect acknowledgement to ten seconds, clear the local session
+  on timeout and prevent a late vendor reply from clearing a newer connection.
+
 - Isolate generic wrapper state when an application reuses an adapter configuration
   across SDK clients; a second client can no longer replace the first native owner.
 
