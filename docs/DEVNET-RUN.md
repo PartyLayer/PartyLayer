@@ -267,8 +267,8 @@ differs from what you typed; or declining does not produce an error in the panel
 
 | Wallet | Should show | Watch for |
 |---|---|---|
-| **Nightly** | payee, amount, instrument **including its admin**, memo, expiry | It is the only one of the three that receives the admin, so it is the one place the issuer could be shown. Record what it actually shows. |
-| **Loop** | recipient, amount, instrument, memo, in the popup | Approving without the popup appearing at all. |
+| **Nightly** | payee, amount, instrument **including its admin**, memo, expiry | The issuer/admin is passed through. Record what the approval screen actually shows. |
+| **Loop** | recipient, amount, instrument including its admin, memo and expiry, in the popup | Both instrument ID and admin are passed to the SDK. Record the display and reject any silent approval. |
 | **Console** | payee, amount, token, memo | Console's send request has no admin field (`@console-wallet/dapp-sdk@2.2.8`), so PartyLayer does not pass one. Record whether the screen names the issuer anyway — the wallet may resolve it from its own registry. |
 
 **The Console question is the one worth answering carefully**, because it decides
