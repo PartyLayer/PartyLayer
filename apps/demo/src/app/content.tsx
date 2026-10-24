@@ -318,7 +318,7 @@ function BookIcon({ size = 20 }: { size?: number }) {
   );
 }
 
-const INSTALL_CMD = 'npm i @partylayer/sdk @partylayer/react';
+const INSTALL_CMD = 'npm install @partylayer/react @tanstack/react-query';
 
 function CopyInstallButton() {
   const [copied, setCopied] = useState(false);
@@ -1390,13 +1390,13 @@ const codeTabs = [
   {
     id: 'install',
     label: 'Install',
-    code: `npm install @partylayer/sdk @partylayer/react
+    code: `npm install @partylayer/react @tanstack/react-query
 
 # or with yarn
-yarn add @partylayer/sdk @partylayer/react
+yarn add @partylayer/react @tanstack/react-query
 
 # or with pnpm
-pnpm add @partylayer/sdk @partylayer/react`,
+pnpm add @partylayer/react @tanstack/react-query`,
   },
   {
     id: 'react',
@@ -1646,7 +1646,7 @@ const faqItems = [
   },
   {
     question: 'Which networks are supported?',
-    answer: 'PartyLayer supports all Canton networks including mainnet, testnet, and devnet environments. The SDK automatically detects the connected network and adapts accordingly. Each wallet adapter handles network-specific connection logic.',
+    answer: 'PartyLayer supports all Canton networks including mainnet, testnet, and devnet environments. Choose the target network explicitly. The catalog filters wallets by network support, while the account UI reports the wallet\'s actual network and guards incompatible operations.',
   },
   {
     question: 'What error codes should I handle?',
@@ -1769,7 +1769,7 @@ function Footer() {
           <div style={{ textAlign: bp === 'mobile' ? 'center' : 'left' }}>
             <Logo size="lg" />
             <p style={{ marginTop: 16, fontSize: bp === 'mobile' ? 14 : 16, lineHeight: 1.6, color: t.slate500, maxWidth: 360, margin: bp === 'mobile' ? '16px auto 0' : undefined }}>
-              One SDK for every Canton wallet. Open source, registry-backed, and built for developers.
+              One integration for supported Canton wallets. Open source, registry-backed, and built for developers.
             </p>
           </div>
 

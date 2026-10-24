@@ -1,5 +1,11 @@
 # Wallet Adapter Contract
 
+> **Compatibility reference:** New wallets must use the generic CIP-0103 paths;
+> `packages/adapters` is closed to new wallet packages. Historical starter/copy
+> examples below apply only to maintaining existing compatibility integrations.
+> dApp developers should use the [one-command kit setup](https://partylayer.xyz/docs/quick-start).
+> Wallet providers should follow the [generic provider guide](https://partylayer.xyz/docs/generic-bridge).
+
 **References:**
 - [OpenRPC dApp API spec](https://github.com/hyperledger-labs/splice-wallet-kernel/blob/main/api-specs/openrpc-dapp-api.json)
 - [Wallet Integration Guide](https://docs.digitalasset.com/integrate/devnet/index.html)

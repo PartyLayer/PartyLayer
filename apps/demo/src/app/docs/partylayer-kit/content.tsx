@@ -32,6 +32,8 @@ function App() {
         { prop: 'locale', type: 'string', default: '"en"', description: 'Connection UI language: English/Turkish language tags; unsupported tags fall back to English.' },
         { prop: 'direction', type: '"ltr" | "rtl"', default: '"ltr"', description: 'Text and layout direction for PartyLayer UI.' },
         { prop: 'authentication', type: 'PartyLayerAuthenticationAdapter', description: 'Application backend integration for server-verified sign-in. Omitted means wallet connection only.' },
+        { prop: 'showAttribution', type: 'boolean', default: 'true', description: 'Show Powered by PartyLayer in the connection modal.' },
+        { prop: 'disclaimer', type: 'ReactNode', description: 'Optional application terms/privacy content in the modal footer.' },
         { prop: 'children', type: 'ReactNode', description: 'Your application component tree.' },
         { prop: 'registryUrl', type: 'string', default: '"https://registry.partylayer.xyz"', description: 'Override the wallet registry URL. Useful for self-hosted registries.' },
         { prop: 'channel', type: '"stable" | "beta"', default: '"stable"', description: 'Registry channel. Use "beta" to include wallets in beta testing.' },
@@ -42,7 +44,7 @@ function App() {
         { prop: 'theme', type: '"light" | "dark" | "auto" | PartyLayerTheme', default: '"light"', description: 'Theme preset or a custom theme object. "auto" follows system preference.' },
         { prop: 'walletIcons', type: 'Record<string, string>', default: '{}', description: 'Custom wallet icon URLs keyed by walletId. Overrides registry icons.' },
         { prop: 'walletOrder', type: 'readonly string[]', description: 'Wallet ids in display order for the connect modal. Unlisted wallets fall to the end; sorting applies within the CIP-0103 Native and Available sections.' },
-        { prop: 'sessionOptions', type: 'Partial<SessionStoreOptions>', description: 'Session-store options forwarded to PartyLayerProvider (reconnect, expiry, broadcast, persistSnapshot, storage, onInvalidate) for encrypted persistence, auto-reconnect, and multi-tab sync.' },
+        { prop: 'sessionOptions', type: 'Partial<SessionStoreOptions>', description: 'Session-store options forwarded to PartyLayerProvider (reconnect, expiry, broadcast, persistSnapshot, storage, onInvalidate) for explicit persistence, reconnect and multi-tab behavior. The kit uses an in-memory live session view by default.' },
       ]} />
 
       <H2 id="localization">UI Language and Direction</H2>
@@ -163,9 +165,11 @@ const myTheme = {
       </UL>
 
       <Callout type="tip">
-        The client is only re-created when <Code>{'network'}</Code>, <Code>{'appName'}</Code>,
-        <Code>{'registryUrl'}</Code>, or <Code>{'channel'}</Code> change. The <Code>{'adapters'}</Code> array
-        uses a stable ref to avoid unnecessary re-initialization.
+        The client is re-created when <Code>{'network'}</Code>, <Code>{'appName'}</Code>,
+        <Code>{'registryUrl'}</Code>, <Code>{'channel'}</Code>, <Code>additionalAdapters</Code>,
+        <Code>walletConnect</Code> or <Code>bron</Code> change. Keep configuration objects stable.
+        Configure the replacement <Code>adapters</Code> catalog at mount; changing that array alone
+        does not rebuild the client. Theme, locale and direction changes preserve the connection.
       </Callout>
 
       <PrevNext />

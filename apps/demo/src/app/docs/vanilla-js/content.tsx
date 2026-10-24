@@ -31,7 +31,7 @@ const client = createPartyLayer({
         { prop: 'app.origin', type: 'string', default: 'window.location.origin', description: 'Origin URL for session binding.' },
         { prop: 'registryUrl', type: 'string', default: '"https://registry.partylayer.xyz"', description: 'Wallet registry URL.' },
         { prop: 'channel', type: '"stable" | "beta"', default: '"stable"', description: 'Registry channel.' },
-        { prop: 'storage', type: 'StorageAdapter', default: 'localStorage', description: 'Custom storage adapter for session persistence.' },
+        { prop: 'storage', type: 'StorageAdapter', default: 'Browser localStorage', description: 'Custom SDK cache storage; cached state is not wallet authorization. This differs from standalone session-store defaults.' },
         { prop: 'crypto', type: 'CryptoAdapter', description: 'Custom crypto adapter.' },
         { prop: 'registryPublicKeys', type: 'string[]', description: 'Public keys for registry signature verification.' },
         { prop: 'adapters', type: '(WalletAdapter | AdapterClass)[]', default: 'Built-in adapters', description: 'Custom adapter list.' },

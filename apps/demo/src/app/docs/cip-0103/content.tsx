@@ -47,7 +47,7 @@ export default function CIP0103Page() {
       <P>PartyLayer supports two ways to integrate:</P>
       <UL>
         <LI>
-          <Strong>Adapter SDK</Strong> (recommended), Use <Code>{'PartyLayerKit'}</Code> and React hooks.
+          <Strong>PartyLayer connection kit</Strong> (recommended), Use <Code>{'PartyLayerKit'}</Code> and React hooks.
           The SDK abstracts CIP-0103 behind a higher-level API.
         </LI>
         <LI>

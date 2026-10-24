@@ -18,9 +18,8 @@ the request and wrap the query or mutation.
 ## Run it
 
 ```bash
-npm create partylayer-app@latest my-app -- --template react-dvp
+npm create partylayer-app@latest my-app -- --template react-dvp --pm npm
 cd my-app
-npm install
 npm run dev
 ```
 
@@ -134,3 +133,8 @@ disclosed contract and choice context types (`TokenDisclosedContract`,
 into one submission.
 
 Wallet SDKs are included. Vala requires Devnet with `channel="beta"`. WalletConnect requires your project id through `walletConnect`; Bron requires OAuth/API configuration through `bron`. No separate wallet SDK installation or registration is needed.
+
+The CLI installs dependencies unless `--no-install` was selected. These demo
+backend outcomes do not prove connected-wallet signing or ledger settlement.
+The default connection UI shows **Powered by PartyLayer**; backend authentication
+and live command/settlement verification remain application responsibilities.

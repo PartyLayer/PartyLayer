@@ -1,21 +1,19 @@
 # Cookie-backed session storage for SSR (React)
 
-PartyLayer persists a small, non-secret session marker (the connected party id,
-network, and timestamp) so a returning user renders as connected without a flash.
-For server-side rendering you want that marker readable on BOTH the server (to
-render the connected state in the initial HTML) and the client (to match it on the
-first paint). A cookie is the only store both sides see, so `@partylayer/react`
-exposes a cookie-backed `SessionStorage` option next to the default and the
-`localStorage` option.
+The default React kit keeps its live session projection in memory. An application
+can explicitly provide cookie storage when it wants server-readable UI hints.
+That cookie contains public account/network metadata, not a verified login.
+Wallet restoration still checks the live provider.
 
-## Why a cookie (and not localStorage)
+Do not use a decoded party ID to authorize server content. Use an independently
+verified backend session for protected routes; see [authentication](./authentication.md).
 
-`createLocalStorage()` works on the client only: the server never sees
-`localStorage`, so a server render cannot know the session, and the client paints
-disconnected first and then flips to connected after hydration. A cookie is sent
-with every request, so the server reads it per request and the client reads the
-same value synchronously via `document.cookie`. The first client paint matches the
-server HTML.
+## Why use a cookie?
+
+Browser localStorage and IndexedDB cannot be read by a Server Component. A cookie
+can carry a small UI hint in a request, so the server can render an initial account
+summary. It does not guarantee that live wallet restoration will succeed or that
+all client/server renders are identical. Handle loading, expired and invalid hints.
 
 ## Client: persist to a cookie
 
@@ -24,14 +22,17 @@ Pass `createCookieStorage()` as the provider's storage. The default adapter wrap
 
 ```tsx
 'use client';
-import { PartyLayerProvider } from '@partylayer/react';
-import { createCookieStorage } from '@partylayer/react';
 
-export function Providers({ children }: { children: React.ReactNode }) {
+import { useMemo, type ReactNode } from 'react';
+import { PartyLayerKit } from '@partylayer/react';
+import { createCookieStorage } from '@partylayer/session';
+
+export function Providers({ children }: { children: ReactNode }) {
+  const storage = useMemo(() => createCookieStorage(), []);
   return (
-    <PartyLayerProvider sessionOptions={{ storage: createCookieStorage() }}>
+    <PartyLayerKit network="devnet" appName="My dApp" sessionOptions={{ storage }}>
       {children}
-    </PartyLayerProvider>
+    </PartyLayerKit>
   );
 }
 ```
@@ -50,8 +51,8 @@ request cookie API. For Next.js App Router that is `cookies()` from `next/header
 import { cookies } from 'next/headers';
 import { createCookieStorage, decodeSessionEnvelope } from '@partylayer/session';
 
-export default function Page() {
-  const jar = cookies();
+export default async function Page() {
+  const jar = await cookies();
   const storage = createCookieStorage({
     adapter: {
       get: (name) => jar.get(name)?.value ?? null,
@@ -62,12 +63,12 @@ export default function Page() {
 
   // The session store persists under one key; cookie storage ignores the key and
   // uses its cookie name, so any key reads the cookie value.
-  const snapshot = decodeSessionEnvelope(storage.getItem('pl') ?? '');
+  const raw = await storage.getItem('pl');
+  const snapshot = typeof raw === 'string' ? decodeSessionEnvelope(raw) : null;
   const partyId = snapshot?.account?.partyId ?? null;
 
-  // Render the server view from `partyId`, then hand off to the client provider
-  // above, which reads the same cookie synchronously and matches this render.
-  return <YourApp initialPartyId={partyId} />;
+  // This is a display hint only. Read protected data from a verified server session.
+  return <p>Last account: {partyId ?? 'No saved account'}</p>;
 }
 ```
 
@@ -92,8 +93,8 @@ framework-agnostic and RSC-safe. The client convenience re-export
   persisted data is non-secret session metadata (public party ids, network,
   timestamps). It is not an auth token and grants no access. The store's
   `restore()` re-validates against the live provider, so a forged or stale cookie
-  cannot forge a connection; at worst it causes a brief incorrect SSR paint that
-  the client corrects on hydrate.
+  cannot forge a connection; the server hint can be stale or forged and the client must
+  resolve it against the live wallet. Backend authorization must be independent.
 - The cookie must be JS-readable (non-httpOnly) so the client read works.
 - Cookies are capped near 4KB each. The session envelope is small; keep any custom
   additions modest.

@@ -1,5 +1,12 @@
 # @partylayer/adapter-loop
 
+> **Default application integration:** The React kit already includes this compatibility
+> runtime where applicable. Install `@partylayer/react @tanstack/react-query` in one
+> command and use `PartyLayerKit` with `ConnectButton`; no per-wallet package
+> installation is required. See [the quick start](https://partylayer.xyz/docs/quick-start).
+> The instructions below are for explicitly using this standalone compatibility package.
+> Native provider paths and limits are recorded in the [integration matrix](https://github.com/PartyLayer/PartyLayer/blob/main/docs/wallet-cip0103-matrix.md).
+
 > **Legacy integration.** This package predates the generic bridge and is kept for
 > compatibility; a new wallet should not copy this pattern. New wallets integrate
 > through Path A or Path B with no PartyLayer-specific code, see

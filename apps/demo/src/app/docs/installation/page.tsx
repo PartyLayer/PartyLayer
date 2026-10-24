@@ -3,7 +3,7 @@ import InstallationContent from './content';
 
 const title = 'Installation Guide';
 const description =
-  'Install PartyLayer SDK via npm, pnpm, or yarn. Peer dependencies, React setup, and Vanilla JS configuration for Canton wallet integration.';
+  'Install the PartyLayer React kit and supported wallet runtimes in one command, or scaffold a new Canton dApp. Includes prerequisites and wallet configuration.';
 const url = 'https://partylayer.xyz/docs/installation';
 
 export const metadata: Metadata = {

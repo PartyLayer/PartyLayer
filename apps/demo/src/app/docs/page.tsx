@@ -10,7 +10,7 @@ import IntroductionContent from './introduction/content';
  */
 const title = 'Introduction';
 const description =
-  'PartyLayer is an open-source SDK for integrating Canton Network wallets into your dApp. Unified adapter interface, registry-backed wallet verification, and CIP-0103 support.';
+  'The Canton wallet connection kit: one installation, included wallet runtimes, branded React UI and CIP-0103 integrations. Start with Next.js, Vite or the TypeScript SDK.';
 const url = 'https://partylayer.xyz/docs';
 
 export const metadata: Metadata = {

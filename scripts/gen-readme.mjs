@@ -69,10 +69,10 @@ const capabilities = (w) => {
 /** The markdown table injected into the READMEs. */
 function markdownTable() {
   const lines = [
-    '| Wallet | Networks | Capabilities | Opt-in | Adapter |',
+    '| Wallet | Networks | Capabilities | Opt-in | Additional setup |',
     '|--------|----------|--------------|--------|---------|',
     ...wallets.map(
-      (w) => `| ${w.name} | ${networks(w)} | ${capabilities(w)} | ${optIn(w)} | \`${w.adapter?.type ?? ''}\` |`,
+      (w) => `| ${w.name} | ${networks(w)} | ${capabilities(w)} | ${optIn(w)} | ${w.id === 'walletconnect' ? 'Your project ID' : w.id === 'bron' ? 'Your OAuth/API configuration' : 'Included'} |`,
     ),
   ];
   return lines.join('\n');

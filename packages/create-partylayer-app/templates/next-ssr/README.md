@@ -1,30 +1,56 @@
 # {{PROJECT_NAME}}
 
-A [PartyLayer](https://partylayer.xyz) dApp: Next.js App Router with **SSR session**.
+A Canton dApp using Next.js App Router, PartyLayer's default `ConnectButton` and
+explicit cookie-based UI session hints. The connection modal shows **Powered by
+PartyLayer** by default.
 
 ## Develop
+
+The CLI installs dependencies unless `--no-install` was selected. If installation
+was skipped, run `npm install` first.
 
 ```bash
 npm run dev
 ```
 
-## How SSR session works
+## Application structure
 
-- **Server** ([lib/session.ts](lib/session.ts)) reads the session cookie via `next/headers` `cookies()` + `@partylayer/session`'s `createCookieStorage` → the connected party is rendered in the **initial HTML** (no disconnected→connected flash). `app/page.tsx` is a Server Component that gates on `getServerSession()`.
-- **Client** ([app/providers.tsx](app/providers.tsx)) wraps the app in `PartyLayerKit` with `sessionOptions={{ storage: createCookieStorage() }}`. This uses `document.cookie` (synchronous), the **same** cookie the server reads.
-- `next/headers` is imported only in your app (`lib/session.ts`), never in `@partylayer/session`. The library stays framework-agnostic.
+- `app/providers.tsx` is the client boundary. It mounts `QueryClientProvider` and
+  `PartyLayerKit` and supplies stable cookie storage through `sessionOptions`.
+- `lib/session.ts` reads the same UI cookie on the server through a Next.js cookie
+  adapter. This can render an initial account hint without waiting for browser storage.
+- The default button reads the live session after hydration; wallet restoration still
+  requires the SDK's live identity/network checks.
 
-Switch networks by changing `network` in `app/providers.tsx` and `appName` accordingly.
+**The UI cookie is not authentication or authorization.** Do not protect backend data
+or actions with its party ID. For protected server routes, use a backend challenge,
+independent signature/key verification and a server-managed authenticated session.
+
+## Wallet configuration
+
+Change `network` in `app/providers.tsx`; keep the application name and any server-side
+network assumptions aligned. The default is Devnet. Runtime dependencies are included;
+no per-wallet installation or registration is needed.
+
+- Vala: Devnet with `channel="beta"` on `PartyLayerKit`.
+- Send: Mainnet-only in the catalog.
+- WalletConnect: your project ID through a stable `walletConnect` configuration.
+- Bron: your OAuth/API configuration through `bron`.
+- `additionalAdapters` extends the defaults; `adapters` replaces them.
+
+User login/approval and test funding are separate prerequisites. A connection or
+signature does not verify a send/swap outcome.
 
 ## Build
 
 ```bash
-npm run build && npm start
+npm run build
+npm start
 ```
 
-## Docs
+## Documentation
 
-- [PartyLayer docs](https://partylayer.xyz/docs)
-- [@partylayer/session: createCookieStorage](https://www.npmjs.com/package/@partylayer/session)
-
-Wallet SDKs are included. Vala requires Devnet with `channel="beta"`. WalletConnect requires your project id through `walletConnect`; Bron requires OAuth/API configuration through `bron`. No separate wallet SDK installation or registration is needed.
+- [Quick start](https://partylayer.xyz/docs/quick-start)
+- [Kit configuration](https://partylayer.xyz/docs/partylayer-kit)
+- [Authentication](https://partylayer.xyz/docs/authentication)
+- [Transaction lifecycle](https://partylayer.xyz/docs/transaction-lifecycle)

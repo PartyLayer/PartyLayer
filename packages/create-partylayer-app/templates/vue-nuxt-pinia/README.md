@@ -1,6 +1,6 @@
 # {{PROJECT_NAME}}
 
-A [PartyLayer](https://partylayer.xyz) dApp: Nuxt 3 + Vue 3 + Pinia, with **SSR session**.
+A [PartyLayer](https://partylayer.xyz) dApp: Nuxt 3 + Vue 3 + Pinia, with a custom connection UI, default PartyLayer attribution and explicit SSR UI session hints.
 
 ## Develop
 
@@ -26,4 +26,11 @@ npm run build && npm run preview
 - [PartyLayer docs](https://partylayer.xyz/docs)
 - [@partylayer/vue composables](https://www.npmjs.com/package/@partylayer/vue)
 
-Wallet SDKs are included. Vala requires Devnet with `channel="beta"`. WalletConnect requires your project id through `walletConnect`; Bron requires OAuth/API configuration through `bron`. No separate wallet SDK installation or registration is needed.
+Wallet SDKs are included. Configure the client in `plugins/partylayer.client.ts`:
+Vala needs `network: 'devnet', channel: 'beta'`; Send is Mainnet-only in the catalog.
+WalletConnect needs your project ID through `walletConnect`; Bron needs OAuth/API
+configuration through `bron`. No per-wallet installation is required.
+
+The cookie/server session is a UI hint, not application authentication. Never use
+its party ID alone to authorize backend access. See [authentication](https://partylayer.xyz/docs/authentication)
+for backend verification. Wallet login/approval and ledger settlement require their own checks.

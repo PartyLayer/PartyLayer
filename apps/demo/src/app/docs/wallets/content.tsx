@@ -17,8 +17,8 @@ export default function WalletsPage() {
         Wallets are discovered through the registry and CIP-0103 native provider detection.
       </P>
       <P>
-        This page is about registering and writing adapters. For the wallet list itself, with the
-        transport each one connects over and a page per integration, see the{' '}
+        The default catalog is included with the kit; no per-wallet installation is required.
+        Custom adapters are an advanced extension point. For transports and a page per integration, see the{' '}
         <A href="/wallets">Canton wallet directory</A>.
       </P>
 
@@ -32,7 +32,7 @@ export default function WalletsPage() {
         }}>
           <thead>
             <tr style={{ background: '#F5F6F8' }}>
-              {['Wallet', 'Networks', 'Opt-in', 'Adapter'].map(h => (
+              {['Wallet', 'Networks', 'Opt-in', 'Additional setup'].map(h => (
                 <th key={h} style={{ textAlign: 'left', padding: '10px 14px', fontWeight: 600, color: '#0B0F1A', borderBottom: '1px solid rgba(15,23,42,0.10)', fontSize: 13 }}>{h}</th>
               ))}
             </tr>
@@ -43,7 +43,7 @@ export default function WalletsPage() {
                 <td style={{ padding: '10px 14px', fontWeight: 500, color: '#0B0F1A' }}>{w.name}</td>
                 <td style={{ padding: '10px 14px', color: '#64748B' }}>{w.networks.join(', ')}</td>
                 <td style={{ padding: '10px 14px', color: w.optIn ? '#92400E' : '#166534', fontWeight: 500 }}>{w.optIn ? 'Yes' : 'No'}</td>
-                <td style={{ padding: '10px 14px', color: '#64748B', fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace', fontSize: 12.5 }}>{w.adapter}</td>
+                <td style={{ padding: '10px 14px', color: '#64748B', fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace', fontSize: 12.5 }}>{w.id === 'walletconnect' ? 'Your project ID' : w.id === 'bron' ? 'Your OAuth/API configuration' : 'Included'}</td>
               </tr>
             ))}
           </tbody>
@@ -106,13 +106,10 @@ export default function WalletsPage() {
           and submission into a single step. Use <Code>{'submitTransaction'}</Code> directly instead
           of the separate sign-then-submit pattern. Calling <Code>{'signTransaction'}</Code> on any of
           them throws <Code>{'CapabilityNotSupportedError'}</Code> pointing you at this fix.</LI>
-        <LI><Strong>Send, passkey signing &amp; namespace guard:</Strong> Send injects at the bare{' '}
-          <Code>{'window.canton'}</Code> slot (the same slot any splice-wallet-kernel-compatible
-          extension would use). The Send adapter verifies the running provider{"'"}s{' '}
-          <Code>{'kernel.id'}</Code> before forwarding any RPC, so installing Send next to a
-          Console-class wallet never claims the wrong provider. Send is currently <Strong>mainnet-only</Strong>{' '}
-          and signs every transaction via WebAuthn-PRF (Touch ID / Face ID), so the user sees a
-          passkey prompt rather than an extension popup.</LI>
+        <LI><Strong>Send:</Strong> the default catalog uses the native announce path.
+          It is Mainnet-only in the catalog and requires the wallet&apos;s own login/passkey approval.
+          The standalone compatibility adapter has its own provider identity guard; it is not required
+          for the default kit. See <A href="/docs/wallets/send">the Send guide</A>.</LI>
         <LI><Strong>Loop, ledgerApi (limited):</Strong> Supports <Code>{'POST /v2/state/acs'}</Code>,{' '}
           <Code>{'GET /v2/state/acs/active-contracts'}</Code>, <Code>{'POST /v2/commands/submit'}</Code>,{' '}
           and <Code>{'POST /v2/commands/submit-and-wait'}</Code>. Other endpoints are not available,
@@ -165,7 +162,7 @@ const bron = {
       </P>
       <P>
         If the registry is unreachable, the SDK gracefully falls back to adapter-only discovery,
-        ensuring your dApp still works offline.
+        which can preserve known wallet entries. Hosted-wallet login and ledger access still require their services.
       </P>
 
       <H3>2. CIP-0103 Native Detection</H3>

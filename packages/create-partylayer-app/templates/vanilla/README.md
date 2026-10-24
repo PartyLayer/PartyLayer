@@ -1,38 +1,67 @@
 # {{PROJECT_NAME}}
 
-A [PartyLayer](https://partylayer.xyz) dApp: vanilla TypeScript + Vite, no framework.
+A Canton dApp using TypeScript, Vite and `@partylayer/sdk`. This template provides
+its own connection UI with **Powered by PartyLayer** attribution. React apps can
+use the ready-made kit and `ConnectButton` instead.
 
 ## Develop
+
+The CLI installs dependencies unless `--no-install` was selected. If needed, run
+`npm install`, then:
 
 ```bash
 npm run dev
 ```
 
-## How it's wired
+## How it works
+
+`src/main.ts` creates the client, renders its wallet list and handles connection
+from a user click. The SDK includes supported runtimes; no separate wallet package
+installation is required.
 
 ```ts
 import { createPartyLayer } from '@partylayer/sdk';
 
-const client = createPartyLayer({ network: 'devnet', app: { name: '{{PROJECT_NAME}}' } });
+const client = createPartyLayer({
+  network: 'devnet',
+  app: { name: '{{PROJECT_NAME}}' },
+});
 
-const wallets = await client.listWallets();        // verified wallets from the registry
-const session = await client.connect({ walletId }); // connect to one
-client.on('session:connected', () => { /* … */ });  // react to session changes
-client.on('session:disconnected', () => { /* … */ });
-const active = await client.getActiveSession();      // restore on load
+const wallets = await client.listWallets();
+// Connect the selected entry from a user click handler:
+// await client.connect({ walletId: selectedWallet.walletId });
+
+const active = await client.getActiveSession();
+// A saved cache alone never establishes a live connection.
 ```
 
-`createPartyLayer` is the dApp connect API, no framework bindings needed. See `src/main.ts` for the full hand-rolled connect UI. Switch networks by changing `network` to `"testnet"` or `"mainnet"`.
+Dispose the application-owned client with `client.destroy()` when its owner is
+removed. Use `client.disconnect()` for an explicit wallet disconnect.
+
+## Wallet configuration
+
+Change the `createPartyLayer` options in `src/main.ts`:
+
+- `network: 'devnet'`, `'testnet'` or `'mainnet'` filters the catalog.
+- Vala requires `network: 'devnet', channel: 'beta'`.
+- Send is Mainnet-only in the catalog.
+- WalletConnect needs `walletConnect: { projectId: 'YOUR_PROJECT_ID' }`.
+- Bron needs application-owned OAuth/API configuration through `bron`.
+- `additionalAdapters` extends defaults; `adapters` replaces them.
+
+Wallet accounts, login/approval and test funding remain prerequisites. A returned
+message signature is not proof of a transfer, swap or authenticated backend login.
 
 ## Build
 
 ```bash
-npm run build && npm run preview
+npm run build
+npm run preview
 ```
 
-## Docs
+## Documentation
 
-- [PartyLayer docs](https://partylayer.xyz/docs)
-- [@partylayer/sdk](https://www.npmjs.com/package/@partylayer/sdk)
-
-Wallet SDKs are included. Vala requires Devnet with `channel="beta"`. WalletConnect requires your project id through `walletConnect`; Bron requires OAuth/API configuration through `bron`. No separate wallet SDK installation or registration is needed.
+- [Framework-independent SDK](https://partylayer.xyz/docs/vanilla-js)
+- [Wallet configuration](https://partylayer.xyz/docs/wallets)
+- [Authentication](https://partylayer.xyz/docs/authentication)
+- [Transaction lifecycle](https://partylayer.xyz/docs/transaction-lifecycle)

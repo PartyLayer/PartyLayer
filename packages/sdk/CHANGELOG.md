@@ -2,6 +2,9 @@
 
 ## 0.20.0
 
+- Align README and website onboarding around one installation, included wallet runtimes,
+  explicit network/configuration prerequisites and the default branded connection UI.
+
 - Reject contradictory command IDs in normalized execution receipts and native
   provider execution results without resubmitting. Cover the published Vala
   runtime with controlled HTTP/popup integration tests; reconcile unknown outcomes.

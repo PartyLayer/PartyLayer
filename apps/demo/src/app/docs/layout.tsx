@@ -16,9 +16,10 @@ const t = {
   brand50: '#FFFBEB',
   brand100: '#FFF5CC',
   brand500: '#FFCC00',
-  brand600: '#E6B800',
+  brand600: '#806000',
   slate300: '#CBD5E1',
-  slate400: '#94A3B8',
+  slate400: '#475569',
+  codeMuted: '#94A3B8',
   slate500: '#64748B',
   slate600: '#475569',
   slate700: '#334155',
@@ -76,7 +77,7 @@ const SIDEBAR_NAV = [
       { label: 'React Hooks', href: '/docs/hooks' },
       { label: 'Vanilla JS', href: '/docs/vanilla-js' },
       { label: 'Wallets & Adapters', href: '/docs/wallets' },
-      { label: 'Send (Beta)', href: '/docs/wallets/send' },
+      { label: 'Send', href: '/docs/wallets/send' },
       { label: 'CIP-0103 Provider', href: '/docs/cip-0103' },
       { label: 'Generic Bridge', href: '/docs/generic-bridge' },
       { label: 'wagmi for Canton', href: '/docs/wagmi-for-canton' },
@@ -131,7 +132,9 @@ const SEARCH_INDEX: SearchEntry[] = [
   // Overview
   { title: 'Introduction', href: '/docs', keywords: ['overview', 'what is', 'features', 'getting started', 'partylayer'] },
   { title: 'Installation', href: '/docs/installation', keywords: ['install', 'npm', 'pnpm', 'yarn', 'setup', 'peer dependencies', 'package'] },
-  { title: 'Quick Start', href: '/docs/quick-start', keywords: ['quickstart', 'tutorial', 'hello world', 'first app', 'setup'] },
+  { title: 'Quick Start', href: '/docs/quick-start', keywords: ['quickstart', 'tutorial', 'hello world', 'first app', 'setup', 'one command'] },
+  { title: 'Create a new app', section: 'Quick Start', href: '/docs/quick-start#new-app', keywords: ['cli', 'npm create', 'starter', 'vite', 'next'] },
+  { title: 'Configure wallets', section: 'Quick Start', href: '/docs/quick-start#wallet-config', keywords: ['vala', 'send', 'walletconnect', 'bron', 'beta', 'mainnet'] },
 
   // Components
   { title: 'PartyLayerKit', href: '/docs/partylayer-kit', keywords: ['kit', 'provider', 'wrapper', 'zero-config', 'component'] },
@@ -182,11 +185,11 @@ const SEARCH_INDEX: SearchEntry[] = [
   { title: 'Custom Adapter', section: 'Wallets & Adapters', href: '/docs/wallets#custom-adapter', keywords: ['custom', 'adapter', 'WalletAdapter', 'interface', 'implement'] },
   { title: 'WalletAdapter Interface', section: 'Wallets & Adapters', href: '/docs/wallets#adapter-interface', keywords: ['interface', 'detectInstalled', 'connect', 'signMessage', 'ledgerApi'] },
   { title: 'getBuiltinAdapters', section: 'Wallets & Adapters', href: '/docs/wallets#builtin-adapters-function', keywords: ['builtin', 'adapters', 'default', 'ConsoleAdapter'] },
-  { title: 'Send Wallet (Beta)', href: '/docs/wallets/send', keywords: ['send', 'sigilry', 'passkey', 'webauthn', 'cantonwallet', 'beta', 'mainnet'] },
-  { title: 'How Send Differs', section: 'Send (Beta)', href: '/docs/wallets/send#how-send-differs', keywords: ['send', 'differences', 'kernel.id', 'passkey', 'webauthn-prf'] },
-  { title: 'Send Connection Flow', section: 'Send (Beta)', href: '/docs/wallets/send#connection-flow', keywords: ['send', 'connect', 'passkey', 'touch id', 'face id'] },
-  { title: 'Send Token Transfers', section: 'Send (Beta)', href: '/docs/wallets/send#token-transfers', keywords: ['send', 'transfer', 'cip-56', 'prepareExecuteAndWait', 'TransferFactory'] },
-  { title: 'Send Troubleshooting', section: 'Send (Beta)', href: '/docs/wallets/send#troubleshooting', keywords: ['send', 'troubleshoot', 'kernel.id mismatch', 'auth failed', 'oauth'] },
+  { title: 'Send Wallet', href: '/docs/wallets/send', keywords: ['send', 'sigilry', 'passkey', 'webauthn', 'cantonwallet', 'beta', 'mainnet'] },
+  { title: 'How Send Differs', section: 'Send', href: '/docs/wallets/send#how-send-differs', keywords: ['send', 'differences', 'kernel.id', 'passkey', 'webauthn-prf'] },
+  { title: 'Send Connection Flow', section: 'Send', href: '/docs/wallets/send#connection-flow', keywords: ['send', 'connect', 'passkey', 'touch id', 'face id'] },
+  { title: 'Send Token Transfers', section: 'Send', href: '/docs/wallets/send#token-transfers', keywords: ['send', 'transfer', 'cip-56', 'prepareExecuteAndWait', 'TransferFactory'] },
+  { title: 'Send Troubleshooting', section: 'Send', href: '/docs/wallets/send#troubleshooting', keywords: ['send', 'troubleshoot', 'kernel.id mismatch', 'auth failed', 'oauth'] },
 
   // CIP-0103
   { title: 'CIP-0103 Provider', href: '/docs/cip-0103', keywords: ['cip-0103', 'canton', 'standard', 'provider', 'dApp'] },
@@ -527,12 +530,15 @@ export default function DocsLayout({ children }: { children: ReactNode }) {
           borderBottom: `1px solid ${t.border}`, height: 56,
         }}>
           <div style={{
-            maxWidth: 1200, margin: '0 auto', padding: '0 24px',
+            maxWidth: 1200, margin: '0 auto', padding: responsive(bp, '0 16px', '0 24px', '0 24px'),
             height: 56, display: 'flex', alignItems: 'center', justifyContent: 'space-between',
           }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
               {/* Mobile hamburger */}
               <button
+                aria-label="Toggle documentation navigation"
+                aria-expanded={mobileOpen}
+                aria-controls="docs-navigation"
                 onClick={() => setMobileOpen(o => !o)}
                 style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4 }}
                 className="docs-mobile-toggle"
@@ -546,11 +552,12 @@ export default function DocsLayout({ children }: { children: ReactNode }) {
                 <img src="/partylayer.xyz.svg" alt="PartyLayer" draggable={false}
                   style={{ height: bp === 'mobile' ? 72 : 96, marginTop: bp === 'mobile' ? -25 : -35, marginBottom: bp === 'mobile' ? -25 : -35, marginLeft: bp === 'mobile' ? -7 : -9 }} />
               </Link>
-              <span style={{ fontSize: 13, fontWeight: 500, color: t.slate400, padding: '3px 8px', background: t.muted, borderRadius: 6 }}>Docs</span>
+              <span className="docs-section-label" style={{ fontSize: 13, fontWeight: 500, color: t.slate400, padding: '3px 8px', background: t.muted, borderRadius: 6 }}>Docs</span>
             </div>
 
             {/* Search button */}
             <button
+              aria-label={bp === 'desktop' ? undefined : 'Search documentation'}
               onClick={() => setSearchOpen(true)}
               className="docs-search-btn"
               style={{
@@ -567,7 +574,7 @@ export default function DocsLayout({ children }: { children: ReactNode }) {
                 <circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" strokeLinecap="round" />
               </svg>
               <span style={{ fontSize: 13, color: t.slate400, fontFamily: t.font, flex: 1, textAlign: 'left', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                Search docs...
+                Search documentation
               </span>
               <kbd style={{
                 fontSize: 11, fontFamily: t.mono, color: t.slate400,
@@ -579,8 +586,8 @@ export default function DocsLayout({ children }: { children: ReactNode }) {
             </button>
 
             <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-              <a href="https://github.com/PartyLayer/PartyLayer" target="_blank" rel="noopener noreferrer"
-                style={{ color: t.slate500, display: 'flex', alignItems: 'center' }}
+              <a href="https://github.com/PartyLayer/PartyLayer" aria-label="PartyLayer on GitHub" target="_blank" rel="noopener noreferrer"
+                style={{ color: t.slate500, display: 'flex', alignItems: 'center', padding: 4 }}
               >
                 <svg width={20} height={20} viewBox="0 0 24 24" fill="currentColor">
                   <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
@@ -593,7 +600,7 @@ export default function DocsLayout({ children }: { children: ReactNode }) {
                   background: t.brand500, transition: `all 150ms ${t.ease}`,
                   display: bp === 'mobile' ? 'none' : undefined,
                 }}
-                onMouseOver={e => { e.currentTarget.style.background = t.brand600; }}
+                onMouseOver={e => { e.currentTarget.style.background = t.brand100; }}
                 onMouseOut={e => { e.currentTarget.style.background = t.brand500; }}
               >
                 Try Demo
@@ -605,6 +612,7 @@ export default function DocsLayout({ children }: { children: ReactNode }) {
         <div style={{ display: 'flex', flex: 1, maxWidth: 1200, margin: '0 auto', width: '100%' }}>
           {/* Sidebar */}
           <aside
+            id="docs-navigation"
             className={`docs-sidebar${mobileOpen ? ' docs-sidebar-open' : ''}`}
             style={{
               width: d.sidebarWidth, flexShrink: 0,
@@ -660,7 +668,7 @@ export default function DocsLayout({ children }: { children: ReactNode }) {
 
           {/* Main content */}
           <main style={{
-            flex: 1, maxWidth: d.contentMaxWidth,
+            flex: 1, minWidth: 0, maxWidth: d.contentMaxWidth,
             padding: responsive(bp, '24px 16px 48px', '32px 32px 64px', '40px 48px 80px'),
             minHeight: 'calc(100vh - 56px)',
           }}>
@@ -691,7 +699,8 @@ export default function DocsLayout({ children }: { children: ReactNode }) {
       {/* Mobile sidebar styles + responsive tweaks */}
       <style>{`
         .docs-mobile-toggle { display: none !important; }
-        @media (max-width: 868px) {
+        @media (max-width: 480px) { .docs-section-label { display: none !important; } }
+        @media (max-width: 1024px) {
           .docs-mobile-toggle { display: block !important; }
           .docs-search-btn { flex: 0 1 40px !important; overflow: hidden !important; }
           .docs-search-btn span, .docs-search-btn kbd { display: none !important; }
@@ -735,12 +744,12 @@ function CodeBlockComponent({ language, title, children }: { language?: string; 
           display: 'flex', justifyContent: 'space-between', alignItems: 'center',
           padding: responsive(cbBp, '8px 12px', '8px 16px', '8px 16px'), background: '#0F172A', borderBottom: '1px solid rgba(148,163,184,0.15)',
         }}>
-          <span style={{ fontSize: 12, fontWeight: 500, color: t.slate400, fontFamily: t.font }}>
+          <span style={{ fontSize: 12, fontWeight: 500, color: t.codeMuted, fontFamily: t.font }}>
             {title || language}
           </span>
           <button onClick={handleCopy} style={{
             background: 'none', border: 'none', cursor: 'pointer',
-            color: copied ? '#34D399' : t.slate400, fontSize: 12, fontFamily: t.font,
+            color: copied ? '#34D399' : t.codeMuted, fontSize: 12, fontFamily: t.font,
             display: 'flex', alignItems: 'center', gap: 4, padding: '2px 6px', borderRadius: 4,
             transition: `color 150ms ${t.ease}`,
           }}>
@@ -758,7 +767,7 @@ function CodeBlockComponent({ language, title, children }: { language?: string; 
           </button>
         </div>
       )}
-      <pre style={{
+      <pre tabIndex={0} style={{
         margin: 0, padding: responsive(cbBp, '12px 14px', '14px 16px', '14px 16px'), background: d.codeBg,
         overflowX: 'auto', fontSize: responsive(cbBp, 12, 13, 13.5), lineHeight: 1.6,
         fontFamily: t.mono, color: d.codeFg,

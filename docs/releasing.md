@@ -199,7 +199,8 @@ Next.js and Vite apps. These are automated integration checks, not proof of a
 successful live wallet approval or ledger commit.
 
 The 2026-10-24 code review also adds four axe accessibility scenarios to the PR
-browser suite and rejects contradictory execution command IDs in both normalized
+browser suite, plus six docs axe/reflow cases across desktop and 320 px mobile.
+It rejects contradictory execution command IDs in both normalized
 receipts and the native provider facade. The installed Vala runtime is covered
 with controlled HTTP/popup tests. See [acceptance evidence](./wallet-acceptance.md)
 for the exact scope, the outstanding VoiceOver run and actual Devnet test areas.
@@ -273,6 +274,21 @@ See the [Dependabot configuration reference](https://docs.github.com/en/code-sec
 - [ ] Changesets created for all changes
 - [ ] CHANGELOG.md reviewed
 - [ ] Documentation updated if needed
+
+## Documentation release alignment
+
+The candidate README and installation guides identify React 3.1.0, SDK 0.20.0 and
+CLI 0.6.0 as unpublished. Before publishing the coordinated package set, replace
+those candidate notes with the actual release/version scope and recheck the same
+commands against the public npm registry after publication. Do not claim that
+`@latest` installs candidate-only behavior before those versions are available.
+
+Keep the homepage, site installation/quick-start pages, root/SDK/React/CLI READMEs
+and generated template guides aligned. Run `pnpm gate:docs-drift`,
+`pnpm gate:readme` and `pnpm gate:templates`. The wallet table is generated from
+the registry plus actual SDK capabilities; use `pnpm gen:readme` instead of editing
+its marked sections. Document runtime inclusion separately from wallet login,
+network support, capability limits and completed live acceptance.
 
 ## Post-Release
 

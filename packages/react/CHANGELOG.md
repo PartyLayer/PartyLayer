@@ -2,6 +2,9 @@
 
 ## 3.1.0
 
+- Align README and website onboarding around one installation, included wallet runtimes,
+  explicit network/configuration prerequisites and the default branded connection UI.
+
 - Announce an empty wallet search through a persistent polite status region,
   retaining focus in the search field and preserving translated messages.
 

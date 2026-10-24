@@ -1,251 +1,178 @@
-# Quick Start Guide
+# Quick start
 
-**References:**
-- [Wallet Integration Guide](https://docs.digitalasset.com/integrate/devnet/index.html)
-- [Signing transactions from dApps](https://docs.digitalasset.com/integrate/devnet/signing-transactions-from-dapps/index.html)
-- [OpenRPC dApp API spec](https://github.com/hyperledger-labs/splice-wallet-kernel/blob/main/api-specs/openrpc-dapp-api.json)
+Add PartyLayer's branded wallet picker and account menu to a React app. One npm command installs the kit, SDK and reviewed wallet runtimes. No wallet-specific imports or stylesheet import are required.
 
-## Installation
+> **Version scope:** This guide targets the unpublished React **3.1.0** / SDK **0.20.0** candidate. Until the coordinated release is published, npm `@latest` still returns the previous release. See [release status](./releasing.md#default-wallet-release-validation).
+
+Use React 18+ in an existing application. Use a supported Node LTS version that meets your framework's requirements. Users need a wallet account or extension for the selected network to finish a real connection.
+
+## Start a new app
+
+If you do not have an app yet:
+
+```bash
+npm create partylayer-app@latest my-dapp -- --template react-vite --pm npm
+cd my-dapp
+npm run dev
+```
+
+The CLI generates the project and installs dependencies. Use `--template next-ssr` for Next.js App Router. See the [CLI guide](../packages/create-partylayer-app/README.md) for all six templates. Generated React apps already use the PartyLayer button and default attribution.
+
+For an existing app, follow the steps below.
+
+## Step 1: Install
+
+Run this in your React project:
 
 ```bash
 npm install @partylayer/react @tanstack/react-query
 ```
 
-**All supported wallet SDKs are included.** The picker uses the selected network and registry channel. Vala is available on Devnet with `channel="beta"`. WalletConnect needs your project id; Bron needs your OAuth/API configuration.
+Use `pnpm add` or `yarn add` with the same package names if preferred. You do not need to install `@partylayer/sdk`, core packages or individual wallet SDKs separately.
 
-## React: Zero Config (Recommended)
+TanStack Query is a required peer. The base connect UI works without `QueryClientProvider`; add that provider when using `@partylayer/react/query` data hooks.
 
-The fastest way to add wallet connectivity:
+## Step 2: Mount the kit
+
+For a Vite React app, wrap the application in `src/main.tsx`:
 
 ```tsx
-import { PartyLayerKit, ConnectButton } from '@partylayer/react';
+import { StrictMode } from 'react';
+import { createRoot } from 'react-dom/client';
+import { PartyLayerKit } from '@partylayer/react';
+import App from './App';
 
-function App() {
+createRoot(document.getElementById('root')!).render(
+  <StrictMode>
+    <PartyLayerKit network="devnet" appName="My dApp">
+      <App />
+    </PartyLayerKit>
+  </StrictMode>,
+);
+```
+
+For Next.js App Router, create a client provider in `app/providers.tsx`:
+
+```tsx
+'use client';
+
+import type { ReactNode } from 'react';
+import { PartyLayerKit } from '@partylayer/react';
+
+export function Providers({ children }: { children: ReactNode }) {
   return (
     <PartyLayerKit network="devnet" appName="My dApp">
+      {children}
+    </PartyLayerKit>
+  );
+}
+```
+
+Mount it in `app/layout.tsx`. Keep this file a Server Component:
+
+```tsx
+import type { ReactNode } from 'react';
+import { Providers } from './providers';
+
+export default function RootLayout({ children }: { children: ReactNode }) {
+  return (
+    <html lang="en">
+      <body><Providers>{children}</Providers></body>
+    </html>
+  );
+}
+```
+
+Use one kit at your application boundary. It owns discovery, client cleanup, theme and session context. Keep `walletConnect`, `bron` and `additionalAdapters` configuration objects stable outside render or with `useMemo`; changes recreate the client.
+
+## Step 3: Add ConnectButton
+
+In Vite, use `src/App.tsx`. In Next.js, use `app/page.tsx` with the client directive:
+
+```tsx
+'use client';
+
+import { ConnectButton } from '@partylayer/react';
+
+export default function Home() {
+  return (
+    <main>
+      <h1>My Canton dApp</h1>
       <ConnectButton />
-      <YourApp />
-    </PartyLayerKit>
+    </main>
   );
 }
 ```
 
-`PartyLayerKit` handles everything:
-- Creates and manages the SDK client
-- Loads the supported default wallet catalog for the selected network and channel
-- Auto-discovers native CIP-0103 wallets (`window.canton.*`)
-- Provides theming (light/dark/auto)
+Users can open the picker, choose an available wallet and approve its connection. The connected button opens the account menu. The modal shows **Powered by PartyLayer** by default. Hosted-wallet login and extension installation are handled by the wallet.
 
-`ConnectButton` is a polished button with:
-- Wallet selection modal
-- Connecting/success/error states
-- Connected dropdown with party ID and disconnect
-
-### Dark Mode
+## Read the connected account
 
 ```tsx
-<PartyLayerKit network="devnet" appName="My dApp" theme="dark">
+import { useAccount } from '@partylayer/react';
+
+export function Account() {
+  const { isConnected, status, party, networkId } = useAccount();
+  if (!isConnected) return <p>Wallet: {status}</p>;
+  return <p>{party} · {networkId}</p>;
+}
+```
+
+Render this inside the kit. A wallet session is not application authentication; use the [authentication guide](./authentication.md) for server-verified sign-in.
+
+For optional data hooks, wrap the kit in `QueryClientProvider`. In a Next.js client provider, create a stable `QueryClient` with `useState(() => new QueryClient())` rather than sharing one across server requests. See [data hooks](https://partylayer.xyz/docs/hooks#query-hooks).
+
+## Configure wallets
+
+| Need | Setting |
+| --- | --- |
+| Development network | `network="devnet"` |
+| Testnet or Mainnet | Set `network` explicitly; the wallet list follows catalog network support |
+| Vala | `network="devnet" channel="beta"` |
+| Send | `network="mainnet"`; absent from the Devnet catalog |
+| WalletConnect | `walletConnect={walletConnect}` with your own project ID |
+| Bron | `bron={bron}` with your OAuth/API configuration |
+| Add custom integrations | `additionalAdapters={customAdapters}` |
+| Replace the default catalog | `adapters={customAdapters}` |
+| Theme and language | `theme="auto" locale="en"`; Turkish and explicit RTL are supported |
+
+For example, enable WalletConnect without an extra wallet package:
+
+```tsx
+const walletConnect = { projectId: 'YOUR_PROJECT_ID' };
+
+<PartyLayerKit network="devnet" appName="My dApp" walletConnect={walletConnect}>
   <ConnectButton />
 </PartyLayerKit>
 ```
 
-Use `"auto"` to follow the user's OS preference.
+Supported runtimes ship with the kit and load as needed. A registry listing or capability declaration is not proof of completed live testing. Check the [wallet matrix](./wallet-cip0103-matrix.md) and [release evidence](./releasing.md#default-wallet-release-validation).
 
-### Custom Wallet Icons
+## Verify the connection
 
-```tsx
-<PartyLayerKit
-  network="devnet"
-  appName="My dApp"
-  walletIcons={{
-    console: '/wallets/console.svg',
-    loop: '/wallets/loop.svg',
-  }}
->
-  <ConnectButton />
-</PartyLayerKit>
-```
+1. Open Connect Wallet and check that wallets match the selected network/channel.
+2. Select a wallet from the button's user-initiated flow. Complete login, installation and approval if required.
+3. Confirm `useAccount()` reports a party and the actual wallet network.
+4. Disconnect and check that the account UI clears. Reload and test restoration separately: a stored hint alone does not prove the wallet is connected.
 
-## React: Custom UI with Hooks
+A successful connection or message signature does not verify a token transfer or swap. Your app needs valid commands, test balance and independent ledger confirmation for those operations.
 
-For full control, use hooks directly:
+## Troubleshooting
 
-```tsx
-import {
-  PartyLayerKit,
-  useAccount,
-  useWallets,
-  useConnect,
-  useDisconnect,
-  useSignMessage,
-} from '@partylayer/react';
+| Symptom | Check |
+| --- | --- |
+| A wallet is missing | Network/channel support, WalletConnect/Bron configuration and whether `adapters` replaced the defaults. Send is Mainnet-only; Vala requires Devnet beta. |
+| Wallet picker is empty | Registry/discovery errors, network/channel filters and custom adapter configuration. A failed registry fetch is only one possible cause. |
+| Popup does not open | Start the flow directly from a user click and check popup blocking. Use the default button to preserve the supported popup flow. |
+| Wallet rejects signing | Check the connected session's capabilities, network and current wallet authentication. Preserve the wallet's error when diagnosing a deployment problem. |
+| Backend rejects a signature | Verify the exact challenged message/encoding, nonce, origin and independently authorized key. Do not infer a universal wallet algorithm. |
+| Old native session is not restored | This candidate requires one reconnect for old caches without an official provider hint. Live party/network checks still apply. |
+| Next.js hydration differs | Keep the kit in a client boundary. Treat SSR cookie state as a UI hint; use backend-verified sessions for protected server content. |
 
-function App() {
-  return (
-    <PartyLayerKit network="devnet" appName="My dApp">
-      <WalletStatus />
-    </PartyLayerKit>
-  );
-}
+## Next steps
 
-function WalletStatus() {
-  const { isConnected, party } = useAccount();
-  const { wallets, isLoading } = useWallets();
-  const { connect, isConnecting } = useConnect();
-  const { disconnect } = useDisconnect();
-  const { signMessage } = useSignMessage();
-
-  if (isConnected) {
-    return (
-      <div>
-        <p>Connected: {party}</p>
-        <button onClick={disconnect}>Disconnect</button>
-        <button onClick={() => signMessage({ message: 'Hello!' })}>
-          Sign Message
-        </button>
-      </div>
-    );
-  }
-
-  if (isLoading) return <p>Discovering wallets...</p>;
-
-  return (
-    <div>
-      {wallets.map((wallet) => (
-        <button
-          key={String(wallet.walletId)}
-          onClick={() => connect({ walletId: wallet.walletId })}
-          disabled={isConnecting}
-        >
-          {wallet.name}
-        </button>
-      ))}
-    </div>
-  );
-}
-```
-
-## Vanilla JavaScript
-
-No React? Use the SDK directly:
-
-```typescript
-import { createPartyLayer } from '@partylayer/sdk';
-
-// Create client, all wallet adapters are automatically included!
-const client = createPartyLayer({
-  network: 'devnet',
-  app: { name: 'My dApp' },
-});
-
-// List available wallets (Console, Loop, Cantor8, Nightly, all ready to use)
-const wallets = await client.listWallets();
-console.log('Available wallets:', wallets.map(w => w.name));
-
-// Connect to a wallet
-const session = await client.connect({ walletId: 'console' });
-console.log('Connected:', session.partyId);
-
-// Sign a message
-const signed = await client.signMessage({ message: 'Hello, Canton!' });
-
-// Sign and submit a transaction
-const signedTx = await client.signTransaction({ tx: myTransaction });
-const receipt = await client.submitTransaction({ signedTx: signedTx.signedTx });
-
-// Listen to events
-client.on('session:connected', (event) => {
-  console.log('Session connected:', event.session);
-});
-
-client.on('error', (event) => {
-  console.error('Error:', event.error);
-});
-
-// Disconnect
-await client.disconnect();
-```
-
-## Supported Wallets (Built-in)
-
-| Wallet | Type | Transport | Auto-registered |
-|--------|------|-----------|-----------------|
-| Console Wallet | Browser Extension | PostMessage | ✅ Yes |
-| 5N Loop | Mobile / Web | QR Code / Popup | ✅ Yes |
-| Cantor8 (C8) | Browser Extension | Deep Link | ✅ Yes |
-| Nightly | Multichain Wallet | Injected | ✅ Yes |
-| Bron | Enterprise | OAuth2 / API | ⚙️ Requires config |
-
-Additionally, any **CIP-0103 compliant wallet** injected at `window.canton.*` is auto-discovered at runtime, no adapter needed.
-
-## Error Handling
-
-```typescript
-import {
-  WalletNotFoundError,
-  WalletNotInstalledError,
-  UserRejectedError,
-  SessionExpiredError,
-  TimeoutError,
-} from '@partylayer/sdk';
-
-try {
-  await client.connect({ walletId: 'console' });
-} catch (error) {
-  if (error instanceof WalletNotInstalledError) {
-    console.error('Please install the wallet extension');
-  } else if (error instanceof UserRejectedError) {
-    console.error('User rejected the connection');
-  } else if (error instanceof SessionExpiredError) {
-    console.error('Session expired, please reconnect');
-  } else if (error instanceof TimeoutError) {
-    console.error('Connection timed out');
-  } else {
-    console.error('Connection failed:', error);
-  }
-}
-```
-
-The `WalletModal` component handles all these error states automatically with dedicated views for not-installed, rejected, and timeout scenarios.
-
-## Advanced: Manual Client Setup
-
-For advanced use cases where you need full control over the client:
-
-```tsx
-import { useMemo } from 'react';
-import { createPartyLayer } from '@partylayer/sdk';
-import { PartyLayerProvider } from '@partylayer/react';
-
-function App() {
-  const client = useMemo(() => createPartyLayer({
-    registryUrl: 'https://registry.partylayer.xyz',
-    network: 'devnet',
-    app: { name: 'My dApp' },
-    // Custom telemetry configuration
-    telemetry: {
-      enabled: true,
-      endpoint: 'https://metrics.example.com',
-      sampleRate: 0.1,
-    },
-  }), []);
-
-  return (
-    <PartyLayerProvider client={client} network="devnet">
-      <MyDApp />
-    </PartyLayerProvider>
-  );
-}
-```
-
-## See Also
-
-- [API Reference](./api.md)
-- [Architecture](./architecture.md)
-- [Error Codes](./errors.md)
-- [Adapter Guide](./adapters.md)
-
-The recommended UI is PartyLayer's `ConnectButton`. Its connection modal includes
-“Powered by PartyLayer” by default, as do the generated starters. Custom UI remains
-available for advanced use. For authentication challenges, include nonce and domain in
-the message being signed; separate nonce/domain metadata is not a cryptographic binding.
+- [Kit configuration](https://partylayer.xyz/docs/partylayer-kit) and [ConnectButton](https://partylayer.xyz/docs/connect-button).
+- [Authentication](./authentication.md), [transaction lifecycle](./transaction-lifecycle.md) and [wallet balances](./wallet-balances.md).
+- [Token transfer support](./typed-transfer-support.md), including valid command and issuer requirements.
+- [Protocol ownership and migration](./protocol-ownership.md) for existing integrations.
+- [Framework-independent SDK](../packages/sdk/README.md) or [Vue bindings](../packages/vue/README.md) for other application stacks.

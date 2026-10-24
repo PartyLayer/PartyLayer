@@ -4,6 +4,10 @@ A [PartyLayer](https://partylayer.xyz) dApp: React + Vite, with Canton wallet in
 
 ## Develop
 
+The CLI installs dependencies unless `--no-install` was selected. If installation
+was skipped, run `npm install` first. The connection modal shows **Powered by PartyLayer**
+by default.
+
 ```bash
 npm run dev
 ```
@@ -23,6 +27,8 @@ import { PartyLayerKit, ConnectButton } from '@partylayer/react';
 `<PartyLayerKit>` creates the client, loads the supported default wallet catalog, and provides session context. `<ConnectButton>` handles the full connect flow. Read the connected session with `useAccount()`.
 
 Switch networks by changing `network` to `"testnet"` or `"mainnet"` in `src/App.tsx`.
+
+A wallet session is not backend authentication. Use the [authentication guide](https://partylayer.xyz/docs/authentication) for sign-in and independently verify ledger outcomes for transfers/swaps. Send is Mainnet-only in the catalog.
 
 ## Build
 

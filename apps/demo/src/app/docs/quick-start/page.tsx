@@ -1,9 +1,9 @@
 import type { Metadata } from 'next';
 import QuickStartContent from './content';
 
-const title = 'Canton dApp quickstart: zero to a working wallet connection';
+const title = 'Quick start: connect Canton wallets with one installation';
 const description =
-  'A working Canton dApp wallet connection in three steps, plus which Canton Network SDK you actually need, how to verify each stage succeeded, and what to do when it does not.';
+  'Install PartyLayer once, add the branded ConnectButton, and configure supported Canton wallets. Complete Vite and Next.js setup, wallet prerequisites and troubleshooting.';
 const url = 'https://partylayer.xyz/docs/quick-start';
 
 export const metadata: Metadata = {
@@ -23,7 +23,7 @@ const howToJsonLd = {
   tool: [{ '@type': 'HowToTool', name: '@partylayer/react' }],
   step: [
     { '@type': 'HowToStep', name: 'Install', url: `${url}#step-1`, text: 'Add @partylayer/react and its peer dependencies to a React app.' },
-    { '@type': 'HowToStep', name: 'Wrap your app', url: `${url}#step-2`, text: 'Mount PartyLayerKit at the root and configure the network.' },
+    { '@type': 'HowToStep', name: 'Mount the kit', url: `${url}#step-2`, text: 'Mount PartyLayerKit at the root and configure the network.' },
     { '@type': 'HowToStep', name: 'Add ConnectButton', url: `${url}#step-3`, text: 'Render ConnectButton to open the registry-backed wallet modal.' },
     { '@type': 'HowToStep', name: 'Verify it works', url: `${url}#verify`, text: 'Check the modal lists wallets, the wallet flow starts, and useAccount reports a party id.' },
   ],

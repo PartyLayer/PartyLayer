@@ -10,7 +10,7 @@ not a certification of every wallet deployment or complete WCAG conformance.
 2.2 AA rule tags against the kit UI, without disabling rules or excluding a
 reported violation. It runs in the PR browser suite and attaches JSON reports.
 
-The four Chromium scenarios pass:
+The four wallet-kit Chromium scenarios pass:
 
 - Light picker, empty search and wallet education.
 - Dark picker, empty search and wallet education.
@@ -22,6 +22,13 @@ in dark mode. Removing its opacity restores the theme's readable foreground.
 Native Chrome accessibility inspection also found duplicate wallet names from
 icons plus adjacent text; picker icons are now decorative. Existing keyboard
 specs cover modal focus containment, Escape and trigger focus restoration.
+
+`apps/demo/e2e/docs-accessibility.spec.ts` adds six full-page axe/reflow cases:
+introduction, installation and quick start at 1440 px and 320 px. The docs shell now
+keeps prose inside the viewport, gives mobile navigation/search and GitHub controls
+accessible names, uses readable light/dark-surface text, and makes overflowing
+code examples keyboard-scrollable. The tests disable no rules or exclusions and
+attach JSON reports. All six pass; they are part of the PR browser command.
 
 These tests use a development-only wallet. They do not prove vendor approval,
 cryptographic verification or live transaction execution. They do not cover every
@@ -48,12 +55,15 @@ translated empty-result message and focus in the input. This lets assistive
 technology announce the message politely; it is not an assertive alert.
 See [WCAG 2.2 status messages](https://www.w3.org/WAI/WCAG22/Understanding/status-messages.html).
 
-After the fix, all 24 PR browser tests and 339 React unit tests pass. The
+The search-status fix passed 24 PR browser tests and 339 React unit tests.
+The documentation follow-up passes the expanded 30-test PR browser suite, with
+zero skips or retries. The
 light/dark browser cases assert the initially empty region, its empty-search
 message, retained input focus and clearing when results return. Automated
 semantics do not establish that an individual reader spoke the announcement.
 
-Spoken confirmation of the new empty-search announcement remains open, along with
+The maintainer deferred spoken confirmation of the new empty-search announcement
+on 2026-10-24; it is neither passed nor failed. That check remains open, along with
 connection progress/error announcements, connected account actions and equivalent
 mobile assistive-technology acceptance. Basic reading alone is not a complete
 VoiceOver or WCAG conformance pass. Earlier temporary activation attempts were

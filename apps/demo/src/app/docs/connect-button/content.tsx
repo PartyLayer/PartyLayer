@@ -29,6 +29,7 @@ function Navbar() {
       <H2 id="props">Props</H2>
       <PropsTable data={[
         { prop: 'label', type: 'string', default: '"Connect Wallet"', description: 'Text shown on the button when disconnected.' },
+        { prop: 'accountStatus', type: '"avatar" | "address" | "full"', default: '"full"', description: 'Choose avatar-only, address-only or full account button display.' },
         { prop: 'connectedLabel', type: '"address" | "wallet" | "custom"', default: '"address"', description: 'What to display when connected: truncated party ID, wallet ID, or custom format.' },
         { prop: 'formatAddress', type: '(partyId: string) => string', description: 'Custom formatter for the connected label. Only used when connectedLabel="custom".' },
         { prop: 'className', type: 'string', description: 'CSS class name for the outer container.' },

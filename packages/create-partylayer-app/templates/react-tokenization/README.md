@@ -17,9 +17,8 @@ hooks type the request and wrap the query or mutation.
 ## Run it
 
 ```bash
-npm create partylayer-app@latest my-app -- --template react-tokenization
+npm create partylayer-app@latest my-app -- --template react-tokenization --pm npm
 cd my-app
-npm install
 npm run dev
 ```
 
@@ -42,8 +41,8 @@ writes the typed hooks do not cover.
 
 ## Demo flows
 
-1. Connect. Click Connect Wallet in the header. The console adapter is registered, so
-   the wallet modal renders themed by the teal family. The sections below are driven
+1. Connect. Click Connect Wallet in the header. The default wallet catalog is included, and
+   the wallet modal uses the teal theme. The sections below are driven
    by the demo-party switcher, not the connection.
 2. View holdings with a frozen lock. As Alice, the Holdings card shows two holdings;
    one carries a lock and renders a "Locked: frozen by issuer" badge.
@@ -139,3 +138,8 @@ The official Splice token-standard CLI is the canonical reference for these regi
 flows.
 
 Wallet SDKs are included. Vala requires Devnet with `channel="beta"`. WalletConnect requires your project id through `walletConnect`; Bron requires OAuth/API configuration through `bron`. No separate wallet SDK installation or registration is needed.
+
+The CLI installs dependencies unless `--no-install` was selected. These demo
+backend outcomes do not prove connected-wallet signing or ledger settlement.
+The default connection UI shows **Powered by PartyLayer**; backend authentication
+and live command/settlement verification remain application responsibilities.
