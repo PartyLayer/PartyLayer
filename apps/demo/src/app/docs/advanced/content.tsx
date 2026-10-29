@@ -91,7 +91,7 @@ const client = createPartyLayer({
       <H3>Explicit logout across tabs</H3>
       <P>Coordinated React logout requires React 3.1.2+ and session 1.1.10+.</P>
       <P>
-        Enable <Code>sessionOptions={'{{ broadcast: true }}'}</Code> on <Code>PartyLayerKit</Code>{' '}
+        Enable <Code>{'sessionOptions={{ broadcast: true }}'}</Code> on <Code>PartyLayerKit</Code>{' '}
         to coordinate sessions across tabs on the same origin. Use <Code>ConnectButton</Code>{' '}
         or the React disconnect hooks, including <Code>@partylayer/react/query</Code>, for
         explicit logout. They cancel reconnect and synchronize the shared store. Receiving
