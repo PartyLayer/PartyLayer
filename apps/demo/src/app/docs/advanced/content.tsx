@@ -88,6 +88,21 @@ const client = createPartyLayer({
         current session and capabilities instead of assuming every wallet silently reconnects.
       </P>
 
+      <H3>Explicit logout across tabs</H3>
+      <P>Coordinated React logout requires React 3.1.2+ and session 1.1.10+.</P>
+      <P>
+        Enable <Code>{'sessionOptions={{ broadcast: true }}'}</Code> on <Code>PartyLayerKit</Code>{' '}
+        to coordinate sessions across tabs on the same origin. Use <Code>ConnectButton</Code>{' '}
+        or the React disconnect hooks, including <Code>@partylayer/react/query</Code>, for
+        explicit logout. They cancel reconnect and synchronize the shared store. Receiving
+        tabs disconnect their own provider once and clear their SDK-backed account view;
+        they do not rebroadcast that logout. Provider failures remain visible as session errors.
+      </P>
+      <P>
+        A direct SDK call manages that client&apos;s lifecycle. Applications that orchestrate
+        their own session store must coordinate its lifecycle too. Cross-tab synchronization
+        does not turn a cached identity into wallet authorization.
+      </P>
 
       <H3>Custom Storage</H3>
       <P>Provide a custom storage adapter for non-browser environments:</P>

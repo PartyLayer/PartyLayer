@@ -12,7 +12,7 @@
     "pretest": "node scripts/copy-registry.mjs",
     "test": "tsx --test --test-force-exit src/lib/*.test.ts",
     "test:e2e": "playwright test",
-    "test:e2e:pr": "playwright test smoke.spec.ts full-connect-flow.spec.ts vala-beta.spec.ts connection-keyboard.spec.ts accessibility.spec.ts docs-accessibility.spec.ts developer-discovery.spec.ts",
+    "test:e2e:pr": "playwright test smoke.spec.ts full-connect-flow.spec.ts vala-beta.spec.ts connection-keyboard.spec.ts accessibility.spec.ts docs-accessibility.spec.ts developer-discovery.spec.ts session-persistence.spec.ts wallets/send.spec.ts",
     "typecheck": "tsc --noEmit -p tsconfig.typecheck.json"
   },
   "dependencies": {

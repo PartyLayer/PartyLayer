@@ -1,58 +1,59 @@
 /**
- * Real-browser session-persistence smoke (1.0 secure-by-default).
- *
- * Exercises the published session layer end-to-end in a real Chromium:
- *   persist (connect → encrypted IndexedDB) → reload → restore → multi-tab.
- *
- * Uses @partylayer/testing's browser primitives (IndexedDB assertions) and the
- * demo's existing mock-wallet helpers. Nightly + on-demand only (not PR-gated).
- *
- * THIS IS THE HOME FOR RELOAD-RESTORE. A second spec, `session-restore.spec.ts`,
- * claimed the same ground with a test named "session persists after page
- * refresh". It was `test.fixme`'d from the day it was written, waiting on a
- * `?mockWallets=1` switch that never existed, and it was the weaker of the two:
- * fixed `waitForTimeout` sleeps, a `text=/party/i` locator, and an
- * `if (count > 0) … else test.skip()` body that would have reported green
- * without asserting. It was deleted rather than repaired, because the coverage
- * it named already lives here and runs. If you come looking for it, this is it.
+ * Real-browser restoration over the current provider-owned session model.
+ * The demo wallet fixture persists its own authorization, like an extension's
+ * background context. The React store is an in-memory UI projection; an app
+ * cache is never proof that the wallet remains connected.
  */
-import { test, expect, type Page } from '@playwright/test';
-import { idbEntryCountScript, sessionKeyDbName } from '@partylayer/testing';
-import { connectToMockWallet, assertConnected } from './helpers';
+import { test, expect } from '@playwright/test';
+import { connectToMockWallet, assertConnected, disconnectWallet } from './helpers';
 
-async function sessionKeyEntries(page: Page): Promise<number> {
-  const origin = await page.evaluate(() => window.location.origin);
-  return page.evaluate(idbEntryCountScript(sessionKeyDbName(origin))) as Promise<number>;
-}
-
-test.describe('Session persistence (1.0 secure-by-default)', () => {
-  test('persist → reload-restore → multi-tab disconnect propagation', async ({ page, context }) => {
+test.describe('Provider-owned session restoration', () => {
+  test('wallet-owned restore preserves identity and explicit logout reaches both tabs', async ({ page, context }) => {
     await page.goto('/');
     await connectToMockWallet(page);
     await assertConnected(page);
 
-    // Persist: the encrypted-IndexedDB default engaged ⇒ the origin-bound AES key
-    // store holds at least one entry (the non-extractable CryptoKey).
-    await expect.poll(() => sessionKeyEntries(page), { timeout: 10_000 }).toBeGreaterThan(0);
+    const identity = await page.locator('header').first().getByRole('button', { name: /party:/i }).textContent();
 
     // Reload → restore: still connected after a full page reload.
     await page.reload();
     await assertConnected(page);
+    await expect(page.locator('header').first().getByRole('button', { name: /party:/i })).toHaveText(identity!);
 
-    // Multi-tab: a second tab in the SAME context shares storage + BroadcastChannel.
+    // A second tab shares the mock wallet authorization and opt-in sync channel.
     const tabB = await context.newPage();
     await tabB.goto('/');
     await assertConnected(tabB); // restores the live session in the new tab
 
-    // Disconnect in tab A propagates to tab B (origin-bound broadcast).
-    const disconnect = page.getByRole('button', { name: /disconnect/i }).first();
-    if (await disconnect.count()) {
-      // open the connected dropdown first if needed
-      await disconnect.click().catch(() => {});
-    }
-    const connectBtnB = tabB.getByRole('button', { name: /connect wallet/i }).first();
-    await expect(connectBtnB).toBeVisible({ timeout: 10_000 });
+    // Both the SDK-backed header and session-store indicator must stop showing
+    // a connected account after explicit logout, without reconnecting.
+    await disconnectWallet(page);
+    await expect(tabB.locator('header').first().getByRole('button', { name: /connect wallet/i })).toBeVisible({ timeout: 10_000 });
+    await expect(tabB.locator('header').first().getByRole('button', { name: /party:/i })).toHaveCount(0);
 
+    await expect(page.locator('[title="session: reconnecting"]')).toHaveCount(0);
+    await expect(tabB.locator('[title="session: connected"]')).toHaveCount(0);
+    await tabB.reload();
+    await tabB.waitForLoadState('networkidle');
+    await expect(tabB.locator('header').first().getByRole('button', { name: /connect wallet/i })).toBeVisible();
+    await expect(tabB.locator('header').first().getByRole('button', { name: /party:/i })).toHaveCount(0);
     await tabB.close();
+  });
+
+  test('a stale application marker cannot restore a wallet that revoked authorization', async ({ page }) => {
+    await page.goto('/');
+    await connectToMockWallet(page);
+    await assertConnected(page);
+    await page.evaluate(() => {
+      // This key belongs to the controlled wallet fixture, not the dApp SDK.
+      localStorage.removeItem('__demo_wallet_session_v1');
+      localStorage.setItem('partylayer.session.connected', 'true');
+    });
+    await page.reload();
+    await page.waitForLoadState('networkidle');
+    const nav = page.locator('header').first();
+    await expect(nav.getByRole('button', { name: /connect wallet/i })).toBeVisible({ timeout: 10_000 });
+    await expect(nav.getByRole('button', { name: /party:/i })).toHaveCount(0);
+    await expect(page.locator('[title="session: connected"]')).toHaveCount(0);
   });
 });

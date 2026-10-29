@@ -215,8 +215,21 @@ export function createSessionStore(
         explicitDisconnect = true;
         cancelReconnect();
         disarmExpiry();
-        setState({ status: 'disconnected', account: null, accounts: [], networkId: null });
+        setState({ status: 'disconnected', account: null, accounts: [], networkId: null, lastError: null });
         void clearConnected();
+        // Invalidate the receiving tab's provider owner too. Clearing only the
+        // view leaves SDK-backed clients connected and allows stale restoration.
+        // Use the standard RPC directly, without calling store.disconnect(), so
+        // this delivery cannot broadcast another disconnect back to its sender.
+        void (async () => {
+          try {
+            await provider.request({ method: 'disconnect' });
+          } catch (error) {
+            if (!disposed && explicitDisconnect && state.status === 'disconnected') {
+              setState({ lastError: toError(error) });
+            }
+          }
+        })();
       } else if (env.kind === 'party') {
         const previous = state.account?.partyId ?? null;
         const match = state.accounts.find((a) => a.partyId === env.partyId) ?? null;
@@ -593,6 +606,7 @@ export function createSessionStore(
       explicitDisconnect = true;
       cancelReconnect();
       disarmExpiry();
+      setState({ lastError: null });
       try {
         await provider.request({ method: 'disconnect' });
       } catch (err) {

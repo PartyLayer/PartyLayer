@@ -1,5 +1,13 @@
 # @partylayer/react
 
+## 3.1.2
+
+### Patch Changes
+
+- Route React's base and Query disconnect hooks through the shared session store so explicit logout cancels reconnect and participates in opt-in tab synchronization. Receiving tabs also disconnect their provider owner once without rebroadcasting, keeping SDK and reactive account UI consistent. Preserve async hook errors and direct-client fallback. Add real-browser restore, cross-tab logout and revoked-wallet cache checks to PR validation.
+- Updated dependencies
+  - @partylayer/session@1.1.10
+
 ## 3.1.1
 
 ### Patch Changes
