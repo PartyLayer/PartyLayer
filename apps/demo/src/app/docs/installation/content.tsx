@@ -16,7 +16,7 @@ export default function InstallationPage() {
 
       <H2 id="framework-support">Choose your framework</H2>
       <P>The connection protocol is shared; the UI and runtime requirements depend on your application stack.</P>
-      <div style={{ overflowX: 'auto', marginBottom: 24 }}>
+      <div role="region" aria-label="Framework support table; scroll horizontally if needed" tabIndex={0} style={{ overflowX: 'auto', marginBottom: 24 }}>
         <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
           <caption style={{ textAlign: 'left', marginBottom: 12 }}>PartyLayer framework and UI support</caption>
           <thead><tr>{['Application', 'Integration', 'Connection UI and requirements'].map(label => <th key={label} scope="col" style={{ padding: 12, borderBottom: '1px solid #CBD5E1' }}>{label}</th>)}</tr></thead>
