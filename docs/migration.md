@@ -99,4 +99,4 @@ Do not automatically resubmit a transaction after a timeout or mismatched comman
 4. Test server-verified sign-in separately from message signing. A successful message signature does not establish token transfer or swap settlement.
 5. Validate transfers/swaps with valid commands, test funding and independent ledger confirmation on supported networks.
 
-CLI **0.7.0** adds an offline `--doctor` check. Until that release is published, do not assume the public `@latest` binary includes it. See the [CLI guide](../packages/create-partylayer-app/README.md) for usage and limits. Doctor does not perform wallet or ledger acceptance.
+CLI **0.7.0 and newer** include an offline `--doctor` check. CLI 0.7.0 is published on npm; its public installation, diagnostics and generated React application build have been verified. See the [CLI guide](../packages/create-partylayer-app/README.md) for usage and limits. Doctor does not perform wallet or ledger acceptance.

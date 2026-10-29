@@ -69,7 +69,7 @@ Provide directory, template and package manager to skip prompts. For example:
 npm create partylayer-app@latest my-dapp -- --template next-ssr --pm npm --no-git
 ```
 
-Node.js 18 is the CLI minimum. Follow the generated framework's Node requirements as well; use a supported Node LTS release for new projects.
+CLI 0.7.0 requires Node.js 20.12.0 or newer. Follow the generated framework's Node requirements as well; use a supported Node LTS release for new projects.
 
 ## Recover an installation failure
 
@@ -100,7 +100,7 @@ MIT
 
 ## Diagnose an existing application
 
-**Introduced in CLI 0.7.0** (release candidate until published). CLI 0.6.2 and older do not support `--doctor`.
+**Available in CLI 0.7.0 and newer.** CLI 0.6.2 and older do not support `--doctor`.
 
 ```bash
 npx create-partylayer-app@latest --doctor .
