@@ -104,7 +104,10 @@ describe('SCENARIO-8: disconnect in tab A → tab B disconnected, no rebroadcast
     const pA = mockProvider();
     const pB = mockProvider();
     const tabA = make(pA, { broadcast: { channelFactory: hub.factory } });
-    const tabB = make(pB, { broadcast: { channelFactory: hub.factory } });
+    const tabB = make(pB, {
+      broadcast: { channelFactory: hub.factory },
+      reconnect: { baseDelayMs: 10, maxDelayMs: 100, factor: 2, maxAttempts: 3 },
+    });
     await establish(tabA, pA);
     await establish(tabB, pB);
     expect(tabB.getSnapshot().status).toBe('connected');
@@ -114,8 +117,47 @@ describe('SCENARIO-8: disconnect in tab A → tab B disconnected, no rebroadcast
     expect(tabA.getSnapshot().status).toBe('disconnected');
     expect(tabB.getSnapshot().status).toBe('disconnected'); // propagated
     expect(hub.posts()).toBe(1); // exactly ONE broadcast — tab B did NOT rebroadcast
+    // The receiving tab must invalidate its provider/SDK owner as well as the
+    // UI projection, otherwise legacy account UI stays connected and reload can
+    // resurrect the old session. No echo and no new connect request are allowed.
+    expect(pB.request.mock.calls.filter(([request]) => request.method === 'disconnect')).toHaveLength(1);
+    expect(await pB.request({ method: 'status' })).toMatchObject({ connection: { isConnected: false } });
+    expect(pA.request.mock.calls.filter(([request]) => request.method === 'disconnect')).toHaveLength(1);
+    const requests = pB.request.mock.calls.length;
+    await vi.advanceTimersByTimeAsync(1000);
+    expect(pB.request.mock.calls).toHaveLength(requests);
+    expect(hub.posts()).toBe(1);
     tabA.destroy();
     tabB.destroy();
+  });
+
+  it('records a receiving provider failure without reconnecting or echoing logout', async () => {
+    const hub = makeHub();
+    const pA = mockProvider();
+    const pB = mockProvider();
+    const error = new Error('remote provider unavailable');
+    const tabA = make(pA, { broadcast: { channelFactory: hub.factory } });
+    const tabB = make(pB, { broadcast: { channelFactory: hub.factory } });
+    await establish(tabA, pA); await establish(tabB, pB);
+    pB.request.mockRejectedValueOnce(error);
+    await tabA.disconnect();
+    await vi.waitFor(() => expect(tabB.getSnapshot().lastError).toBe(error));
+    expect(tabB.getSnapshot().status).toBe('disconnected');
+    expect(hub.posts()).toBe(1);
+    tabA.destroy(); tabB.destroy();
+  });
+
+  it('clears a previous teardown error when a subsequent explicit logout succeeds', async () => {
+    const p = mockProvider();
+    const store = make(p);
+    await establish(store, p);
+    const error = new Error('temporary teardown failure');
+    p.request.mockRejectedValueOnce(error);
+    await store.disconnect();
+    expect(store.getSnapshot().lastError).toBe(error);
+    await store.disconnect();
+    expect(store.getSnapshot().lastError).toBeNull();
+    store.destroy();
   });
 });
 

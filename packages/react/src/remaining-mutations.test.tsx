@@ -3,6 +3,9 @@ import React from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, waitFor, act } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+// The client hook is mocked below; mirror the older/no-store context so these
+// mutation-shape tests continue to exercise the direct-client fallback.
+vi.mock('./context', () => ({ usePartyLayerContext: () => ({ store: null }) }));
 
 // Mock the client accessor so each hook gets a controllable mock client
 // (the QueryClient is still real, via QueryClientProvider).

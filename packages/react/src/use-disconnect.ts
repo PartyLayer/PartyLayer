@@ -3,9 +3,9 @@
 /**
  * @partylayer/react v2: useDisconnect (TanStack Query mutation).
  *
- * Wagmi-shaped: wraps the existing client disconnect path in `useMutation`. The
- * underlying logic is UNCHANGED: `mutationFn` calls `client.disconnect()` (the
- * same method the v1 context hook calls). The QueryClient is supplied by the
+ * Wagmi-shaped: wraps the shared explicit-disconnect path in `useMutation`,
+ * including opt-in tab synchronization through the provider's session store.
+ * The QueryClient is supplied by the
  * CONSUMER's `QueryClientProvider` (TanStack Query is a peer dependency).
  *
  * Returns the TanStack mutation result spread, plus wagmi-style aliases:
@@ -15,6 +15,8 @@
 import { useMutation, type UseMutationOptions, type UseMutationResult } from '@tanstack/react-query';
 import { usePartyLayer } from './hooks';
 import { partyLayerKeys } from './query-keys';
+import { usePartyLayerContext } from './context';
+import { disconnectSession } from './disconnect-session';
 
 /** Disconnect takes no variables. */
 export type DisconnectVariables = void;
@@ -41,12 +43,12 @@ export type UseDisconnectReturnType = UseMutationResult<void, Error, DisconnectV
 
 export function useDisconnect(parameters: UseDisconnectParameters = {}): UseDisconnectReturnType {
   const client = usePartyLayer();
+  const { store } = usePartyLayerContext();
 
   const mutation = useMutation<void, Error, DisconnectVariables>({
     ...parameters.mutation,
     mutationKey: partyLayerKeys.disconnect(),
-    // Underlying disconnect path is UNCHANGED, same call the v1 hook makes.
-    mutationFn: () => client.disconnect(),
+    mutationFn: () => disconnectSession(client, store),
   });
 
   return {

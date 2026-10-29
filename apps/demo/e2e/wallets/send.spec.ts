@@ -9,19 +9,14 @@ import { SEND_KERNEL_ID } from '@partylayer/adapter-send';
  * which Playwright cannot drive. These tests stub `window.canton`
  * before navigation and validate the picker-side surface only:
  *
- *   - Send-shaped status (canonical OR build-specific kernel.id) is
- *     promoted into the "CIP-0103 Native" section with proper Send
- *     branding (NOT the raw kernel.id string — the bug that triggered
- *     this architecture upgrade).
- *   - A truly foreign provider gets a generic CIP-0103 entry, NOT a
- *     "Send" entry. The kernel.id guard fires only on the connect
- *     attempt; the picker still surfaces every wallet.
- *   - Stubbing Send does not crowd the picker: every OTHER registry wallet is
- *     still offered. The one exception is asserted as a rule, not a headcount —
- *     see the block below the first test.
+ * The public showcase is Devnet. Send is Mainnet-only, so even a detected
+ * Mainnet provider must not bypass the catalog's network filter. Canonical
+ * and build-specific identities must not leak a raw kernel ID into the UI.
+ * Other wallets remain available according to network and application config.
+ * Mainnet discovery/identity matching is covered by the SDK contract tests;
+ * this Devnet UI test does not establish real Send login or signing acceptance.
  *
- * Anything that requires a real passkey unlock is verified by the
- * adapter's vitest suite + manual E2E.
+ * Real account/passkey acceptance remains a separate manual check.
  */
 
 const BUILD_SPECIFIC_KERNEL_ID = 'lpnfhpbpmlobjlgkdmnjieeihjmihhjd';
@@ -92,37 +87,18 @@ test.describe('Send adapter — DOM-level smoke (registry-driven detection)', ()
       await page.addInitScript(buildCantonStub(SEND_CANONICAL));
     });
 
-    test('Send appears in picker by name (NOT raw kernel.id) and is not flagged Beta', async ({ page }) => {
+    test('a canonical Mainnet Send provider stays out of the Devnet picker', async ({ page }) => {
       await openWalletModal(page);
       const modal = page.getByRole('dialog');
-      await expect(modal.getByText(/^Send$/)).toBeVisible({ timeout: 5000 });
-      // The pre-Prompt-6 bug rendered the raw extension id — verify it does NOT appear.
+      // Wait for the real catalog before asserting absence.
+      await expect(modal.getByText(/^Cantor8/i).first()).toBeVisible();
+      await expect(modal.getByText(/^Send$/)).toHaveCount(0);
       await expect(modal.getByText(SEND_KERNEL_ID)).toHaveCount(0);
-      // Stable release: the Beta badge must NOT render for Send anymore.
-      await expect(modal.getByText('Beta', { exact: true })).toHaveCount(0);
     });
 
-    /**
-     * This replaces a test that asserted a fixed list of six wallet names.
-     *
-     * It failed for 38 consecutive nights (2026-07-30 .. 2026-09-05), and it was
-     * right to fail: #265 deliberately widened the SDK's visibility rule from
-     * `discovery-adapter` entries to EVERY wallet that needs an app-registered
-     * adapter, and the demo deliberately does not register Bron's — it needs real
-     * OAuth credentials a public demo cannot ship (canton-demo-adapter.ts). The
-     * product changed; the headcount did not.
-     *
-     * A list of names rots exactly this way the next time the picker's contents
-     * change, and it rots silently, because a name disappearing looks the same
-     * whether it was hidden on purpose or lost by accident. So these tests assert
-     * the RULE instead: which wallets the demo can connect, why the one it cannot
-     * is absent, and that "absent" means gated rather than missing.
-     *
-     * The expectation is derived from the registry the demo actually serves, so
-     * adding a wallet does not require editing this file. The single hardcoded
-     * value is the exception itself, with its reason attached.
-     */
-    const REGISTRY_PATH = '/registry/v1/stable/registry.json';
+    // Match the actual showcase channel and network. Config-dependent Bron
+    // remains an explicit exception; a registry entry alone is not usable setup.
+    const REGISTRY_PATH = '/registry/v1/beta/registry.json';
 
     /**
      * The one wallet the demo cannot register an adapter for. Not a defect and
@@ -140,10 +116,10 @@ test.describe('Send adapter — DOM-level smoke (registry-driven detection)', ()
      * hand-copied list. This is the same bytes the SDK fetches, so the test and
      * the product cannot disagree about what a wallet is called.
      */
-    async function registryWallets(page: Page): Promise<{ id: string; name: string }[]> {
+    async function registryWallets(page: Page): Promise<{ id: string; name: string; supportedNetworks: string[] }[]> {
       const res = await page.request.get(REGISTRY_PATH);
       expect(res.ok(), `${REGISTRY_PATH} must be served by the demo`).toBe(true);
-      const body = (await res.json()) as { wallets: { id: string; name: string }[] };
+      const body = (await res.json()) as { wallets: { id: string; name: string; supportedNetworks: string[] }[] };
       expect(body.wallets.length, 'registry must not be empty').toBeGreaterThan(1);
       return body.wallets;
     }
@@ -153,9 +129,9 @@ test.describe('Send adapter — DOM-level smoke (registry-driven detection)', ()
       return new RegExp(name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
     }
 
-    test('every wallet the demo can connect is offered in the picker', async ({ page }) => {
+    test('every configured Devnet wallet is offered despite the detected Mainnet provider', async ({ page }) => {
       const wallets = await registryWallets(page);
-      const connectable = wallets.filter((w) => w.id !== UNCONNECTABLE.id);
+      const connectable = wallets.filter((w) => w.supportedNetworks.includes('devnet') && w.id !== UNCONNECTABLE.id);
       expect(connectable.length, 'the exception must not be the whole registry').toBeGreaterThan(3);
 
       await openWalletModal(page);
@@ -167,7 +143,7 @@ test.describe('Send adapter — DOM-level smoke (registry-driven detection)', ()
       for (const w of connectable) {
         await expect(
           modal.locator('button').filter({ hasText: literal(w.name) }).first(),
-          `"${w.name}" (${w.id}) should be offered — the demo registers an adapter for it, or it connects via announce with no app adapter at all`,
+          `"${w.name}" (${w.id}) supports Devnet and has the required runtime/configuration`,
         ).toBeVisible({ timeout: 5000 });
       }
     });
@@ -212,12 +188,25 @@ test.describe('Send adapter — DOM-level smoke (registry-driven detection)', ()
       await page.addInitScript(buildCantonStub(SEND_BUILD_SPECIFIC));
     });
 
-    test('URL-domain matchers still identify it as Send (not raw kernel.id)', async ({ page }) => {
+    test('a build-specific Mainnet Send provider cannot bypass the Devnet filter', async ({ page }) => {
       await openWalletModal(page);
       const modal = page.getByRole('dialog');
-      await expect(modal.getByText(/^Send$/)).toBeVisible({ timeout: 5000 });
+      await expect(modal.getByText(/^Cantor8/i).first()).toBeVisible();
+      await expect(modal.getByText(/^Send$/)).toHaveCount(0);
       await expect(modal.getByText(BUILD_SPECIFIC_KERNEL_ID)).toHaveCount(0);
     });
+  });
+
+  test('both public catalogs declare Send as Mainnet-only', async ({ request }) => {
+    for (const channel of ['stable', 'beta']) {
+      const response = await request.get(`/registry/v1/${channel}/registry.json`);
+      expect(response.ok()).toBe(true);
+      const registry = await response.json();
+      const send = registry.wallets.find((wallet: { id: string }) => wallet.id === 'send');
+      expect(send).toBeDefined();
+      expect(send.name).toBe('Send');
+      expect(send.supportedNetworks).toEqual(['mainnet']);
+    }
   });
 
 });

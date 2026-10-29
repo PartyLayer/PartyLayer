@@ -81,6 +81,12 @@ Do not run multiple Next dev/build processes against the same app output directo
 
 ## Wallet code checks
 
+The controlled browser session check now covers wallet-owned restoration with
+the same party, explicit logout in both tabs (SDK and reactive UI), and rejection
+of a stale application marker after wallet authorization is revoked. This and
+Send's Devnet network-filter checks are included in `test:e2e:pr`, as well as the
+broader nightly suite. They use protocol fixtures, not real wallet accounts.
+
 The [integration matrix](./wallet-cip0103-matrix.md) records the actual default
 paths, registry networks, installed versions and upgrade decisions. All registry
 entries are exercised by catalog/capability/network tests. Packed npm consumers

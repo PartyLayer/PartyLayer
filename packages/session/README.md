@@ -276,6 +276,12 @@ rebroadcasting** (loop-safe, verified: BroadcastChannel never echoes to the
 sender). When BroadcastChannel is **unavailable** (SSR / Node) it is a **graceful
 no-op**, single-tab behavior is unchanged.
 
+On explicit logout, each receiving tab also calls its provider's standard
+`disconnect` once so the provider/SDK owner and UI agree. Reconnect is cancelled;
+provider failures are recorded in `lastError`. This does not authenticate from a
+cached snapshot. In React, use the kit's ConnectButton or disconnect hooks to
+coordinate the shared store with the SDK lifecycle.
+
 ### Party-switch
 
 On `accountsChanged`, the store compares the **primary** `partyId`. A change from
