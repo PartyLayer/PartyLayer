@@ -2,6 +2,8 @@
 
 Create a Canton dApp with PartyLayer wallet connectivity, configuration and a working development setup. React starters use the ready-made `ConnectButton` and show **Powered by PartyLayer** by default.
 
+Use a supported Node LTS release. CLI 0.7.0 requires Node **20.12.0+**, matching its existing prompt-library dependency; your selected framework may require a newer runtime.
+
 ## Create an app
 
 ```bash

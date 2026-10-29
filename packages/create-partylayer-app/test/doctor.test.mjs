@@ -5,6 +5,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { test } from 'node:test';
+import semver from 'semver';
 
 const cli = fileURLToPath(new URL('../dist/index.js', import.meta.url));
 function fixture(fn) {
@@ -116,3 +117,12 @@ test('explicit project paths and human report work; directory named doctor remai
   assert.equal(run(root, ['doctor', '--template', 'vanilla', '--pm', 'npm', '--no-install', '--no-git']).status, 0);
   assert.ok(readFileSync(join(root, 'doctor/package.json'), 'utf8').includes('@partylayer/sdk'));
 }));
+
+test('CLI Node support does not advertise runtimes excluded by its direct runtime dependencies', () => {
+  const root = fileURLToPath(new URL('..', import.meta.url));
+  const manifest = JSON.parse(readFileSync(join(root, 'package.json'), 'utf8'));
+  for (const name of Object.keys(manifest.dependencies)) {
+    const dependency = JSON.parse(readFileSync(join(root, 'node_modules', name, 'package.json'), 'utf8'));
+    if (dependency.engines?.node) assert.ok(semver.subset(manifest.engines.node, dependency.engines.node), `${name} excludes a runtime advertised by the CLI`);
+  }
+});
