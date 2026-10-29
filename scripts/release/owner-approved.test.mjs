@@ -201,6 +201,10 @@ test('the isolated staging module loads without workspace dependencies or applic
   mkdirSync(join(directory, '.github'));
   copyFileSync(new URL('./owner-approved.mjs', import.meta.url), join(directory, 'scripts/release/owner-approved.mjs'));
   writeFileSync(join(directory, '.github/npm-release-policy.json'), JSON.stringify(POLICY));
-  const result = execFileSync(process.execPath, ['--input-type=module', '-e', 'const module = await import(process.argv[1]); if(typeof module.stage !== "function") process.exit(1);', join(directory, 'scripts/release/owner-approved.mjs')], { cwd: directory, encoding: 'utf8' });
+  // Load as a real consumer: passing the module as argv[1] to node -e makes
+  // an imported module look like the CLI entry point on non-symlinked paths.
+  const consumer = join(directory, 'consumer.mjs');
+  writeFileSync(consumer, 'import { stage } from "./scripts/release/owner-approved.mjs"; if (typeof stage !== "function") process.exit(1);');
+  const result = execFileSync(process.execPath, [consumer], { cwd: directory, encoding: 'utf8' });
   assert.equal(result, '');
 }));
