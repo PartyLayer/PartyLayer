@@ -14,6 +14,25 @@ export default function InstallationPage() {
         for publication and acceptance evidence.
       </Callout>
 
+      <H2 id="framework-support">Choose your framework</H2>
+      <P>The connection protocol is shared; the UI and runtime requirements depend on your application stack.</P>
+      <div role="region" aria-label="Framework support table; scroll horizontally if needed" tabIndex={0} style={{ overflowX: 'auto', marginBottom: 24 }}>
+        <table style={{ width: '100%', minWidth: 680, borderCollapse: 'collapse', textAlign: 'left', fontSize: 14, lineHeight: 1.5, color: '#334155' }}>
+          <caption style={{ textAlign: 'left', marginBottom: 12 }}>PartyLayer framework and UI support. Scroll horizontally on smaller screens.</caption>
+          <thead><tr>{['Application', 'Integration', 'Connection UI and requirements'].map(label => <th key={label} scope="col" style={{ padding: 12, borderBottom: '1px solid #CBD5E1' }}>{label}</th>)}</tr></thead>
+          <tbody>
+            {[
+              ['React / Vite', '@partylayer/react', 'PartyLayerKit and ConnectButton; browser wallet access.'],
+              ['Next.js App Router', '@partylayer/react', 'Same kit in a client boundary. SSR cookies restore UI hints; verify authentication on your backend.'],
+              ['Vue / Nuxt', '@partylayer/vue', 'Composables and application-owned connection UI. Start with the vue-nuxt-pinia template.'],
+              ['Other web frameworks', '@partylayer/sdk', 'Framework-independent client; your app supplies the picker and lifecycle.'],
+              ['React Native', '@partylayer/react-native', 'Separate native UI entrypoint and storage setup. Browser extension discovery does not establish mobile-wallet compatibility.'],
+            ].map(([stack, integration, details]) => <tr key={stack}><th scope="row" style={{ padding: 12, borderBottom: '1px solid #E2E8F0' }}>{stack}</th><td style={{ padding: 12, borderBottom: '1px solid #E2E8F0' }}><Code>{integration}</Code></td><td style={{ padding: 12, borderBottom: '1px solid #E2E8F0' }}>{details}</td></tr>)}
+          </tbody>
+        </table>
+      </div>
+      <P>For native setup and peer dependencies, use the <A href="https://github.com/PartyLayer/PartyLayer/tree/main/packages/react-native">React Native guide</A>. Validate each wallet&apos;s transport on the target platform; package availability alone is not live acceptance.</P>
+
       <H2 id="prerequisites">Prerequisites</H2>
       <UL>
         <LI><Strong>React 18+</Strong> for the connection kit.</LI>
@@ -56,6 +75,12 @@ npm run dev`}</CodeBlock>
         Vue/Nuxt, vanilla TypeScript and two demo vertical templates are also available; see the{' '}
         <A href="https://github.com/PartyLayer/PartyLayer/tree/main/packages/create-partylayer-app">CLI guide</A>.
       </P>
+      <H3>Recover a dependency installation failure</H3>
+      <P>If your package manager reports an installation error, keep the generated project, resolve the reported registry, network or dependency issue, then retry the install before starting the development server:</P>
+      <CodeBlock language="bash">{`cd my-dapp
+npm install
+npm run dev`}</CodeBlock>
+      <P>Use the package manager you selected. With <Code>--no-install</Code>, these installation steps are intentionally left to you.</P>
 
       <H2 id="wallet-setup">Wallet setup</H2>
       <UL>
@@ -86,6 +111,14 @@ npm run dev`}</CodeBlock>
       <H2 id="verify">Verify installation</H2>
       <P>Run your app, open Connect Wallet, select a supported wallet and complete approval. Confirm the connected party and actual network with <Code>useAccount()</Code>. An import resolving proves installation only; connection and ledger outcomes require their own checks.</P>
       <P>Continue with the <A href="/docs/quick-start">quick start</A>, then <A href="/docs/authentication">authentication</A> or <A href="/docs/transaction-lifecycle">transactions</A>.</P>
+
+      <H2 id="troubleshooting">Common setup questions</H2>
+      <H3>Why is a wallet missing from Connect Wallet?</H3>
+      <P>Check the configured network and registry channel first. Send requires Mainnet; Vala requires Devnet beta. Then check required application configuration for WalletConnect or Bron and whether the wallet is installed or logged in. See the <A href="/docs/wallets">wallet support matrix</A> and <A href="/docs/error-handling">error-handling guide</A>.</P>
+      <H3>Does signing a message prove that transfers and swaps work?</H3>
+      <P>A message signature verifies only that signing operation. Transfers and swaps also require supported capabilities, valid protocol commands, authorization, funding and confirmed ledger outcomes. Follow <A href="/docs/transaction-lifecycle">the transaction lifecycle</A> before showing a successful payment or swap.</P>
+      <H3>How should an AI coding assistant use these docs?</H3>
+      <P>Provide <A href="/llms-full.txt">the maintained integration reference</A>, your installed package versions and your target network. Ask it to follow <A href="https://github.com/PartyLayer/PartyLayer/blob/main/docs/protocol-ownership.md">protocol ownership</A> when migrating an existing app. Compile and run the resulting integration, then verify connection and ledger operations separately.</P>
       <PrevNext />
     </>
   );

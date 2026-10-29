@@ -44,8 +44,16 @@ npm install @partylayer/adapter-console
 ```typescript
 import { createPartyLayer } from '@partylayer/sdk';
 
-const client = createPartyLayer({ network: 'devnet' });
-await client.connect({ walletId: 'console' });
+const client = createPartyLayer({
+  network: 'devnet',
+  app: { name: 'My Canton dApp' },
+});
+// Call from your Connect button's click handler.
+export async function connectWallet() {
+  const wallet = (await client.listWallets()).find(wallet => wallet.walletId === 'console');
+  if (!wallet) throw new Error('console is unavailable on this network');
+  return client.connect({ walletId: wallet.walletId });
+}
 ```
 
 ---

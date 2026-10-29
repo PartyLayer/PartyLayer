@@ -42,11 +42,27 @@ npm install @partylayer/adapter-bron
 ## Usage with SDK
 
 ```typescript
-import { createPartyLayer } from '@partylayer/sdk';
+import { createPartyLayer, type BronAdapterConfig } from '@partylayer/sdk';
 
-const client = createPartyLayer({ network: 'devnet' });
-await client.connect({ walletId: 'bron' });
+// Supply the OAuth endpoints, public client ID, registered redirect URI and
+// signer API URL issued for your application by Bron.
+export function createBronClient(bron: BronAdapterConfig) {
+  return createPartyLayer({
+    network: 'devnet',
+    app: { name: 'My Canton dApp' },
+    bron,
+  });
+}
 ```
+
+Bron requires application-owned OAuth and signer API configuration. Without
+`bron` configuration, Bron is omitted from the wallet picker. After constructing
+the client with your approved configuration, find Bron in `await client.listWallets()`
+and pass that entry's `walletId` to `client.connect()` from a user action in the browser.
+
+Use PKCE for browser flows and never expose a client secret in frontend code.
+Register the callback URL with Bron and follow their onboarding instructions;
+this package does not provision a Bron account or credentials.
 
 ---
 

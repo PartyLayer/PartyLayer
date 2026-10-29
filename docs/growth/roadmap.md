@@ -83,4 +83,33 @@ Run `pnpm gen:ai-docs` after updating those sources. The required documentation 
 
 This is a developer reference, not a guarantee of AI search inclusion. Google's [AI features guidance](https://developers.google.com/search/docs/appearance/ai-features) requires no special AI text file or schema; its underlying SEO and indexability requirements still apply. Measure actual referrals and cited links separately before claiming AI visibility increased.
 
+## Documentation quality and next adoption experiments
+
+The installation guide now separates framework, UI and runtime support and
+answers concrete setup questions. Compatibility-package README examples are
+compiled from their actual `ts`, `typescript` and `tsx` fences, alongside the
+entry-guide examples. This prevents stale API examples from surviving a green
+React-only documentation check.
+
+Use the established projects as task-oriented references, not as evidence that
+PartyLayer has their adoption or wallet acceptance:
+
+| Reference | Useful pattern | PartyLayer action and evidence |
+| --- | --- | --- |
+| [Reown AppKit](https://docs.reown.com/appkit/overview) | Explicit framework/feature coverage and AI integration guidance | Maintain our framework table and generated AI reference; evaluate a versioned assistant skill against real setup tasks before publishing one |
+| [Sui dApp Kit](https://sdk.mystenlabs.com/dapp-kit) | Clearly separate current packages, transport changes and migration paths | Link protocol ownership and migration requirements from installation; expand each migration with a tested before/after integration |
+| [RainbowKit](https://rainbowkit.com/docs/introduction) | Short route from installation to the connection UI and customization | Preserve the one-command kit setup and branded ConnectButton; test first connection with new developers using prepared wallets |
+
+Next evidence to collect: five independent onboarding attempts with time to
+first successful connection, failure reasons and documentation fixes. Then
+publish one reproducible transfer walkthrough backed by a valid Canton command
+and independent ledger confirmation, followed by a protocol-specific swap only
+after real acceptance. A message signature is not that evidence.
+
+For Search Console, submit `https://partylayer.xyz/sitemap.xml`, not the HTML
+homepage. Inspect each submitted URL separately: a homepage entry's "Sitemap is
+HTML" error does not diagnose or resolve a different sitemap fetch error. Our
+HTTP/XML checks establish the public response; only Google's report establishes
+whether Google fetched and processed that submission.
+
 The conventional `/favicon.ico` URL serves the existing PartyLayer icon asset as well as the SVG icon declared in page metadata. This closes a reproducible 404 observed in Google crawl examples; it is separate from the unresolved sitemap fetch report. The browser discovery suite checks the actual icon response and metadata declaration.

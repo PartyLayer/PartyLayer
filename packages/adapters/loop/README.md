@@ -44,8 +44,16 @@ npm install @partylayer/adapter-loop
 ```typescript
 import { createPartyLayer } from '@partylayer/sdk';
 
-const client = createPartyLayer({ network: 'devnet' });
-await client.connect({ walletId: 'loop' });
+const client = createPartyLayer({
+  network: 'devnet',
+  app: { name: 'My Canton dApp' },
+});
+// Call from your Connect button's click handler.
+export async function connectWallet() {
+  const wallet = (await client.listWallets()).find(wallet => wallet.walletId === 'loop');
+  if (!wallet) throw new Error('loop is unavailable on this network');
+  return client.connect({ walletId: wallet.walletId });
+}
 ```
 
 ---

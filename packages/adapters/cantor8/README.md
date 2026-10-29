@@ -44,8 +44,16 @@ npm install @partylayer/adapter-cantor8
 ```typescript
 import { createPartyLayer } from '@partylayer/sdk';
 
-const client = createPartyLayer({ network: 'devnet' });
-await client.connect({ walletId: 'cantor8' });
+const client = createPartyLayer({
+  network: 'devnet',
+  app: { name: 'My Canton dApp' },
+});
+// Call from your Connect button's click handler.
+export async function connectWallet() {
+  const wallet = (await client.listWallets()).find(wallet => wallet.walletId === 'cantor8');
+  if (!wallet) throw new Error('cantor8 is unavailable on this network');
+  return client.connect({ walletId: wallet.walletId });
+}
 ```
 
 ---

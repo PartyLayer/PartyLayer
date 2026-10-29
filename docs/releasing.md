@@ -2,6 +2,10 @@
 
 This document describes how to cut releases and publish packages for PartyLayer.
 
+The [trusted-publishing activation plan](./trusted-publishing.md) describes the
+reviewed path toward tokenless npm releases. It is not enabled yet; the current
+publication commands below remain the release contract.
+
 ## Versioning Strategy
 
 We follow [Semantic Versioning](https://semver.org/):
