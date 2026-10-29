@@ -226,10 +226,11 @@ await submit({
         <LI><Strong>Private keys never leave the extension.</Strong> Passkey signing happens on the
           user{"'"}s device through WebAuthn-PRF; PartyLayer never touches the underlying key
           material.</LI>
-        <LI><Strong>Session JWT is held by the extension.</Strong> The adapter receives an access
-          token in <Code>{'status.session.accessToken'}</Code> for the lifetime of the connection;
-          PartyLayer{"'"}s session-persistence layer encrypts state at rest in the dApp{"'"}s
-          configured storage.</LI>
+        <LI><Strong>Keep authorization in the wallet.</Strong> The compatibility adapter omits
+          access tokens from persisted session metadata. The React live view is in memory;
+          a UI cache is not a secret vault or proof of authorization. Native restoration
+          checks the live provider. See <A href="/docs/advanced#session-persistence">session persistence</A>{' '}
+          for the separate wallet, SDK and UI storage contracts.</LI>
         <LI><Strong>Announce-scoped channel.</Strong> Send is discovered and every RPC is routed over
           the dedicated <Code>{'canton:announceProvider'}</Code> channel that Send advertises. Because
           the channel is bound to the announcing extension, the adapter never acts on a foreign
@@ -242,7 +243,7 @@ await submit({
         <LI><A href="https://cantonwallet.com">Send (cantonwallet.com)</A></LI>
         <LI><A href="https://sigilry.org">Sigilry, open-source dApp SDK powering Send</A></LI>
         <LI><A href="/docs/token-transfers">CIP-56 Token Standard guide</A></LI>
-        <LI><A href="/docs/wallets">Capability matrix across all six wallets</A></LI>
+        <LI><A href="/docs/wallets">Supported wallet capability matrix</A></LI>
       </UL>
 
       <PrevNext />
