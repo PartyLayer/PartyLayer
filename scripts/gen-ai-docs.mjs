@@ -13,6 +13,8 @@ const GUIDES = [
   ['Introduction', '/docs'],
   ['Installation and new-app CLI', '/docs/installation'],
   ['React and Next.js quick start', '/docs/quick-start'],
+  ['Upgrade an existing application', '/docs/migration'],
+  ['AI-assisted integration and optional skill', '/docs/ai-integration'],
   ['Coming from RainbowKit', '/docs/rainbowkit-for-canton'],
   ['PartyLayerKit configuration', '/docs/partylayer-kit'],
   ['ConnectButton', '/docs/connect-button'],
@@ -73,7 +75,7 @@ export function generateAiDocs(root = ROOT) {
   }).join('\n');
   const header = '# PartyLayer\n\n> CIP-0103 compliant Canton Network wallet connection kit. One React installation includes the SDK, supported wallet runtimes and a branded Connect Wallet UI.\n\n';
   const links = GUIDES.map(([title, route]) => `- [${title}](${ORIGIN}${route})`).join('\n');
-  const resources = `- [Wallet directory](${ORIGIN}/wallets)\n- [Interactive Devnet demo](${ORIGIN}/kit-demo)\n- [GitHub](${REPOSITORY})\n- [npm React kit](https://www.npmjs.com/package/@partylayer/react)\n- [Full text reference](${ORIGIN}/llms-full.txt)`;
+  const resources = `- [Wallet directory](${ORIGIN}/wallets)\n- [Interactive Devnet demo](${ORIGIN}/kit-demo)\n- [Integration skill](${REPOSITORY}/blob/main/skills/partylayer-integration/SKILL.md)\n- [GitHub](${REPOSITORY})\n- [npm React kit](https://www.npmjs.com/package/@partylayer/react)\n- [Full text reference](${ORIGIN}/llms-full.txt)`;
   const index = `${header}Start with the quick start for the complete installation and provider/button examples. Wallet support depends on the selected network, channel and application configuration.\n\n## Documentation\n\n${links}\n\n## Resources\n\n${resources}\n`;
   const guide = (file, heading) => {
     const text = absoluteLinks(read(file), file, root).replace(/^# [^\n]+\n/, '');

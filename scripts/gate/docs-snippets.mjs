@@ -34,6 +34,8 @@ assert.ok(provider && app,'Quick-start provider and application examples must re
 const groups = [
   ['docs/quick-start.md',quickStart],
   ['README.md',markdown('README.md')],
+  ...['docs/migration.md', 'docs/ai-integration.md'].map(file => [file,markdown(file)]),
+  ...['migration', 'ai-integration'].map(slug => { const file = `apps/demo/src/app/docs/${slug}/content.tsx`; return [file,website(file)]; }),
   ['docs/react-cookie-ssr.md',markdown('docs/react-cookie-ssr.md')],
   ['apps/demo/public/llms-full.txt',markdown('apps/demo/public/llms-full.txt')],
   ['apps/demo/src/app/docs/introduction/content.tsx',website('apps/demo/src/app/docs/introduction/content.tsx')],

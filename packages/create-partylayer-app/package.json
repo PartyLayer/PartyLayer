@@ -1,6 +1,6 @@
 {
   "name": "create-partylayer-app",
-  "version": "0.6.2",
+  "version": "0.7.0",
   "description": "Create a Canton Network dApp with PartyLayer: React, Next.js, Vue and TypeScript starters with wallet integration and ready-made React Connect Wallet UI.",
   "type": "module",
   "bin": {
@@ -13,17 +13,19 @@
   ],
   "scripts": {
     "build": "tsc",
-    "test": "pnpm run build && node --test test/installation.test.mjs",
+    "test": "pnpm run build && node --test test/*.test.mjs",
     "clean": "rm -rf dist *.tsbuildinfo",
     "prepublishOnly": "pnpm run clean && pnpm run build"
   },
   "dependencies": {
     "@clack/prompts": "1.5.1",
     "mri": "1.2.0",
-    "picocolors": "1.1.1"
+    "picocolors": "1.1.1",
+    "semver": "7.8.0"
   },
   "devDependencies": {
     "@types/node": "^20.11.0",
+    "@types/semver": "7.7.1",
     "typescript": "^5.3.3"
   },
   "engines": {

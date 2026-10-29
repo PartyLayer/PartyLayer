@@ -1,5 +1,11 @@
 # create-partylayer-app
 
+## 0.7.0
+
+### Minor Changes
+
+- Add read-only `--doctor [directory] [--json]` installation diagnostics for existing applications. Report unresolved packages, incompatible peers and Node engines, duplicate React/query contexts and competing lockfiles without executing application code or changing project files. Preserve all existing scaffolding and installer recovery behavior.
+
 ## 0.6.2
 
 ### Patch Changes

@@ -113,3 +113,9 @@ HTTP/XML checks establish the public response; only Google's report establishes
 whether Google fetched and processed that submission.
 
 The conventional `/favicon.ico` URL serves the existing PartyLayer icon asset as well as the SVG icon declared in page metadata. This closes a reproducible 404 observed in Google crawl examples; it is separate from the unresolved sitemap fetch report. The browser discovery suite checks the actual icon response and metadata declaration.
+
+## 2026-10-29 onboarding and Search Console follow-up
+
+The correct `https://partylayer.xyz/sitemap.xml` submission was accepted again in Search Console on October 29. The report still showed “could not be read” and zero discovered pages after submission. The public endpoint returned HTTP 200 with XML content type and 42 valid URLs before this change. Submission acceptance is not a successful Google fetch or indexing confirmation. The separate root-URL submission is an HTML error; it does not explain the XML fetch failure. Continue with Google's live URL inspection and actual deployment logs before changing network/security policy.
+
+The onboarding update adds current migration and AI-assisted integration pages, a repository integration skill, compiled examples and CLI 0.7.0 offline installation diagnostics. The CLI remains a release candidate until npm publication and public-consumer verification. These improvements reduce integration friction; downloads, search positions and independent adoption must still be measured.

@@ -83,6 +83,8 @@ const CLASSIFICATION = {
   'multi-party-patterns': { mode: 'enforce' },
   'privacy-and-reads': { mode: 'enforce' },
   'quick-start': { mode: 'enforce' },
+  'migration': { mode: 'enforce' },
+  'ai-integration': { mode: 'enforce' },
 };
 
 const FIX = (slug) =>

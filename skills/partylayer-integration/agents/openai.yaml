@@ -1,0 +1,4 @@
+interface:
+  display_name: "PartyLayer Integration"
+  short_description: "Integrate Canton wallets using current PartyLayer APIs"
+  default_prompt: "Use $partylayer-integration to add or upgrade PartyLayer wallet connectivity while preserving this application."

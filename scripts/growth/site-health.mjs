@@ -3,7 +3,7 @@ import { createHash } from 'node:crypto';
 
 const ORIGIN = 'https://partylayer.xyz';
 const LIMIT = 100;
-export const REQUIRED_PATHS = ['', '/docs', '/docs/installation', '/docs/quick-start', '/docs/rainbowkit-for-canton', '/docs/integration-support', '/wallets', '/kit-demo'];
+export const REQUIRED_PATHS = ['', '/docs', '/docs/installation', '/docs/quick-start', '/docs/migration', '/docs/ai-integration', '/docs/rainbowkit-for-canton', '/docs/integration-support', '/wallets', '/kit-demo'];
 export const AI_REFERENCE_PATHS = ['/llms.txt', '/llms-full.txt'];
 const hash = text => createHash('sha256').update(text).digest('hex');
 

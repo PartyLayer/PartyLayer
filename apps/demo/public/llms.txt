@@ -9,6 +9,8 @@ Start with the quick start for the complete installation and provider/button exa
 - [Introduction](https://partylayer.xyz/docs)
 - [Installation and new-app CLI](https://partylayer.xyz/docs/installation)
 - [React and Next.js quick start](https://partylayer.xyz/docs/quick-start)
+- [Upgrade an existing application](https://partylayer.xyz/docs/migration)
+- [AI-assisted integration and optional skill](https://partylayer.xyz/docs/ai-integration)
 - [Coming from RainbowKit](https://partylayer.xyz/docs/rainbowkit-for-canton)
 - [PartyLayerKit configuration](https://partylayer.xyz/docs/partylayer-kit)
 - [ConnectButton](https://partylayer.xyz/docs/connect-button)
@@ -29,6 +31,7 @@ Start with the quick start for the complete installation and provider/button exa
 
 - [Wallet directory](https://partylayer.xyz/wallets)
 - [Interactive Devnet demo](https://partylayer.xyz/kit-demo)
+- [Integration skill](https://github.com/PartyLayer/PartyLayer/blob/main/skills/partylayer-integration/SKILL.md)
 - [GitHub](https://github.com/PartyLayer/PartyLayer)
 - [npm React kit](https://www.npmjs.com/package/@partylayer/react)
 - [Full text reference](https://partylayer.xyz/llms-full.txt)
