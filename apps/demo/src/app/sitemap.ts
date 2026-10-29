@@ -22,6 +22,8 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: `${base}/docs` },
     { url: `${base}/docs/installation` },
     { url: `${base}/docs/quick-start` },
+    { url: `${base}/docs/migration` },
+    { url: `${base}/docs/ai-integration` },
     { url: `${base}/docs/partylayer-kit` },
     { url: `${base}/docs/connect-button` },
     { url: `${base}/docs/wallet-modal` },

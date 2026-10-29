@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 
-const guides = ['/docs/rainbowkit-for-canton', '/docs/integration-support'];
+const guides = ['/docs/rainbowkit-for-canton', '/docs/integration-support', '/docs/migration', '/docs/ai-integration'];
 
 for (const route of guides) {
   test(`${route} is indexable with its own identity and an actionable installation`, async ({ page }) => {

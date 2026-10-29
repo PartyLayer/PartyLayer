@@ -153,7 +153,9 @@ Message signing does not prove a transfer or swap works. Your app or protocol co
 
 Browser-native connections use official Canton discovery as their connection owner. `client.asProvider()` exposes the connected native provider through a stable facade, including accounts, events and raw Ledger API results. Existing compatibility integrations have narrower contracts; capabilities must be checked before use.
 
-Upgrading an existing app? Native cached sessions may require one explicit reconnect. Native `asProvider()` Ledger API results are raw JSON; migrate callers that parsed `result.response`. See [protocol ownership and migration](./docs/protocol-ownership.md) and the [CIP-0103 guide](https://partylayer.xyz/docs/cip-0103).
+Use the [AI integration guide](./docs/ai-integration.md) with your coding assistant.
+
+Upgrading an existing app? Start with the [current migration guide](./docs/migration.md). Native cached sessions may require one explicit reconnect. Native `asProvider()` Ledger API results are raw JSON; migrate callers that parsed `result.response`. See [protocol ownership and migration](./docs/protocol-ownership.md) and the [CIP-0103 guide](https://partylayer.xyz/docs/cip-0103).
 
 ## API reference
 

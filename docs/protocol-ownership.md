@@ -1,8 +1,8 @@
 # Canton protocol ownership decision
 
-Status: implemented in the unpublished SDK 0.20 candidate for browser-native
-announce/injected and official ProviderAdapter connections. Release and live-wallet
-acceptance remain open. Review baseline: `@canton-network/core-wallet-discovery`
+Status: published in SDK **0.20.1** and React **3.1.2** for browser-native
+announce/injected and official ProviderAdapter connections. Live-wallet acceptance
+remains open; see [release evidence](./releasing.md#default-wallet-release-validation). Review baseline: `@canton-network/core-wallet-discovery`
 **1.15.0**, Canton dApp SDK **1.8.0**, 2026-10-23.
 
 ## Decision

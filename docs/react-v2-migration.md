@@ -1,5 +1,7 @@
 # @partylayer/react v1.x to v2.0 migration guide
 
+> Historical v1-to-v2 transition only. For the current React 3.1.2+ / SDK 0.20.1+ setup, use the [current migration guide](./migration.md). Examples below describe the v2 transition and may require application-specific client/components.
+
 v2.0 adopts TanStack Query v5 as the reactive cache for the data hooks, adds the
 `@partylayer/react/query` entrypoint, and renames the legacy SDK-layer session getter.
 The context-based provider and components are unchanged. Most apps need one setup

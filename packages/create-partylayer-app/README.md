@@ -2,6 +2,8 @@
 
 Create a Canton dApp with PartyLayer wallet connectivity, configuration and a working development setup. React starters use the ready-made `ConnectButton` and show **Powered by PartyLayer** by default.
 
+Use a supported Node LTS release. CLI 0.7.0 requires Node **20.12.0+**, matching its existing prompt-library dependency; your selected framework may require a newer runtime.
+
 ## Create an app
 
 ```bash
@@ -95,3 +97,20 @@ its dependencies are ready or that a live wallet connection has succeeded.
 ## License
 
 MIT
+
+## Diagnose an existing application
+
+**Introduced in CLI 0.7.0** (release candidate until published). CLI 0.6.2 and older do not support `--doctor`.
+
+```bash
+npx create-partylayer-app@latest --doctor .
+npx create-partylayer-app@latest --doctor ./apps/web --json
+```
+
+Select the application's directory, not just the monorepo root. Doctor reads package metadata and checks declared/installed PartyLayer entry packages, SemVer ranges, required peers, duplicate React/query contexts, Node engine requirements and competing local lockfiles. Linked/workspace dependencies are supported; non-SemVer specifications produce a warning when they cannot be compared offline. A workspace root may own the lockfile.
+
+The command does not write project files, run application code or install scripts, read `.env`/`.npmrc`, access wallets, or contact the registry. `npx` itself may download the CLI from npm before Doctor starts. Warnings about old guide baselines do not mean an installed wallet is broken, and the offline report does not claim packages match npm's current `latest` tag.
+
+Exit codes: **0** = no detected setup errors (warnings may exist), **1** = setup errors, **2** = invalid diagnostic arguments. `--json` emits a versioned report with `schemaVersion`, `toolVersion`, `checks` and `summary`. Do not combine Doctor with scaffold flags. The positional directory name `doctor` remains a valid scaffold target; diagnostics use the explicit `--doctor` flag.
+
+Doctor does not prove provider mounting, application configuration, CIP-0103 transport behavior, login, signing, or successful ledger execution. Follow the [migration guide](../../docs/migration.md) and complete runtime acceptance for the application's actual wallet/network.

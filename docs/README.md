@@ -12,6 +12,8 @@ These guides cover React 3.1.0+ / SDK 0.20.0+. See [release status](./releasing.
 
 | Guide | What you will build or learn |
 | --- | --- |
+| [Upgrade an existing app](./migration.md) | Migrate hooks, providers and native sessions without duplicating connection owners |
+| [AI-assisted integration](./ai-integration.md) | Give coding assistants maintained setup instructions and review generated code |
 | [Quick start](./quick-start.md) | Install once, mount the kit and render the branded Connect Wallet button |
 | [Framework support](https://partylayer.xyz/docs/installation#framework-support) | Choose React, Next.js, Vue/Nuxt, a custom web stack or React Native and understand their UI/runtime limits |
 | [New app CLI](../packages/create-partylayer-app/README.md) | Generate React, Next.js, Vue, vanilla or vertical starters |

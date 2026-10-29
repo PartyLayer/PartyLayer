@@ -7,6 +7,7 @@ export default function Content() {
     <P>Start with the ready-made React kit or a generated application. If an integration gets stuck, a small reproduction helps maintainers isolate application configuration, PartyLayer behavior and wallet-provider responses.</P>
     <CodeBlock language="bash">{'npm install @partylayer/react @tanstack/react-query'}</CodeBlock>
     <P>Follow the <A href="/docs/quick-start">React and Next.js quick start</A>, use the <A href="/docs/installation">application generator</A>, and check the <A href="/wallets">wallet network and capability directory</A>.</P>
+    <P>Before reporting setup errors, review the <A href="/docs/migration">migration guide</A> and the CLI <A href="https://github.com/PartyLayer/PartyLayer/tree/main/packages/create-partylayer-app#diagnose-an-existing-application">offline diagnostics and release notes</A>.</P>
     <H2 id="application">Application teams</H2>
     <UL>
       <LI>Include package versions, framework, browser, target network and wallet name.</LI>

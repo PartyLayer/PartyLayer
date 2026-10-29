@@ -29,24 +29,51 @@ const HELP = `${pc.bold('create-partylayer-app')} — scaffold a PartyLayer dApp
 
 ${pc.bold('Usage')}
   npm create partylayer-app@latest [dir] [options]
+  npx create-partylayer-app@latest --doctor [dir] [--json]
 
 ${pc.bold('Options')}
   -t, --template <id>   ${TEMPLATES.map((t) => t.id).join(', ')}
       --pm <manager>    npm | pnpm | yarn
       --no-install      skip dependency install
       --no-git          skip git init
+      --doctor          diagnose an existing app without changing it
+      --json            machine-readable doctor report (requires --doctor)
   -h, --help            show this help
 `;
 
 async function main(): Promise<void> {
   const argv = mri(process.argv.slice(2), {
-    boolean: ['install', 'git', 'help'],
+    boolean: ['install', 'git', 'help', 'doctor', 'json'],
     default: { install: true, git: true, help: false },
     alias: { t: 'template', h: 'help' },
   });
 
   if (argv.help) {
     console.log(HELP);
+    return;
+  }
+
+  if (argv.doctor || argv.json) {
+    const allowed = new Set(['_', 'doctor', 'json', 'install', 'git', 'help', 'h']);
+    const raw = process.argv.slice(2);
+    if (!argv.doctor || argv._.length > 1 || Object.keys(argv).some(key => !allowed.has(key)) ||
+        raw.some(arg => ['--install', '--no-install', '--git', '--no-git'].includes(arg))) {
+      console.error('Usage: npx create-partylayer-app@latest --doctor [dir] [--json]. Do not combine diagnostic and scaffold options.');
+      process.exitCode = 2;
+      return;
+    }
+    const { runDoctor } = await import('./doctor.js');
+    const report = runDoctor(resolve(process.cwd(), String(argv._[0] ?? '.')));
+    if (argv.json) console.log(JSON.stringify(report, null, 2));
+    else {
+      console.log(`PartyLayer doctor ${report.toolVersion} — offline installation checks`);
+      for (const check of report.checks) {
+        console.log(`[${check.severity.toUpperCase()}] ${check.message}`);
+        if (check.remediation) console.log(`  ${check.remediation}`);
+      }
+      console.log(`${report.summary.errors} error(s), ${report.summary.warnings} warning(s). Wallet login, configuration, signing and ledger execution require separate runtime tests.`);
+    }
+    process.exitCode = report.summary.errors ? 1 : 0;
     return;
   }
 

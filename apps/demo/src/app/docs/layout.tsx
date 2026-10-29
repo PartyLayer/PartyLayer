@@ -60,6 +60,8 @@ const SIDEBAR_NAV = [
       { label: 'Introduction', href: '/docs' },
       { label: 'Installation', href: '/docs/installation' },
       { label: 'Quick Start', href: '/docs/quick-start' },
+      { label: 'Migration', href: '/docs/migration' },
+      { label: 'AI Integration', href: '/docs/ai-integration' },
       { label: 'RainbowKit for Canton', href: '/docs/rainbowkit-for-canton' },
       { label: 'Integration Support', href: '/docs/integration-support' },
     ],
@@ -134,6 +136,8 @@ const SEARCH_INDEX: SearchEntry[] = [
   // Overview
   { title: 'Introduction', href: '/docs', keywords: ['overview', 'what is', 'features', 'getting started', 'partylayer'] },
   { title: 'Installation', href: '/docs/installation', keywords: ['install', 'npm', 'pnpm', 'yarn', 'setup', 'peer dependencies', 'package'] },
+  { title: 'Migration', href: '/docs/migration', keywords: ['upgrade', 'v1', 'v2', 'v3', 'session', 'cip-0103', 'doctor'] },
+  { title: 'AI Integration', href: '/docs/ai-integration', keywords: ['ai', 'coding assistant', 'skill', 'llms', 'chatgpt', 'codex'] },
   { title: 'Quick Start', href: '/docs/quick-start', keywords: ['quickstart', 'tutorial', 'hello world', 'first app', 'setup', 'one command'] },
   { title: 'Create a new app', section: 'Quick Start', href: '/docs/quick-start#new-app', keywords: ['cli', 'npm create', 'starter', 'vite', 'next'] },
   { title: 'Configure wallets', section: 'Quick Start', href: '/docs/quick-start#wallet-config', keywords: ['vala', 'send', 'walletconnect', 'bron', 'beta', 'mainnet'] },
