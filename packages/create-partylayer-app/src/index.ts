@@ -99,11 +99,20 @@ async function main(): Promise<void> {
   if (opts.install) {
     const inst = p.spinner();
     inst.start(`Installing dependencies with ${opts.pm}`);
-    const res = spawnSync(opts.pm, ['install'], { cwd: targetDir, stdio: 'ignore' });
+    const res = spawnSync(opts.pm, ['install'], { cwd: targetDir, stdio: 'inherit' });
     if (res.status === 0) {
       inst.stop('Dependencies installed');
     } else {
-      inst.stop(pc.yellow(`Install skipped/failed — run "${opts.pm} install" yourself.`));
+      inst.stop(pc.yellow('Dependency installation failed. Your project files have been kept.'));
+      if (res.error) p.log.error(`Could not start ${opts.pm}: ${res.error.message}`);
+      p.note([
+        `cd ${opts.projectDir}`,
+        `${opts.pm} install`,
+        `${opts.pm} run dev`,
+      ].join('\n'), 'Recover installation');
+      p.outro('Project created, but setup is incomplete. Resolve the install error before starting the app.');
+      process.exitCode = res.status !== null && res.status > 0 ? res.status : 1;
+      return;
     }
   }
 

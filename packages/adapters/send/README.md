@@ -44,31 +44,45 @@ Users connect through a browser extension. Direct them to [sigilry.org](https://
 ## Quick start
 
 ```tsx
-import { useConnect } from '@partylayer/react';
+import { PartyLayerKit, ConnectButton } from '@partylayer/react';
 
-function ConnectWithSend() {
-  const { connect, isConnecting } = useConnect();
+export default function App() {
   return (
-    <button onClick={() => connect('send')} disabled={isConnecting}>
-      {isConnecting ? 'Connecting…' : 'Connect with Send'}
-    </button>
+    <PartyLayerKit network="mainnet" appName="My Canton dApp">
+      <ConnectButton />
+    </PartyLayerKit>
   );
 }
 ```
 
-`PartyLayerKit` registers Send automatically — no extra wiring needed.
+`PartyLayerKit` discovers Send through CIP-0103 automatically; no separate wallet
+package or registration is needed. Send supports Mainnet, so it is not offered
+in a Devnet wallet list. The wallet extension must be installed and unlocked.
 
-For explicit registration in a custom adapter list:
+For an existing application, place the kit around your application instead of
+adding another kit inside a child component. See the [quick start](https://partylayer.xyz/docs/quick-start).
+
+For advanced compatibility setups that explicitly supply the Send runtime:
 
 ```ts
-import { createPartyLayer, getBuiltinAdapters, SendAdapter } from '@partylayer/sdk';
+import { createPartyLayer, SendAdapter } from '@partylayer/sdk';
 
 const client = createPartyLayer({
   network: 'mainnet',
-  appName: 'My dApp',
-  adapters: [...getBuiltinAdapters(), new SendAdapter()],
+  app: { name: 'My Canton dApp' },
+  adapters: [new SendAdapter()],
 });
+// Call from your Connect button's click handler.
+export async function connectWallet() {
+  const wallet = (await client.listWallets()).find(wallet => wallet.walletId === 'send');
+  if (!wallet) throw new Error('send is unavailable on this network');
+  return client.connect({ walletId: wallet.walletId });
+}
 ```
+
+The `adapters` option replaces the default wallet catalog. Omit it
+for the standard catalog and native CIP-0103 discovery; do not register the same
+wallet runtime twice.
 
 ---
 

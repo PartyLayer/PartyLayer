@@ -69,6 +69,22 @@ npm create partylayer-app@latest my-dapp -- --template next-ssr --pm npm --no-gi
 
 Node.js 18 is the CLI minimum. Follow the generated framework's Node requirements as well; use a supported Node LTS release for new projects.
 
+## Recover an installation failure
+
+If dependency installation fails, keep the generated project and resolve the package
+manager's reported network, registry or dependency issue. Retry with the selected
+package manager before starting the app:
+
+```bash
+cd my-dapp
+npm install
+npm run dev
+```
+
+Use `pnpm` or `yarn` in place of `npm` if selected during setup. With `--no-install`,
+installation is deliberately left to you. A generated directory alone does not mean
+its dependencies are ready or that a live wallet connection has succeeded.
+
 ## Next steps
 
 - [Quick start](https://partylayer.xyz/docs/quick-start)

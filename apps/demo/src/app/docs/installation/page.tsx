@@ -3,7 +3,7 @@ import InstallationContent from './content';
 
 const title = 'Installation Guide';
 const description =
-  'Install the PartyLayer React kit and supported wallet runtimes in one command, or scaffold a new Canton dApp. Includes prerequisites and wallet configuration.';
+  'Install the Canton wallet kit in one command. Compare React, Next.js, Vue, TypeScript and React Native setup, wallet requirements and installation recovery.';
 const url = 'https://partylayer.xyz/docs/installation';
 
 export const metadata: Metadata = {

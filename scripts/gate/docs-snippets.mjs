@@ -9,6 +9,11 @@ import { fileURLToPath } from 'node:url';
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 const read = file => readFileSync(join(root,file),'utf8');
 const markdown = file => [...read(file).matchAll(/```tsx\n([\s\S]*?)\n```/g)].map(match => match[1]);
+// These package READMEs contain complete SDK programs, including ts/typescript
+// fences that the React entry-guide extractor intentionally does not select.
+const compatibilityReadmes = ['console','loop','cantor8','nightly','send','bron']
+  .map(name => `packages/adapters/${name}/README.md`);
+const completeMarkdown = file => [...read(file).matchAll(/```(?:tsx|ts|typescript)\n([\s\S]*?)\n```/g)].map(match => match[1]);
 function website(file) {
   const source = ts.createSourceFile(file,read(file),ts.ScriptTarget.Latest,true,ts.ScriptKind.TSX);
   const snippets = [];
@@ -32,9 +37,11 @@ const groups = [
   ['docs/react-cookie-ssr.md',markdown('docs/react-cookie-ssr.md')],
   ['apps/demo/public/llms-full.txt',markdown('apps/demo/public/llms-full.txt')],
   ['apps/demo/src/app/docs/introduction/content.tsx',website('apps/demo/src/app/docs/introduction/content.tsx')],
+  ['apps/demo/src/app/docs/installation/content.tsx',website('apps/demo/src/app/docs/installation/content.tsx')],
   ['apps/demo/src/app/docs/quick-start/content.tsx',website('apps/demo/src/app/docs/quick-start/content.tsx')],
   ['apps/demo/src/app/content.tsx',website('apps/demo/src/app/content.tsx')],
   ['apps/demo/src/app/docs/rainbowkit-for-canton/content.tsx',website('apps/demo/src/app/docs/rainbowkit-for-canton/content.tsx')],
+  ...compatibilityReadmes.map(file => [file,completeMarkdown(file)]),
 ];
 const parent = join(root,'apps/demo/node_modules/.cache');
 mkdirSync(parent,{recursive:true});
@@ -67,7 +74,7 @@ try {
       console.error(ts.formatDiagnosticsWithColorAndContext([diagnostic],{getCanonicalFileName:file=>file,getCurrentDirectory:()=>root,getNewLine:()=> '\n'}));
     }
     process.exitCode = 1;
-  } else console.log(`PASS: ${files.length} actual entry-guide, landing and SSR examples compile against public package declarations.`);
+  } else console.log(`PASS: ${files.length} actual entry-guide, landing, SSR and compatibility-package examples compile against public package declarations.`);
 } finally {
   rmSync(temporary,{recursive:true,force:true});
 }

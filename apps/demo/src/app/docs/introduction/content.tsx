@@ -26,7 +26,7 @@ export default function App() {
         <A href="/docs/quick-start">Follow the quick start</A> for complete Vite and Next.js setup,
         or <A href="/docs/installation#new-app">generate a new app</A>. The{' '}
         <A href="/docs/installation">installation guide</A> records the target release versions
-        and release verification.
+        and release verification. Use its <A href="/docs/installation#framework-support">framework support table</A> to choose the UI and runtime for your application.
       </P>
 
       <H2 id="features">What comes with the kit</H2>
