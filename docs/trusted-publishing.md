@@ -2,7 +2,7 @@
 
 The release workflow prepares verified packages and can submit them to **npm staging**. It never approves a stage or publishes directly. A staged package becomes public only after the owner's separate npm 2FA approval.
 
-**Activation status:** the dedicated GitHub `npm-release` environment is configured with `anilkaracay` as its sole reviewer, no administrator bypass and only the `main` branch. The workflow and tests are prepared in the repository. npm trusted-publisher configuration, effective account/team permissions, token restrictions and the first real staged release still need authenticated verification. Do not treat the full publishing system as active until those checks pass.
+**Activation status (2026-10-29):** the workflow is merged and the first owner-approved OIDC release, `create-partylayer-app@0.7.0`, is public. The dedicated GitHub `npm-release` environment has `anilkaracay` as its sole reviewer, no administrator bypass and only the `main` branch. Authenticated collaborator queries found only `cayvox` with read-write access on all 20 packages. The CLI's stage-only npm connection and real release are verified; npm also accepted its require-2FA/disallow-tokens setting. Other packages' existing trust connections and token restrictions remain unaudited, so this is not a claim of completed migration for all 20 packages.
 
 ## Owner and trust boundaries
 
@@ -19,7 +19,15 @@ The release workflow prepares verified packages and can submit them to **npm sta
 
 The owner confirmed that both GitHub administrator accounts (`anilkaracay` and `cayvox`) belong to them. The release workflow deliberately uses `anilkaracay`; it does not remove the owner's second administrator/recovery account. Self-review is allowed for this single reviewer so an owner-initiated release can proceed. That GitHub approval permits staging only; npm still requires a separate interactive 2FA approval for publication.
 
-The reviewed identities, toolchain and frozen list of 20 existing packages live in [the release policy](../.github/npm-release-policy.json). A new package, renamed account or changed publishing path requires a reviewed policy change. Public maintainer metadata currently lists `cayvox` for all 20 packages; that observation alone is not an audit of organization/team grants, tokens or other trusted publishers. Verify effective npm access while signed in before activation.
+The reviewed identities, toolchain and frozen list of 20 existing packages live in [the release policy](../.github/npm-release-policy.json). A new package, renamed account or changed publishing path requires a reviewed policy change. Both public maintainer metadata and authenticated effective collaborator queries currently identify only `cayvox` for all 20 packages. That does not establish the absence of other trusted-publisher connections or complete the token-restriction audit.
+
+## First verified release
+
+[`create-partylayer-app@0.7.0`](https://www.npmjs.com/package/create-partylayer-app/v/0.7.0) was prepared and staged by [workflow run 40896650344](https://github.com/PartyLayer/PartyLayer/actions/runs/40896650344), from commit `3356c383cee44f10c5a2f4f5515e938e423c92f9`. The owner explicitly approved that run's GitHub environment gate and completed npm's separate final 2FA approval. No manually created npm publishing token was used by the workflow.
+
+The downloaded staged and public tarballs matched the prepared artifact byte for byte. The `latest` tag, Node `>=20.12.0` engine, registry signatures and provenance were checked; provenance names this workflow, source commit and run. A clean unauthenticated npm consumer installed CLI 0.7.0, generated a React/Vite application, passed Doctor and completed its production build. `npm audit signatures` verified the installed consumer's registry signatures and attestations. These checks establish the release path, not live wallet or ledger acceptance.
+
+The CLI connection grants only `createStagedPackage`, bound to `PartyLayer/PartyLayer`, `npm-stage.yml` and `npm-release`. npm acknowledged `npm access set mfa=publish create-partylayer-app`; an independent settings read-back remains to be recorded. Before activating each of the remaining 19 packages, audit existing trust connections and token settings and complete its next real release through the same owner-approved path. Do not pre-create unused connections and let their initial-validation window expire.
 
 ## Prepare and stage a release
 
@@ -48,7 +56,7 @@ Audit every other trust connection and effective organization/team publishing gr
 
 Complete and verify the first real owner-approved release before relying on the new path. Newly created npm trust connections expire if their initial validation is not completed within the period described in [npm's current documentation](https://docs.npmjs.com/trusted-publishers/); configure them when the owner is ready for that release. Then select **Require two-factor authentication and disallow tokens**, verify that stage-only OIDC still works, and revoke superseded automation tokens. Preserve the owner's recovery access.
 
-The current one-time authenticated [release process](./releasing.md) remains the fallback until this activation has been verified. A temporary token used for CLI 0.7.0 is not evidence that OIDC or owner-only stage promotion works.
+Use the verified staged workflow for CLI releases. The [release process](./releasing.md) also describes versioning and validation; it is not authorization to bypass the owner gate or introduce publishing tokens for packages still awaiting migration.
 
 ## Failure and recovery
 

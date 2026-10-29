@@ -44,7 +44,7 @@ export function Providers({ children }: { children: ReactNode }) {
       <LI>Check network/channel policy: Send is Mainnet-only; Vala requires Devnet beta. Configure WalletConnect/Bron with your own settings.</LI>
       <LI>Verify backend authentication independently. Validate transfers and swaps with valid commands, test funds and independent ledger confirmation.</LI>
     </UL>
-    <Callout type="note">CLI 0.7.0 introduces offline --doctor diagnostics. Until published, the public @latest command may still resolve the previous CLI. Doctor checks installation metadata; it does not establish wallet or ledger acceptance.</Callout>
+    <Callout type="note">CLI 0.7.0 and newer include offline --doctor diagnostics. CLI 0.7.0 is published on npm, with public installation and a generated React production build verified. Doctor checks installation metadata; it does not establish wallet or ledger acceptance.</Callout>
     <P>Use the <A href="/docs/ai-integration">AI integration guide</A> to give a coding assistant this same migration contract.</P>
     <PrevNext />
   </>;
