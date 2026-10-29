@@ -1,5 +1,11 @@
 # @partylayer/adapter-cantor8
 
+## 0.5.1
+
+### Patch Changes
+
+- c130fc4: Correct SDK README examples to include the required application configuration. Show Send's Mainnet kit integration and explicit compatibility setup without duplicate registration, and document Bron's application-owned OAuth/API requirements. These complete examples now compile against the public package declarations in the documentation gate.
+
 ## 0.5.0
 
 ### Minor Changes
