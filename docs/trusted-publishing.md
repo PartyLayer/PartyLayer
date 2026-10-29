@@ -1,63 +1,63 @@
-# Tokenless publishing: activation plan
+# Owner-approved npm releases
 
-Status: design prepared; no trusted publisher or publishing workflow is enabled
-by this document. Continue using the authenticated [release process](./releasing.md)
-until the replacement has passed its dry run and account configuration review.
+The release workflow prepares verified packages and can submit them to **npm staging**. It never approves a stage or publishes directly. A staged package becomes public only after the owner's separate npm 2FA approval.
 
-## Goal and current constraint
+**Activation status:** the dedicated GitHub `npm-release` environment is configured with `anilkaracay` as its sole reviewer, no administrator bypass and only the `main` branch. The workflow and tests are prepared in the repository. npm trusted-publisher configuration, effective account/team permissions, token restrictions and the first real staged release still need authenticated verification. Do not treat the full publishing system as active until those checks pass.
 
-Publish reviewed releases from GitHub Actions with short-lived npm OIDC
-credentials and verifiable provenance instead of sharing npm write tokens.
-npm's [trusted-publisher documentation](https://docs.npmjs.com/trusted-publishers/)
-currently requires npm CLI 11.5.1+ and Node 22.14.0+ on a supported hosted runner.
-Use a pinned, supported toolchain in the eventual workflow; the existing Node 20
-test jobs do not establish OIDC publishing support.
+## Owner and trust boundaries
 
-This repository pins pnpm 9.15.9. Its `pnpm release` path lets pnpm rewrite
-`workspace:*` and `workspace:^` ranges before publishing. Do not replace this
-with `npm publish` against raw workspace directories. A tokenless migration must
-preserve that manifest transformation; npm CLI OIDC support alone is not proof
-that our current pnpm publishing path supports it.
+| Boundary | Required identity or setting |
+| --- | --- |
+| GitHub repository | `PartyLayer/PartyLayer`, immutable repository ID `1142218754` |
+| Initial dispatch | GitHub account `anilkaracay`, immutable user ID `70052819` |
+| Rerun and release-environment reviewer | `anilkaracay` only |
+| npm maintainer and final approver | Owner's npm account `cayvox` |
+| Workflow | `.github/workflows/npm-stage.yml` |
+| GitHub environment | `npm-release`; `main` branch only; administrator bypass disabled |
+| npm trusted-publisher actions | Stage only; direct publish and independent dist-tag management disabled |
+| npm publishing access after migration | Require 2FA and disallow traditional tokens |
 
-## Reviewable implementation sequence
+The owner confirmed that both GitHub administrator accounts (`anilkaracay` and `cayvox`) belong to them. The release workflow deliberately uses `anilkaracay`; it does not remove the owner's second administrator/recovery account. Self-review is allowed for this single reviewer so an owner-initiated release can proceed. That GitHub approval permits staging only; npm still requires a separate interactive 2FA approval for publication.
 
-1. Keep package versioning in a release PR targeting `main`, with changelogs and
-   coordinated template pins. Require the normal CI and regression gate on its
-   exact head. Build and package the merged release commit, not a floating branch
-   or an artifact supplied by an untrusted pull request.
-2. Add a manually dispatched workflow, restricted to the default branch, with
-   read-only repository permission by default. Packaging and validation need no
-   npm publishing credentials. Pack with the pinned pnpm version so workspace
-   dependencies become real semver ranges.
-3. Before enabling publication, validate the resulting tarballs: manifest names
-   and versions match the reviewed release; no workspace ranges remain; all
-   entrypoints, README and license exist; clean ESM/CommonJS consumers and
-   generated starter builds pass. Preserve tarball checksums and the source SHA
-   as the release record. Reuse the repository's packed-consumer gates.
-4. Use an isolated publishing job with `id-token: write`, a GitHub-hosted runner
-   and the supported npm CLI. Publish the validated pnpm tarballs in dependency
-   order. Never rebuild or edit a tarball after recording its checksum. Test the
-   exact npm-tarball/OIDC path before treating it as the standard release route.
-5. On npm, configure each package's trusted publisher for organization
-   `PartyLayer`, repository `PartyLayer`, the actual reviewed workflow filename
-   and an explicitly chosen GitHub release environment. Configure that
-   environment's approval rules before relying on it for protection. These
-   account permissions need maintainer review; creating a workflow alone does
-   not configure them.
-6. Verify public registry metadata, integrity and provenance after the first
-   release. Reinstall the published entrypoints in a clean consumer and run the
-   documented quick start. Remove any superseded automation token only after
-   the replacement is verified. Do not remove a maintainer's recovery access.
+The reviewed identities, toolchain and frozen list of 20 existing packages live in [the release policy](../.github/npm-release-policy.json). A new package, renamed account or changed publishing path requires a reviewed policy change. Public maintainer metadata currently lists `cayvox` for all 20 packages; that observation alone is not an audit of organization/team grants, tokens or other trusted publishers. Verify effective npm access while signed in before activation.
+
+## Prepare and stage a release
+
+1. Merge a normal version/release PR with changelogs, coordinated dependency versions and current template pins. Wait for **both** the CI and regression-gate push runs to pass on the current `main` commit.
+2. Open **Actions → Owner-approved npm staging → Run workflow** as `anilkaracay`. Select `main`, explicitly name the existing packages separated by commas, and select `latest` or `next`. Leave **stage** unchecked for the first preparation-only run. No PR event or tag push triggers a release.
+3. Preparation checks the actor, immutable repository identity, current source SHA, exact CI runs and actual environment approval/branch rules. It builds the workspace, runs publish/packed-consumer gates, packs with pinned pnpm and records a SHA-512 integrity manifest. The job has no npm token or OIDC publishing permission.
+4. Inspect the `npm-release-<sha>-<attempt>` artifact, including selected names, versions, dist-tag and checksums. Preparation refuses a downgrade of `latest`, unpublished omitted internal dependencies, unknown packages and an existing version with different bytes.
+5. When npm trust settings have been verified, dispatch with **stage** checked. The isolated staging job waits for the owner's GitHub environment approval. It downloads only this run's artifact, checks source/run identity, selection, tag, package manifests, README/license, file paths and hashes, and rechecks CI, environment rules and current registry state.
+6. The job uses `npm stage publish` on the exact validated tarballs. It installs no application dependencies, executes no package lifecycle hooks and runs npm from an empty temporary directory rather than loading the repository's npm configuration. There is no `npm publish`, `npm stage approve`, `npm stage reject` or token fallback in the workflow.
+7. Preserve the stage receipt. Sign in to npm as `cayvox`, inspect the staged package, download and compare its tarball integrity with the prepared manifest, then approve with 2FA. Approve coordinated dependencies in the recorded dependency order. The automation does not ask for or handle the owner's 2FA code.
+8. Verify public registry integrity, provenance, dist-tags and a clean public-consumer installation. Only then mark the release complete and create its package-version tag at the reviewed source commit.
+
+Keep the release window serial. A new commit on `main`, changed `latest`, missing CI result or changed approval rule stops the workflow; dispatch again from the new reviewed state rather than bypassing it. A preparation-only run validates packaging, not npm OIDC, stage creation, 2FA promotion or final provenance.
+
+## Activate npm trust without widening publishing rights
+
+Use a GitHub-hosted runner, **Node 24.21.0**, **npm 11.19.0** and **pnpm 9.15.9**, pinned in the workflow. Staged publishing requires npm 11.15.0+ and Node 22.14.0+; the ordinary Node 20 CI jobs do not establish this publishing capability. These are release-tool requirements, separate from application/package runtime engines.
+
+For each package being activated, use its authenticated npm settings to bind the trusted publisher to:
+
+- Organization `PartyLayer`, repository `PartyLayer` and workflow filename `npm-stage.yml`.
+- Environment **`npm-release`**, not a website's Vercel environment.
+- Stage-only permission. Leave direct publishing and separate dist-tag management disabled.
+
+Audit every other trust connection and effective organization/team publishing grant. Do not silently replace or delete account access. Package-setting and trust changes require the owner's authenticated interaction and may require 2FA. Do not put an npm write token in repository/environment secrets or workflow variables.
+
+Complete and verify the first real owner-approved release before relying on the new path. Newly created npm trust connections expire if their initial validation is not completed within the period described in [npm's current documentation](https://docs.npmjs.com/trusted-publishers/); configure them when the owner is ready for that release. Then select **Require two-factor authentication and disallow tokens**, verify that stage-only OIDC still works, and revoke superseded automation tokens. Preserve the owner's recovery access.
+
+The current one-time authenticated [release process](./releasing.md) remains the fallback until this activation has been verified. A temporary token used for CLI 0.7.0 is not evidence that OIDC or owner-only stage promotion works.
 
 ## Failure and recovery
 
-npm releases are not atomic across a monorepo. Record each successful package
-and stop when a publish fails. Before a retry, compare existing registry
-integrity with the prepared artifact and skip only an identical published
-version. A version already present with different contents is a hard stop,
-not permission to overwrite, unpublish or silently accept it. Preserve existing
-dist-tags unless the release explicitly calls for changing them.
+A monorepo release is not atomic. The script checks all selected registry states before staging the first package and records each successful stage immediately. It stops on the first failure and preserves the partial receipt. It does not retry a possibly successful write, reject an unknown stage, overwrite a version or unpublish a package.
 
-README fixes also need publication: merging a corrected source README does not
-change the README shown for an already published npm version. Track these with
-changesets even when the runtime bundle is unchanged.
+OIDC credentials cannot inspect or approve existing stages. If a stage request times out or its result is uncertain, use the owner's interactive npm account to inspect/download it and compare bytes before retrying. If an identical version is already public it can be skipped; a differing integrity is a hard stop. Never interpret a mocked staging test as a successful real registry release.
+
+## Verification
+
+`pnpm gate:workflow-scripts` runs the workflow/script tests as part of the mandatory repository gate. They exercise wrong actors/forks/refs, changed main, failed or stale CI, missing approval, extra reviewers, administrator bypass, wildcard branches, archive/source/hash drift, owner-selection changes, token fallback, dependency ordering and partial-failure recovery. Tests use local archives and fake APIs/commands; they do not create npm stages or approve a release.
+
+See [npm staged publishing](https://docs.npmjs.com/staged-publishing/), [npm trusted publishers](https://docs.npmjs.com/trusted-publishers/) and [GitHub environment protection](https://docs.github.com/en/actions/how-tos/deploy/configure-and-manage-deployments/manage-environments) for the service contracts.
