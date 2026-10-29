@@ -100,11 +100,11 @@ importers:
         specifier: ^5.101.0
         version: 5.101.1(react@18.3.1)
       '@walletconnect/sign-client':
-        specifier: ^2.23.8
-        version: 2.23.9(typescript@5.9.3)(zod@4.6.7)
+        specifier: ^2.26.0
+        version: 2.26.0(typescript@5.9.3)(zod@4.6.7)
       '@walletconnect/types':
-        specifier: ^2.23.8
-        version: 2.23.9
+        specifier: ^2.26.0
+        version: 2.26.0
       next:
         specifier: ^14.0.0
         version: 14.2.35(@opentelemetry/api@1.9.1)(@playwright/test@1.58.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -140,8 +140,8 @@ importers:
   apps/devnet-proxy:
     dependencies:
       '@canton-network/wallet-sdk':
-        specifier: 1.4.0
-        version: 1.4.0
+        specifier: 1.6.0
+        version: 1.6.0
       '@partylayer/react':
         specifier: workspace:^
         version: link:../../packages/react
@@ -194,13 +194,13 @@ importers:
         version: 18.3.7(@types/react@18.3.27)
       '@vitejs/plugin-react':
         specifier: ^4.3.1
-        version: 4.7.0(vite@5.4.21(@types/node@25.9.5)(terser@5.49.0))
+        version: 4.7.0(vite@5.4.21(@types/node@25.9.9)(terser@5.49.0))
       typescript:
         specifier: ^5.6.2
         version: 5.9.3
       vite:
         specifier: ^5.4.2
-        version: 5.4.21(@types/node@25.9.5)(terser@5.49.0)
+        version: 5.4.21(@types/node@25.9.9)(terser@5.49.0)
 
   apps/registry-server:
     dependencies:
@@ -299,13 +299,13 @@ importers:
         version: 18.3.7(@types/react@18.3.27)
       '@vitejs/plugin-react':
         specifier: ^4.3.1
-        version: 4.7.0(vite@5.4.21(@types/node@25.9.5)(terser@5.49.0))
+        version: 4.7.0(vite@5.4.21(@types/node@25.9.9)(terser@5.49.0))
       typescript:
         specifier: ^5.6.2
         version: 5.9.3
       vite:
         specifier: ^5.4.2
-        version: 5.4.21(@types/node@25.9.5)(terser@5.49.0)
+        version: 5.4.21(@types/node@25.9.9)(terser@5.49.0)
 
   examples/telemetry-adapters:
     dependencies:
@@ -339,7 +339,7 @@ importers:
         version: 6.21.0(eslint@8.57.1)(typescript@5.9.3)
       '@vitejs/plugin-react':
         specifier: ^4.2.1
-        version: 4.7.0(vite@5.4.21(@types/node@25.9.5)(terser@5.49.0))
+        version: 4.7.0(vite@5.4.21(@types/node@25.9.9)(terser@5.49.0))
       eslint:
         specifier: ^8.45.0
         version: 8.57.1
@@ -354,10 +354,10 @@ importers:
         version: 5.9.3
       vite:
         specifier: ^5.0.8
-        version: 5.4.21(@types/node@25.9.5)(terser@5.49.0)
+        version: 5.4.21(@types/node@25.9.9)(terser@5.49.0)
       vitest:
         specifier: ^1.2.0
-        version: 1.6.1(@types/node@25.9.5)(@vitest/ui@1.6.1)(happy-dom@14.12.3)(jsdom@24.1.3)(terser@5.49.0)
+        version: 1.6.1(@types/node@25.9.9)(@vitest/ui@1.6.1)(happy-dom@14.12.3)(jsdom@24.1.3)(terser@5.49.0)
 
   examples/test-dapp:
     dependencies:
@@ -388,7 +388,7 @@ importers:
         version: 6.21.0(eslint@8.57.1)(typescript@5.9.3)
       '@vitejs/plugin-react':
         specifier: ^4.2.1
-        version: 4.7.0(vite@5.4.21(@types/node@25.9.5)(terser@5.49.0))
+        version: 4.7.0(vite@5.4.21(@types/node@25.9.9)(terser@5.49.0))
       eslint:
         specifier: ^8.45.0
         version: 8.57.1
@@ -403,7 +403,7 @@ importers:
         version: 5.9.3
       vite:
         specifier: ^5.0.8
-        version: 5.4.21(@types/node@25.9.5)(terser@5.49.0)
+        version: 5.4.21(@types/node@25.9.9)(terser@5.49.0)
 
   examples/wallet-balance-loop:
     dependencies:
@@ -428,7 +428,7 @@ importers:
         version: 18.3.7(@types/react@18.3.27)
       '@vitejs/plugin-react':
         specifier: ^4.2.1
-        version: 4.7.0(vite@5.4.21(@types/node@25.9.5)(terser@5.49.0))
+        version: 4.7.0(vite@5.4.21(@types/node@25.9.9)(terser@5.49.0))
       tsx:
         specifier: ^4.21.0
         version: 4.21.0
@@ -437,7 +437,7 @@ importers:
         version: 5.9.3
       vite:
         specifier: ^5.0.8
-        version: 5.4.21(@types/node@25.9.5)(terser@5.49.0)
+        version: 5.4.21(@types/node@25.9.9)(terser@5.49.0)
 
   packages/adapter-starter:
     dependencies:
@@ -471,8 +471,8 @@ importers:
   packages/adapters/cantor8:
     dependencies:
       '@cantor8/wallet-connect-sdk':
-        specifier: ^0.4.0
-        version: 0.4.0
+        specifier: ^0.9.0
+        version: 0.9.0
       '@partylayer/core':
         specifier: workspace:^
         version: link:../../core
@@ -564,16 +564,16 @@ importers:
     dependencies:
       '@canton-network/dapp-sdk':
         specifier: 1.8.0
-        version: 1.8.0(@walletconnect/sign-client@2.23.9(typescript@5.9.3)(zod@4.6.7))(@walletconnect/types@2.23.9)
+        version: 1.8.0(@walletconnect/sign-client@2.26.0(typescript@5.9.3)(zod@4.6.7))(@walletconnect/types@2.26.0)
       '@partylayer/core':
         specifier: workspace:^
         version: link:../../core
       '@walletconnect/sign-client':
         specifier: ^2.23.8
-        version: 2.23.9(typescript@5.9.3)(zod@4.6.7)
+        version: 2.26.0(typescript@5.9.3)(zod@4.6.7)
       '@walletconnect/types':
         specifier: ^2.23.8
-        version: 2.23.9
+        version: 2.26.0
     devDependencies:
       '@types/node':
         specifier: ^20.11.0
@@ -617,7 +617,7 @@ importers:
         version: 5.9.3
       vitest:
         specifier: ^1.2.0
-        version: 1.6.1(@types/node@25.9.5)(@vitest/ui@1.6.1)(happy-dom@14.12.3)(jsdom@24.1.3)(terser@5.49.0)
+        version: 1.6.1(@types/node@25.9.9)(@vitest/ui@1.6.1)(happy-dom@14.12.3)(jsdom@24.1.3)(terser@5.49.0)
 
   packages/create-partylayer-app:
     dependencies:
@@ -664,7 +664,7 @@ importers:
         version: 5.9.3
       vitest:
         specifier: ^1.2.0
-        version: 1.6.1(@types/node@25.9.5)(@vitest/ui@1.6.1)(happy-dom@14.12.3)(jsdom@24.1.3)(terser@5.49.0)
+        version: 1.6.1(@types/node@25.9.9)(@vitest/ui@1.6.1)(happy-dom@14.12.3)(jsdom@24.1.3)(terser@5.49.0)
 
   packages/react:
     dependencies:
@@ -820,8 +820,8 @@ importers:
         specifier: 1.14.0
         version: 1.14.0
       '@canton-network/core-wallet-discovery':
-        specifier: 1.15.0
-        version: 1.15.0
+        specifier: 1.16.0
+        version: 1.16.0
       '@canton-network/dapp-sdk':
         specifier: 0.24.0
         version: 0.24.0
@@ -830,7 +830,7 @@ importers:
         version: 1.2.0(@canton-network/dapp-sdk@0.24.0)
       '@lithiumdigital/cauri-dapp-sdk':
         specifier: 0.2.0
-        version: 0.2.0(@canton-network/core-splice-provider@1.15.0)(@canton-network/core-types@1.14.0)(@canton-network/core-wallet-dapp-rpc-client@1.15.0)(@canton-network/core-wallet-discovery@1.15.0)
+        version: 0.2.0(@canton-network/core-splice-provider@1.16.0)(@canton-network/core-types@1.14.0)(@canton-network/core-wallet-dapp-rpc-client@1.16.0)(@canton-network/core-wallet-discovery@1.16.0)
       '@oneswap/wallet-cip0103-adapter':
         specifier: 0.2.0
         version: 0.2.0(@partylayer/core@packages+core)
@@ -868,11 +868,11 @@ importers:
         specifier: 0.1.0
         version: 0.1.0
       '@walletconnect/sign-client':
-        specifier: ^2.23.8
-        version: 2.23.9(typescript@5.9.3)(zod@4.6.7)
+        specifier: ^2.26.0
+        version: 2.26.0(typescript@5.9.3)(zod@4.6.7)
       '@walletconnect/types':
-        specifier: ^2.23.8
-        version: 2.23.9
+        specifier: ^2.26.0
+        version: 2.26.0
     devDependencies:
       '@types/node':
         specifier: ^20.11.0
@@ -1138,23 +1138,20 @@ packages:
   '@biomejs/wasm-nodejs@2.3.14':
     resolution: {integrity: sha512-XRLrEHVUlvDzWvtH8eu5cBRlApL8U6eXSp2NQ6RrBR52v6Oo4qP4s4Ccw+ROMQ2gtqEi/9Daqqi56PkAV1yDZw==}
 
-  '@canton-network/core-acs-reader@1.16.0':
-    resolution: {integrity: sha512-DglfUCOIOEw4hrtUsm4OE7uPr5zK5YLXXSAetZ2tFtYyzvGF0MDiPyDbjk4mDfx2pQtVDulawkp9YV+hC7pLtA==}
+  '@canton-network/core-acs-reader@1.22.0':
+    resolution: {integrity: sha512-s4QOeQ6F91qTXgBIKa2HrxQQHnmSDnAYEuJ7EOIsxQgodGG0PxUC3mA+3UQhs7mAmcvH8SLMb1mFJ5krIS+IyA==}
 
-  '@canton-network/core-amulet-service@1.8.0':
-    resolution: {integrity: sha512-PAcaV2fXyfhc3m6z3vnB/a9cdPosZeZV4BpUCSxT4oEC1FFXZh/IJjlRArysnfaQ1u7GEmL3MCzYTRF8Z3vpoA==}
+  '@canton-network/core-amulet-service@1.14.0':
+    resolution: {integrity: sha512-kWbHC6ssqYkmFyYJw28Ig6aD6Dh3eEQ8ZEHVWyhvoySBjCloyy3VEzeMhMzJ5jOGDzZ43COYWXL7iVR+R6bW0A==}
 
-  '@canton-network/core-asyncapi-client@1.8.0':
-    resolution: {integrity: sha512-/zAJjTkwb6q7oKUC0YFEA4hARb28We9LGDjRSZKZn1fOZ73xZ2smh1yNLZahV/gAHKFdQk4VF/Nz+dXZaw7P4w==}
+  '@canton-network/core-asyncapi-client@1.14.0':
+    resolution: {integrity: sha512-3nxPE69kjqUpaf4bRwPSDetc+/5rWHbN/COBpAya/2uQyxS6/xzGyjHl1Ku2vXpdNaO8H9jJldNkq4dvp9JGNQ==}
 
   '@canton-network/core-ledger-client-types@1.14.0':
     resolution: {integrity: sha512-YuI0odlKj3nlo74UKtQA76ipm2FklFmtawyWtw4tkrXGJNK1WzHtefxX5yU3NcL05b2LpTBVUoOVloGk//5PlA==}
 
-  '@canton-network/core-ledger-client-types@1.8.0':
-    resolution: {integrity: sha512-woRwZFD364FNFyRIjVIkEQUeC+vMgRuA+Wnox98knq3TY62yiB5zRMlYgFSC3rHUTG3qmbVfTaeaFLak6bVXXA==}
-
-  '@canton-network/core-ledger-client@1.8.0':
-    resolution: {integrity: sha512-8Osss0cxh2qlc4Vjb6AeWbvisIF8tdTDeJbn9ZM4YsOQqdzVKMH1cB5QEG+BOrZra4how+tf5u/Itync/nVfcA==}
+  '@canton-network/core-ledger-client@1.14.0':
+    resolution: {integrity: sha512-qlthtinIqEyKbOjfMtt9r34qf2UvdAZzy6IITH89g43ghtxvVIdTsCAKWkygsaddXWYANI2FAftNqKOVNx8YvQ==}
 
   '@canton-network/core-ledger-proto@0.22.2':
     resolution: {integrity: sha512-B7fWq9K13eXE/41XroBm6txNVLv/mtnUP5Z92olOSiXaD4x8fwqcMRSaytOq1Dhi+QTkVhpZpoVYRBhYILI13g==}
@@ -1162,20 +1159,14 @@ packages:
   '@canton-network/core-ledger-proto@1.13.0':
     resolution: {integrity: sha512-f7cQlAGO79Iy7QUEmFVWZazwdifIzjkTxq+EqthnsLs1hqI9NvMO31+Z11x+zwrA7NnkwgFLjojxkrNNnoOaGw==}
 
-  '@canton-network/core-ledger-proto@1.7.0':
-    resolution: {integrity: sha512-Ls23TpHqkiCXjsX/CiIw3lGw6vxXULveYpj+YY3SKDg0wxZ5kKKQ0z+lu8mX1CXOYA1uDD4uwOaOAhwoZRv9Fg==}
-
   '@canton-network/core-provider-dapp@0.4.1':
     resolution: {integrity: sha512-SP6B7UKL5Rp+mfWMZxh5EvEJxO/ywOhF0QliMzZlbmuveATNxLvtdY5toYiZqw8gvDG77LazXemC3WABPRH51g==}
 
   '@canton-network/core-provider-dapp@1.14.0':
     resolution: {integrity: sha512-dCgLYMykqiWU+4uWUjwn88VycSJH7OIcjrnW4fcL30mBj+Pb5iCTDvH06QTp7VHGhCiphVoMtxQrOPJ5URrm4w==}
 
-  '@canton-network/core-provider-dapp@1.8.0':
-    resolution: {integrity: sha512-GIzQyTA4s7921rD2H4APjmWrh6NmebwyI3Ru9DgFrJxNqKs5EYuha6O0tdy97FdpPtF2DQuNvjeeU0rS/R/cWQ==}
-
-  '@canton-network/core-provider-ledger@1.8.0':
-    resolution: {integrity: sha512-bBs+VhQi/ElIHpbfvNmD42/L0ysnOdFqYGjNFKisOWeuz/7yRFYK1eyMWUV3SIwFbN+CMkFHpfsM2X1boITpEw==}
+  '@canton-network/core-provider-ledger@1.14.0':
+    resolution: {integrity: sha512-OTnWsbClylY2iuwLWAgx+5o90/HTHYTUBRXrFwy9UGQZT1ijQ1S1JC24UIfoaAJL0fj66stPlxihMGv5PGrEaw==}
 
   '@canton-network/core-rpc-errors@0.18.2':
     resolution: {integrity: sha512-7uMsTQKpvF53SR/0VZVN6uDwRR6Xxn8y9uowIhawSsX0sgcJgT9VdtNlXdWRk7BhE0VkPwR8mIMg7PMzpep4NQ==}
@@ -1186,8 +1177,8 @@ packages:
   '@canton-network/core-rpc-errors@1.13.0':
     resolution: {integrity: sha512-piAnwZ3F0FVkmuzhFm946mf1wq/l3ibqAwhDLgT3k8f4a2cuo3jmxvEvVRlPNw4V54OWFD3e9z5phrQzcNgTdA==}
 
-  '@canton-network/core-rpc-errors@1.14.0':
-    resolution: {integrity: sha512-FLq4P3p1arL2kA8WnYCapBshUQ6eKlD0wGcjLjN9/ybvU2tbAO6Bdpf7Iu13Ol8wMNQ5TeS0nS5ULHJ4uH9Agw==}
+  '@canton-network/core-rpc-errors@1.15.0':
+    resolution: {integrity: sha512-yIskWaqZYNS9zfqli1YkKevMgBDJRknmDb/4kGJPK/lxUwfAVAZ6fouiI5HIY8PmS6AS0MQsCTsbbCPvVyVLxg==}
 
   '@canton-network/core-rpc-transport@0.8.1':
     resolution: {integrity: sha512-ZUIhB3QN8KT+TEhFxjDYAxjQ/PUg8OwKajzIwaVxFU0SKkUJmac235ckEm8PyAcUq7sYaNpPq2BjBY6hKO4WJg==}
@@ -1198,14 +1189,14 @@ packages:
   '@canton-network/core-rpc-transport@1.14.0':
     resolution: {integrity: sha512-81X+Nmuhu4CIUT32//Z5X2d3Dgl2H/VmUeoNwGo940z3mRVziIRk+O+W+k8AlzHnMcMHfjYB8K+psBR2dunxJg==}
 
-  '@canton-network/core-rpc-transport@1.15.0':
-    resolution: {integrity: sha512-Uap2tJWsVwypSvAWrAOMyF9wn1TvOXDNnuVY22x2OoRjtQp2nQRD24wvtJrrMSbDK5ttK5vjt9Hmi1+YW8nL2w==}
+  '@canton-network/core-rpc-transport@1.16.0':
+    resolution: {integrity: sha512-T/z1eQl+W6mn1BSuMX/xzE/2LtPITvpBsOWtFxnhTFWGQXjse3M0PuSZagkOMs0CxM4tWesvlYYRAO4rRUScIg==}
 
-  '@canton-network/core-signing-lib@1.8.0':
-    resolution: {integrity: sha512-QEDuIvyCr1+JzQ/uRmzZSCgZYz+OD17z4hm7HSDic2TPqlmg7FlEvFOYE+uINqwynjMBD9ySs/PF6z5FaIPkDg==}
+  '@canton-network/core-signing-lib@1.14.0':
+    resolution: {integrity: sha512-R1SdoMd+x+WcSi4nduzUiR/z92MP31JtntbsYlss1iK766n2SMIyAtcygtgVpUyMEd+pYsosdcI/BzV8NTG9Bw==}
 
-  '@canton-network/core-splice-client@1.8.0':
-    resolution: {integrity: sha512-SgpQVeReg4kS1gTdeqjFNC9upzqSKjS7W5LMZh6NBefrJVHj4C8rYpfeOI4pDNR3yTEz8TJmkP7Xy10D+qO0mQ==}
+  '@canton-network/core-splice-client@1.14.0':
+    resolution: {integrity: sha512-e+/JmO5NQU1yII5Fb/OLxOi+uhO1riDzumZqWTAJPzEQ0VCzKUOUyDPFqSdSnOHJRFdR0PjKV4K3VNqw7/jatQ==}
 
   '@canton-network/core-splice-provider@0.28.1':
     resolution: {integrity: sha512-Q5kAMU6W+B7EaQAMZCW02x12LgyCBJJimzoihx0x99lC7bEx8E9jqFsFV3XhmGPfY13IZfwmo6IuLdXII63BeQ==}
@@ -1216,29 +1207,26 @@ packages:
   '@canton-network/core-splice-provider@1.14.0':
     resolution: {integrity: sha512-mVaZs+He8EPdd5rZo2VsrF0RgI5cmAx8kvoDGUY379Wsktg5eOJ8LK7tl0bMmwjK0tlV+OrZReNvjlrSL1Q+0A==}
 
-  '@canton-network/core-splice-provider@1.15.0':
-    resolution: {integrity: sha512-/vt3u2gdlHXwvG3Zct77vVZ5k6Er+oqcXfq0oHnfMxo6WzAbczVZZoSVxf31VLbQnV2tUjNyf7Pz7GLDedsWgg==}
+  '@canton-network/core-splice-provider@1.16.0':
+    resolution: {integrity: sha512-W9AOg7MphIYGt2J75lyYPV+nB77q4UDXp09BzXJ2/R/1AL5RB8ml9NyICuwNqN6UgOImSvc1DLPCne78TfzTyQ==}
 
-  '@canton-network/core-splice-provider@1.8.0':
-    resolution: {integrity: sha512-vN7HFNLG4YSzSBu/DURmVeWt179zXfEhGEK+HUFbpyOJao/jPp9IZ7uybQ4qL/Z56tDrA8V5GDfA2EZAwm5lxw==}
+  '@canton-network/core-token-standard-service@1.14.0':
+    resolution: {integrity: sha512-dDMOubXcrRWDVfhyJMPn2SjVJKfZafdomT7Ldk+92cMDockbYwkPwCC4Vrj7zKxHsAExHtFV/RPCX+8p/H0boA==}
 
-  '@canton-network/core-token-standard-service@1.8.0':
-    resolution: {integrity: sha512-oPb3j25LJpsgEbgZfUHW9WgFH4e5usj5dUXqnjNUNgcIxuTp33RWE4RIdv0vjlPjH2xVpLBa7KPfE4rLbsr0IA==}
+  '@canton-network/core-token-standard-v2@1.2.0':
+    resolution: {integrity: sha512-OV7Zf4bYa7bKAe58FIezbcaPiQcVfh+yOHvG/0mwBCap1SI7zfqH5HbWqOGYRTLi+AAxhpqjciLJcZlkqIlm3Q==}
 
-  '@canton-network/core-token-standard@1.8.0':
-    resolution: {integrity: sha512-NImeNERpQGNz1JIkaIdKd/vRwt3+C5yL1QJ750y5r6r9xb8/BxuLbvFukg2VnA6ImVkyTF8+xQW5Whcfw8MJ0w==}
+  '@canton-network/core-token-standard@1.14.0':
+    resolution: {integrity: sha512-bai2fKdwmXu1cFJ9505WFRWTc2JniJTi0W0PfUpMTmJiwx72Ub24hqpWsG7n4U4bkCqduZj+GFijs+kwB7Knsg==}
 
-  '@canton-network/core-tx-parser@1.8.0':
-    resolution: {integrity: sha512-ZH8jdLQYGjEebOihPiFsO7NPrSnAaeekbNxQFAJ81JYH3aD2n0f/RlfSO8+q3DDQ9naqvWFJz40FzIe8dfaVHg==}
+  '@canton-network/core-tx-parser@1.14.0':
+    resolution: {integrity: sha512-1BYqJsH5MfXdZBlpr0HjJ+r6i/4WVrvxbO3OlBVfOnRulwGo8CSH0sg/uAYVOYvNMPOAK0SN7Km9Iqfu+JNIRg==}
 
   '@canton-network/core-tx-visualizer@0.22.2':
     resolution: {integrity: sha512-irwr8nZOGzf17MEygmjRTVENk/ZJ+QP7/cAY4Vvo05TGpMw0hKxx73uRs62bqCT5bRq3WKFr+BE4DWML4WuO8A==}
 
   '@canton-network/core-tx-visualizer@1.13.0':
     resolution: {integrity: sha512-vHGnLsfNQhFLthKH9Ifz5dG40L3kBDksTius9VphpQtW3GqlN9jPtEfNPFkYHhMtvD7dCxombmkIxreS5IkvBg==}
-
-  '@canton-network/core-tx-visualizer@1.7.0':
-    resolution: {integrity: sha512-gNVNGXaEIxKPkdUcNZ5RuZrPaVXd3ySPsDFUbKSOxYSskoKq1GVKf0MF6B3j31Zgb8lePI9BpubP+zDYu25ZxA==}
 
   '@canton-network/core-types@0.22.1':
     resolution: {integrity: sha512-yhCHmd6ASPtm5A/oh2r20orcq46uZrvBM1wXE2OMSYU5qAZshNhCGvHgt4ep2X14cEUm1V3odJnGzgKDM34GIg==}
@@ -1249,17 +1237,14 @@ packages:
   '@canton-network/core-types@1.14.0':
     resolution: {integrity: sha512-InvLx8VtxRn4jqCGAqIwQf+0Ts/I+xwdpU1PhBkfZ0PvDMkZ6QtgWnvKB0nMlwtaqDWRklPbIpzlUcPVIPiuZA==}
 
-  '@canton-network/core-types@2.1.0':
-    resolution: {integrity: sha512-zi8PXiQtDueCLnPI2MERKjTpHvcy7wBlyFmOv0krn6U27agD/Va4awRv2/PBzIJGy3PfiZNuYAaNCThL7sVPGQ==}
+  '@canton-network/core-types@2.2.0':
+    resolution: {integrity: sha512-lV1vMpPjrupAfeZ20I+M4F4q7Zscwrfj3t1U2O8T+Apy1FLzNu9KG2LaPJkDcYHqa0fh5wC0HXubZ4HiDre0JA==}
 
   '@canton-network/core-wallet-auth@0.23.1':
     resolution: {integrity: sha512-+o2l7jb4D1TZqAaU0t2scNAz5k5CpA8A+cB3DcAxslbmxDj0He03NfsKkIiVt416VhWvr9WoyM5FI6mpJuhtJQ==}
 
   '@canton-network/core-wallet-auth@1.14.0':
     resolution: {integrity: sha512-jeOTaAWpviiYRpE2GGuOdbGrqEMgHUo2iqkPxce8pZnx8sEqEAJS/OID6szZM8+TAQMz/6lvPRArUQzl5ihr1A==}
-
-  '@canton-network/core-wallet-auth@1.8.0':
-    resolution: {integrity: sha512-k6akHzRvnitiGHluaLNYrFmnQdB9ITO7rZqaRUkT23c8MZ/zOdet69AvMJyL9J2MKX2L++x10GFG/fZY2C0nKQ==}
 
   '@canton-network/core-wallet-dapp-remote-rpc-client@0.21.1':
     resolution: {integrity: sha512-5cOu+KNd/12IGYTMJzFGLd/o535IbF9B2ItWQzgcfCkVg7Bghfsh0vyjDF7sWM5+eXgfXspqQh+tLiDv2QMjzw==}
@@ -1270,9 +1255,6 @@ packages:
   '@canton-network/core-wallet-dapp-remote-rpc-client@1.14.0':
     resolution: {integrity: sha512-vraztBpMf+YpEOFPdehF1VIrw/1srsU5x1jrDaMidGbGUysqaKZdsdfiNA4x9/+pzIT4TshBcXAD3MBYjrzQTA==}
 
-  '@canton-network/core-wallet-dapp-remote-rpc-client@1.15.0':
-    resolution: {integrity: sha512-F4OKve2hpBPUjKV5XJNQ+vvycfYiYPgTZcYemZ0BL2lrt0Bf9DZpxHzPFKryckaHHXAJqGuU5FghlfTwbjOyMg==}
-
   '@canton-network/core-wallet-dapp-rpc-client@0.27.1':
     resolution: {integrity: sha512-VkZWv6WLqJRtJ7dZzm9Cnlw1mLW4RiLSjxNPoJ0zIVgaVEkZyF3DL/w1jIWXGglQP7bx5cYzSlQ8ckGWSWuXOg==}
 
@@ -1282,8 +1264,8 @@ packages:
   '@canton-network/core-wallet-dapp-rpc-client@1.14.0':
     resolution: {integrity: sha512-sEOH4NEYQYsVinU2Mr5i5qO1RGLTq/NdqLF4E0Krk6uxcNY0PryexwJBRgnoxJ78Xw/VLtyVCLVHRevakSUVlw==}
 
-  '@canton-network/core-wallet-dapp-rpc-client@1.15.0':
-    resolution: {integrity: sha512-3HH70CucEb+OOuh4JY3Btcigb/ZwJHZJcTq1AYVSTjW3ft04PSMWa3L49Idntq+P8TTgoIRqsvRVyyw0xunAdw==}
+  '@canton-network/core-wallet-dapp-rpc-client@1.16.0':
+    resolution: {integrity: sha512-5rk+Ij/0gK5sJtdKzZNklbdA6XIdi24GXhQE3evuSPPmfKNKI3XzQQZKQPGyrWwqWAGOirU4hg4Z/FqC06IWjQ==}
 
   '@canton-network/core-wallet-discovery@0.4.1':
     resolution: {integrity: sha512-F23dO/tWgoyd4uTuL59+q0DFcahXg2FQ0Ce8tVgWzjKPIDNMrt1oO8tizh7UbAsABxSWtzL6IvPBr9ANbRb90g==}
@@ -1294,8 +1276,8 @@ packages:
   '@canton-network/core-wallet-discovery@1.14.0':
     resolution: {integrity: sha512-6iP/3U+7hIUTVpAIPVdEiHCb9BmzypiJ42UlB7NgOdsPBxFBI7KoGMHHIIUt3QICBuQo495+HikJdaRfP82NpA==}
 
-  '@canton-network/core-wallet-discovery@1.15.0':
-    resolution: {integrity: sha512-6ESeM/iJS0JhqBuMRnzkc+BGySbBdIqgXPKREoU12PewbcJP/aCxiypI3b5gOo67vN1Sp6wrR+AKEc/WDrmMqw==}
+  '@canton-network/core-wallet-discovery@1.16.0':
+    resolution: {integrity: sha512-f+L3fGncd91tpUPNiHjtVyN/sE103uwNNxArzZDir03c7wZLAgGkVoow+wq1fvwPv2H1KGasFuimGvjaSVCQxw==}
 
   '@canton-network/core-wallet-store@0.26.1':
     resolution: {integrity: sha512-nkAdGKuReKDfGKy41p+NZfqlWZxzNV+4TpvO/LTPKf+IfSp0m6qRC6PdyxOTSyhmuFSts+H98AscAuhIA+yHmw==}
@@ -1329,11 +1311,11 @@ packages:
       '@walletconnect/types':
         optional: true
 
-  '@canton-network/wallet-sdk@1.4.0':
-    resolution: {integrity: sha512-uskdurYd9HgNSXisFUHFkpEFnZTusd0XJ4oBIDnyI2DrM+9TfJk1Z/s2qF1+J2f6B6OswE3oHwyjY39tyXLURg==}
+  '@canton-network/wallet-sdk@1.6.0':
+    resolution: {integrity: sha512-iBQ6yailWDpHN3PLG9hUpRTF0If2LzGqM+2gURbHMJ2EsndYMCVs4PL0c3nscri+k4tNsO42B4uMLpQi7EeNGQ==}
 
-  '@cantor8/wallet-connect-sdk@0.4.0':
-    resolution: {integrity: sha512-BeSXu4U0S2KfPPjfe0Q/QLpjdOCzLaWOEQK/OBy6qz/g3K32NpSSjNFjgS5GImCc9TQN8k9QjvNYKBWB+RfPRQ==}
+  '@cantor8/wallet-connect-sdk@0.9.0':
+    resolution: {integrity: sha512-YtjimPiyLVOGlAmk5CZHU9frivX0RBkHK+Tk6EIeJ5zpCrjPj7gATE1XBQeMEyypJG9G39cD3E5dHKel2BTqdA==}
 
   '@changesets/apply-release-plan@7.0.14':
     resolution: {integrity: sha512-ddBvf9PHdy2YY0OUiEl3TV78mH9sckndJR14QAt87KLEbIov81XO0q0QAmvooBxXlqRRP8I9B7XOzZwQG7JkWA==}
@@ -1473,6 +1455,9 @@ packages:
 
   '@daml/types@3.6.2':
     resolution: {integrity: sha512-GYZI+KxUicGaCdZ9CVY9V9KoM9zW/doacd6qfTe2+96qvwU1LTU5SG49Sf3b3NUTBHlF0P9Ldm87Xo5r90v57g==}
+
+  '@daml/types@3.7.0':
+    resolution: {integrity: sha512-jg/JQaHBcEooxqytPgb2eU9KMXDL5w2A485OTulUS5fIkjdEj1h5gP7kQv+CYurfGz7ykvSPgbzoP/4TJAbFOA==}
 
   '@esbuild/aix-ppc64@0.21.5':
     resolution: {integrity: sha512-1SDgH6ZSPTlggy1yI6+Dbkiz8xzpHJEVAlF/AM1tHPLsf5STom9rwtjE4hKAF20FfXXNTFqEYXyJNWh1GiZedQ==}
@@ -2576,6 +2561,9 @@ packages:
   '@types/lodash@4.17.24':
     resolution: {integrity: sha512-gIW7lQLZbue7lRSWEFql49QJJWThrTFFeIMJdp3eH4tKoxm1OvEPg02rm4wCCSHS0cL3/Fizimb35b7k8atwsQ==}
 
+  '@types/lodash@4.17.27':
+    resolution: {integrity: sha512-VenMRv/eKNrspX9v3H4dbmjsrnCOYdYBG3kxXKk3dG6X+urBGcj2Prww3xw1U5K4FV/mE4h5GbWd0szEKf+9ew==}
+
   '@types/mime@1.3.5':
     resolution: {integrity: sha512-/pyBZWSLD2n0dcHE3hq8s8ZvcETHtEuF+3E7XVt0Ig2nvsVQXdghHVcEkIWjy9A0wKfTn97a/PSDYohKIlnP/w==}
 
@@ -2588,8 +2576,8 @@ packages:
   '@types/node@20.19.30':
     resolution: {integrity: sha512-WJtwWJu7UdlvzEAUm484QNg5eAoq5QR08KDNx7g45Usrs2NtOPiX8ugDqmKdXkyL03rBqU5dYNYVQetEpBHq2g==}
 
-  '@types/node@25.9.5':
-    resolution: {integrity: sha512-OScDchr2fwuUmWdf4kZ9h7PcJiYDVInhJizG/biAq3cAvqwYktuy/TYGGdZNMtNTFUP7rnb0NU4TUdm82kt4Rg==}
+  '@types/node@25.9.9':
+    resolution: {integrity: sha512-b4e2xxj/yMeT2hNlD6x7zNFiQK2Dlmkb9CQ6v3/1G2RezKN4YS2lcEv8lzGm1mhs4f2lM4yNAMI/zUDBZBBt7w==}
 
   '@types/prop-types@15.7.15':
     resolution: {integrity: sha512-F6bEyamV9jKGAFBEmlQnesRPGOQqS2+Uwi0Em15xenOxHaf2hv6L8YCVn3rPdPJOiJfPiCnLIRyvwVaqMY3MIw==}
@@ -2771,8 +2759,8 @@ packages:
       '@vue/server-renderer':
         optional: true
 
-  '@walletconnect/core@2.23.9':
-    resolution: {integrity: sha512-ws4WG8LeagUo2ERRo02HryXRcpwIRmCQ3pHLW5gWbVReLXXIpgk6ZAfID3fEGHevIwwnHSGww+nNhNpdXyiq0g==}
+  '@walletconnect/core@2.26.0':
+    resolution: {integrity: sha512-lvnqCLEp5Z3DqUFih/FPKbgJHauby5XNAe1clwIf2jYhACFWusRCgUoCK8ULyIopW9FIAqF87ldw/V0Z9v5GAQ==}
     engines: {node: '>=18.20.8'}
 
   '@walletconnect/environment@1.0.1':
@@ -2816,17 +2804,17 @@ packages:
   '@walletconnect/safe-json@1.0.2':
     resolution: {integrity: sha512-Ogb7I27kZ3LPC3ibn8ldyUr5544t3/STow9+lzz7Sfo808YD7SBWk7SAsdBFlYgP2zDRy2hS3sKRcuSRM0OTmA==}
 
-  '@walletconnect/sign-client@2.23.9':
-    resolution: {integrity: sha512-Xj+hw4E6mGRyhCdVOT/RMgnG+up/Y3v0ho5PlkVozvXWeVSqHNh9DmjLuU97a7OACoGd/oHBF6g3NVqD7MgCMQ==}
+  '@walletconnect/sign-client@2.26.0':
+    resolution: {integrity: sha512-zu15NhOmGp1o0LsV9t6V1w+DFYx0UdljNLspqXu2L0GDJlU0Nv5Z70gadrbQGHn8tN70aQrrbOxfMCB48GTe8Q==}
 
   '@walletconnect/time@1.0.2':
     resolution: {integrity: sha512-uzdd9woDcJ1AaBZRhqy5rNC9laqWGErfc4dxA9a87mPdKOgWMD85mcFo9dIYIts/Jwocfwn07EC6EzclKubk/g==}
 
-  '@walletconnect/types@2.23.9':
-    resolution: {integrity: sha512-IUl1PpD/Dig8IE2OZ9XtjbPohEyOZJ73xs92EDUzoIyzRtfm36g2D340pY3iu3AAdLv1yFiaZafB8Hf8RFze8A==}
+  '@walletconnect/types@2.26.0':
+    resolution: {integrity: sha512-XmM6ZFeIvL0oJ+cK8xq8FKk6G9qVXGhXIsWl0lyTZ921Tjvn5eYOd3qIZW34E+8V2alP6uv8c7Fy5GWgz/j7aw==}
 
-  '@walletconnect/utils@2.23.9':
-    resolution: {integrity: sha512-C5TltCs8UPypNiteYnKSv8+ZDK2EjVDyXCxN6kA9bkA+j6KGsNIV7l9MUA8WBAvE5Gi5EcBdhD3R9Hpo/1HHqQ==}
+  '@walletconnect/utils@2.26.0':
+    resolution: {integrity: sha512-zCpuG8vVvL+vHiX2wE+pChr123prvlQE37lJoHNcRiD2+3RxXFPoHnjJ/zAhN+ivdjK743FHsrP2DRXXqno1fg==}
 
   '@walletconnect/window-getters@1.0.1':
     resolution: {integrity: sha512-vHp+HqzGxORPAN8gY03qnbTMnhqIwjeRJNOMOAzePRg4xVEEE2WvYsI9G2NMjOknA8hnuYbU3/hwLcKbjhc8+Q==}
@@ -2838,8 +2826,8 @@ packages:
     resolution: {integrity: sha512-6/mh1E2u2YgEsCHdY0Yx5oW+61gZU+1vXaoiHHrpKeuRNNgFvS+/jrwHiQhB5apAf5oB7UB7E19ol2R2LKH8hQ==}
     engines: {node: ^14.17.0 || ^16.13.0 || >=18.0.0}
 
-  abitype@1.2.4:
-    resolution: {integrity: sha512-dpKH+N27vRjarMVTFFkeY445VTKftzGWpL0FiT7xmVmzQRKazZexzC5uHG0f6XKsVLAuUlndnbGau6lRejClxg==}
+  abitype@1.3.0:
+    resolution: {integrity: sha512-fk6Te+bojIFrMvMZrnOO+SxCB+RUksTGOzq/60ZRvs1L+BVzvi2bqt9L3W/17ZLdZsyM1FuYf65P5nlmoiH1Bg==}
     peerDependencies:
       typescript: '>=5.0.4'
       zod: ^3.22.0 || ^4.0.0
@@ -2872,6 +2860,11 @@ packages:
 
   acorn@8.15.0:
     resolution: {integrity: sha512-NZyJarBfL7nWwIq+FDL6Zp/yHEhePMNnnJ0y3qfieCrmNvYct8uvtiV41UvlSe6apAfk0fY1FbWx+NwfmpvtTg==}
+    engines: {node: '>=0.4.0'}
+    hasBin: true
+
+  acorn@8.19.0:
+    resolution: {integrity: sha512-oJlA3XiRm7Cyk6qFD2Jn8ak9B7jSy0qy00ADO3+8dpT0LSjFihQYv4C02LFCSYJV3Q37xYwwRy5m+IpIiUzqWw==}
     engines: {node: '>=0.4.0'}
     hasBin: true
 
@@ -3002,9 +2995,6 @@ packages:
   bignumber.js@10.0.2:
     resolution: {integrity: sha512-E8Wp9O06QA6lneJ4aRUXKYf/1GIomqUEmUMwtIOMtDxf1U52ffJY+y7JBk/8wRafA8qOIqLnXQGqonYXZdBnFQ==}
 
-  bignumber.js@9.3.1:
-    resolution: {integrity: sha512-Ko0uX15oIUS7wJ3Rb30Fs6SkVbLmPBAKdlm7q9+ak9bbIeFf0MwuBsQV6z7+X768/cHsfg+WlysDWJcmthjsjQ==}
-
   blakejs@1.2.1:
     resolution: {integrity: sha512-QXUSXI3QVc/gJME0dBpXrag1kbzOqCjCX8/b54ntNyW6sjtoqxqRk3LTmXzaJoh71zMsDCjM+47jS7XiwN/+fQ==}
 
@@ -3097,8 +3087,8 @@ packages:
     resolution: {integrity: sha512-P8BjAsXvZS+VIDUI11hHCQEv74YT67YUi5JJFNWIqL235sBmjX4+qx9Muvls5ivyNENctx46xQLQ3aTuE7ssaQ==}
     engines: {node: '>=6'}
 
-  camelcase-keys@10.0.2:
-    resolution: {integrity: sha512-PVHCLVbJ7nWGal0lPAmBN5eSLjIynlMUk2EPmL9aPl6QyJ6+FoszTKwldPzkuVqg5teZbPTbb8Oenzyw9GSJRw==}
+  camelcase-keys@10.0.3:
+    resolution: {integrity: sha512-+WSfgt7e6uZSWfEO9xdFmWEf/bwvA6lJY2mmj4U+N1MHY6h01jQUlZ2dyxnaL4dumg/cxXyRci1fKUtGQfX5+g==}
     engines: {node: '>=20'}
 
   camelcase@5.3.1:
@@ -3324,8 +3314,8 @@ packages:
   dateformat@4.6.3:
     resolution: {integrity: sha512-2P0p0pFGzHS5EMnhdxQi7aJN+iMheud0UhG4dlE1DLAlvL8JHjJJTX/CSm4JXwV0Ka5nGk3zC5mcb5bUQUxxMA==}
 
-  dayjs@1.11.21:
-    resolution: {integrity: sha512-98IT+HOahAisibz/yjKbzuOBwYcjJ7BCLPzARyHiyEBmRz4fatF+KPJszEHXsGYjUG234aH/cOjW1wwTbKUZlA==}
+  dayjs@1.11.23:
+    resolution: {integrity: sha512-QDTCU0M0MxR3hQfnlDJfwekQiaanm1ubOD231u73WBckQ/fsamwRLiE2GBz6D3a/xF1NgfiDLJjXBa1hYOYTtQ==}
 
   debug@2.6.9:
     resolution: {integrity: sha512-bC7ElrdJaJnPbAP+1EotYvqZsb3ecl5wi6Bfi6BJTUcNowp6cvspg0jXznRTKDjm/E7AdgFBVeAPVMNcKGsHMA==}
@@ -3528,6 +3518,9 @@ packages:
   es-toolkit@1.44.0:
     resolution: {integrity: sha512-6penXeZalaV88MM3cGkFZZfOoLGWshWWfdy0tWw/RlVVyhvMaWSBTOvXNeiW3e5FwdS5ePW0LGEu17zT139ktg==}
 
+  es-toolkit@1.45.1:
+    resolution: {integrity: sha512-/jhoOj/Fx+A+IIyDNOvO3TItGmlMKhtX8ISAHKE90c4b/k1tqaqEZ+uUqfpU8DMnW5cgNJv606zS55jGvza0Xw==}
+
   es5-ext@0.10.64:
     resolution: {integrity: sha512-p2snDhiLaXe6dahss1LddxqEm+SkuDvV8dnIQG0MWjyHpcMNfXKPE+/Cc0y+PhxJX3A4xGNeFCj5oc0BUh6deg==}
     engines: {node: '>=0.10'}
@@ -3684,8 +3677,8 @@ packages:
     resolution: {integrity: sha512-CGnyrvbhPlWYMngksqrSSUT1BAVP49dZocrHuK0SvtR0D5TMs5wP0o3j7jexDJW01KSadjBp1M/71o/KR3nD1w==}
     engines: {node: '>=18'}
 
-  fast-copy@4.0.4:
-    resolution: {integrity: sha512-eVAiWVNPSEGIzDl5yPuLrx8fNMogScXvD9xp1Kzd41FjRIz2I3sSIcxsFeM5EzFfHAfobdvs8ZySffUopljvIA==}
+  fast-copy@4.3.1:
+    resolution: {integrity: sha512-CRzQaTFOFUs6PuhsAq7lk9Zqr995soJBcFNZlfJS/5keTSl1awREV9dZW4xS2nX4pWbhIIR0xp4h+J8PQxCkvg==}
 
   fast-deep-equal@3.1.3:
     resolution: {integrity: sha512-f3qQ9oQy9j2AhBe/H9VC91wLmKBCCU/gDOnKNAYG5hswO7BLKj09Hc5HYNz9cGI++xlpDCIgDaitVs03ATR84Q==}
@@ -3804,8 +3797,8 @@ packages:
     resolution: {integrity: sha512-zJ2mQYM18rEFOudeV4GShTGIQ7RbzA7ozbU9I/XBpm7kqgMywgmylMwXHxZJmkVoYkna9d2pVXVXPdYTP9ej8Q==}
     engines: {node: '>= 0.6'}
 
-  fs-extra@11.3.6:
-    resolution: {integrity: sha512-w8ZNZr2mKIc7qeNaQ9AVPT1+iFaI+Avd4xudVOvdDJ8VytREi1Ft5Ih7hd9jjehod8vAM5GMsfQ/TpPf4EyoEA==}
+  fs-extra@11.4.1:
+    resolution: {integrity: sha512-KYAb4c9BJQI6QqGKthV68OHe0badztdXJWKo0WtBA9IuCFPTKvE5ZdUBglP833aMjhaSPNO4A5j/EkzZtGlKjA==}
     engines: {node: '>=14.14'}
 
   fs-extra@7.0.1:
@@ -4018,8 +4011,8 @@ packages:
     resolution: {integrity: sha512-im9DjEDQ55s9fL4EYzOAv0yMqmMBSZp6G0VvFyTMPKWxiSBHUj9NW/qqLmXUwXrrM7AvqSlTCfvqRb0cM8yYqw==}
     engines: {node: '>=0.10.0'}
 
-  idb-keyval@6.2.5:
-    resolution: {integrity: sha512-eKQkTnS0relYsSOYomx8ozIbmdsQCKUdhyuIaQ2DZgKuaxtyQQMkyD/wlnQN32pO3yutN1b1L8uqwcDKaJd7/Q==}
+  idb-keyval@6.3.0:
+    resolution: {integrity: sha512-um+2dgAWmYsu615EXpWVwSmapJhON0G43t3Ka/EVaohzPQXSMqKEqeDK/oIW3Ow+BXaF2PvSc+oBTFp793A5Ow==}
 
   idb@8.0.3:
     resolution: {integrity: sha512-LtwtVyVYO5BqRvcsKuB2iUMnHwPVByPCXFXOpuU96IZPPoPN6xjOGxZQ74pgSVVLQWtUOYgyeL4GE98BY5D3wg==}
@@ -4246,8 +4239,8 @@ packages:
   jose@5.10.0:
     resolution: {integrity: sha512-s+3Al/p9g32Iq+oqXxkW//7jk2Vig6FF1CFqzVXoTUXt2qz89YWbL+OwS17NFYEvxC35n0FKeGO2LGYSxeM2Gg==}
 
-  jose@6.2.3:
-    resolution: {integrity: sha512-YYVDInQKFJfR/xa3ojUTl8c2KoTwiL1R5Wg9YCydwH0x0B9grbzlg5HC7mMjCtUJjbQ/YnGEZIhI5tCgfTb4Hw==}
+  jose@6.2.14:
+    resolution: {integrity: sha512-3JasLuki1NRLQvY4wCoC37KZk4qxoBx2k2aFqLxT84IezqW0bkJKnNtxnZj/Fu1xsQivoc/lytxaRHJoGLjJ1A==}
 
   joycon@3.1.1:
     resolution: {integrity: sha512-34wB/Y7MW7bzjKRjUKTa46I2Z7eV62Rkhva+KkopW7Qvv/OSWBqvkSY7vusOPrNuZcUG3tApvdVgNB8POj3SPw==}
@@ -4410,8 +4403,8 @@ packages:
   lru-cache@10.4.3:
     resolution: {integrity: sha512-JNAzZcXrCt42VGLuYz0zfAzDfAvJWW6AfYlDBQyDV5DClI2m5sAmK+OIO7s59XfsRsWHp02jAJrRadPRGTt6SQ==}
 
-  lru-cache@11.3.2:
-    resolution: {integrity: sha512-wgWa6FWQ3QRRJbIjbsldRJZxdxYngT/dO0I5Ynmlnin8qy7tC6xYzbcJjtN4wHLXtkbVwHzk0C+OejVw1XM+DQ==}
+  lru-cache@11.5.3:
+    resolution: {integrity: sha512-U4N8FgzmWxc8k1VH8Kr6lQg18U7Fjvby6wXHVRX/ZZ7IwWbRMgrRbP0Wrb5q5NVinryp4SQampHKdvtecItxUg==}
     engines: {node: 20 || >=22}
 
   lru-cache@5.1.1:
@@ -4686,8 +4679,8 @@ packages:
   node-int64@0.4.0:
     resolution: {integrity: sha512-O5lz91xSOeoXP6DulyHfllpq+Eg00MWitZIbtPfoSEvqIHdl5gfcY6hYzDWnj0qD5tz52PI08u9qUvSVeUBeHw==}
 
-  node-mock-http@1.0.4:
-    resolution: {integrity: sha512-8DY+kFsDkNXy1sJglUfuODx1/opAGJGyrTuFqEoN90oRc2Vk0ZbD4K2qmKXBBEhZQzdKHIVfEJpDU8Ak2NJEvQ==}
+  node-mock-http@1.0.5:
+    resolution: {integrity: sha512-KQyt/wLjG3TAc7DOUhpqWzgd4ERxR80JOlTK5VE5R1S12IaPVN5qkj4klBce9HPG1Njuup4Sb5bljaT34lIyjw==}
 
   node-readfiles@0.2.0:
     resolution: {integrity: sha512-SU00ZarexNlE4Rjdm83vglt5Y9yiQ+XI1XpflWlb7q7UTN1JUItm69xMeiQCTxtTfnzt+83T8Cx+vI2ED++VDA==}
@@ -4799,17 +4792,11 @@ packages:
     resolution: {integrity: sha512-MVHddDVweXZF3awtlAS+6pgKLlm/JgxZ90+/NBurBoQctVOOB/zDdVjcyPzQ+0laDGbsWgrRkflI65sQeOgT9Q==}
     engines: {node: '>=8'}
 
-  openapi-fetch@0.15.2:
-    resolution: {integrity: sha512-rdYTzUmSsJevmNqg7fwUVGuKc2Gfb9h6ph74EVPkPfIGJaZTfqdIbJahtbJ3qg1LKinln30hqZniLnKpH0RJBg==}
-
   openapi-fetch@0.17.0:
     resolution: {integrity: sha512-PsbZR1wAPcG91eEthKhN+Zn92FMHxv+/faECIwjXdxfTODGSGegYv0sc1Olz+HYPvKOuoXfp+0pA2XVt2cI0Ig==}
 
   openapi-types@12.1.3:
     resolution: {integrity: sha512-N4YtSYJqghVu4iek2ZUvcN/0aqH1kRDuNqzcycDxhOUpg7GdvLa2F3DgS6yBNhInhv2r/6I0Flkn7CqL8+nIcw==}
-
-  openapi-typescript-helpers@0.0.15:
-    resolution: {integrity: sha512-opyTPaunsklCBpTK8JGef6mfPhLSnyy5a0IN9vKtx3+4aExf+KxEqYwIy3hqkedXIB97u357uLMJsOnm3GVjsw==}
 
   openapi-typescript-helpers@0.1.0:
     resolution: {integrity: sha512-OKTGPthhivLw/fHz6c3OPtg72vi86qaMlqbJuVJ23qOvQ+53uw1n7HdmkJFibloF7QEjDrDkzJiOJuockM/ljw==}
@@ -4950,6 +4937,10 @@ packages:
     resolution: {integrity: sha512-JU3teHTNjmE2VCGFzuY8EXzCDVwEqB2a8fsIvwaStHhAWJEeVd1o1QD80CU6+ZdEXXSLbSsuLwJjkCBWqRQUVA==}
     engines: {node: '>=8.6'}
 
+  picomatch@2.3.2:
+    resolution: {integrity: sha512-V7+vQEJ06Z+c5tSye8S+nHUfI51xoXIXjHQ99cQtKUkQqqO1kO/KCJUfZXuB47h/YBlDhah2H3hdUGXn8ie0oA==}
+    engines: {node: '>=8.6'}
+
   picomatch@4.0.3:
     resolution: {integrity: sha512-5gTmgEY/sqK6gFXLIsQNH19lWb4ebPDLA4SdLP7dsWkIXHWlG66oPuVvXSGFPppYZz8ZDZq0dYYrbHfBCVUb1Q==}
     engines: {node: '>=12'}
@@ -4982,8 +4973,8 @@ packages:
   pino-abstract-transport@3.0.0:
     resolution: {integrity: sha512-wlfUczU+n7Hy/Ha5j9a/gZNy7We5+cXp8YL+X+PG8S0KXxw7n/JXA3c46Y0zQznIJ83URJiwy7Lh56WLokNuxg==}
 
-  pino-pretty@13.1.3:
-    resolution: {integrity: sha512-ttXRkkOz6WWC95KeY9+xxWL6AtImwbyMHrL1mSwqwW9u+vLp/WIElvHvCSDg0xO/Dzrggz1zv3rN5ovTRVowKg==}
+  pino-pretty@13.2.0:
+    resolution: {integrity: sha512-jjghD1ML+Di/WxjJDz6j6Y4FT7hIXOlb8h27AyJ+ohtAXJXH4PS/xkv7si+RCCIW59HMgZsMKTDgzdr0RhuRrg==}
     hasBin: true
 
   pino-std-serializers@7.1.0:
@@ -4993,8 +4984,8 @@ packages:
     resolution: {integrity: sha512-eI9pKwWEix40kfvSzqEP6ldqOoBIN7dwD/o91TY5z8vQI12sAffpR/pOqAD1IVVwIVHDpHjkq0joBPdJD0rafA==}
     hasBin: true
 
-  pino@10.3.1:
-    resolution: {integrity: sha512-r34yH/GlQpKZbU1BvFFqOjhISRo1MNx1tWYsYvmj6KIRHSPMT2+yHOEb1SG6NMvRoHRF0a07kCOox/9yakl1vg==}
+  pino@10.4.0:
+    resolution: {integrity: sha512-bk1ZMTwG/Vymx+zPoa28MhNzucFvXJWp3csrSuxuHPSMeUettaCoQ5Jvg07mtC4JGNpcfTwz41oVCnNgBK9+vA==}
     hasBin: true
 
   pirates@4.0.7:
@@ -5081,8 +5072,8 @@ packages:
     resolution: {integrity: sha512-Pdlw/oPxN+aXdmM9R00JVC9WVFoCLTKJvDVLgmJ+qAffBMxsV85l/Lu7sNx4zSzPyoL2euImuEwHhOXdEgNFZQ==}
     engines: {node: ^14.15.0 || ^16.10.0 || >=18.0.0}
 
-  process-warning@5.0.0:
-    resolution: {integrity: sha512-a39t9ApHNx2L4+HBnQKqxxHNs1r7KF+Intd8Q/g1bUh6q0WIp9voPXJ/x0j+ZL45KF1pJd9+q2jLIRMfvEshkA==}
+  process-warning@5.1.1:
+    resolution: {integrity: sha512-oCkNVj4OKnKEcocVBcDfiIugN1/cE6rgfT3nCtzeqZPA8+rIxMaQ0xXzIkGP8Gj2qUaP1UR7uhJ1VD8lUCpzCg==}
 
   promise@8.3.0:
     resolution: {integrity: sha512-rZPNPKTOYVNEEKFaq1HqTgOwZD+4/YHS5ukLzQCypkj+OkYx7iv0mA91lJlpPPZ8vMau3IIGj5Qlwrx+8iiSmg==}
@@ -5224,8 +5215,8 @@ packages:
     resolution: {integrity: sha512-GDhwkLfywWL2s6vEjyhri+eXmfH6j1L7JE27WhqLeYzoh/A3DBaYGEj2H/HFZCn/kMfim73FXxEJTw06WtxQwg==}
     engines: {node: '>= 14.18.0'}
 
-  readdirp@5.0.0:
-    resolution: {integrity: sha512-9u/XQ1pvrQtYyMpZe7DXKv2p5CNvyVwzUB6uhLAnQwHMSgKMBR62lc7AHljaeteeHXn11XTAaLLUVZYVZyuRBQ==}
+  readdirp@5.1.1:
+    resolution: {integrity: sha512-Kko+Y5XQ6fM+Ce3dq3m9YGxnacYZYl9cA1wZjaF3Vbry2L3i1qVg8+CAgNPsXRArPMUMCaOR7oa9Nqntc43JKA==}
     engines: {node: '>= 20.19.0'}
 
   real-require@0.2.0:
@@ -5337,8 +5328,8 @@ packages:
   scheduler@0.27.0:
     resolution: {integrity: sha512-eNv+WrVbKu1f3vbYJT/xtiF5syA5HPIMtf9IgY/nKg0sWqzAUEvqY/xm7OcZc/qafLx/iO9FgOmeSAp4v5ti/Q==}
 
-  secure-json-parse@4.1.0:
-    resolution: {integrity: sha512-l4KnYfEyqYJxDwlNVyRfO2E4NTHfMKAWdUuA8J0yve2Dz/E/PdBepY03RvyJpssIpRFwJoCD55wA+mEDs6ByWA==}
+  secure-json-parse@4.1.1:
+    resolution: {integrity: sha512-lnd81MQEZKjhW/Gd2TQqdd4XP6QYNdDW/EP+I7nTrFHP9y2LmaGPIHk9xsnzcOiEr1c39c/e84xFgGviQKBTRw==}
 
   semver@5.7.2:
     resolution: {integrity: sha512-cBznnQ9KjJqU67B52RMC65CMarK2600WFnbkcaiwWq3xy/5haFJlshgnpjovMVJ+Hff49d8GEn0b87C5pDQ10g==}
@@ -5465,6 +5456,9 @@ packages:
 
   sonic-boom@4.2.1:
     resolution: {integrity: sha512-w6AxtubXa2wTXAUsZMMWERrsIRAdrK0Sc+FUytWvYAhBJLyuI4llrMIC1DtlNSdI99EI86KZum2MMq3EAZlF9Q==}
+
+  sonic-boom@5.0.2:
+    resolution: {integrity: sha512-/JEruzo6yhNVhsLblTRchgTQHIt7SsdJP0YyrfWaNKjIOQDfrdZv9gwYraYCAsmKV39/LAdV31FLL5NCDpoL/A==}
 
   source-map-js@1.2.1:
     resolution: {integrity: sha512-UXWMKhLOwVKb728IUtQPXxfYU+usdybtUrK/8uGE8CQMvrhOpwvzDBwj0QhSL7MQc7vIsISBG8VQ8+IDQxpfQA==}
@@ -5799,8 +5793,8 @@ packages:
     resolution: {integrity: sha512-Ne2YiiGN8bmrmJJEuTWTLJR32nh/JdL1+PSicowtNb0WFpn59GK8/lfD61bVtzguz7b3PBt74nxpv/Pw5po5Rg==}
     engines: {node: '>=8'}
 
-  type-fest@5.7.0:
-    resolution: {integrity: sha512-1URUxUqfHFM1c+zfSPsa3gnkO7Aq21qyH75SIduNYz4SzY964rn1X2vCMQaHSHhktiw+0kPa2iyb6PUpXqB6Vg==}
+  type-fest@5.10.0:
+    resolution: {integrity: sha512-NoSdpq/WEiAg5sjmBkmV/hfxv6HJH4NqPNrqjtSO5CwRmpsDfaf4begxW34KdJykH/l1yHtwBWQkCRdoXO8mPA==}
     engines: {node: '>=20'}
 
   type-is@1.6.18:
@@ -5837,6 +5831,9 @@ packages:
   ufo@1.6.3:
     resolution: {integrity: sha512-yDJTmhydvl5lJzBmy/hyOAA0d+aqCBuwl818haVdYCRrWV84o7YyeVm4QlVHStqNrrJSTb6jKuFAVqAFsr+K3Q==}
 
+  ufo@1.6.4:
+    resolution: {integrity: sha512-JFNbkD1Svwe0KvGi8GOeLcP4kAWQ609twvCdcHxq1oSL8svv39ZuSvajcD8B+5D0eL4+s1Is2D/O6KN3qcTeRA==}
+
   uint8arrays@3.1.1:
     resolution: {integrity: sha512-+QJa8QRnbdXVpHYjLoTpJIdCTiw9Ir62nocClWuXIq2JIh4Uta0cQsTSpFL678p2CN8B+XSApwcU+pQEqVpKWg==}
 
@@ -5869,8 +5866,8 @@ packages:
     resolution: {integrity: sha512-pjy2bYhSsufwWlKwPc+l3cN7+wuJlK6uz0YdJEOlQDbl6jo/YlPi4mb8agUkVC8BF7V8NuzeyPNqRksA3hztKQ==}
     engines: {node: '>= 0.8'}
 
-  unstorage@1.17.5:
-    resolution: {integrity: sha512-0i3iqvRfx29hkNntHyQvJTpf5W9dQ9ZadSoRU8+xVlhVtT7jAX57fazYO9EHvcRCfBCyi5YRya7XCDOsbTgkPg==}
+  unstorage@1.17.6:
+    resolution: {integrity: sha512-gjKtcmn/KwZuJZO9o2sc0esAQnhmTw0LviDHwevTXbJMYs0dRTp8ZEEWXHU0vTpzbN3cA0yxlTeyXssMp3zDqw==}
     peerDependencies:
       '@azure/app-configuration': ^1.8.0
       '@azure/cosmos': ^4.2.0
@@ -5880,7 +5877,7 @@ packages:
       '@azure/storage-blob': ^12.26.0
       '@capacitor/preferences': ^6 || ^7 || ^8
       '@deno/kv': '>=0.9.0'
-      '@netlify/blobs': ^6.5.0 || ^7.0.0 || ^8.1.0 || ^9.0.0 || ^10.0.0
+      '@netlify/blobs': ^6.5.0 || ^7.0.0 || ^8.1.0 || ^9.0.0 || ^10.0.0 || ^11.0.0
       '@planetscale/database': ^1.19.0
       '@upstash/redis': ^1.34.3
       '@vercel/blob': '>=0.27.1'
@@ -5949,10 +5946,6 @@ packages:
 
   uuid@11.1.1:
     resolution: {integrity: sha512-vIYxrBCC/N/K+Js3qSN88go7kIfNPssr/hHCesKCQNAjmgvYS2oqr69kIufEG+O4+PfezOH4EbIeHCfFov8ZgQ==}
-    hasBin: true
-
-  uuid@14.0.0:
-    resolution: {integrity: sha512-Qo+uWgilfSmAhXCMav1uYFynlQO7fMFiMVZsQqZRMIXp0O7rR7qjkj+cPvBHLgBqi960QCoo/PH2/6ZtVqKvrg==}
     hasBin: true
 
   uuid@14.0.3:
@@ -6151,6 +6144,18 @@ packages:
 
   ws@7.5.11:
     resolution: {integrity: sha512-zS54Oen9bITtp7kp2XM3AydrCIq1D+HwJOuH+c+e4LfpL/lotP5osijd+UoMnxwAam1GN8R4KtLAyIrIcBNpiA==}
+    engines: {node: '>=8.3.0'}
+    peerDependencies:
+      bufferutil: ^4.0.1
+      utf-8-validate: ^5.0.2
+    peerDependenciesMeta:
+      bufferutil:
+        optional: true
+      utf-8-validate:
+        optional: true
+
+  ws@7.5.13:
+    resolution: {integrity: sha512-rsKI6xDBFVf4r/x8XyChGK04QR/XHroxs/jUcoWvtEZM8TPU/X/uIY9B1CsSzYws9ZJb/6bbBu7dPhFW00CAoA==}
     engines: {node: '>=8.3.0'}
     peerDependencies:
       bufferutil: ^4.0.1
@@ -6413,72 +6418,60 @@ snapshots:
 
   '@biomejs/wasm-nodejs@2.3.14': {}
 
-  '@canton-network/core-acs-reader@1.16.0':
+  '@canton-network/core-acs-reader@1.22.0':
     dependencies:
-      '@canton-network/core-ledger-client-types': 1.8.0
-      '@canton-network/core-provider-ledger': 1.8.0
+      '@canton-network/core-ledger-client-types': 1.14.0
+      '@canton-network/core-provider-ledger': 1.14.0
       '@canton-network/core-types': 1.14.0
-      bignumber.js: 9.3.1
-      dayjs: 1.11.21
-      openapi-fetch: 0.15.2
-      pino: 10.3.1
+      dayjs: 1.11.23
+      openapi-fetch: 0.17.0
+      pino: 10.4.0
       typescript-lru-cache: 2.0.0
     transitivePeerDependencies:
       - supports-color
 
-  '@canton-network/core-amulet-service@1.8.0':
+  '@canton-network/core-amulet-service@1.14.0':
     dependencies:
-      '@canton-network/core-ledger-client': 1.8.0
-      '@canton-network/core-ledger-client-types': 1.8.0
-      '@canton-network/core-splice-client': 1.8.0
-      '@canton-network/core-token-standard-service': 1.8.0
+      '@canton-network/core-ledger-client': 1.14.0
+      '@canton-network/core-ledger-client-types': 1.14.0
+      '@canton-network/core-splice-client': 1.14.0
+      '@canton-network/core-token-standard-service': 1.14.0
       '@canton-network/core-types': 1.14.0
-      '@canton-network/core-wallet-auth': 1.8.0
-      bignumber.js: 10.0.2
-      dayjs: 1.11.21
+      '@canton-network/core-wallet-auth': 1.14.0
+      dayjs: 1.11.23
       decimal.js: 10.6.0
       openapi-fetch: 0.17.0
-      pino: 10.3.1
+      pino: 10.4.0
     transitivePeerDependencies:
       - supports-color
 
-  '@canton-network/core-asyncapi-client@1.8.0':
+  '@canton-network/core-asyncapi-client@1.14.0':
     dependencies:
-      '@canton-network/core-ledger-client-types': 1.8.0
+      '@canton-network/core-ledger-client-types': 1.14.0
       '@canton-network/core-types': 1.14.0
-      '@canton-network/core-wallet-auth': 1.8.0
-      bignumber.js: 10.0.2
-      pino: 10.3.1
+      '@canton-network/core-wallet-auth': 1.14.0
+      pino: 10.4.0
     transitivePeerDependencies:
       - supports-color
 
   '@canton-network/core-ledger-client-types@1.14.0':
     dependencies:
       '@canton-network/core-types': 1.14.0
-      dayjs: 1.11.21
+      dayjs: 1.11.23
       openapi-fetch: 0.17.0
-      pino: 10.3.1
+      pino: 10.4.0
 
-  '@canton-network/core-ledger-client-types@1.8.0':
+  '@canton-network/core-ledger-client@1.14.0':
     dependencies:
+      '@canton-network/core-ledger-client-types': 1.14.0
+      '@canton-network/core-ledger-proto': 1.13.0
+      '@canton-network/core-splice-client': 1.14.0
+      '@canton-network/core-token-standard': 1.14.0
       '@canton-network/core-types': 1.14.0
-      bignumber.js: 10.0.2
-      dayjs: 1.11.21
+      '@canton-network/core-wallet-auth': 1.14.0
+      dayjs: 1.11.23
       openapi-fetch: 0.17.0
-      pino: 10.3.1
-
-  '@canton-network/core-ledger-client@1.8.0':
-    dependencies:
-      '@canton-network/core-ledger-client-types': 1.8.0
-      '@canton-network/core-ledger-proto': 1.7.0
-      '@canton-network/core-splice-client': 1.8.0
-      '@canton-network/core-token-standard': 1.8.0
-      '@canton-network/core-types': 1.14.0
-      '@canton-network/core-wallet-auth': 1.8.0
-      bignumber.js: 10.0.2
-      dayjs: 1.11.21
-      openapi-fetch: 0.17.0
-      pino: 10.3.1
+      pino: 10.4.0
       typescript-lru-cache: 2.0.0
     transitivePeerDependencies:
       - supports-color
@@ -6489,11 +6482,6 @@ snapshots:
       '@protobuf-ts/runtime-rpc': 2.11.1
 
   '@canton-network/core-ledger-proto@1.13.0':
-    dependencies:
-      '@protobuf-ts/runtime': 2.11.1
-      '@protobuf-ts/runtime-rpc': 2.11.1
-
-  '@canton-network/core-ledger-proto@1.7.0':
     dependencies:
       '@protobuf-ts/runtime': 2.11.1
       '@protobuf-ts/runtime-rpc': 2.11.1
@@ -6517,25 +6505,14 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  '@canton-network/core-provider-dapp@1.8.0':
+  '@canton-network/core-provider-ledger@1.14.0':
     dependencies:
-      '@canton-network/core-ledger-client-types': 1.8.0
-      '@canton-network/core-rpc-transport': 1.14.0
+      '@canton-network/core-ledger-client': 1.14.0
+      '@canton-network/core-ledger-client-types': 1.14.0
       '@canton-network/core-splice-provider': 1.14.0
       '@canton-network/core-types': 1.14.0
-      '@canton-network/core-wallet-dapp-remote-rpc-client': 1.14.0
-      '@canton-network/core-wallet-dapp-rpc-client': 1.14.0
-    transitivePeerDependencies:
-      - supports-color
-
-  '@canton-network/core-provider-ledger@1.8.0':
-    dependencies:
-      '@canton-network/core-ledger-client': 1.8.0
-      '@canton-network/core-ledger-client-types': 1.8.0
-      '@canton-network/core-splice-provider': 1.14.0
-      '@canton-network/core-types': 1.14.0
-      '@canton-network/core-wallet-auth': 1.8.0
-      pino: 10.3.1
+      '@canton-network/core-wallet-auth': 1.14.0
+      pino: 10.4.0
     transitivePeerDependencies:
       - supports-color
 
@@ -6557,7 +6534,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  '@canton-network/core-rpc-errors@1.14.0':
+  '@canton-network/core-rpc-errors@1.15.0':
     dependencies:
       '@metamask/rpc-errors': 7.0.3
     transitivePeerDependencies:
@@ -6581,31 +6558,31 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  '@canton-network/core-rpc-transport@1.15.0':
+  '@canton-network/core-rpc-transport@1.16.0':
     dependencies:
-      '@canton-network/core-rpc-errors': 1.14.0
-      '@canton-network/core-types': 2.1.0
+      '@canton-network/core-rpc-errors': 1.15.0
+      '@canton-network/core-types': 2.2.0
     transitivePeerDependencies:
       - supports-color
 
-  '@canton-network/core-signing-lib@1.8.0':
+  '@canton-network/core-signing-lib@1.14.0':
     dependencies:
-      '@canton-network/core-wallet-auth': 1.8.0
-      fs-extra: 11.3.6
+      '@canton-network/core-wallet-auth': 1.14.0
+      fs-extra: 11.4.1
       lodash: 4.18.1
       tweetnacl: 1.0.3
       tweetnacl-util: 0.15.1
-      zod: 4.4.3
+      zod: 4.6.7
     transitivePeerDependencies:
       - supports-color
 
-  '@canton-network/core-splice-client@1.8.0':
+  '@canton-network/core-splice-client@1.14.0':
     dependencies:
       '@canton-network/core-types': 1.14.0
-      '@canton-network/core-wallet-auth': 1.8.0
+      '@canton-network/core-wallet-auth': 1.14.0
       openapi-fetch: 0.17.0
       uuid: 14.0.3
-      zod: 4.4.3
+      zod: 4.6.7
     transitivePeerDependencies:
       - supports-color
 
@@ -6632,88 +6609,82 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  '@canton-network/core-splice-provider@1.15.0':
+  '@canton-network/core-splice-provider@1.16.0':
     dependencies:
-      '@canton-network/core-rpc-transport': 1.15.0
-      '@canton-network/core-types': 2.1.0
-      '@canton-network/core-wallet-dapp-remote-rpc-client': 1.15.0
-      '@canton-network/core-wallet-dapp-rpc-client': 1.15.0
-    transitivePeerDependencies:
-      - supports-color
+      '@canton-network/core-types': 2.2.0
 
-  '@canton-network/core-splice-provider@1.8.0':
+  '@canton-network/core-token-standard-service@1.14.0':
     dependencies:
-      '@canton-network/core-rpc-transport': 1.14.0
+      '@canton-network/core-acs-reader': 1.22.0
+      '@canton-network/core-ledger-client-types': 1.14.0
+      '@canton-network/core-provider-ledger': 1.14.0
+      '@canton-network/core-splice-client': 1.14.0
+      '@canton-network/core-token-standard': 1.14.0
+      '@canton-network/core-token-standard-v2': 1.2.0
+      '@canton-network/core-tx-parser': 1.14.0
       '@canton-network/core-types': 1.14.0
-      '@canton-network/core-wallet-dapp-remote-rpc-client': 1.14.0
-      '@canton-network/core-wallet-dapp-rpc-client': 1.14.0
-    transitivePeerDependencies:
-      - supports-color
-
-  '@canton-network/core-token-standard-service@1.8.0':
-    dependencies:
-      '@canton-network/core-acs-reader': 1.16.0
-      '@canton-network/core-ledger-client-types': 1.8.0
-      '@canton-network/core-provider-ledger': 1.8.0
-      '@canton-network/core-splice-client': 1.8.0
-      '@canton-network/core-token-standard': 1.8.0
-      '@canton-network/core-tx-parser': 1.8.0
-      '@canton-network/core-types': 1.14.0
-      '@canton-network/core-wallet-auth': 1.8.0
-      dayjs: 1.11.21
+      '@canton-network/core-wallet-auth': 1.14.0
+      dayjs: 1.11.23
       decimal.js: 10.6.0
       openapi-fetch: 0.17.0
-      pino: 10.3.1
+      pino: 10.4.0
       typescript-lru-cache: 2.0.0
     transitivePeerDependencies:
       - supports-color
 
-  '@canton-network/core-token-standard@1.8.0':
+  '@canton-network/core-token-standard-v2@1.2.0':
     dependencies:
       '@canton-network/core-types': 1.14.0
-      '@canton-network/core-wallet-auth': 1.8.0
-      '@daml/types': 3.6.2
+      '@canton-network/core-wallet-auth': 1.14.0
+      '@daml/types': 3.7.0
       '@mojotech/json-type-validation': 3.1.0
       lodash: 4.18.1
       openapi-fetch: 0.17.0
       uuid: 14.0.3
-      zod: 4.4.3
+      zod: 4.6.7
     transitivePeerDependencies:
       - supports-color
 
-  '@canton-network/core-tx-parser@1.8.0':
+  '@canton-network/core-token-standard@1.14.0':
     dependencies:
-      '@canton-network/core-ledger-client-types': 1.8.0
-      '@canton-network/core-ledger-proto': 1.7.0
-      '@canton-network/core-provider-ledger': 1.8.0
-      '@canton-network/core-splice-client': 1.8.0
-      '@canton-network/core-token-standard': 1.8.0
       '@canton-network/core-types': 1.14.0
-      '@canton-network/core-wallet-auth': 1.8.0
-      bignumber.js: 10.0.2
-      dayjs: 1.11.21
+      '@canton-network/core-wallet-auth': 1.14.0
+      '@daml/types': 3.7.0
+      '@mojotech/json-type-validation': 3.1.0
+      lodash: 4.18.1
       openapi-fetch: 0.17.0
-      pino: 10.3.1
+      uuid: 14.0.3
+      zod: 4.6.7
+    transitivePeerDependencies:
+      - supports-color
+
+  '@canton-network/core-tx-parser@1.14.0':
+    dependencies:
+      '@canton-network/core-ledger-client-types': 1.14.0
+      '@canton-network/core-ledger-proto': 1.13.0
+      '@canton-network/core-provider-ledger': 1.14.0
+      '@canton-network/core-splice-client': 1.14.0
+      '@canton-network/core-token-standard': 1.14.0
+      '@canton-network/core-types': 1.14.0
+      '@canton-network/core-wallet-auth': 1.14.0
+      bignumber.js: 10.0.2
+      dayjs: 1.11.23
+      openapi-fetch: 0.17.0
+      pino: 10.4.0
     transitivePeerDependencies:
       - supports-color
 
   '@canton-network/core-tx-visualizer@0.22.2':
     dependencies:
       '@canton-network/core-ledger-proto': 0.22.2
-      '@types/node': 25.9.5
-      camelcase-keys: 10.0.2
+      '@types/node': 25.9.9
+      camelcase-keys: 10.0.3
 
   '@canton-network/core-tx-visualizer@1.13.0':
     dependencies:
       '@canton-network/core-ledger-proto': 1.13.0
-      '@types/node': 25.9.5
-      camelcase-keys: 10.0.2
-
-  '@canton-network/core-tx-visualizer@1.7.0':
-    dependencies:
-      '@canton-network/core-ledger-proto': 1.7.0
-      '@types/node': 25.9.5
-      camelcase-keys: 10.0.2
+      '@types/node': 25.9.9
+      camelcase-keys: 10.0.3
 
   '@canton-network/core-types@0.22.1':
     dependencies:
@@ -6731,17 +6702,17 @@ snapshots:
       uuid: 14.0.3
       zod: 4.6.7
 
-  '@canton-network/core-types@2.1.0':
+  '@canton-network/core-types@2.2.0':
     dependencies:
-      '@daml/types': 3.6.2
+      '@daml/types': 3.7.0
       zod: 4.6.7
 
   '@canton-network/core-wallet-auth@0.23.1':
     dependencies:
       '@canton-network/core-rpc-errors': 0.18.2
       '@canton-network/core-types': 0.22.1
-      jose: 6.2.3
-      zod: 4.4.3
+      jose: 6.2.14
+      zod: 4.6.7
     transitivePeerDependencies:
       - supports-color
 
@@ -6750,16 +6721,7 @@ snapshots:
       '@canton-network/core-rpc-errors': 1.13.0
       '@canton-network/core-types': 1.14.0
       jose: 5.10.0
-      zod: 4.4.3
-    transitivePeerDependencies:
-      - supports-color
-
-  '@canton-network/core-wallet-auth@1.8.0':
-    dependencies:
-      '@canton-network/core-rpc-errors': 1.13.0
-      '@canton-network/core-types': 1.14.0
-      jose: 6.2.3
-      zod: 4.4.3
+      zod: 4.6.7
     transitivePeerDependencies:
       - supports-color
 
@@ -6782,13 +6744,6 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  '@canton-network/core-wallet-dapp-remote-rpc-client@1.15.0':
-    dependencies:
-      '@canton-network/core-rpc-transport': 1.15.0
-      '@canton-network/core-types': 2.1.0
-    transitivePeerDependencies:
-      - supports-color
-
   '@canton-network/core-wallet-dapp-rpc-client@0.27.1':
     dependencies:
       '@canton-network/core-rpc-transport': 0.8.1
@@ -6808,10 +6763,10 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  '@canton-network/core-wallet-dapp-rpc-client@1.15.0':
+  '@canton-network/core-wallet-dapp-rpc-client@1.16.0':
     dependencies:
-      '@canton-network/core-rpc-transport': 1.15.0
-      '@canton-network/core-types': 2.1.0
+      '@canton-network/core-rpc-transport': 1.16.0
+      '@canton-network/core-types': 2.2.0
     transitivePeerDependencies:
       - supports-color
 
@@ -6835,25 +6790,25 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  '@canton-network/core-wallet-discovery@1.15.0':
+  '@canton-network/core-wallet-discovery@1.16.0':
     dependencies:
-      '@canton-network/core-splice-provider': 1.15.0
-      '@canton-network/core-types': 2.1.0
-      '@canton-network/core-wallet-dapp-rpc-client': 1.15.0
+      '@canton-network/core-splice-provider': 1.16.0
+      '@canton-network/core-types': 2.2.0
+      '@canton-network/core-wallet-dapp-rpc-client': 1.16.0
     transitivePeerDependencies:
       - supports-color
 
   '@canton-network/core-wallet-store@0.26.1':
     dependencies:
       '@canton-network/core-wallet-auth': 0.23.1
-      zod: 4.4.3
+      zod: 4.6.7
     transitivePeerDependencies:
       - supports-color
 
   '@canton-network/core-wallet-store@1.15.0':
     dependencies:
       '@canton-network/core-wallet-auth': 1.14.0
-      zod: 4.4.3
+      zod: 4.6.7
     transitivePeerDependencies:
       - supports-color
 
@@ -6909,7 +6864,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  '@canton-network/dapp-sdk@1.8.0(@walletconnect/sign-client@2.23.9(typescript@5.9.3)(zod@4.6.7))(@walletconnect/types@2.23.9)':
+  '@canton-network/dapp-sdk@1.8.0(@walletconnect/sign-client@2.26.0(typescript@5.9.3)(zod@4.6.7))(@walletconnect/types@2.26.0)':
     dependencies:
       '@canton-network/core-provider-dapp': 1.14.0
       '@canton-network/core-rpc-errors': 1.13.0
@@ -6923,39 +6878,40 @@ snapshots:
       qrcode: 1.5.4
       uuid: 14.0.3
     optionalDependencies:
-      '@walletconnect/sign-client': 2.23.9(typescript@5.9.3)(zod@4.6.7)
-      '@walletconnect/types': 2.23.9
+      '@walletconnect/sign-client': 2.26.0(typescript@5.9.3)(zod@4.6.7)
+      '@walletconnect/types': 2.26.0
     transitivePeerDependencies:
       - supports-color
 
-  '@canton-network/wallet-sdk@1.4.0':
+  '@canton-network/wallet-sdk@1.6.0':
     dependencies:
-      '@canton-network/core-acs-reader': 1.16.0
-      '@canton-network/core-amulet-service': 1.8.0
-      '@canton-network/core-asyncapi-client': 1.8.0
-      '@canton-network/core-ledger-client-types': 1.8.0
-      '@canton-network/core-ledger-proto': 1.7.0
-      '@canton-network/core-provider-dapp': 1.8.0
-      '@canton-network/core-provider-ledger': 1.8.0
-      '@canton-network/core-signing-lib': 1.8.0
-      '@canton-network/core-splice-client': 1.8.0
-      '@canton-network/core-splice-provider': 1.8.0
-      '@canton-network/core-token-standard': 1.8.0
-      '@canton-network/core-token-standard-service': 1.8.0
-      '@canton-network/core-tx-parser': 1.8.0
-      '@canton-network/core-tx-visualizer': 1.7.0
+      '@canton-network/core-acs-reader': 1.22.0
+      '@canton-network/core-amulet-service': 1.14.0
+      '@canton-network/core-asyncapi-client': 1.14.0
+      '@canton-network/core-ledger-client-types': 1.14.0
+      '@canton-network/core-ledger-proto': 1.13.0
+      '@canton-network/core-provider-dapp': 1.14.0
+      '@canton-network/core-provider-ledger': 1.14.0
+      '@canton-network/core-signing-lib': 1.14.0
+      '@canton-network/core-splice-client': 1.14.0
+      '@canton-network/core-splice-provider': 1.14.0
+      '@canton-network/core-token-standard': 1.14.0
+      '@canton-network/core-token-standard-service': 1.14.0
+      '@canton-network/core-token-standard-v2': 1.2.0
+      '@canton-network/core-tx-parser': 1.14.0
+      '@canton-network/core-tx-visualizer': 1.13.0
       '@canton-network/core-types': 1.14.0
-      '@canton-network/core-wallet-auth': 1.8.0
+      '@canton-network/core-wallet-auth': 1.14.0
       decimal.js: 10.6.0
-      jose: 6.2.3
-      pino: 10.3.1
-      pino-pretty: 13.1.3
+      jose: 5.10.0
+      pino: 10.4.0
+      pino-pretty: 13.2.0
       typescript-lru-cache: 2.0.0
-      uuid: 14.0.0
+      uuid: 14.0.3
     transitivePeerDependencies:
       - supports-color
 
-  '@cantor8/wallet-connect-sdk@0.4.0': {}
+  '@cantor8/wallet-connect-sdk@0.9.0': {}
 
   '@changesets/apply-release-plan@7.0.14':
     dependencies:
@@ -7264,6 +7220,12 @@ snapshots:
     dependencies:
       '@mojotech/json-type-validation': 3.1.0
       '@types/lodash': 4.17.24
+      lodash: 4.18.1
+
+  '@daml/types@3.7.0':
+    dependencies:
+      '@mojotech/json-type-validation': 3.1.0
+      '@types/lodash': 4.17.27
       lodash: 4.18.1
 
   '@esbuild/aix-ppc64@0.21.5':
@@ -7655,12 +7617,12 @@ snapshots:
     dependencies:
       '@lit-labs/ssr-dom-shim': 1.6.0
 
-  '@lithiumdigital/cauri-dapp-sdk@0.2.0(@canton-network/core-splice-provider@1.15.0)(@canton-network/core-types@1.14.0)(@canton-network/core-wallet-dapp-rpc-client@1.15.0)(@canton-network/core-wallet-discovery@1.15.0)':
+  '@lithiumdigital/cauri-dapp-sdk@0.2.0(@canton-network/core-splice-provider@1.16.0)(@canton-network/core-types@1.14.0)(@canton-network/core-wallet-dapp-rpc-client@1.16.0)(@canton-network/core-wallet-discovery@1.16.0)':
     dependencies:
-      '@canton-network/core-splice-provider': 1.15.0
+      '@canton-network/core-splice-provider': 1.16.0
       '@canton-network/core-types': 1.14.0
-      '@canton-network/core-wallet-dapp-rpc-client': 1.15.0
-      '@canton-network/core-wallet-discovery': 1.15.0
+      '@canton-network/core-wallet-dapp-rpc-client': 1.16.0
+      '@canton-network/core-wallet-discovery': 1.16.0
 
   '@manypkg/find-root@1.1.0':
     dependencies:
@@ -7696,7 +7658,7 @@ snapshots:
       '@noble/hashes': 1.8.0
       '@scure/base': 1.2.6
       '@types/debug': 4.1.13
-      '@types/lodash': 4.17.24
+      '@types/lodash': 4.17.27
       debug: 4.4.3
       lodash: 4.18.1
       pony-cause: 2.1.11
@@ -8142,6 +8104,8 @@ snapshots:
 
   '@types/lodash@4.17.24': {}
 
+  '@types/lodash@4.17.27': {}
+
   '@types/mime@1.3.5': {}
 
   '@types/ms@2.1.0': {}
@@ -8152,7 +8116,7 @@ snapshots:
     dependencies:
       undici-types: 6.21.0
 
-  '@types/node@25.9.5':
+  '@types/node@25.9.9':
     dependencies:
       undici-types: 7.24.6
 
@@ -8301,7 +8265,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  '@vitejs/plugin-react@4.7.0(vite@5.4.21(@types/node@25.9.5)(terser@5.49.0))':
+  '@vitejs/plugin-react@4.7.0(vite@5.4.21(@types/node@25.9.9)(terser@5.49.0))':
     dependencies:
       '@babel/core': 7.28.6
       '@babel/plugin-transform-react-jsx-self': 7.27.1(@babel/core@7.28.6)
@@ -8309,7 +8273,7 @@ snapshots:
       '@rolldown/pluginutils': 1.0.0-beta.27
       '@types/babel__core': 7.20.5
       react-refresh: 0.17.0
-      vite: 5.4.21(@types/node@25.9.5)(terser@5.49.0)
+      vite: 5.4.21(@types/node@25.9.9)(terser@5.49.0)
     transitivePeerDependencies:
       - supports-color
 
@@ -8344,7 +8308,7 @@ snapshots:
       pathe: 1.1.2
       picocolors: 1.1.1
       sirv: 2.0.4
-      vitest: 1.6.1(@types/node@20.19.30)(@vitest/ui@1.6.1)(happy-dom@14.12.3)(jsdom@24.1.3)(terser@5.49.0)
+      vitest: 1.6.1(@types/node@25.9.9)(@vitest/ui@1.6.1)(happy-dom@14.12.3)(jsdom@24.1.3)(terser@5.49.0)
 
   '@vitest/utils@1.6.1':
     dependencies:
@@ -8418,7 +8382,7 @@ snapshots:
     optionalDependencies:
       '@vue/server-renderer': 3.5.38(vue@3.5.38(typescript@5.9.3))
 
-  '@walletconnect/core@2.23.9(typescript@5.9.3)(zod@4.6.7)':
+  '@walletconnect/core@2.26.0(typescript@5.9.3)(zod@4.6.7)':
     dependencies:
       '@walletconnect/heartbeat': 1.2.2
       '@walletconnect/jsonrpc-provider': 1.0.14
@@ -8431,10 +8395,10 @@ snapshots:
       '@walletconnect/relay-auth': 1.1.0
       '@walletconnect/safe-json': 1.0.2
       '@walletconnect/time': 1.0.2
-      '@walletconnect/types': 2.23.9
-      '@walletconnect/utils': 2.23.9(typescript@5.9.3)(zod@4.6.7)
+      '@walletconnect/types': 2.26.0
+      '@walletconnect/utils': 2.26.0(typescript@5.9.3)(zod@4.6.7)
       '@walletconnect/window-getters': 1.0.1
-      es-toolkit: 1.44.0
+      es-toolkit: 1.45.1
       events: 3.3.0
       uint8arrays: 3.1.1
     transitivePeerDependencies:
@@ -8499,7 +8463,7 @@ snapshots:
       '@walletconnect/jsonrpc-utils': 1.0.8
       '@walletconnect/safe-json': 1.0.2
       events: 3.3.0
-      ws: 7.5.11
+      ws: 7.5.13
     transitivePeerDependencies:
       - bufferutil
       - utf-8-validate
@@ -8507,8 +8471,8 @@ snapshots:
   '@walletconnect/keyvaluestorage@1.1.1':
     dependencies:
       '@walletconnect/safe-json': 1.0.2
-      idb-keyval: 6.2.5
-      unstorage: 1.17.5(idb-keyval@6.2.5)
+      idb-keyval: 6.3.0
+      unstorage: 1.17.6(idb-keyval@6.3.0)
     transitivePeerDependencies:
       - '@azure/app-configuration'
       - '@azure/cosmos'
@@ -8550,16 +8514,14 @@ snapshots:
     dependencies:
       tslib: 1.14.1
 
-  '@walletconnect/sign-client@2.23.9(typescript@5.9.3)(zod@4.6.7)':
+  '@walletconnect/sign-client@2.26.0(typescript@5.9.3)(zod@4.6.7)':
     dependencies:
-      '@walletconnect/core': 2.23.9(typescript@5.9.3)(zod@4.6.7)
-      '@walletconnect/events': 1.0.1
-      '@walletconnect/heartbeat': 1.2.2
+      '@walletconnect/core': 2.26.0(typescript@5.9.3)(zod@4.6.7)
       '@walletconnect/jsonrpc-utils': 1.0.8
       '@walletconnect/logger': 3.0.2
       '@walletconnect/time': 1.0.2
-      '@walletconnect/types': 2.23.9
-      '@walletconnect/utils': 2.23.9(typescript@5.9.3)(zod@4.6.7)
+      '@walletconnect/types': 2.26.0
+      '@walletconnect/utils': 2.26.0(typescript@5.9.3)(zod@4.6.7)
       events: 3.3.0
     transitivePeerDependencies:
       - '@azure/app-configuration'
@@ -8590,7 +8552,7 @@ snapshots:
     dependencies:
       tslib: 1.14.1
 
-  '@walletconnect/types@2.23.9':
+  '@walletconnect/types@2.26.0':
     dependencies:
       '@walletconnect/events': 1.0.1
       '@walletconnect/heartbeat': 1.2.2
@@ -8619,7 +8581,7 @@ snapshots:
       - ioredis
       - uploadthing
 
-  '@walletconnect/utils@2.23.9(typescript@5.9.3)(zod@4.6.7)':
+  '@walletconnect/utils@2.26.0(typescript@5.9.3)(zod@4.6.7)':
     dependencies:
       '@msgpack/msgpack': 3.1.3
       '@noble/ciphers': 1.3.0
@@ -8631,9 +8593,8 @@ snapshots:
       '@walletconnect/logger': 3.0.2
       '@walletconnect/relay-api': 1.0.11
       '@walletconnect/relay-auth': 1.1.0
-      '@walletconnect/safe-json': 1.0.2
       '@walletconnect/time': 1.0.2
-      '@walletconnect/types': 2.23.9
+      '@walletconnect/types': 2.26.0
       '@walletconnect/window-getters': 1.0.1
       '@walletconnect/window-metadata': 1.0.1
       blakejs: 1.2.1
@@ -8674,7 +8635,7 @@ snapshots:
 
   abbrev@2.0.0: {}
 
-  abitype@1.2.4(typescript@5.9.3)(zod@4.6.7):
+  abitype@1.3.0(typescript@5.9.3)(zod@4.6.7):
     optionalDependencies:
       typescript: 5.9.3
       zod: 4.6.7
@@ -8702,6 +8663,8 @@ snapshots:
       acorn: 8.15.0
 
   acorn@8.15.0: {}
+
+  acorn@8.19.0: {}
 
   agent-base@7.1.4: {}
 
@@ -8746,7 +8709,7 @@ snapshots:
   anymatch@3.1.3:
     dependencies:
       normalize-path: 3.0.0
-      picomatch: 2.3.1
+      picomatch: 2.3.2
 
   argparse@1.0.10:
     dependencies:
@@ -8818,8 +8781,6 @@ snapshots:
       is-windows: 1.0.2
 
   bignumber.js@10.0.2: {}
-
-  bignumber.js@9.3.1: {}
 
   blakejs@1.2.1: {}
 
@@ -8933,12 +8894,12 @@ snapshots:
 
   callsites@3.1.0: {}
 
-  camelcase-keys@10.0.2:
+  camelcase-keys@10.0.3:
     dependencies:
       camelcase: 9.0.0
       map-obj: 6.0.0
       quick-lru: 7.3.0
-      type-fest: 5.7.0
+      type-fest: 5.10.0
 
   camelcase@5.3.1: {}
 
@@ -8981,7 +8942,7 @@ snapshots:
 
   chokidar@5.0.0:
     dependencies:
-      readdirp: 5.0.0
+      readdirp: 5.1.1
 
   chrome-launcher@0.15.2:
     dependencies:
@@ -9173,7 +9134,7 @@ snapshots:
 
   dateformat@4.6.3: {}
 
-  dayjs@1.11.21: {}
+  dayjs@1.11.23: {}
 
   debug@2.6.9:
     dependencies:
@@ -9423,6 +9384,8 @@ snapshots:
       is-symbol: 1.1.1
 
   es-toolkit@1.44.0: {}
+
+  es-toolkit@1.45.1: {}
 
   es5-ext@0.10.64:
     dependencies:
@@ -9711,7 +9674,7 @@ snapshots:
 
   fake-indexeddb@6.2.5: {}
 
-  fast-copy@4.0.4: {}
+  fast-copy@4.3.1: {}
 
   fast-deep-equal@3.1.3: {}
 
@@ -9838,7 +9801,7 @@ snapshots:
 
   fresh@0.5.2: {}
 
-  fs-extra@11.3.6:
+  fs-extra@11.4.1:
     dependencies:
       graceful-fs: 4.2.11
       jsonfile: 6.2.1
@@ -9987,9 +9950,9 @@ snapshots:
       defu: 6.1.7
       destr: 2.0.5
       iron-webcrypto: 1.2.1
-      node-mock-http: 1.0.4
+      node-mock-http: 1.0.5
       radix3: 1.1.2
-      ufo: 1.6.3
+      ufo: 1.6.4
       uncrypto: 0.1.3
 
   happy-dom@14.12.3:
@@ -10084,7 +10047,7 @@ snapshots:
     dependencies:
       safer-buffer: 2.1.2
 
-  idb-keyval@6.2.5: {}
+  idb-keyval@6.3.0: {}
 
   idb@8.0.3: {}
 
@@ -10284,7 +10247,7 @@ snapshots:
       chalk: 4.1.2
       ci-info: 3.9.0
       graceful-fs: 4.2.11
-      picomatch: 2.3.1
+      picomatch: 2.3.2
 
   jest-validate@29.7.0:
     dependencies:
@@ -10306,7 +10269,7 @@ snapshots:
 
   jose@5.10.0: {}
 
-  jose@6.2.3: {}
+  jose@6.2.14: {}
 
   joycon@3.1.1: {}
 
@@ -10483,7 +10446,7 @@ snapshots:
 
   lru-cache@10.4.3: {}
 
-  lru-cache@11.3.2: {}
+  lru-cache@11.5.3: {}
 
   lru-cache@5.1.1:
     dependencies:
@@ -10829,7 +10792,7 @@ snapshots:
 
   node-int64@0.4.0: {}
 
-  node-mock-http@1.0.4: {}
+  node-mock-http@1.0.5: {}
 
   node-readfiles@0.2.0:
     dependencies:
@@ -10939,7 +10902,7 @@ snapshots:
     dependencies:
       destr: 2.0.5
       node-fetch-native: 1.6.7
-      ufo: 1.6.3
+      ufo: 1.6.4
 
   ohash@2.0.11: {}
 
@@ -10966,17 +10929,11 @@ snapshots:
       is-docker: 2.2.1
       is-wsl: 2.2.0
 
-  openapi-fetch@0.15.2:
-    dependencies:
-      openapi-typescript-helpers: 0.0.15
-
   openapi-fetch@0.17.0:
     dependencies:
       openapi-typescript-helpers: 0.1.0
 
   openapi-types@12.1.3: {}
-
-  openapi-typescript-helpers@0.0.15: {}
 
   openapi-typescript-helpers@0.1.0: {}
 
@@ -11007,7 +10964,7 @@ snapshots:
       '@noble/hashes': 1.8.0
       '@scure/bip32': 1.7.0
       '@scure/bip39': 1.6.0
-      abitype: 1.2.4(typescript@5.9.3)(zod@4.6.7)
+      abitype: 1.3.0(typescript@5.9.3)(zod@4.6.7)
       eventemitter3: 5.0.1
     optionalDependencies:
       typescript: 5.9.3
@@ -11082,7 +11039,7 @@ snapshots:
 
   path-scurry@2.0.2:
     dependencies:
-      lru-cache: 11.3.2
+      lru-cache: 11.5.3
       minipass: 7.1.3
 
   path-to-regexp@0.1.12: {}
@@ -11104,6 +11061,8 @@ snapshots:
   picocolors@1.1.1: {}
 
   picomatch@2.3.1: {}
+
+  picomatch@2.3.2: {}
 
   picomatch@4.0.3: {}
 
@@ -11131,11 +11090,11 @@ snapshots:
     dependencies:
       split2: 4.2.0
 
-  pino-pretty@13.1.3:
+  pino-pretty@13.2.0:
     dependencies:
       colorette: 2.0.20
       dateformat: 4.6.3
-      fast-copy: 4.0.4
+      fast-copy: 4.3.1
       fast-safe-stringify: 2.1.1
       help-me: 5.0.0
       joycon: 3.1.1
@@ -11143,8 +11102,8 @@ snapshots:
       on-exit-leak-free: 2.1.2
       pino-abstract-transport: 3.0.0
       pump: 3.0.4
-      secure-json-parse: 4.1.0
-      sonic-boom: 4.2.1
+      secure-json-parse: 4.1.1
+      sonic-boom: 5.0.2
       strip-json-comments: 5.0.3
 
   pino-std-serializers@7.1.0: {}
@@ -11155,7 +11114,7 @@ snapshots:
       on-exit-leak-free: 2.1.2
       pino-abstract-transport: 2.0.0
       pino-std-serializers: 7.1.0
-      process-warning: 5.0.0
+      process-warning: 5.1.1
       quick-format-unescaped: 4.0.4
       real-require: 0.2.0
       safe-stable-stringify: 2.5.0
@@ -11163,16 +11122,16 @@ snapshots:
       sonic-boom: 4.2.1
       thread-stream: 3.2.0
 
-  pino@10.3.1:
+  pino@10.4.0:
     dependencies:
       '@pinojs/redact': 0.4.0
       atomic-sleep: 1.0.0
       on-exit-leak-free: 2.1.2
       pino-abstract-transport: 3.0.0
       pino-std-serializers: 7.1.0
-      process-warning: 5.0.0
+      process-warning: 5.1.1
       quick-format-unescaped: 4.0.4
-      real-require: 0.2.0
+      real-require: 1.0.0
       safe-stable-stringify: 2.5.0
       sonic-boom: 4.2.1
       thread-stream: 4.2.0
@@ -11250,7 +11209,7 @@ snapshots:
       ansi-styles: 5.2.0
       react-is: 18.3.1
 
-  process-warning@5.0.0: {}
+  process-warning@5.1.1: {}
 
   promise@8.3.0:
     dependencies:
@@ -11428,7 +11387,7 @@ snapshots:
 
   readdirp@4.1.2: {}
 
-  readdirp@5.0.0: {}
+  readdirp@5.1.1: {}
 
   real-require@0.2.0: {}
 
@@ -11560,7 +11519,7 @@ snapshots:
 
   scheduler@0.27.0: {}
 
-  secure-json-parse@4.1.0: {}
+  secure-json-parse@4.1.1: {}
 
   semver@5.7.2: {}
 
@@ -11718,6 +11677,10 @@ snapshots:
   slow-redact@0.3.2: {}
 
   sonic-boom@4.2.1:
+    dependencies:
+      atomic-sleep: 1.0.0
+
+  sonic-boom@5.0.2:
     dependencies:
       atomic-sleep: 1.0.0
 
@@ -11931,7 +11894,7 @@ snapshots:
   terser@5.49.0:
     dependencies:
       '@jridgewell/source-map': 0.3.11
-      acorn: 8.15.0
+      acorn: 8.19.0
       commander: 2.20.3
       source-map-support: 0.5.21
 
@@ -12065,7 +12028,7 @@ snapshots:
 
   type-fest@0.7.1: {}
 
-  type-fest@5.7.0:
+  type-fest@5.10.0:
     dependencies:
       tagged-tag: 1.0.0
 
@@ -12115,6 +12078,8 @@ snapshots:
 
   ufo@1.6.3: {}
 
+  ufo@1.6.4: {}
+
   uint8arrays@3.1.1:
     dependencies:
       multiformats: 9.9.0
@@ -12140,18 +12105,18 @@ snapshots:
 
   unpipe@1.0.0: {}
 
-  unstorage@1.17.5(idb-keyval@6.2.5):
+  unstorage@1.17.6(idb-keyval@6.3.0):
     dependencies:
       anymatch: 3.1.3
       chokidar: 5.0.0
       destr: 2.0.5
       h3: 1.15.11
-      lru-cache: 11.3.2
+      lru-cache: 11.5.3
       node-fetch-native: 1.6.7
       ofetch: 1.5.1
-      ufo: 1.6.3
+      ufo: 1.6.4
     optionalDependencies:
-      idb-keyval: 6.2.5
+      idb-keyval: 6.3.0
 
   update-browserslist-db@1.2.3(browserslist@4.28.1):
     dependencies:
@@ -12171,8 +12136,6 @@ snapshots:
   utils-merge@1.0.1: {}
 
   uuid@11.1.1: {}
-
-  uuid@14.0.0: {}
 
   uuid@14.0.3: {}
 
@@ -12203,13 +12166,13 @@ snapshots:
       - supports-color
       - terser
 
-  vite-node@1.6.1(@types/node@25.9.5)(terser@5.49.0):
+  vite-node@1.6.1(@types/node@25.9.9)(terser@5.49.0):
     dependencies:
       cac: 6.7.14
       debug: 4.4.3
       pathe: 1.1.2
       picocolors: 1.1.1
-      vite: 5.4.21(@types/node@25.9.5)(terser@5.49.0)
+      vite: 5.4.21(@types/node@25.9.9)(terser@5.49.0)
     transitivePeerDependencies:
       - '@types/node'
       - less
@@ -12231,13 +12194,13 @@ snapshots:
       fsevents: 2.3.3
       terser: 5.49.0
 
-  vite@5.4.21(@types/node@25.9.5)(terser@5.49.0):
+  vite@5.4.21(@types/node@25.9.9)(terser@5.49.0):
     dependencies:
       esbuild: 0.21.5
       postcss: 8.5.6
       rollup: 4.56.0
     optionalDependencies:
-      '@types/node': 25.9.5
+      '@types/node': 25.9.9
       fsevents: 2.3.3
       terser: 5.49.0
 
@@ -12278,7 +12241,7 @@ snapshots:
       - supports-color
       - terser
 
-  vitest@1.6.1(@types/node@25.9.5)(@vitest/ui@1.6.1)(happy-dom@14.12.3)(jsdom@24.1.3)(terser@5.49.0):
+  vitest@1.6.1(@types/node@25.9.9)(@vitest/ui@1.6.1)(happy-dom@14.12.3)(jsdom@24.1.3)(terser@5.49.0):
     dependencies:
       '@vitest/expect': 1.6.1
       '@vitest/runner': 1.6.1
@@ -12297,11 +12260,11 @@ snapshots:
       strip-literal: 2.1.1
       tinybench: 2.9.0
       tinypool: 0.8.4
-      vite: 5.4.21(@types/node@25.9.5)(terser@5.49.0)
-      vite-node: 1.6.1(@types/node@25.9.5)(terser@5.49.0)
+      vite: 5.4.21(@types/node@25.9.9)(terser@5.49.0)
+      vite-node: 1.6.1(@types/node@25.9.9)(terser@5.49.0)
       why-is-node-running: 2.3.0
     optionalDependencies:
-      '@types/node': 25.9.5
+      '@types/node': 25.9.9
       '@vitest/ui': 1.6.1(vitest@1.6.1)
       happy-dom: 14.12.3
       jsdom: 24.1.3
@@ -12446,6 +12409,8 @@ snapshots:
   wrappy@1.0.2: {}
 
   ws@7.5.11: {}
+
+  ws@7.5.13: {}
 
   ws@8.21.0: {}
 
