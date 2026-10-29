@@ -42,6 +42,7 @@ These guides cover React 3.1.0+ / SDK 0.20.0+. See [release status](./releasing.
 - [Development and staging](./dev-and-staging.md): local environments and mocks.
 - [Production checklist](./production-checklist.md): application responsibilities before launch.
 - [Observability](./observability.md) and [performance](./performance.md): diagnose and measure an integration.
+- [Owner-approved npm staging](./trusted-publishing.md): owner-only GitHub preparation and separate npm 2FA promotion, with explicit activation checks.
 - [Release process](./releasing.md), [acceptance evidence](./wallet-acceptance.md) and [roadmap](./platform-roadmap.md): published versus candidate status, automated checks and outstanding manual/live work.
 
 [Developer discovery and adoption roadmap](./growth/roadmap.md) covers npm/GitHub/search visibility, public measurement and verified integration references.

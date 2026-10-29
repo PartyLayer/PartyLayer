@@ -38,7 +38,7 @@
     "gate:test": "CI=true pnpm -r test",
     "gate:test-skips": "node --test scripts/gate/test-skips.test.mjs",
     "//gate:workflow-scripts": "The nightly failure sink decides whether to open, update, or close the tracking issue that is the ONLY place a scheduled-workflow failure surfaces. It runs exclusively inside a GitHub Actions job, so nothing else would ever execute it: a bug there is invisible until the night it matters, and its whole purpose is to be reliable on that night. Hence a unit test against a fake Octokit, wired into the gate.",
-    "gate:workflow-scripts": "node --test .github/scripts/nightly-failure-sink.test.mjs",
+    "gate:workflow-scripts": "node --test .github/scripts/nightly-failure-sink.test.mjs scripts/release/*.test.mjs",
     "//gate:dead-env-vars": "A NEXT_PUBLIC_* variable set in CI or scripts but read by no product code. Setting one cannot fail, so it silently licenses the belief that a mechanism exists: NEXT_PUBLIC_MOCK_WALLETS was set in six places, read in none, and left four e2e tests switched off waiting for a switch that had been deleted. Scoped to NEXT_PUBLIC_* on purpose \u2014 those exist only to be read by app code, so the rule needs no allowlist and is always right.",
     "gate:dead-env-vars": "node --test scripts/gate/dead-env-vars.test.mjs",
     "gate:conformance": "node scripts/gate/conformance-native.mjs",
@@ -100,7 +100,8 @@
     "tsup": "^8.5.1",
     "tsx": "^4.21.0",
     "typescript": "^5.3.3",
-    "vitest": "^1.2.0"
+    "vitest": "^1.2.0",
+    "yaml": "2.8.2"
   },
   "engines": {
     "node": ">=18.0.0",
