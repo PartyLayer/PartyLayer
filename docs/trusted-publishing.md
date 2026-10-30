@@ -67,7 +67,9 @@ alone does not prove that no other trusted-publisher connection exists.
    `npm publish <exact-file> --ignore-scripts --provenance` through OIDC. It does
    not repack source, execute package hooks, use a persistent npm token or OTP,
    manage dist-tags separately, overwrite versions or unpublish packages.
-7. Packages are published in dependency order. Public registry version, integrity
+7. Packages are published in dependency order, including dependencies inside
+   shipped CLI starter manifests. A CLI release cannot precede an unpublished SDK
+   required by its generated applications. Public registry version, integrity
    and requested tag are checked after each write; short bounded retries apply
    only to registry propagation reads. Preserve the partial receipt. Verify
    provenance/signatures and a clean public installation before marking the full

@@ -6,7 +6,7 @@ import { mkdtempSync, mkdirSync, readFileSync, writeFileSync, rmSync, existsSync
 import { join, dirname } from 'node:path';
 import { tmpdir } from 'node:os';
 import { parse } from 'yaml';
-import { POLICY, assertOwner, selectPackages, preflight, inspectTarball, packageOrder, verifyManifest, stage, registryState } from './owner-approved.mjs';
+import { POLICY, assertOwner, selectPackages, preflight, inspectTarball, packageOrder, verifyManifest, stage, registryState, sourcePackages, assertPublishedDependencies } from './owner-approved.mjs';
 
 const context = { repository: POLICY.repository, repositoryId: POLICY.repositoryId, actorId: POLICY.ownerId, triggeringActor: POLICY.ownerLogin, event: 'workflow_dispatch', ref: 'refs/heads/main', sha: 'a'.repeat(40), runId: '123', runAttempt: '1', actions: 'true' };
 const cleanEnv = { ACTIONS_ID_TOKEN_REQUEST_URL: 'https://example.invalid', ACTIONS_ID_TOKEN_REQUEST_TOKEN: 'TEST_ONLY', RELEASE_PACKAGES: '@partylayer/core', RELEASE_TAG: 'latest' };
@@ -218,4 +218,20 @@ test('archive mutation after manifest validation blocks staging before any npm w
     execute: () => { calls++; },
   }), /Archive changed after validation/);
   assert.equal(calls, 0);
+}));
+
+test('CLI starter dependencies are released first and cannot refer to unpublished omitted packages', async () => fixture(async ({ root }) => {
+  const templates = join(root, POLICY.packages['create-partylayer-app'], 'templates');
+  for (const name of ['react', 'next']) {
+    mkdirSync(join(templates, name), { recursive: true });
+    writeFileSync(join(templates, name, '_package.json'), JSON.stringify({ dependencies: { '@partylayer/sdk': '^1.0.0', '@partylayer/react': '^1.0.0' } }));
+  }
+  const sources = sourcePackages(root);
+  assert.deepEqual(packageOrder(['create-partylayer-app', '@partylayer/sdk', '@partylayer/react'], sources, root), ['@partylayer/sdk', '@partylayer/react', 'create-partylayer-app']);
+  await assert.rejects(assertPublishedDependencies(['create-partylayer-app'], sources, async () => ({ publishedIntegrity: null }), root), /starter dependency is unpublished/);
+  let queries = 0;
+  await assertPublishedDependencies(['create-partylayer-app', '@partylayer/sdk', '@partylayer/react'], sources, async () => { queries++; }, root);
+  assert.equal(queries, 0);
+  await assertPublishedDependencies(['create-partylayer-app'], sources, async () => { queries++; return { publishedIntegrity: 'sha512-existing' }; }, root);
+  assert.equal(queries, 2, 'shared template dependencies are checked once');
 }));

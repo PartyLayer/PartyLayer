@@ -147,13 +147,43 @@ export function sourcePackages(root = ROOT) {
     return [name, manifest];
   }));
 }
-export function packageOrder(names, manifests) {
+/** Include dependencies inside shipped starter manifests, not just the CLI's own runtime. */
+export function releaseDependencies(name, manifest, packages, root = ROOT) {
+  const dependencies = new Set(Object.keys({ ...manifest.dependencies, ...manifest.optionalDependencies, ...manifest.peerDependencies }));
+  if (name === 'create-partylayer-app') {
+    const templates = join(root, POLICY.packages[name], 'templates');
+    for (const entry of readdirSync(templates, { withFileTypes: true })) {
+      if (!entry.isDirectory()) continue;
+      const path = join(templates, entry.name, '_package.json');
+      if (!existsSync(path)) continue;
+      const template = read(path);
+      for (const dependency of Object.keys({ ...template.dependencies, ...template.devDependencies, ...template.peerDependencies })) {
+        if (!dependency.startsWith('@partylayer/')) continue;
+        assert.ok(packages.has(dependency), 'Unknown internal starter dependency.');
+        dependencies.add(dependency);
+      }
+    }
+  }
+  return dependencies;
+}
+export async function assertPublishedDependencies(names, packages, state = registryState, root = ROOT) {
+  const checked = new Set();
+  for (const name of names) {
+    for (const dependency of releaseDependencies(name, packages.get(name), packages, root)) {
+      if (!packages.has(dependency) || names.includes(dependency) || checked.has(dependency)) continue;
+      const published = await state(dependency, packages.get(dependency).version);
+      assert.ok(published.publishedIntegrity, 'An internal dependency or shipped starter dependency is unpublished; include it in the coordinated release.');
+      checked.add(dependency);
+    }
+  }
+}
+export function packageOrder(names, manifests, root = ROOT) {
   const ordered = [], visiting = new Set(), done = new Set();
   const visit = name => {
     if (done.has(name)) return;
     assert.ok(!visiting.has(name), 'Release dependency cycle.'); visiting.add(name);
     const manifest = manifests.get(name);
-    for (const dependency of Object.keys({ ...manifest.dependencies, ...manifest.optionalDependencies, ...manifest.peerDependencies })) if (names.includes(dependency)) visit(dependency);
+    for (const dependency of releaseDependencies(name, manifest, manifests, root)) if (names.includes(dependency)) visit(dependency);
     visiting.delete(name); done.add(name); ordered.push(name);
   };
   names.forEach(visit); return ordered;
@@ -165,6 +195,7 @@ export async function prepare(context, input, directory, tag, api, state = regis
   assert.equal(run('git', ['status', '--porcelain', '--untracked-files=no']).trim(), '', 'Tracked source files changed.');
   const packages = sourcePackages();
   const names = packageOrder(selectPackages(input), packages);
+  await assertPublishedDependencies(names, packages, state);
   const versions = Object.fromEntries([...packages].map(([name, manifest]) => [name, manifest.version]));
   const semver = (await import('semver')).default;
   mkdirSync(directory, { recursive: true });
@@ -186,16 +217,6 @@ export async function prepare(context, input, directory, tag, api, state = regis
     assert.ok(tag !== 'latest' || semver.gte(source.version, remote.latestVersion), 'Refusing to move latest backwards.');
     manifest.packages.push({ name, version: source.version, filename, integrity, latestVersion: remote.latestVersion });
   }
-  for (const item of manifest.packages) {
-    for (const field of ['dependencies', 'optionalDependencies', 'peerDependencies']) {
-      for (const [name, range] of Object.entries(packages.get(item.name)[field] ?? {})) {
-        if (packages.has(name) && range.startsWith('workspace:') && !names.includes(name)) {
-          const dependency = await state(name, versions[name]);
-          assert.ok(dependency.publishedIntegrity, 'An internal dependency is unpublished; include it in the coordinated release.');
-        }
-      }
-    }
-  }
   assert.equal(run('git', ['status', '--porcelain', '--untracked-files=no']).trim(), '', 'Packaging changed tracked source.');
   writeFileSync(join(directory, 'manifest.json'), JSON.stringify(manifest, null, 2) + '\n');
   return manifest;
@@ -209,7 +230,7 @@ export function verifyManifest(context, directory, root = ROOT) {
   assert.ok(Array.isArray(manifest.packages) && manifest.packages.length > 0);
   const names = selectPackages(manifest.packages.map(item => item.name).join(','));
   const sources = sourcePackages(root), versions = Object.fromEntries([...sources].map(([name, pkg]) => [name, pkg.version]));
-  assert.deepEqual(names, packageOrder(names, sources), 'Artifact package order changed.');
+  assert.deepEqual(names, packageOrder(names, sources, root), 'Artifact package order changed.');
   for (const item of manifest.packages) {
     assert.match(item.filename, /^[a-zA-Z0-9_.-]+\.tgz$/);
     assert.match(item.integrity, /^sha512-[A-Za-z0-9+/]{86}==$/);
@@ -225,7 +246,7 @@ export async function stage(context, directory, api, { state = registryState, ex
   assert.ok(env.ACTIONS_ID_TOKEN_REQUEST_URL && env.ACTIONS_ID_TOKEN_REQUEST_TOKEN, 'OIDC is required; there is no npm-token fallback.');
   assert.ok(!env.NODE_AUTH_TOKEN && !env.NPM_TOKEN, 'Long-lived npm tokens are forbidden in this job.');
   const manifest = verifyManifest(context, directory, root);
-  assert.deepEqual(manifest.packages.map(item => item.name), packageOrder(selectPackages(env.RELEASE_PACKAGES ?? ''), sourcePackages(root)), 'Artifact selection differs from owner dispatch.');
+  assert.deepEqual(manifest.packages.map(item => item.name), packageOrder(selectPackages(env.RELEASE_PACKAGES ?? ''), sourcePackages(root), root), 'Artifact selection differs from owner dispatch.');
   assert.equal(manifest.tag, env.RELEASE_TAG, 'Artifact tag differs from owner dispatch.');
   const pending = [];
   for (const item of manifest.packages) {

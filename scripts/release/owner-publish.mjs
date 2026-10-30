@@ -62,7 +62,7 @@ export async function publish(context, directory, api, {
     assert.ok(!env[key] && !env[key.toLowerCase()], 'Traditional authentication and OTP fallback are forbidden.');
   }
   const manifest = verifyManifest(context, directory, root);
-  assert.deepEqual(manifest.packages.map(item => item.name), packageOrder(selectPackages(env.RELEASE_PACKAGES ?? ''), sourcePackages(root)), 'Artifact selection differs from owner dispatch.');
+  assert.deepEqual(manifest.packages.map(item => item.name), packageOrder(selectPackages(env.RELEASE_PACKAGES ?? ''), sourcePackages(root), root), 'Artifact selection differs from owner dispatch.');
   assert.equal(manifest.tag, env.RELEASE_TAG, 'Artifact tag differs from owner dispatch.');
   const pending = [];
   for (const item of manifest.packages) {
