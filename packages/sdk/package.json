@@ -47,7 +47,7 @@
     "url": "https://github.com/PartyLayer/PartyLayer/issues"
   },
   "dependencies": {
-    "@canton-network/core-types": "1.14.0",
+    "@canton-network/core-types": "2.2.0",
     "@canton-network/core-wallet-discovery": "1.16.0",
     "@canton-network/dapp-sdk": "0.24.0",
     "@k2flabs/walley-dapp-sdk": "1.2.0",
