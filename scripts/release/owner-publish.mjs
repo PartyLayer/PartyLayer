@@ -20,17 +20,21 @@ export async function publishPreflight(context, api) {
 }
 
 /** Read-only retries cover registry propagation; immutable integrity mismatches stop immediately. */
-export async function verifyPublicPackage(item, tag, fetcher = fetch) {
+export async function verifyPublicPackage(item, tag, fetcher = fetch, {
+  now = () => performance.now(), sleep = ms => new Promise(resolve => setTimeout(resolve, ms)),
+  timeoutMs = 300_000, pollMs = 5_000,
+} = {}) {
+  const deadline = now() + timeoutMs;
   const transient = message => Object.assign(new Error(message), { retryable: true });
   const request = async suffix => {
     const response = await fetcher(`${REGISTRY}/${encodeURIComponent(item.name)}/${encodeURIComponent(suffix)}`, {
-      redirect: 'error', signal: AbortSignal.timeout(8_000),
+      redirect: 'error', signal: AbortSignal.timeout(Math.max(1, Math.min(8_000, Math.ceil(deadline - now())))),
     });
     if ([404, 429].includes(response.status) || response.status >= 500) throw transient('Published registry metadata is not available yet.');
     assert.equal(response.status, 200, 'Published registry metadata is unavailable; inspect before retrying.');
     return response.json();
   };
-  for (let attempt = 0; ; attempt++) {
+  for (;;) {
     try {
       const [version, tagged] = await Promise.all([request(item.version), request(tag)]);
       assert.equal(version.name, item.name); assert.equal(version.version, item.version);
@@ -40,8 +44,9 @@ export async function verifyPublicPackage(item, tag, fetcher = fetch) {
       assert.equal(tagged.dist?.integrity, item.integrity, 'Public registry integrity differs from the reviewed file.');
       return;
     } catch (error) {
-      if (!error.retryable || attempt >= 4) throw error;
-      await new Promise(resolve => setTimeout(resolve, [250, 750, 1500, 3000][attempt]));
+      const remaining = deadline - now();
+      if (!error.retryable || remaining <= 0) throw error;
+      await sleep(Math.min(pollMs, remaining));
     }
   }
 }

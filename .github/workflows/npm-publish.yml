@@ -87,7 +87,8 @@ jobs:
     environment:
       name: npm-release
     runs-on: ubuntu-24.04
-    timeout-minutes: 15
+    # Each selected package can need minutes of asynchronous npm processing.
+    timeout-minutes: 90
     permissions:
       contents: read
       actions: read
