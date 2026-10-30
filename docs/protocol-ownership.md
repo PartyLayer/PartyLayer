@@ -7,6 +7,14 @@ remains open; see [release evidence](./releasing.md#default-wallet-release-valid
 
 ## Decision
 
+The 2026-10-30 candidate reviews discovery **1.16.0** with the same public native
+ownership boundaries. WalletConnect's compatibility runtime updates to **2.26.0**;
+the separate Canton dApp SDK **0.24.0** remains pinned for Walley's peer contract.
+The private Devnet demonstration updates wallet-sdk to **1.6.0** and resolves
+complete asset capabilities from the registry. A newer vendor version is not
+automatically treated as live-wallet acceptance. The published baseline above
+remains historical until the coordinated npm release is verified.
+
 One official Canton `DiscoveryClient` owns the active native provider and native
 connection. PartyLayer owns approved runtime loading, registry policy, announced
 metadata, branded UI, boundary validation and reactive application views. Existing

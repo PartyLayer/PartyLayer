@@ -361,4 +361,21 @@ describe('signature integrity', () => {
       expect(signatureRequested).toBe(false);
     });
   });
+
+  it('supports an overlapping key rotation and rejects a retired signer after removal', async () => {
+    const replacement = await makeKeypair();
+    const registry = makeRegistry(1); const json = JSON.stringify(registry);
+    const oldSignature = await signBytes(keys.pair.privateKey, json);
+    const newSignature = await signBytes(replacement.pair.privateKey, json);
+    const signedClient = (signature: typeof oldSignature, trust: string[]) => makeClient(router({
+      manifest: () => jsonResponse(registry), signature: () => jsonResponse(signature),
+    }), trust);
+    for (const signature of [oldSignature, newSignature]) {
+      const client = signedClient(signature, [keys.publicKeyBase64, replacement.publicKeyBase64]);
+      await expect(client.getRegistry()).resolves.toMatchObject({ metadata: { sequence: 1 } });
+      expect(client.getStatus()?.verified).toBe(true);
+    }
+    await expect(signedClient(oldSignature, [replacement.publicKeyBase64]).getRegistry()).rejects.toBeInstanceOf(RegistryVerificationFailedError);
+    await expect(signedClient(newSignature, [replacement.publicKeyBase64]).getRegistry()).resolves.toMatchObject({ metadata: { sequence: 1 } });
+  });
 });

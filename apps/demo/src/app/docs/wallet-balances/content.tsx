@@ -28,6 +28,13 @@ export default function WalletBalancesContent() {
       It uses the public default wallet catalog and requires a compatible wallet/ledger deployment;
       it is not a claim that every live wallet read has passed.</P>
     <H2 id="react">React</H2>
+    <P>Starting with SDK 0.21.0 / React 3.2.0, <code>useWalletTokenHoldings</code> is the ready alternative for compatible v2 wallet proxies. It scopes the
+      cache and validates complete snapshots; the application-fetcher hook below remains available.
+      See the <A href="https://github.com/PartyLayer/PartyLayer/blob/main/docs/wallet-ledger-reader.md">reader guide</A>.</P>
+    <P>The same hook also accepts an explicit application endpoint/source configuration when
+      a wallet has no ledger proxy. The <A href="https://github.com/PartyLayer/PartyLayer/tree/main/examples/authentication-server">server reference</A>
+      authorizes those reads with its own app session and rebuilds party-scoped filters;
+      participant credentials stay server-side.</P>
     <CodeBlock language="tsx">{`import { ConnectButton, useAccount } from '@partylayer/react';
 import { useTokenHoldings } from '@partylayer/react/query';
 import type { TokenHoldingRef } from '@partylayer/react/query';

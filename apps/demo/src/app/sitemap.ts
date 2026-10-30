@@ -31,6 +31,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: `${base}/docs/hooks` },
     { url: `${base}/docs/authentication` },
     { url: `${base}/docs/transaction-lifecycle` },
+    { url: `${base}/docs/swaps` },
     { url: `${base}/docs/vanilla-js` },
     { url: `${base}/docs/wallets` },
     { url: `${base}/docs/wallets/send` },

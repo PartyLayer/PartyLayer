@@ -12,7 +12,7 @@ valid Canton commands, disclosures and token-standard approval flows.
 import { TransactionToast, useTransactionFlow } from '@partylayer/react';
 import type { TransactionConfirmation } from '@partylayer/react';
 
-function SendPreparedCommands({ commands }: { commands: unknown }) {
+function SendPreparedCommands({ commands }: { commands: { commandId: string; [key: string]: unknown } }) {
   const flow = useTransactionFlow({
     confirmationTimeoutMs: 30_000,
     confirm: async ({ transaction, signal }): Promise<TransactionConfirmation> => {
@@ -25,7 +25,7 @@ function SendPreparedCommands({ commands }: { commands: unknown }) {
         body: JSON.stringify({
           partyId: transaction.partyId, networkId: transaction.networkId,
           updateId: transaction.receipt?.updateId,
-          commandId: transaction.receipt?.commandId,
+          commandId: transaction.commandId,
           transactionHash: transaction.receipt?.transactionHash,
         }),
       });
@@ -36,7 +36,7 @@ function SendPreparedCommands({ commands }: { commands: unknown }) {
 
   return <>
     <button disabled={flow.isPending}
-      onClick={() => { void flow.submitTransaction({ signedTx: commands }).catch(console.error); }}>
+      onClick={() => { void flow.submitTransaction({ signedTx: commands }, { commandId: commands.commandId }).catch(console.error); }}>
       Send
     </button>
     <TransactionToast status={flow.transaction?.status ?? 'idle'}
@@ -110,17 +110,72 @@ notify the application of account/network changes.
 `useRecentTransactions()` reads the shared current-identity journal.
 `RecentTransactions transactions={records}` renders it in a custom composition.
 The panel shows up to five entries; the shared store keeps at most 100 total,
-and the public current-identity view returns at most twenty. A flow hook also
-keeps its own twenty-entry history in `flow.transactions`; its `transaction`
-is the latest record for the current identity. Reconciliation uses the id from
-that flow, not a local id from an unrelated controller.
+and the public current-identity view returns at most twenty. Flow hooks in the
+same provider share those records and can reconcile the same current-identity id.
+Without a shared provider, a flow retains its local fallback history.
 
-The journal is never persisted to browser storage or telemetry. A reload loses
-the local journal; it is not complete on-ledger history or a portfolio indexer.
-The shared store resets when the SDK client changes without remounting application
-children. Existing submission hooks, direct SDK calls and writes performed
-outside this hook are not automatically added to this new journal. Apps may
-read full historical activity from their authorized backend/indexer.
+The default remains memory-only. No journal is sent to telemetry. Existing
+submission hooks, direct SDK calls and external writes are not automatically
+enrolled. Full historical activity still comes from an authorized backend/indexer.
+
+## Optional pending journal and reload recovery
+
+The journal and ready-reader additions require SDK 0.21.0 / React 3.2.0 or later.
+During rollout, check npm availability before importing the new exports. The
+existing memory-only flow and application confirmation callback remain compatible.
+
+The persistence implementation is a separate import from the **same React
+package**, not another wallet package. Supply a stable journal to the kit:
+
+```tsx
+import { useEffect, useState } from 'react';
+import { PartyLayerKit } from '@partylayer/react';
+import { createTransactionJournal } from '@partylayer/react/journal';
+import type { TransactionJournal } from '@partylayer/react/journal';
+
+export function Providers({ children }: { children: React.ReactNode }) {
+  const [journal, setJournal] = useState<TransactionJournal>();
+  useEffect(() => {
+    try {
+      setJournal(createTransactionJournal({
+        namespace: 'my-app:devnet', storage: window.localStorage,
+        onError: () => { /* Show a storage warning if your app needs one. */ },
+      }));
+    } catch { /* Storage can be unavailable; the default remains in memory. */ }
+  }, []);
+  return <PartyLayerKit network="devnet" appName="My app" transactionJournal={journal}>
+    {children}
+  </PartyLayerKit>;
+}
+```
+
+Only pending metadata is saved: local id, wallet, party, network, timestamps,
+original command id and any real receipt update id. No command payload, signature,
+credentials or error text is saved. Records older than seven days are not retained;
+the journal is bounded to 100 entries. Terminal entries are removed from storage.
+
+After reload every restored entry is `unknown` with `restored: true`. Nothing is
+automatically resubmitted or confirmed. Offer an explicit **Check ledger status**
+action calling `reconcile(id)` with a read-only confirmer. `useClearRecentTransactions()`
+clears the provider history and journal, for example on app sign-out. Different apps
+and environments must use different namespaces. Records are displayed/reconciled
+only under their matching wallet/party/network.
+
+Browser storage can be edited by the user or compromised application code.
+Restored ids are lookup hints, not trusted business intent, financial authorization
+or proof that the user originally requested an operation. A server must correlate
+its own authenticated intent records before making business decisions. Storage
+denial/quota errors cannot retry or undo an already-issued wallet request.
+
+## Ready wallet proxy confirmation
+
+For a compatible wallet exposing `ledgerApi`, pass
+`createWalletLedgerReader(client, { networkId }).confirmTransaction` as `confirm`.
+No holding interface is required for confirmation-only use. Capture the original
+command id before submission and provide the same value in the command payload and
+`submitTransaction({ signedTx: payload }, { commandId: payload.commandId })`.
+The reader never infers that id from the wallet receipt. See the
+[wire contract and limitations](./wallet-ledger-reader.md).
 
 ## Transfers, swaps and holdings
 

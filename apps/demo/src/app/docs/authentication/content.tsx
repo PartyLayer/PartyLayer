@@ -96,6 +96,10 @@ const identity = await verifyAuthenticationProof({
       closes, a device is offline or a wallet emits no account events. Refresh/reconnect that wallet
       before signing in again.</P>
     <H2 id="validation-and-limits">Validation and limits</H2>
+    <P>The <A href="https://github.com/PartyLayer/PartyLayer/tree/main/examples/authentication-server">runnable PostgreSQL server reference</A>
+      implements all four endpoints, browser-bound atomic nonce consumption, configured signature
+      verification and opaque server sessions. It tests real SQL and generated keys. Supply trusted
+      party/key bindings and validate the vendor profile before enabling it.</P>
     <P>Automated checks cover exact signed fields, actual test-key cryptography and independent
       party authorization, concurrent replay, tampering, wrong origin/party/network, expiry,
       rejection, duplicate requests, account changes, late responses, disconnect/unmount and

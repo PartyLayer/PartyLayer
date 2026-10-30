@@ -21,7 +21,7 @@ const flow = useTransactionFlow({
       body: JSON.stringify({
         partyId: transaction.partyId, networkId: transaction.networkId,
         updateId: transaction.receipt?.updateId,
-        commandId: transaction.receipt?.commandId,
+        commandId: transaction.commandId,
         transactionHash: transaction.receipt?.transactionHash,
       }),
     });
@@ -31,7 +31,7 @@ const flow = useTransactionFlow({
 });
 
 // Explicit user action with valid app/protocol commands:
-const result = await flow.submitTransaction({ signedTx: commands });
+const result = await flow.submitTransaction({ signedTx: commands }, { commandId: commands.commandId });
 // Inspect result.status; promise resolution is not ledger confirmation.
 
 <TransactionToast status={flow.transaction?.status ?? 'idle'}
@@ -71,12 +71,33 @@ await flow.reconcile(result.id);`}</CodeBlock>
     <P><Code>useRecentTransactions()</Code> reads the shared current-account journal.
       <Code>{'RecentTransactions transactions={records}'}</Code> renders a custom view. The panel
       shows five entries, the store retains at most 100 and the account view returns twenty.
-      Each flow also maintains its own twenty-entry history. Reconcile using that flow&apos;s id.</P>
-    <P>The journal is in memory and is not sent to storage or telemetry. Reloading loses it; it
-      is not a full ledger-history indexer. Replacing the SDK client resets the shared store
-      without remounting application children. Existing mutation hooks, direct SDK calls and
-      external writes are not automatically enrolled. Full history comes from an authorized
-      application backend/indexer.</P>
+      Flows in the same provider share records and can reconcile the same current-account id.</P>
+    <P>The default remains memory-only and no journal is sent to telemetry. Existing mutation
+      hooks, direct SDK calls and external writes are not automatically enrolled. Full history
+      comes from an authorized application backend/indexer.</P>
+    <H2 id="optional-pending-journal">Optional pending journal and reload recovery</H2>
+    <P>The journal and ready ledger-reader additions require SDK 0.21.0 / React 3.2.0 or later.
+      During rollout, check npm availability before using these new exports; the existing
+      memory-only flow and application confirmation callback remain compatible.</P>
+    <P>Import <Code>createTransactionJournal</Code> from <Code>@partylayer/react/journal</Code> and
+      supply the stable result as <Code>PartyLayerKit.transactionJournal</Code>. This optional
+      subpath belongs to the same package. Choose an app/environment namespace and explicit
+      storage. The <A href="https://github.com/PartyLayer/PartyLayer/blob/main/docs/transaction-lifecycle.md#optional-pending-journal-and-reload-recovery">full guide</A>
+      includes an SSR-safe example.</P>
+    <P>Only pending identifiers and identity metadata are retained, at most 100 records for seven
+      days. Commands, signatures, credentials and error details are excluded. All restored records
+      become unknown; no write or success is replayed. Call reconcile for an explicit read-only
+      check, or useClearRecentTransactions to clear this provider&apos;s activity and journal.</P>
+    <Callout type="warning">Browser storage is untrusted. Restored identifiers are lookup hints,
+      not financial authorization or a trusted business intent. Server-side decisions require
+      the app&apos;s independently stored and authenticated intent.</Callout>
+    <H2 id="ready-ledger-reader">Ready wallet proxy confirmation</H2>
+    <P><Code>{'createWalletLedgerReader(client, { networkId }).confirmTransaction'}</Code> can supply
+      the read-only confirmer for compatible CIP-0103 ledger proxies. Capture the original
+      commandId before submission and pass it as the second submitTransaction argument:
+      <Code>{'{ commandId: payload.commandId }'}</Code>. The helper compares that command id and
+      real update id against the ledger; missing correlation stays unknown. See the
+      <A href="https://github.com/PartyLayer/PartyLayer/blob/main/docs/wallet-ledger-reader.md">reader contract</A>.</P>
     <H2 id="transfers-swaps-and-holdings">Transfers, swaps and holdings</H2>
     <P>Acceptance requires a valid operation, supported wallet/network, required preapprovals and
       actual ledger outcomes. A message signature alone proves neither send nor swap. Private

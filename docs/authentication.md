@@ -69,6 +69,13 @@ opening the wallet; the user clicks again to approve the new request.
 
 ## Server challenge and verification
 
+The [runnable PostgreSQL server reference](../examples/authentication-server)
+implements the four endpoints, real configured signature verification, atomic
+browser-bound nonce consumption and opaque server sessions. Its test suite uses
+actual SQL and generated signing keys. Provision trusted party/key bindings and
+verify the selected vendor signing profile before enabling it; synthetic crypto
+tests do not certify a live wallet.
+
 Use the server-safe `@partylayer/core/authentication` subpath in your application
 backend. Generate randomness on the server, configure the exact origin, and
 store the complete challenge bound to the requesting browser's pre-auth session.

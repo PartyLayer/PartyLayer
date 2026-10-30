@@ -54,7 +54,7 @@ export default function WagmiForCantonPage() {
               ['useConnectors', 'useWallets', 'Registry-backed rather than statically configured.'],
               ['useSignMessage', 'useSignMessage', 'Same intent. Check the base64 note below.'],
               ['useSendTransaction', 'useSubmitTransaction', 'Submits Daml commands, not calldata.'],
-              ['useWaitForTransactionReceipt', 'submit result', 'Awaited in the submit call, not a separate hook.'],
+              ['useWaitForTransactionReceipt', 'useTransactionFlow + confirm', 'Wallet submission and independent ledger confirmation are separate states.'],
               ['ConnectButton (RainbowKit)', 'ConnectButton', 'Drop-in, themeable. See Theming.'],
             ].map(([w, p, n]) => (
               <tr key={w}>
@@ -105,14 +105,16 @@ function Profile() {
         There is no global state to query.
       </P>
       <P>
-        So reads are party-scoped and require a connection. <Code>{'useTokenHoldings'}</Code>,{' '}
-        <Code>{'useDamlContract'}</Code> and <Code>{'useLedgerApi'}</Code> all read as the connected
-        party, and a different party running the same code legitimately sees different results.{' '}
+        Private reads require an authorized party context. <Code>{'useLedgerApi'}</Code> uses the
+        connected wallet. <Code>{'useTokenHoldings'}</Code> and <Code>{'useDamlContract'}</Code>
+        wrap application-supplied readers: the application must enforce authorization and scope
+        their cache keys by party, network and data source. Different authorized parties can see different results.{' '}
         <A href="/docs/privacy-and-reads">Privacy and reads</A> covers how visibility actually works.
       </P>
       <P>
-        <Strong>Practical consequence:</Strong> a landing page that shows chain data before the user
-        connects has no Canton equivalent. Design for connect-first.
+        <Strong>Practical consequence:</Strong> private user holdings usually need connect-first
+        access. Publicly disclosed data and application-authorized backend data can still appear
+        before wallet connection; authorization belongs at the data source.
       </P>
 
       <H3>2. No ABI. Templates and choices instead</H3>
@@ -133,15 +135,14 @@ function Profile() {
 
       <H3>4. useSwitchChain has no working equivalent</H3>
       <P>
-        Not a design position on our side, a fact about the ecosystem today:{' '}
-        <Strong>every wallet in the registry declares switchNetwork: false</Strong>, all ten of them.
-        You can see it in the capability matrix on the{' '}
-        <A href="/wallets">Canton wallet directory</A>, which is generated from the registry, so if
-        that changes the page changes.
+        CIP-0103 defines active-network discovery, but no universal network-switch method.
+        Network support varies by wallet; check the{' '}
+        <A href="/wallets">Canton wallet directory</A> and the wallet&apos;s current documentation.
       </P>
       <P>
         Configure the network on <Code>{'PartyLayerKit'}</Code> and treat it as fixed for the session.
-        A multi-network app mounts per network rather than switching in place.
+        Ask the user to select the supported network in their wallet and reconnect. A visual
+        network selector alone does not switch the wallet or authorize another network.
       </P>
 
       <H3>5. Gas is traffic, and it is priced differently</H3>
@@ -184,8 +185,8 @@ function Profile() {
           ports mechanically, so get it working first and it will feel familiar.
         </LI>
         <LI>
-          Then find every read in your app that runs before connect. Those are the ones that need
-          rethinking, and there are usually more than you expect.
+          Review every private read, including reads before connect. Decide which party authorizes
+          it, enforce that access on the server or wallet, and isolate its cache by identity and network.
         </LI>
         <LI>
           Replace ABI-and-selector thinking with template-and-choice thinking before you write the

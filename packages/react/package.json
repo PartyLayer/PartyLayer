@@ -12,6 +12,11 @@
       "import": "./dist/index.mjs",
       "require": "./dist/index.js"
     },
+    "./journal": {
+      "types": "./dist/journal.d.ts",
+      "import": "./dist/journal.mjs",
+      "require": "./dist/journal.js"
+    },
     "./query": {
       "types": "./dist/query.d.ts",
       "import": "./dist/query.mjs",

@@ -35,6 +35,7 @@ const groups = [
   ['docs/quick-start.md',quickStart],
   ['README.md',markdown('README.md')],
   ...['docs/migration.md', 'docs/ai-integration.md'].map(file => [file,markdown(file)]),
+  ...['docs/wallet-ledger-reader.md', 'docs/transaction-lifecycle.md'].map(file => [file,completeMarkdown(file)]),
   ...['migration', 'ai-integration'].map(slug => { const file = `apps/demo/src/app/docs/${slug}/content.tsx`; return [file,website(file)]; }),
   ['docs/react-cookie-ssr.md',markdown('docs/react-cookie-ssr.md')],
   ['apps/demo/public/llms-full.txt',markdown('apps/demo/public/llms-full.txt')],

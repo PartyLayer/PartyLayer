@@ -29,6 +29,7 @@ import type {
 } from '@partylayer/sdk';
 import { createSessionStore, createMemoryStorage, type SessionStore, type SessionStoreOptions } from '@partylayer/session';
 import { TransactionHistoryProvider } from './transaction-history';
+import type { TransactionJournal } from './transaction-journal';
 
 interface PartyLayerContextValue {
   client: PartyLayerClient | null;
@@ -66,16 +67,19 @@ interface PartyLayerProviderProps {
   /**
    * session-store options merged into the shared store
    * (`reconnect`, `expiry`, `broadcast`, `persistSnapshot`, `onInvalidate`,
-   * `storage`). Omitted ⇒ today's default (localStorage marker, no
+   * `storage`). Omitted ⇒ today's default (memory-only snapshot, no
    * reconnect/broadcast). A provided `storage` overrides the default.
    */
   sessionOptions?: Partial<SessionStoreOptions>;
+  /** Opt-in persistence of pending transaction metadata only. Default: memory only. */
+  transactionJournal?: TransactionJournal;
 }
 
 export function PartyLayerProvider({
   client,
   children,
   sessionOptions,
+  transactionJournal,
 }: PartyLayerProviderProps) {
   const [session, setSession] = useState<Session | null>(null);
   const [wallets, setWallets] = useState<WalletInfo[]>([]);
@@ -233,7 +237,7 @@ export function PartyLayerProvider({
         store,
       }}
     >
-      <TransactionHistoryProvider client={client} session={session}>{children}</TransactionHistoryProvider>
+      <TransactionHistoryProvider client={client} session={session} journal={transactionJournal}>{children}</TransactionHistoryProvider>
     </PartyLayerContext.Provider>
   );
 }

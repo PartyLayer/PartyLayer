@@ -3,7 +3,7 @@ import TokenTransfersContent from './content';
 
 const title = 'Token Transfers';
 const description =
-  'Trigger token transfers on the Canton Network using the PartyLayer SDK. Sign and submit Daml commands through any connected wallet.';
+  'Build Canton Token Standard transfers with PartyLayer, supported wallet approvals, registry context, disclosures and independent ledger confirmation.';
 const url = 'https://partylayer.xyz/docs/token-transfers';
 
 export const metadata: Metadata = {

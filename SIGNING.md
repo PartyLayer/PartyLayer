@@ -1,43 +1,38 @@
-# Registry signing — hardening debt (post-M1)
+# Registry signing and activation
 
-**Status: tracked, NOT yet implemented. The production wallet registry is currently UNSIGNED, by design, at the dev stage.**
+**Status: production signing is not activated. The production wallet registry is UNSIGNED. No production key has been generated.**
 
 ## Why this exists
 
 The wallet registry (`registry/v1/<channel>/registry.json`) supports Ed25519
 signature verification end-to-end, but verification is **gated entirely on the
-consumer configuring `registryPublicKeys`** — and no shipping consumer does:
+consumer configuring `registryPublicKeys`**. No default production trust roots
+are distributed. Without configured roots the signature is not fetched and
+status truthfully reports `verified: false`.
 
-- `RegistryClient.verifyRegistrySignature()` returns `true` (skips) when
-  `publicKeys.length === 0` — see `packages/registry-client/src/client.ts:181-184`.
-- `requireSignature = this.publicKeys.length > 0` (`client.ts:213`); when false,
-  the `.sig` is **not even fetched** (`client.ts:286-314`).
-- `this.publicKeys = options.registryPublicKeys || []` defaults empty
-  (`client.ts:100`); `PartyLayerClient` only forwards `config.registryPublicKeys`
-  (`packages/sdk/src/client.ts:181`).
-- No shipping consumer sets `registryPublicKeys` (the demo passes `registryUrl`
-  but no keys; `examples/` set none) — so the sole rejection path,
-  `RegistryVerificationFailedError` (`client.ts:305-310`), is unreachable in
-  production today.
+The SDK accepts explicit roots; the candidate React kit also forwards
+`PartyLayerKit.registryPublicKeys`. Persisted signed bytes are re-verified against
+the current roots, cache storage is scoped by registry URL/channel, and rotation
+tests cover overlap and removal. A stored `verified` boolean is not trusted.
+These controls do not imply that production signing has been activated.
 
-Consequently the committed `registry/v1/*/registry.sig` files are empty and
-CI's "Verify Registry Signatures" step (`.github/workflows/ci.yml:57-66`) is
-conditional on a committed `.sig` + `registry/keys/dev.pub`, both absent, so it
-no-ops. `gate:registry` validates shape + the CIP-0103 footgun guard +
-provider.id disjointness — deliberately **not** the signature.
+Neither channel has a committed `registry.sig` or production public key. CI's
+conditional signature-verification step therefore does not run against production
+artifacts. `gate:registry` checks catalog structure and policy; cryptographic
+fixture tests run separately in the unit suite. Signature activation requires
+the complete release/consumer transition below.
 
-Adding/updating registry entries while unsigned therefore breaks no consumer.
-This is acceptable at the current stage; making signatures **real** end-to-end
-is the hardening slice below.
+Registry signing is an optional PartyLayer catalog control, not a CIP-0103
+requirement. The maintainer deferred production key custody/activation on
+2026-10-29; it does not block the remaining wallet-platform work.
 
 ## The proper-signing slice (STEP-0 this separately before building)
 
-1. **Key generation** — mint the production Ed25519 keypair
-   (`pnpm registry:sign --generate-key` produces `registry/keys/dev-<ts>.{pub,key}`;
-   the production key must NOT reuse a dev key).
-2. **Secure key storage** — the **private** key lives out-of-repo (gitignored,
-   like the npm token); never committed. Decide the custody mechanism (CI
-   secret / external secret manager) before generating the real key.
+1. **Custody decision** — name the holder and backup arrangement before generating
+   a production key; no private key is placed in this public repository or CI.
+2. **Key generation** — use the explicit out-of-repository private-key path in the
+   ceremony below. The public key may be committed; the private key remains
+   holder-controlled, mode `0600`, and must not reuse a test key.
 3. **Sign on release** — wire `pnpm registry:sign --channel <c> --key <path>`
    into the registry release flow so every registry change reproduces a fresh
    `registry.sig`. (Re-sign on every content change — the signature is over the

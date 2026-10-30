@@ -1,0 +1,53 @@
+name: Browser compatibility
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'packages/react/**'
+      - 'packages/sdk/**'
+      - 'apps/demo/**'
+      - 'pnpm-lock.yaml'
+      - '.github/workflows/browser-compatibility.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'packages/react/**'
+      - 'packages/sdk/**'
+      - 'apps/demo/**'
+      - '.github/workflows/browser-compatibility.yml'
+  schedule:
+    - cron: '30 5 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: browser-compatibility-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  ui:
+    name: Chromium, Firefox and WebKit UI
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm build
+      - run: pnpm --filter partylayer-demo exec playwright install --with-deps chromium firefox webkit
+      - run: pnpm --filter partylayer-demo exec playwright test --config playwright.compatibility.config.ts
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: browser-compatibility-evidence
+          path: |
+            apps/demo/test-results/compatibility.json
+            apps/demo/test-results/compatibility/
+          retention-days: 14

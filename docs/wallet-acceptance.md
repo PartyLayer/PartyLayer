@@ -6,6 +6,14 @@ not a certification of every wallet deployment or complete WCAG conformance.
 
 ## Accessibility
 
+The 2026-10-30 candidate adds a separate Chromium/Firefox/WebKit compatibility
+matrix covering desktop and emulated mobile profiles. The initial 70 UI/docs
+checks pass; the expanded matrix also includes the updated authentication,
+holdings, transaction and swap guides. These are controlled local UI tests,
+not physical iOS/Android wallet acceptance or complete screen-reader speech.
+The workflow saves machine-readable evidence; manual/live records below are
+not promoted to passed by this automation.
+
 `apps/demo/e2e/accessibility.spec.ts` runs axe-core's WCAG 2 A/AA, 2.1 A/AA and
 2.2 AA rule tags against the kit UI, without disabling rules or excluding a
 reported violation. It runs in the PR browser suite and attaches JSON reports.

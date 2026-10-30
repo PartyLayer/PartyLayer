@@ -74,6 +74,7 @@ const CLASSIFICATION = {
   'generic-bridge': { mode: 'enforce' },
   'authentication': { mode: 'enforce' },
   'transaction-lifecycle': { mode: 'enforce' },
+  'swaps': { mode: 'enforce' },
   'wallet-balances': { mode: 'enforce' },
   'partylayer-and-canton-topology': { mode: 'enforce' },
   'dev-and-staging': { mode: 'enforce' },

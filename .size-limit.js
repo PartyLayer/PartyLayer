@@ -54,7 +54,9 @@ module.exports = [
     // Exact-decimal, issuer-separated holdings UI adds ~1.2 kB.
     // WCAG luminance/hover checks and scoped readable placeholders add ~0.17 kB.
     // Measured 37.02 kB gzip; retain ~0.23 kB of headroom.
-    limit: '37.25 kB',
+    // Optional journal wiring and registry trust configuration add ~0.14 kB.
+    // The persistence implementation itself stays in the opt-in /journal entry.
+    limit: '37.5 kB',
   },
   {
     name: 'react/query: useTokenHoldings',
@@ -281,7 +283,8 @@ module.exports = [
     // Official native ownership, abort/identity guards and the stable provider
     // facade add ~3.5 kB. Discovery runtime stays a separately loaded chunk.
     // Shared request/receipt command correlation adds ~0.12 kB; measured 53.09 kB.
-    limit: '53.25 kB',
+    // Re-verifying persisted registry bytes and bounding storage startup add ~0.38 kB.
+    limit: '53.75 kB',
   },
   {
     name: 'react-native: ui (ConnectButton)',
@@ -503,6 +506,7 @@ module.exports = [
     // Official native ownership, abort/identity guards and the stable provider
     // facade add ~3.5 kB. Discovery runtime stays a separately loaded chunk.
     // Shared request/receipt command correlation adds ~0.12 kB; measured 52.85 kB.
-    limit: '53 kB',
+    // Re-verifying persisted registry bytes and bounding storage startup add ~0.38 kB.
+    limit: '53.5 kB',
   },
 ];

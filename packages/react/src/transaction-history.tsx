@@ -1,10 +1,11 @@
 'use client';
 
-import { createContext, useContext, useMemo, useSyncExternalStore } from 'react';
+import { createContext, useContext, useEffect, useMemo, useSyncExternalStore } from 'react';
 import { toCAIP2Network, type Session } from '@partylayer/core';
 import type { TransactionFlowRecord } from './use-transaction-flow';
 import { useLocale } from './localization';
 import { useTheme } from './theme';
+import type { TransactionJournal } from './transaction-journal';
 
 const EMPTY: readonly TransactionFlowRecord[] = [];
 const noop = () => () => {};
@@ -12,29 +13,55 @@ const getEmpty = () => EMPTY;
 interface TransactionHistoryStore {
   getSnapshot(): readonly TransactionFlowRecord[];
   subscribe(listener: () => void): () => void;
-  write(record: TransactionFlowRecord): void;
+  write(record: TransactionFlowRecord, epoch?: number): void;
+  getEpoch(): number;
+  restore(): void;
+  clear(): void;
 }
 const Context = createContext<{ store: TransactionHistoryStore; session: Session | null } | null>(null);
 export const useTransactionHistoryStore = () => useContext(Context)?.store ?? null;
 
-/** Internal per-client store. History is never written to browser storage or sent to telemetry. */
-export function TransactionHistoryProvider({ children, client, session }: { children: React.ReactNode; client: object; session: Session | null }) {
+/** Per-client history; optional pending-only journal. Never sent to telemetry. */
+export function TransactionHistoryProvider({ children, client, session, journal }: { children: React.ReactNode; client: object; session: Session | null; journal?: TransactionJournal }) {
   const store = useMemo<TransactionHistoryStore>(() => {
     let records: readonly TransactionFlowRecord[] = EMPTY;
     const listeners = new Set<() => void>();
+    const persistence = journal;
+    let restored = false;
+    let epoch = 0;
+    const restore = () => {
+      if (restored) return;
+      restored = true;
+      let loaded: TransactionFlowRecord[] = [];
+      try { loaded = persistence?.load() ?? []; } catch { /* Persistence cannot break wallet activity. */ }
+      records = [...records, ...loaded.filter(r => !records.some(item => item.id === r.id))].slice(0, 100);
+      listeners.forEach(listener => listener());
+    };
     return {
       getSnapshot: () => records,
+      getEpoch: () => epoch,
       subscribe: (listener) => { listeners.add(listener); return () => { listeners.delete(listener); }; },
-      write: (record) => {
+      write: (record, expectedEpoch) => {
+        if (expectedEpoch !== undefined && expectedEpoch !== epoch) return;
+        restore();
         records = records.some(item => item.id === record.id)
           ? records.map(item => item.id === record.id ? record : item)
           : [record, ...records].slice(0, 100);
+        try { persistence?.save(records); } catch { /* A quota/backend failure must never repeat a wallet write. */ }
         listeners.forEach(listener => listener());
       },
+      restore,
+      clear: () => { epoch++; records = EMPTY; try { persistence?.clear(); } catch { /* Best-effort persistence cleanup. */ } listeners.forEach(listener => listener()); },
     };
-  }, [client]);
+  }, [client, journal]);
+  useEffect(() => { store.restore(); }, [store]);
   const value = useMemo(() => ({ store, session }), [store, session]);
   return <Context.Provider value={value}>{children}</Context.Provider>;
+}
+
+/** Clear all activity in this provider and its optional journal (for example at app sign-out). */
+export function useClearRecentTransactions(): () => void {
+  return useTransactionHistoryStore()?.clear ?? (() => {});
 }
 
 /** Current wallet/party/network only. A command id or local id is never treated as confirmation. */
