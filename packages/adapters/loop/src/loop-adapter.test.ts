@@ -1032,3 +1032,9 @@ describe('LoopAdapter events', () => {
     expect(seen).toHaveLength(2); // second listener still on, first removed
   });
 });
+
+it('normalizes long route suffixes without backtracking or matching a near-miss', () => {
+  const adapter = new LoopAdapter() as unknown as { isAcsRoute(method: string, resource: string): boolean };
+  expect(adapter.isAcsRoute('POST', '/v2/state/active-contracts' + '/'.repeat(100_000))).toBe(true);
+  expect(adapter.isAcsRoute('POST', '/'.repeat(100_000) + 'x')).toBe(false);
+});

@@ -23,6 +23,9 @@ concurrency:
   group: regression-gate-${{ github.ref }}
   cancel-in-progress: true
 
+permissions:
+  contents: read
+
 jobs:
   gate:
     name: pnpm gate
@@ -37,7 +40,7 @@ jobs:
           fetch-depth: 0
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@v4
+        uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
         # Version is read from the root package.json `packageManager` field.
 
       - name: Setup Node.js

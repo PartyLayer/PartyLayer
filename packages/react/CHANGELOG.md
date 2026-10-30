@@ -8,6 +8,8 @@
 
 ### Patch Changes
 
+- Render wallet QR SVGs as inert images, validate Console deep links and WalletConnect pairing URIs, and keep decimal normalization linear for long fractions.
+
 - Updated dependencies [64ac2e1]
 - Updated dependencies [64ac2e1]
 - Updated dependencies [64ac2e1]

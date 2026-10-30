@@ -107,11 +107,11 @@ export const DEFAULT_BORDER_RADIUS = 10;
  */
 export function parseBorderRadius(value: string): number {
   const trimmed = value.trim();
-  const remMatch = /^(-?\d*\.?\d+)rem$/.exec(trimmed);
+  const remMatch = /^(-?(?:\d+(?:\.\d+)?|\.\d+))rem$/.exec(trimmed);
   if (remMatch) return parseFloat(remMatch[1]) * REM_BASE_PX;
-  const pxMatch = /^(-?\d*\.?\d+)px$/.exec(trimmed);
+  const pxMatch = /^(-?(?:\d+(?:\.\d+)?|\.\d+))px$/.exec(trimmed);
   if (pxMatch) return parseFloat(pxMatch[1]);
-  const bare = /^(-?\d*\.?\d+)$/.exec(trimmed);
+  const bare = /^(-?(?:\d+(?:\.\d+)?|\.\d+))$/.exec(trimmed);
   if (bare) return parseFloat(bare[1]);
   return DEFAULT_BORDER_RADIUS;
 }

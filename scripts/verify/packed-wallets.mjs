@@ -70,7 +70,10 @@ const server = createServer((req, res) => {
     }))).catch(error => { res.statusCode = 502; res.end(String(error)); });
     return;
   }
-  res.writeHead(307, { location: `https://registry.npmjs.org${req.url}` }); res.end();
+  const target = new URL('https://registry.npmjs.org');
+  target.pathname = new URL(req.url, 'http://localhost').pathname;
+  target.search = new URL(req.url, 'http://localhost').search;
+  res.writeHead(307, { location: target.href }); res.end();
 });
 await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
 registry = `http://127.0.0.1:${server.address().port}`;

@@ -1,5 +1,13 @@
 # @partylayer/adapter-loop
 
+## 0.6.2
+
+### Patch Changes
+
+- Keep error classification and Loop resource normalization linear in untrusted input length. Preserve supported error wording, timeout extraction and route matching.
+- Updated dependencies
+  - @partylayer/core@0.15.1
+
 ## 0.6.1
 
 ### Patch Changes

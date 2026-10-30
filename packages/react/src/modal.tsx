@@ -322,17 +322,14 @@ function extractSdkQrCode(): { svgHtml: string; deepLinkUrl: string | null } | n
   for (let i = 0; i < links.length; i++) {
     const el = links[i];
     const href = (el as HTMLAnchorElement).href || el.getAttribute('data-href') || '';
-    if (href.includes('consolewallet.io/wallet-connect')) {
-      deepLinkUrl = href;
-      break;
-    }
-  }
-  // Fallback: look for child anchors with consolewallet href
-  if (!deepLinkUrl) {
-    const anchors = container.querySelectorAll('a[href*="consolewallet"]');
-    if (anchors.length > 0) {
-      deepLinkUrl = (anchors[0] as HTMLAnchorElement).href;
-    }
+    try {
+      const url = new URL(href);
+      if (url.protocol === 'https:' && ['consolewallet.io', 'www.consolewallet.io'].includes(url.hostname) &&
+        !url.username && !url.password && url.pathname.replace(/\/$/, '') === '/wallet-connect') {
+        deepLinkUrl = url.href;
+        break;
+      }
+    } catch { /* Ignore malformed SDK links. */ }
   }
 
   return { svgHtml: svg.outerHTML, deepLinkUrl };
@@ -767,6 +764,8 @@ export function WalletModal({
    * this; everything else keeps its existing flow.
    */
   const handleDisplayUri = useCallback(async (uri: string) => {
+    // This callback is the WalletConnect pairing path, never an arbitrary browser URL.
+    if (!uri.startsWith('wc:') || uri.length > 8192) return;
     setDeepLinkUrl(uri);
     setConnectPhase('qr');
     try {
@@ -1903,14 +1902,17 @@ export function WalletModal({
             border: `1px solid ${theme.colors.border}`,
           }}>
             {qrSvgHtml ? (
-              <div
-                dangerouslySetInnerHTML={{ __html: qrSvgHtml }}
+              <img
+                data-testid="partylayer-qr-image"
+                alt={scanCopy}
+                src={`data:image/svg+xml;charset=utf-8,${encodeURIComponent(qrSvgHtml)}`}
                 style={{
                   width: '100%',
                   height: '100%',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
+                  objectFit: 'contain',
                 }}
               />
             ) : (

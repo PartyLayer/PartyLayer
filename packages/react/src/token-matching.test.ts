@@ -187,3 +187,8 @@ describe('allocationMatchesRequestLeg', () => {
     expect(allocationMatchesRequestLeg(bad, request, 'leg-usd')).toBe(false);
   });
 });
+
+it('compares long decimal fractions without trailing-zero backtracking', () => {
+  const fraction = '0'.repeat(100_000) + '1';
+  expect(tokenDecimalEquals('1.' + fraction, '+1.' + fraction)).toBe(true);
+});

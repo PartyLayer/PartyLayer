@@ -1,5 +1,11 @@
 # @partylayer/core
 
+## 0.15.1
+
+### Patch Changes
+
+- Keep error classification and Loop resource normalization linear in untrusted input length. Preserve supported error wording, timeout extraction and route matching.
+
 ## 0.15.0
 
 ### Minor Changes

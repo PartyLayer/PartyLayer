@@ -23,7 +23,10 @@ function normalizeDecimal(value: string): string {
   const body = s.startsWith('+') || s.startsWith('-') ? s.slice(1) : s;
   const parts = body.split('.');
   const intPart = parts[0].replace(/^0+/, '') || '0';
-  const frac = (parts[1] ?? '').replace(/0+$/, '');
+  const fraction = parts[1] ?? '';
+  let end = fraction.length;
+  while (end > 0 && fraction.charCodeAt(end - 1) === 48) end--;
+  const frac = fraction.slice(0, end);
   const isZero = intPart === '0' && frac === '';
   const sign = negative && !isZero ? '-' : '';
   return sign + intPart + (frac ? '.' + frac : '');

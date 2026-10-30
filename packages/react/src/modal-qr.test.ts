@@ -71,7 +71,7 @@ vi.mock('@partylayer/sdk', () => ({
   isCip0103Native: (w: { cip0103?: { native?: boolean } }) => !!w?.cip0103?.native,
 }));
 vi.mock('qrcode', () => ({
-  toString: vi.fn(async () => '<svg data-testid="wc-qr-svg"></svg>'),
+  toString: vi.fn(async () => '<svg data-testid="wc-qr-svg"><script>window.qrInjected = true</script><foreignObject><iframe src="https://evil.example"></iframe></foreignObject></svg>'),
 }));
 
 // eslint-disable-next-line import/first
@@ -105,7 +105,11 @@ describe('WalletModal — WalletConnect QR view', () => {
     const opts = connectMock.mock.calls[0][0] as { onDisplayUri?: unknown };
     expect(typeof opts.onDisplayUri).toBe('function');
     await waitFor(() => {
-      expect(document.querySelector('[data-testid="wc-qr-svg"]')).toBeTruthy();
+      const image = document.querySelector('[data-testid="partylayer-qr-image"]') as HTMLImageElement;
+      expect(image?.src).toContain('data:image/svg+xml');
+      expect(decodeURIComponent(image.src)).toContain('wc-qr-svg');
+      expect(document.querySelector('[data-testid="wc-qr-svg"]')).toBeNull();
+      expect(document.querySelector('iframe, script, foreignObject')).toBeNull();
     });
   });
 
@@ -120,4 +124,15 @@ describe('WalletModal — WalletConnect QR view', () => {
     expect(opts.onDisplayUri).toBeUndefined();
     expect(screen.queryByText('Scan with your Canton wallet')).toBeNull();
   });
+});
+
+it('does not turn a non-pairing display URI into an active browser link', async () => {
+  connectMock.mockImplementation(async (options: { onDisplayUri?: (uri: string) => void }) => {
+    options.onDisplayUri?.('javascript:window.qrInjected=true');
+    return new Promise(() => {});
+  });
+  renderModal(); fireEvent.click(await screen.findByText('WalletConnect'));
+  await waitFor(() => expect(connectMock).toHaveBeenCalledTimes(1));
+  expect(document.querySelector('a[href^="javascript:"]')).toBeNull();
+  expect(document.querySelector('[data-testid="partylayer-qr-image"]')).toBeNull();
 });

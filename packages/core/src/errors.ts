@@ -455,7 +455,7 @@ export function mapUnknownErrorToPartyLayerError(
     const isUserRejection =
       err.name === 'UserRejectedError' ||
       (err as { code?: unknown }).code === 4001 ||
-      /\buser\b.{0,24}(reject|den|declin|cancel|abort)|(reject|den|declin|cancel|abort)\w*.{0,24}\bby (?:the )?user\b/.test(
+      /\buser\b.{0,24}(reject|den|declin|cancel|abort)|\b(reject|den|declin|cancel|abort)\w{0,32}.{0,24}\bby (?:the )?user\b/.test(
         message,
       );
 
@@ -484,8 +484,8 @@ export function mapUnknownErrorToPartyLayerError(
       // is how a 120 000 ms race came to be reported as "30000ms". Context is a
       // FALLBACK now, used only when the message carries no figure, and an
       // unknown deadline stays unknown instead of becoming 0.
-      const msMatch = err.message.match(/(\d+)\s*ms\b/i);
-      const secMatch = err.message.match(/(\d+)\s*(?:s\b|sec|second)/i);
+      const msMatch = err.message.match(/(?:^|\D)(\d{1,10})\s{0,32}ms\b/i);
+      const secMatch = err.message.match(/(?:^|\D)(\d{1,10})\s{0,32}(?:s\b|sec|second)/i);
       const fromMessage = msMatch
         ? parseInt(msMatch[1], 10)
         : secMatch

@@ -39,3 +39,6 @@ reviewer, source revision, scope and unresolved findings.
 The [dependency maintenance record](docs/dependency-maintenance.md) distinguishes
 workspace resolution fixes, clean-consumer audit results and remaining upstream
 findings. CodeQL and dependency checks do not certify live wallet operations.
+
+The [initial CodeQL baseline review](./docs/codeql-review.md) records corrective
+changes and individually explained test/diagnostic false positives.
