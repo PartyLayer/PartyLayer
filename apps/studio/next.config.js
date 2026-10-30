@@ -11,10 +11,6 @@ const nextConfig = {
     '@partylayer/provider',
     '@partylayer/session',
   ],
-  // Ensure ESM packages work correctly
-  experimental: {
-    esmExternals: 'loose',
-  },
   // Webpack configuration to resolve workspace packages
   webpack: (config, { dev }) => {
     // Use memory cache in dev to prevent stale chunk errors after file edits
@@ -25,6 +21,7 @@ const nextConfig = {
     // Resolve workspace packages
     config.resolve.alias = {
       ...config.resolve.alias,
+      '@tanstack/react-query': path.dirname(require.resolve('@tanstack/react-query/package.json')),
       '@partylayer/react$': path.resolve(__dirname, '../../packages/react'),
       '@partylayer/sdk': path.resolve(__dirname, '../../packages/sdk'),
       '@partylayer/core$': path.resolve(__dirname, '../../packages/core'),

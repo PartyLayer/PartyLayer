@@ -35,3 +35,7 @@ specific response-time commitment or external audit certification is implied.
 Automated security/conformance tests and maintainer review are not an independent
 security audit. Published audit reports, if commissioned, must identify their
 reviewer, source revision, scope and unresolved findings.
+
+The [dependency maintenance record](docs/dependency-maintenance.md) distinguishes
+workspace resolution fixes, clean-consumer audit results and remaining upstream
+findings. CodeQL and dependency checks do not certify live wallet operations.

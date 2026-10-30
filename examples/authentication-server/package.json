@@ -7,6 +7,7 @@
   "scripts": {
     "build": "node --check server.mjs && node --check store.mjs && node --check verifier.mjs && node --check ledger.mjs",
     "test": "node --test *.test.mjs",
+    "test:postgres": "node --test postgres.integration.mjs",
     "start": "node server.mjs"
   },
   "dependencies": { "@partylayer/core": "workspace:^", "pg": "8.23.1" },

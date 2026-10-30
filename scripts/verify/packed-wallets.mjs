@@ -8,6 +8,7 @@ import { mkdtemp, mkdir, readFile, writeFile, readdir, copyFile } from 'node:fs/
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { fileURLToPath } from 'node:url';
+import { auditConsumer } from '../security/audit-consumer.mjs';
 
 const exec = promisify(execFile);
 const root = fileURLToPath(new URL('../../', import.meta.url));
@@ -83,6 +84,7 @@ try {
   }));
   console.log('Installing the single-command React consumer…');
   await run('npm', ['install', '@partylayer/react', '@tanstack/react-query', ...npmFlags], minimal);
+  await auditConsumer(minimal, join(root, 'artifacts/packed-wallets/react-audit.json'));
   const beta = await readFile(join(root, 'registry/v1/beta/registry.json'), 'utf8');
   await writeFile(join(minimal, 'registry.json'), beta);
   await writeFile(join(minimal, 'probe.mjs'), `
@@ -159,7 +161,7 @@ console.log('Packed server authentication: clean npm, ESM and CommonJS passed');
   const result = JSON.stringify({ passed: true,
     sdk: packages.get('@partylayer/sdk').pkg.version,
     react: packages.get('@partylayer/react').pkg.version, cli: cliVersion,
-    checks: ['single-command-install', 'esm', 'commonjs', 'ssr', 'official-defaults', 'authentication-backend', 'react-vite', 'next-ssr'],
+    checks: ['single-command-install', 'clean-consumer-security-audit', 'esm', 'commonjs', 'ssr', 'official-defaults', 'authentication-backend', 'react-vite', 'next-ssr'],
   }, null, 2);
   await writeFile(join(staging, 'result.json'), result);
   const evidence = join(root, 'artifacts/packed-wallets');

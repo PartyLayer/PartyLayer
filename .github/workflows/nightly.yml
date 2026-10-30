@@ -67,6 +67,7 @@ jobs:
     name: npm consumer canary (published packages)
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v4
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
@@ -173,6 +174,14 @@ jobs:
 
           npx tsc -p tsconfig.json
           echo "✓ consumer smoke compiled against published @partylayer/* surfaces"
+          node "$GITHUB_WORKSPACE/scripts/security/audit-consumer.mjs" "$DIR" "$RUNNER_TEMP/public-consumer-audit.json"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: public-consumer-security-audit
+          path: ${{ runner.temp }}/public-consumer-audit.json
+          if-no-files-found: ignore
+          retention-days: 14
       - name: Summary
         if: always()
         run: |

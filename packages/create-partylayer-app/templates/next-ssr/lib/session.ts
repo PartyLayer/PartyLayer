@@ -9,8 +9,8 @@ import {
 // next/headers is imported HERE (the app), never inside @partylayer/session —
 // the library stays framework-agnostic. This adapter wraps Next's read-only
 // request cookies into the CookieAdapter shape createCookieStorage expects.
-function nextCookieAdapter(): CookieAdapter {
-  const jar = cookies();
+async function nextCookieAdapter(): Promise<CookieAdapter> {
+  const jar = await cookies();
   return {
     get: (name) => jar.get(name)?.value ?? null,
     // Server Components can only READ cookies; writes happen client-side
@@ -25,8 +25,8 @@ function nextCookieAdapter(): CookieAdapter {
  * snapshot (party, network, …) or null. This is what lets a Server Component
  * render the connected state in the initial HTML — before any client JS.
  */
-export function getServerSession(): PersistedSessionSnapshot | null {
-  const storage = createCookieStorage({ adapter: nextCookieAdapter() });
+export async function getServerSession(): Promise<PersistedSessionSnapshot | null> {
+  const storage = createCookieStorage({ adapter: await nextCookieAdapter() });
   // Cookie reads are synchronous; the SessionStorage interface types getItem as
   // string | null | Promise, so narrow to a string (null/absent → no session).
   const raw = storage.getItem('pl_session');
