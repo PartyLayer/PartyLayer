@@ -9,13 +9,12 @@ on:
       - 'apps/demo/**'
       - 'pnpm-lock.yaml'
       - '.github/workflows/browser-compatibility.yml'
+      - '.github/workflows/npm-publish.yml'
+      - '.github/npm-release-policy.json'
+      - 'scripts/release/**'
+  # Releases require browser evidence for the exact main commit, including tooling-only changes.
   push:
     branches: [main]
-    paths:
-      - 'packages/react/**'
-      - 'packages/sdk/**'
-      - 'apps/demo/**'
-      - '.github/workflows/browser-compatibility.yml'
   schedule:
     - cron: '30 5 * * 1'
   workflow_dispatch:

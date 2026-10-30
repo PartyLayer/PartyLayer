@@ -178,3 +178,8 @@ test('real publishing workflow has one protected owner gate and defaults to no p
   assert.doesNotMatch(commands, /pnpm|npm (?:stage|dist-tag)|npm (?:ci|install)(?! --global npm@)/);
   assert.ok(commands.includes('owner-publish.mjs publish')); assert.ok(commands.includes(`npm@${POLICY.npmVersion}`));
 });
+
+test('required browser evidence runs on every main push without path omissions', () => {
+  const browser = parse(readFileSync(new URL('../../.github/workflows/browser-compatibility.yml', import.meta.url), 'utf8'), { uniqueKeys: true });
+  assert.deepEqual(browser.on.push, { branches: ['main'] });
+});
