@@ -13,7 +13,7 @@ export const POLICY = JSON.parse(readFileSync(join(ROOT, '.github/npm-release-po
 const digest = data => createHash('sha512').update(data).digest('base64');
 const fail = message => { throw new Error(message); };
 const read = path => JSON.parse(readFileSync(path, 'utf8'));
-function archiveBytes(path) {
+export function archiveBytes(path) {
   const descriptor = openSync(path, constants.O_RDONLY | constants.O_NOFOLLOW);
   try {
     const info = fstatSync(descriptor);
@@ -28,10 +28,11 @@ export function contextFrom(env = process.env) {
   return { repository: env.GITHUB_REPOSITORY, repositoryId: env.GITHUB_REPOSITORY_ID,
     actorId: env.GITHUB_ACTOR_ID, triggeringActor: env.GITHUB_TRIGGERING_ACTOR,
     event: env.GITHUB_EVENT_NAME, ref: env.GITHUB_REF, sha: env.GITHUB_SHA,
-    runId: env.GITHUB_RUN_ID, runAttempt: env.GITHUB_RUN_ATTEMPT, actions: env.GITHUB_ACTIONS };
+    runId: env.GITHUB_RUN_ID, runAttempt: env.GITHUB_RUN_ATTEMPT, actions: env.GITHUB_ACTIONS,
+    workflowRef: env.GITHUB_WORKFLOW_REF, job: env.GITHUB_JOB };
 }
 export function assertOwner(context, policy = POLICY) {
-  assert.equal(context.actions, 'true', 'Staging runs only in GitHub Actions.');
+  assert.equal(context.actions, 'true', 'Release operations run only in GitHub Actions.');
   assert.equal(context.repository, policy.repository, 'Unexpected repository.');
   assert.equal(context.repositoryId, policy.repositoryId, 'Repository identity does not match.');
   assert.equal(context.actorId, policy.ownerId, 'Only the owner may initiate the release.');

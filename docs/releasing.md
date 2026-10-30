@@ -2,7 +2,7 @@
 
 This document describes how to cut releases and publish packages for PartyLayer.
 
-The [owner-approved staged release workflow](./trusted-publishing.md) is the
+The [owner-approved release workflow](./trusted-publishing.md) is the
 publication contract. It has completed a real tokenless CLI release. Other packages
 require their trust settings to be audited and activated before their first staged
 release; do not bypass the owner gate or create publishing tokens for them.
@@ -91,23 +91,27 @@ git push
 
 Create a PR with the version bump. After review and merge:
 
-### 6. Prepare, stage and approve packages
+### 6. Prepare, approve and publish packages
 
-Wait for CI and the regression gate to pass on the exact merged `main` commit.
-As the owner, dispatch the **Owner-approved npm staging** workflow with the explicit
-package list and `stage=false`. Review its versions, dependency order and SHA-512
-manifest before proceeding.
+Wait for CI, the regression gate, browser compatibility and CodeQL to pass on the
+exact merged `main` commit. As the owner, dispatch **Owner-approved npm publishing**
+with the explicit package list. Its `publish=false` default prepares files without
+any npm write. When selected packages have verified direct-publishing connections,
+`publish=true` prepares the files and waits for the owner's single GitHub approval
+in `npm-release`.
 
-Once the selected packages' stage-only npm trust settings are verified, dispatch
-with `stage=true`. The GitHub `npm-release` environment waits for the owner's
-approval of that specific run. The isolated job submits the verified tarballs to
-npm staging through OIDC; it cannot make them public. The owner then inspects the
-staged files and separately completes npm's final 2FA approval. Follow the
-[full staged release procedure](./trusted-publishing.md#prepare-and-stage-a-release).
+Review that run's versions, dependency order and SHA-512 manifest before approving.
+The isolated job publishes the exact files through OIDC, disables lifecycle hooks,
+requires provenance and checks public registry integrity/tag after each write.
+The npm account keeps 2FA; initial connection/security setup can require package-
+specific MFA, while releases through this model need no second npm approval.
+Follow the [full owner-approved procedure](./trusted-publishing.md#prepare-and-publish-a-release).
+The existing `npm-stage.yml` workflow remains a two-approval alternative for
+unmigrated packages; its connections stay stage-only.
 
 Never use the legacy local `pnpm release` / `changeset publish` command to bypass
 this workflow. Versioning and packing happen with pnpm, which expands workspace
-ranges in the tarballs. The staging job submits those exact files rather than
+ranges in the tarballs. The publishing job submits those exact files rather than
 repacking them with npm or publishing the source directory.
 
 Verify registry integrity, provenance, `latest` and a clean public installation

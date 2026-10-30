@@ -1,71 +1,145 @@
 # Owner-approved npm releases
 
-The release workflow prepares verified packages and can submit them to **npm staging**. It never approves a stage or publishes directly. A staged package becomes public only after the owner's separate npm 2FA approval.
+The selected release model uses **one protected GitHub approval per release run**.
+`npm-publish.yml` builds and records exact package files, then waits for the owner
+in the `npm-release` environment. After approval, an isolated job publishes those
+files through npm OIDC. There is no separate npm approval for each package in this
+model. The npm account retains 2FA; initial package/trust configuration can still
+require separate npm verification.
 
-**Activation status (2026-10-29):** the workflow is merged and the first owner-approved OIDC release, `create-partylayer-app@0.7.0`, is public. The dedicated GitHub `npm-release` environment has `anilkaracay` as its sole reviewer, no administrator bypass and only the `main` branch. Authenticated collaborator queries found only `cayvox` with read-write access on all 20 packages. The CLI's stage-only npm connection and real release are verified; npm also accepted its require-2FA/disallow-tokens setting. Other packages' existing trust connections and token restrictions remain unaudited, so this is not a claim of completed migration for all 20 packages.
+**Activation status (2026-10-30):** the owner selected this model to replace repeated
+per-package publication approvals. Its direct-publishing connections and first real
+release must be verified before migration is recorded as complete. Nine reviewed
+package versions are pending publication. Authenticated collaborator queries for
+these nine packages identify only `cayvox` with read-write access; the core package
+has no existing trust connection. Other packages' existing connections and token
+restrictions still require inspection. This is not a completed migration claim for
+all 20 packages.
 
 ## Owner and trust boundaries
 
 | Boundary | Required identity or setting |
 | --- | --- |
 | GitHub repository | `PartyLayer/PartyLayer`, immutable repository ID `1142218754` |
-| Initial dispatch | GitHub account `anilkaracay`, immutable user ID `70052819` |
-| Rerun and release-environment reviewer | `anilkaracay` only |
-| npm maintainer and final approver | Owner's npm account `cayvox` |
-| Workflow | `.github/workflows/npm-stage.yml` |
-| GitHub environment | `npm-release`; `main` branch only; administrator bypass disabled |
-| npm trusted-publisher actions | Stage only; direct publish and independent dist-tag management disabled |
-| npm publishing access after migration | Require 2FA and disallow traditional tokens |
+| Dispatch, rerun and environment approval | `anilkaracay`, immutable user ID `70052819` |
+| npm maintainer and initial settings | Owner's npm account `cayvox` |
+| Direct-publishing workflow | `.github/workflows/npm-publish.yml` |
+| GitHub environment | `npm-release`; only `main`, one owner reviewer, no administrator bypass |
+| npm connection | Exact repository, workflow filename and environment; allow publication; separate dist-tag management disabled |
+| Account/package settings | Preserve 2FA and restrict traditional publishing tokens |
 
-The owner confirmed that both GitHub administrator accounts (`anilkaracay` and `cayvox`) belong to them. The release workflow deliberately uses `anilkaracay`; it does not remove the owner's second administrator/recovery account. Self-review is allowed for this single reviewer so an owner-initiated release can proceed. That GitHub approval permits staging only; npm still requires a separate interactive 2FA approval for publication.
+Both GitHub administrator accounts, `anilkaracay` and `cayvox`, belong to the owner.
+The workflow intentionally uses `anilkaracay`; it does not remove the second
+administrator/recovery account. Self-review is allowed so the single owner can
+approve their own dispatch. Public repository visibility does not grant release
+approval or npm rights. This model removes the independent npm publication MFA
+barrier; the protected GitHub approval is the publication decision.
 
-The reviewed identities, toolchain and frozen list of 20 existing packages live in [the release policy](../.github/npm-release-policy.json). A new package, renamed account or changed publishing path requires a reviewed policy change. Both public maintainer metadata and authenticated effective collaborator queries currently identify only `cayvox` for all 20 packages. That does not establish the absence of other trusted-publisher connections or complete the token-restriction audit.
+Identities, toolchain and the fixed list of 20 existing packages are recorded in
+[the release policy](../.github/npm-release-policy.json). A new package, workflow,
+identity or trust boundary requires a reviewed change. Sole maintainer metadata
+alone does not prove that no other trusted-publisher connection exists.
 
-## First verified release
+## Prepare and publish a release
 
-[`create-partylayer-app@0.7.0`](https://www.npmjs.com/package/create-partylayer-app/v/0.7.0) was prepared and staged by [workflow run 40896650344](https://github.com/PartyLayer/PartyLayer/actions/runs/40896650344), from commit `3356c383cee44f10c5a2f4f5515e938e423c92f9`. The owner explicitly approved that run's GitHub environment gate and completed npm's separate final 2FA approval. No manually created npm publishing token was used by the workflow.
+1. Merge the ordinary version PR. CI, the regression gate, browser compatibility
+   and CodeQL must all pass on the exact current `main` commit. Review any open
+   default-branch code-scanning alerts; publication refuses an unreviewed baseline.
+2. As `anilkaracay`, dispatch **Owner-approved npm publishing** on `main`, name
+   the existing packages explicitly, and select `latest` or `next`. The **publish**
+   input defaults to false, which prepares files without any npm write. When the
+   package connections are ready, select **publish** to prepare and request the
+   owner's environment approval in the same run.
+3. Preparation verifies identities, current main, checks and actual environment
+   protection. It builds, validates packed consumers, packs through pinned pnpm
+   and uploads `npm-release-<sha>-<attempt>`, containing the SHA-512 manifest and
+   exact files. Preparation has no OIDC publishing permission.
+4. Review names, versions, dependency order, tag and integrity in that run's
+   artifact. Approve **that specific run** in `npm-release`. A dispatch or an
+   earlier preparation approval is not blanket permission for later releases.
+5. The separate publishing job uses a fresh runner, pinned Node/npm and no
+   application dependencies. It revalidates source/run/attempt, owner selection,
+   source manifests, archive paths, README/license, hashes, successful checks,
+   code-scanning status, registry state and environment rules. It also verifies
+   the exact publishing workflow reference and protected job name.
+6. Every archive is copied into a private snapshot before the first write. Empty
+   user/global npm configurations replace inherited configuration. The job uses
+   `npm publish <exact-file> --ignore-scripts --provenance` through OIDC. It does
+   not repack source, execute package hooks, use a persistent npm token or OTP,
+   manage dist-tags separately, overwrite versions or unpublish packages.
+7. Packages are published in dependency order. Public registry version, integrity
+   and requested tag are checked after each write; short bounded retries apply
+   only to registry propagation reads. Preserve the partial receipt. Verify
+   provenance/signatures and a clean public installation before marking the full
+   release complete and creating package-version tags at the source commit.
 
-The downloaded staged and public tarballs matched the prepared artifact byte for byte. The `latest` tag, Node `>=20.12.0` engine, registry signatures and provenance were checked; provenance names this workflow, source commit and run. A clean unauthenticated npm consumer installed CLI 0.7.0, generated a React/Vite application, passed Doctor and completed its production build. `npm audit signatures` verified the installed consumer's registry signatures and attestations. These checks establish the release path, not live wallet or ledger acceptance.
+Keep the release window serial. A changed main/check/approval policy at preflight,
+changed registry latest, mismatched file or unknown outcome stops the operation.
+A preparation-only success proves packaging, not publication, npm trust activation
+or final provenance. Never approve an unrelated run to work around a failed gate.
 
-The CLI connection grants only `createStagedPackage`, bound to `PartyLayer/PartyLayer`, `npm-stage.yml` and `npm-release`. npm acknowledged `npm access set mfa=publish create-partylayer-app`; an independent settings read-back remains to be recorded. Before activating each of the remaining 19 packages, audit existing trust connections and token settings and complete its next real release through the same owner-approved path. Do not pre-create unused connections and let their initial-validation window expire.
+## Activate the package connections
 
-## Prepare and stage a release
+Use a GitHub-hosted runner with pinned **Node 24.21.0**, **npm 11.19.0** and
+**pnpm 9.15.9**. These release-tool versions are separate from package runtime
+engines. Configure each selected package's connection for:
 
-1. Merge a normal version/release PR with changelogs, coordinated dependency versions and current template pins. Wait for **both** the CI and regression-gate push runs to pass on the current `main` commit.
-2. Open **Actions → Owner-approved npm staging → Run workflow** as `anilkaracay`. Select `main`, explicitly name the existing packages separated by commas, and select `latest` or `next`. Leave **stage** unchecked for the first preparation-only run. No PR event or tag push triggers a release.
-3. Preparation checks the actor, immutable repository identity, current source SHA, exact CI runs and actual environment approval/branch rules. It builds the workspace, runs publish/packed-consumer gates, packs with pinned pnpm and records a SHA-512 integrity manifest. The job has no npm token or OIDC publishing permission.
-4. Inspect the `npm-release-<sha>-<attempt>` artifact, including selected names, versions, dist-tag and checksums. Preparation refuses a downgrade of `latest`, unpublished omitted internal dependencies, unknown packages and an existing version with different bytes.
-5. When npm trust settings have been verified, dispatch with **stage** checked. The isolated staging job waits for the owner's GitHub environment approval. It downloads only this run's artifact, checks source/run identity, selection, tag, package manifests, README/license, file paths and hashes, and rechecks CI, environment rules and current registry state.
-6. The job uses `npm stage publish` on the exact validated tarballs. It installs no application dependencies, executes no package lifecycle hooks and runs npm from an empty temporary directory rather than loading the repository's npm configuration. There is no `npm publish`, `npm stage approve`, `npm stage reject` or token fallback in the workflow.
-7. Preserve the stage receipt. Sign in to npm as `cayvox`, inspect the staged package, download and compare its tarball integrity with the prepared manifest, then approve with 2FA. Approve coordinated dependencies in the recorded dependency order. The automation does not ask for or handle the owner's 2FA code.
-8. Verify public registry integrity, provenance, dist-tags and a clean public-consumer installation. Only then mark the release complete and create its package-version tag at the reviewed source commit.
+- Repository **PartyLayer/PartyLayer**.
+- Workflow filename **npm-publish.yml**, without a directory prefix.
+- Environment **npm-release**.
+- Direct publishing permission; leave independent dist-tag management disabled.
 
-Keep the release window serial. A new commit on `main`, changed `latest`, missing CI result or changed approval rule stops the workflow; dispatch again from the new reviewed state rather than bypassing it. A preparation-only run validates packaging, not npm OIDC, stage creation, 2FA promotion or final provenance.
+Audit existing connections and effective collaborator/team grants before adding
+a connection. Do not silently delete account access. Initial configuration and
+package-security changes may require MFA for each package: one GitHub approval
+per release does not promise one verification for the initial migration.
 
-## Activate npm trust without widening publishing rights
+A new connection must complete its first successful publish within npm's validation
+window (currently two days). Configure it for an imminent, reviewed release.
+After the first real release works, select **Require two-factor authentication and
+disallow tokens**, verify the setting and revoke superseded automation tokens.
+Trusted OIDC publication remains supported with that setting; owner recovery
+access and ordinary account 2FA are retained. Never add an npm publishing token to
+repository or environment secrets as a fallback.
 
-Use a GitHub-hosted runner, **Node 24.21.0**, **npm 11.19.0** and **pnpm 9.15.9**, pinned in the workflow. Staged publishing requires npm 11.15.0+ and Node 22.14.0+; the ordinary Node 20 CI jobs do not establish this publishing capability. These are release-tool requirements, separate from application/package runtime engines.
+## Existing staged workflow and first verified release
 
-For each package being activated, use its authenticated npm settings to bind the trusted publisher to:
+`npm-stage.yml` remains available for packages that intentionally retain two
+independent approvals. It grants only staging, with a separate npm MFA approval
+for publication. Keep its existing connections stage-only; do not widen them to
+activate the new direct-publishing workflow.
 
-- Organization `PartyLayer`, repository `PartyLayer` and workflow filename `npm-stage.yml`.
-- Environment **`npm-release`**, not a website's Vercel environment.
-- Stage-only permission. Leave direct publishing and separate dist-tag management disabled.
-
-Audit every other trust connection and effective organization/team publishing grant. Do not silently replace or delete account access. Package-setting and trust changes require the owner's authenticated interaction and may require 2FA. Do not put an npm write token in repository/environment secrets or workflow variables.
-
-Complete and verify the first real owner-approved release before relying on the new path. Newly created npm trust connections expire if their initial validation is not completed within the period described in [npm's current documentation](https://docs.npmjs.com/trusted-publishers/); configure them when the owner is ready for that release. Then select **Require two-factor authentication and disallow tokens**, verify that stage-only OIDC still works, and revoke superseded automation tokens. Preserve the owner's recovery access.
-
-Use the verified staged workflow for CLI releases. The [release process](./releasing.md) also describes versioning and validation; it is not authorization to bypass the owner gate or introduce publishing tokens for packages still awaiting migration.
+The historical first verified tokenless release was
+[`create-partylayer-app@0.7.0`](https://www.npmjs.com/package/create-partylayer-app/v/0.7.0),
+from [run 40896650344](https://github.com/PartyLayer/PartyLayer/actions/runs/40896650344)
+and source `3356c383cee44f10c5a2f4f5515e938e423c92f9`. The owner approved the GitHub
+stage and separately completed npm MFA. Staged/public/prepared tarballs matched;
+registry provenance, signatures, latest, clean installation, Doctor and a generated
+Vite build were checked. Its stage-only connection and token restriction were
+accepted by npm; an independent settings read-back remains to be recorded.
+Those observations validate the old path, not the new direct publisher or live
+wallet send/swap acceptance.
 
 ## Failure and recovery
 
-A monorepo release is not atomic. The script checks all selected registry states before staging the first package and records each successful stage immediately. It stops on the first failure and preserves the partial receipt. It does not retry a possibly successful write, reject an unknown stage, overwrite a version or unpublish a package.
-
-OIDC credentials cannot inspect or approve existing stages. If a stage request times out or its result is uncertain, use the owner's interactive npm account to inspect/download it and compare bytes before retrying. If an identical version is already public it can be skipped; a differing integrity is a hard stop. Never interpret a mocked staging test as a successful real registry release.
+A multi-package release is not atomic. All selected registry states and all file
+snapshots are checked before the first write. The intent is saved before each write and each verified result updates
+`publish-receipt.json`, uploaded even if the job stops. A failed
+write or failed post-write check records `unknown-stop-and-inspect`; no write is
+automatically retried. Inspect registry version/tag/integrity and provenance before
+resuming. An identical published version is skipped only when its requested tag
+also verifies; differing bytes or an unapproved retag are a hard stop.
 
 ## Verification
 
-`pnpm gate:workflow-scripts` runs the workflow/script tests as part of the mandatory repository gate. They exercise wrong actors/forks/refs, changed main, failed or stale CI, missing approval, extra reviewers, administrator bypass, wildcard branches, archive/source/hash drift, owner-selection changes, token fallback, dependency ordering and partial-failure recovery. Tests use local archives and fake APIs/commands; they do not create npm stages or approve a release.
+`pnpm gate:workflow-scripts` runs both legacy staging and direct-publisher tests.
+They cover wrong actors/forks/refs/workflows/jobs, missing explicit publication,
+missing OIDC, token/OTP fallback, changed main or CI, open code-scanning alerts,
+extra reviewers, bypass/wildcard rules, source/hash drift, protected snapshots,
+configuration isolation, publication order, read-only propagation retries and
+partial-failure recovery. Tests use synthetic archives and fake writes: they
+neither publish real versions nor constitute a real OIDC activation test.
 
-See [npm staged publishing](https://docs.npmjs.com/staged-publishing/), [npm trusted publishers](https://docs.npmjs.com/trusted-publishers/) and [GitHub environment protection](https://docs.github.com/en/actions/how-tos/deploy/configure-and-manage-deployments/manage-environments) for the service contracts.
+See [npm trusted publishing](https://docs.npmjs.com/trusted-publishers/),
+[npm staged publishing](https://docs.npmjs.com/staged-publishing/) and
+[GitHub environment protection](https://docs.github.com/en/actions/how-tos/deploy/configure-and-manage-deployments/manage-environments).

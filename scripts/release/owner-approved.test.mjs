@@ -64,7 +64,7 @@ test('package selections reject flags, paths, duplicates and unknown wallets', (
 });
 test('preflight verifies current main and exact successful push workflows', async () => {
   const good = apiFixture(); await preflight(context, good.api);
-  assert.equal(good.calls.length, 5);
+  assert.equal(good.calls.length, 7);
   for (const change of [
     data => { data['git/ref/heads/main'].object.sha = 'b'.repeat(40); },
     data => { Object.values(data).find(value => value.workflow_runs).workflow_runs[0].conclusion = 'failure'; },
