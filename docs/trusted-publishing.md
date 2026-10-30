@@ -7,14 +7,15 @@ files through npm OIDC. There is no separate npm approval for each package in th
 model. The npm account retains 2FA; initial package/trust configuration can still
 require separate npm verification.
 
-**Activation status (2026-10-30):** the owner selected this model to replace repeated
-per-package publication approvals. Its direct-publishing connections and first real
-release must be verified before migration is recorded as complete. Nine reviewed
-package versions are pending publication. Authenticated collaborator queries for
-these nine packages identify only `cayvox` with read-write access; the core package
-has no existing trust connection. Other packages' existing connections and token
-restrictions still require inspection. This is not a completed migration claim for
-all 20 packages.
+**Activation status (2026-10-30):** direct-publishing connections for the nine selected
+packages were created and their repository, workflow, environment and permissions
+verified. Authenticated collaborator queries identify only `cayvox` with read-write
+access. The first owner-approved run published `@partylayer/core@0.15.1`; its public
+integrity and `latest` match the reviewed file. npm processed that publication
+asynchronously, and the old six-second verification window stopped the job before
+the other eight packages. Those eight publications and their first OIDC activation
+remain pending. Traditional-token restrictions on the eight non-CLI packages also
+remain pending. This is not a completed migration claim for all 20 packages.
 
 ## Owner and trust boundaries
 
@@ -70,8 +71,10 @@ alone does not prove that no other trusted-publisher connection exists.
 7. Packages are published in dependency order, including dependencies inside
    shipped CLI starter manifests. A CLI release cannot precede an unpublished SDK
    required by its generated applications. Public registry version, integrity
-   and requested tag are checked after each write; short bounded retries apply
-   only to registry propagation reads. Preserve the partial receipt. Verify
+   and requested tag are checked after each write. npm can accept a publication
+   before its asynchronous processing finishes; read-only checks poll for up to
+   five minutes per package. Integrity mismatches stop immediately, and no write
+   is retried. Preserve the partial receipt. Verify
    provenance/signatures and a clean public installation before marking the full
    release complete and creating package-version tags at the source commit.
 
