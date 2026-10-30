@@ -61,3 +61,9 @@ describe('mapUnknownErrorToPartyLayerError traffic branch', () => {
     );
   });
 });
+
+// Wallet-controlled text must not trigger quadratic backtracking.
+it('classifies long refusal-like and numeric timeout messages without backtracking', () => {
+  expect(mapUnknownErrorToPartyLayerError(new Error('den'.repeat(100_000)), ctx)).not.toBeInstanceOf(UserRejectedError);
+  expect(mapUnknownErrorToPartyLayerError(new Error('0'.repeat(100_000) + 'x timeout'), ctx)).toBeInstanceOf(TimeoutError);
+});

@@ -1,5 +1,21 @@
 # @partylayer/react
 
+## 3.2.0
+
+### Minor Changes
+
+- 64ac2e1: Add authorized, identity-scoped CIP-0103 JSON Ledger API holdings reads and independent update/command correlation. Add the ready React holdings hook and an opt-in pending transaction journal that restores unknown outcomes without replaying writes. Preserve existing hooks and default memory-only behavior; expose optional registry trust roots through PartyLayerKit.
+
+### Patch Changes
+
+- Render wallet QR SVGs as inert images, validate Console deep links and WalletConnect pairing URIs, and keep decimal normalization linear for long fractions.
+
+- Updated dependencies [64ac2e1]
+- Updated dependencies [64ac2e1]
+- Updated dependencies [64ac2e1]
+  - @partylayer/sdk@0.21.0
+  - @partylayer/registry-client@0.7.1
+
 ## 3.1.2
 
 ### Patch Changes

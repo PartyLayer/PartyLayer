@@ -31,6 +31,9 @@ on:
     # 03:17 UTC daily — off-peak, prime-ish minute to avoid the top-of-hour rush.
     - cron: '17 3 * * *'
 
+permissions:
+  contents: read
+
 jobs:
   gate-main:
     name: Gate (main, drift detection)
@@ -43,7 +46,7 @@ jobs:
           # against its `<name>@<version>` release tag.
           fetch-depth: 0
       - name: Setup pnpm
-        uses: pnpm/action-setup@v4
+        uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
@@ -203,7 +206,7 @@ jobs:
         with:
           ref: main
       - name: Setup pnpm
-        uses: pnpm/action-setup@v4
+        uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
@@ -236,7 +239,7 @@ jobs:
         with:
           ref: main
       - name: Setup pnpm
-        uses: pnpm/action-setup@v4
+        uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:

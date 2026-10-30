@@ -1,5 +1,11 @@
 # @partylayer/adapter-cantor8
 
+## 0.5.2
+
+### Patch Changes
+
+- 64ac2e1: Update official discovery, Cantor8 and WalletConnect runtime dependencies after compatibility validation. Retain the separate pinned Canton SDK required by Walley's peer contract. The Devnet demonstration resolves complete registry asset capabilities with the upstream wallet SDK instead of constructing a stale AssetBody shape.
+
 ## 0.5.1
 
 ### Patch Changes

@@ -843,7 +843,7 @@ export class LoopAdapter implements WalletAdapter {
   /** Check if the request targets the ACS query endpoint */
   private isAcsRoute(method: string, resource: string): boolean {
     const m = method.toUpperCase();
-    const normalized = resource.replace(/\/+$/, '');
+    const normalized = trimRouteSlashes(resource);
     // POST /v2/state/acs — filtered query (Canton Ledger API standard)
     // POST /v2/state/active-contracts — alias
     // GET  /v2/state/acs/active-contracts — unfiltered fetch of all contracts
@@ -860,7 +860,7 @@ export class LoopAdapter implements WalletAdapter {
   /** Check if the request targets a command submission endpoint */
   private isSubmitRoute(method: string, resource: string): boolean {
     if (method.toUpperCase() !== 'POST') return false;
-    const normalized = resource.replace(/\/+$/, '');
+    const normalized = trimRouteSlashes(resource);
     return normalized === '/v2/commands/submit'
       || normalized === '/v2/commands/submit-and-wait'
       || normalized === '/v2/commands/submit-and-wait-for-transaction';
@@ -993,7 +993,7 @@ export class LoopAdapter implements WalletAdapter {
       );
     }
 
-    const normalized = resource.replace(/\/+$/, '');
+    const normalized = trimRouteSlashes(resource);
     const waitForResult = normalized.includes('wait');
 
     // The adapter is a passthrough: `payload` is opaque JSON whose shape is the
@@ -1152,4 +1152,11 @@ function extractContracts(result: unknown): unknown[] {
     }
   }
   return [];
+}
+
+/** Linear-time route normalization, including long untrusted resources. */
+function trimRouteSlashes(resource: string): string {
+  let end = resource.length;
+  while (end > 0 && resource.charCodeAt(end - 1) === 47) end--;
+  return resource.slice(0, end);
 }

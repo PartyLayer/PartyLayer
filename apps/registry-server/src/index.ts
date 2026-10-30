@@ -12,6 +12,7 @@
 
 import express from 'express';
 import cors from 'cors';
+import { createRegistryRateLimit } from './rate-limit.js';
 import { readFileSync, existsSync, statSync } from 'fs';
 import { join, resolve } from 'path';
 import { createHash } from 'crypto';
@@ -65,6 +66,7 @@ app.use(cors({
 
 // Security: disable directory listing, no eval/templating
 app.disable('x-powered-by');
+app.use(createRegistryRateLimit());
 
 /**
  * Compute ETag from file content

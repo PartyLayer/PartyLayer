@@ -31,7 +31,7 @@
  */
 
 import { execFileSync } from 'node:child_process';
-import { readFileSync, statSync } from 'node:fs';
+import { openSync, closeSync, readSync, fstatSync, constants } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join, resolve } from 'node:path';
 
@@ -78,21 +78,20 @@ for (const rel of tracked) {
   }
   if (DOC_ALLOWLIST.some((re) => re.test(rel))) continue;
 
-  let full;
-  try {
-    full = join(ROOT, rel);
-    // Skip anything large or binary; key material is small and textual.
-    if (statSync(full).size > 512 * 1024) continue;
-  } catch {
-    continue;
-  }
-
+  let descriptor;
   let text;
   try {
-    text = readFileSync(full, 'utf8');
+    descriptor = openSync(join(ROOT, rel), constants.O_RDONLY | constants.O_NOFOLLOW);
+    const info = fstatSync(descriptor);
+    if (!info.isFile() || info.size > 512 * 1024) continue;
+    // Read a bounded snapshot from the same descriptor we checked.
+    const buffer = Buffer.alloc(512 * 1024 + 1);
+    const size = readSync(descriptor, buffer, 0, buffer.length, 0);
+    if (size > 512 * 1024) continue;
+    text = buffer.toString('utf8', 0, size);
   } catch {
     continue;
-  }
+  } finally { if (descriptor !== undefined) closeSync(descriptor); }
   if (text.includes('\0')) continue;
 
   for (const re of KEY_CONTENT) {

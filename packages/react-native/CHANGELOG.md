@@ -1,5 +1,15 @@
 # @partylayer/react-native
 
+## 1.0.4
+
+### Patch Changes
+
+- Keep CSS radius parsing linear for long malformed theme values.
+
+- Updated dependencies [64ac2e1]
+- Updated dependencies [64ac2e1]
+  - @partylayer/sdk@0.21.0
+
 ## 1.0.3
 
 ### Patch Changes

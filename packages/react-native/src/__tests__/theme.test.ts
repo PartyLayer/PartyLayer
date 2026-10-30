@@ -145,3 +145,7 @@ it('keeps native preset and custom accent text readable while pressed', () => {
     }
   }
 });
+
+it('rejects long malformed CSS lengths without ambiguous numeric backtracking', () => {
+  expect(parseBorderRadius('0'.repeat(100_000) + 'nope')).toBe(DEFAULT_BORDER_RADIUS);
+});

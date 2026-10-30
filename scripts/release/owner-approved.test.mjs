@@ -121,12 +121,14 @@ test('staging invokes only npm stage publish on the exact artifact in an isolate
     state: async () => ({ latestVersion: '0.9.0', publishedIntegrity: null }),
     execute: (command, args, cwd) => {
       calls.push({ command, args, cwd }); assert.ok(!cwd.startsWith(root));
+      assert.equal(`sha512-${createHash('sha512').update(readFileSync(args[2])).digest('base64')}`, value.packages[0].integrity);
+      assert.equal(dirname(args[2]), cwd, 'stage the protected snapshot, not the mutable download');
       return JSON.stringify({ name: value.packages[0].name, version: '1.0.0', integrity: value.packages[0].integrity, stageId: 'stage-123' });
     },
   });
   assert.equal(calls.length, 1); assert.equal(calls[0].command, 'npm');
   assert.deepEqual(calls[0].args.slice(0, 2), ['stage', 'publish']);
-  assert.equal(calls[0].args[2], join(output, value.packages[0].filename));
+  assert.notEqual(calls[0].args[2], join(output, value.packages[0].filename));
   assert.ok(calls[0].args.includes('--ignore-scripts')); assert.ok(calls[0].args.includes('--tag=latest'));
   assert.equal(existsSync(calls[0].cwd), false, 'temporary working directory cleaned');
   assert.equal(receipt.packages[0].status, 'staged-awaiting-owner-2fa');
@@ -207,4 +209,13 @@ test('the isolated staging module loads without workspace dependencies or applic
   writeFileSync(consumer, 'import { stage } from "./scripts/release/owner-approved.mjs"; if (typeof stage !== "function") process.exit(1);');
   const result = execFileSync(process.execPath, [consumer], { cwd: directory, encoding: 'utf8' });
   assert.equal(result, '');
+}));
+
+test('archive mutation after manifest validation blocks staging before any npm write', async () => fixture(async ({ root, output, manifest }) => {
+  const value = manifest(['@partylayer/core']); let calls = 0;
+  await assert.rejects(stage(context, output, apiFixture().api, { root, env: cleanEnv,
+    state: async () => { writeFileSync(join(output, value.packages[0].filename), 'changed after validation'); return { latestVersion: '0.9.0', publishedIntegrity: null }; },
+    execute: () => { calls++; },
+  }), /Archive changed after validation/);
+  assert.equal(calls, 0);
 }));

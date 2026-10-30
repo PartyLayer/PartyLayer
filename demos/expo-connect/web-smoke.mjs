@@ -14,7 +14,7 @@
 import { execSync } from 'node:child_process';
 import { createServer } from 'node:http';
 import { readFileSync, existsSync } from 'node:fs';
-import { join, dirname, resolve, extname } from 'node:path';
+import { join, dirname, resolve, extname, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createRequire } from 'node:module';
 
@@ -42,8 +42,11 @@ if (!existsSync(join(dist, 'index.html'))) {
 }
 
 const server = createServer((req, res) => {
-  const url = (req.url || '/').split('?')[0];
-  let file = join(dist, url === '/' ? 'index.html' : url);
+  let pathname;
+  try { pathname = decodeURIComponent(new URL(req.url || '/', 'http://localhost').pathname); }
+  catch { res.writeHead(400).end(); return; }
+  let file = resolve(dist, '.' + (pathname === '/' ? '/index.html' : pathname));
+  if (!file.startsWith(dist + sep)) { res.writeHead(403).end(); return; }
   if (!existsSync(file)) file = join(dist, 'index.html'); // SPA fallback
   try {
     res.writeHead(200, { 'content-type': MIME[extname(file)] || 'application/octet-stream' });
@@ -64,7 +67,7 @@ const fail = (msg) => {
 // a module-loading regression, so it is tolerated (logged, not failed).
 const isBrokenIconNoise = (text) => /valid SVG|closing tag|match opening tag/i.test(text);
 
-server.listen(PORT, async () => {
+server.listen(PORT, '127.0.0.1', async () => {
   const pageErrors = []; // uncaught exceptions: a module-loading regression crashes here
   const otherConsole = []; // console.errors that are not broken-icon noise
   const iconNoise = [];
@@ -131,7 +134,7 @@ server.listen(PORT, async () => {
     process.exit(0);
   } catch (e) {
     console.error(e instanceof Error ? e.message : String(e));
-    if (errors.length) console.error('page errors:\n' + errors.join('\n'));
+    if (pageErrors.length) console.error('page errors:\n' + pageErrors.join('\n'));
     await browser.close();
     fail('exception during smoke');
   }

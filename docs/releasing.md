@@ -2,9 +2,10 @@
 
 This document describes how to cut releases and publish packages for PartyLayer.
 
-The [trusted-publishing activation plan](./trusted-publishing.md) describes the
-reviewed path toward tokenless npm releases. It is not enabled yet; the current
-publication commands below remain the release contract.
+The [owner-approved staged release workflow](./trusted-publishing.md) is the
+publication contract. It has completed a real tokenless CLI release. Other packages
+require their trust settings to be audited and activated before their first staged
+release; do not bypass the owner gate or create publishing tokens for them.
 
 ## Versioning Strategy
 
@@ -90,28 +91,29 @@ git push
 
 Create a PR with the version bump. After review and merge:
 
-### 6. Publish Packages
+### 6. Prepare, stage and approve packages
 
-```bash
-pnpm release
-```
+Wait for CI and the regression gate to pass on the exact merged `main` commit.
+As the owner, dispatch the **Owner-approved npm staging** workflow with the explicit
+package list and `stage=false`. Review its versions, dependency order and SHA-512
+manifest before proceeding.
 
-This builds all packages and publishes to npm (requires authentication).
+Once the selected packages' stage-only npm trust settings are verified, dispatch
+with `stage=true`. The GitHub `npm-release` environment waits for the owner's
+approval of that specific run. The isolated job submits the verified tarballs to
+npm staging through OIDC; it cannot make them public. The owner then inspects the
+staged files and separately completes npm's final 2FA approval. Follow the
+[full staged release procedure](./trusted-publishing.md#prepare-and-stage-a-release).
 
-> **Important:** Always use `pnpm release`, never `npm run release` or `yarn release`.
-> pnpm automatically resolves `workspace:*` dependencies to their actual semver versions
-> at publish time. Using npm or yarn will publish unresolved `workspace:*` references,
-> which causes `EUNSUPPORTEDPROTOCOL` errors for consumers.
+Never use the legacy local `pnpm release` / `changeset publish` command to bypass
+this workflow. Versioning and packing happen with pnpm, which expands workspace
+ranges in the tarballs. The staging job submits those exact files rather than
+repacking them with npm or publishing the source directory.
 
-> **Verified (@changesets/cli 2.29.8):** `pnpm release` runs `changeset publish`, which
-> detects the package manager and, when pnpm is detected, spawns `pnpm publish` per package
-> rather than `npm publish`. `pnpm publish` expands `workspace:^` and similar ranges to real
-> semver in the published manifest, so this flow does not reproduce the 2.2.0 unresolved
-> range defect. This holds as long as pnpm is the package manager changesets detects; if it
-> ever ran somewhere pnpm was not on PATH, changesets would fall back to `npm publish`, which
-> does not expand workspace ranges. Evidence: `internalPublish` in
-> `node_modules/@changesets/cli/dist/changesets-cli.cjs.js` spawns `pnpm publish` when the
-> detected tool is pnpm, with the package directory as the cwd.
+Verify registry integrity, provenance, `latest` and a clean public installation
+before recording a release as complete or creating its package-version tags.
+Publication of one package does not complete a coordinated release: approve
+internal dependencies in the recorded order and verify the entire selected set.
 
 ## Process notes
 
@@ -121,14 +123,11 @@ another. A stacked pull request can be closed or silently absorbed when its base
 lands, so the change never reaches `main` even though the pull request badge shows as
 merged. Keeping the base as `main` also ensures CI runs on the pull request.
 
-For the same reason, before merging a pull request when `main` has moved since the branch
-was cut, confirm the branch is current with `main`. A branch cut before another change
-landed still carries the pre-change tree, so merging it silently reverts whatever landed in
-between; because the reverted files can keep the same names, nobody notices until the old
-behaviour reappears (a wallet mark reverting to the wrong icon is one way this shows up).
-Rebase the branch onto `main`, then confirm the diff touches only the files the pull request
-is meant to change. This is the same failure shape as a stacked pull request, arriving
-through a different door.
+Before merging when `main` has moved, review the current merge result and resolve
+conflicts against the latest `main`. A stale branch does not inherently revert
+unrelated changes, but an incorrect conflict resolution or copied generated file
+can reintroduce old behavior. Confirm that the final diff contains only the
+intended changes, then run the required checks on that exact head.
 
 ## Registry Updates
 

@@ -2,7 +2,7 @@
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import { execFileSync } from 'node:child_process';
-import { existsSync, mkdirSync, mkdtempSync, rmSync, readdirSync, readFileSync, writeFileSync, lstatSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, rmSync, readdirSync, readFileSync, writeFileSync, openSync, closeSync, fstatSync, constants } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
@@ -13,6 +13,15 @@ export const POLICY = JSON.parse(readFileSync(join(ROOT, '.github/npm-release-po
 const digest = data => createHash('sha512').update(data).digest('base64');
 const fail = message => { throw new Error(message); };
 const read = path => JSON.parse(readFileSync(path, 'utf8'));
+function archiveBytes(path) {
+  const descriptor = openSync(path, constants.O_RDONLY | constants.O_NOFOLLOW);
+  try {
+    const info = fstatSync(descriptor);
+    assert.ok(info.isFile(), 'Artifact must be a regular file.');
+    assert.ok(info.size > 0 && info.size < 64 * 1024 * 1024, 'Unexpected archive size.');
+    return readFileSync(descriptor);
+  } finally { closeSync(descriptor); }
+}
 const run = (command, args, cwd = ROOT) => execFileSync(command, args, { cwd, encoding: 'utf8', timeout: 120_000, maxBuffer: 16 * 1024 * 1024 });
 
 export function contextFrom(env = process.env) {
@@ -96,8 +105,7 @@ function targets(manifest) {
   return values.filter(value => !value.includes('*')).map(value => `package/${value.replace(/^\.\//, '')}`);
 }
 export function inspectTarball(path, source, versions, root = ROOT) {
-  assert.ok(lstatSync(path).isFile() && !lstatSync(path).isSymbolicLink(), 'Artifact must be a regular file.');
-  assert.ok(lstatSync(path).size > 0 && lstatSync(path).size < 64 * 1024 * 1024, 'Unexpected archive size.');
+  archiveBytes(path); // Validate one no-follow descriptor before invoking tar.
   const entries = run('tar', ['-tzf', path]).trim().split('\n');
   assert.equal(new Set(entries).size, entries.length, 'Duplicate archive entries.');
   for (const entry of entries) {
@@ -205,8 +213,7 @@ export function verifyManifest(context, directory, root = ROOT) {
     assert.match(item.filename, /^[a-zA-Z0-9_.-]+\.tgz$/);
     assert.match(item.integrity, /^sha512-[A-Za-z0-9+/]{86}==$/);
     const path = join(directory, item.filename);
-    assert.ok(lstatSync(path).isFile() && !lstatSync(path).isSymbolicLink(), 'Artifact must be a regular file.');
-    assert.equal(`sha512-${digest(readFileSync(path))}`, item.integrity, 'Archive integrity changed.');
+    assert.equal(`sha512-${digest(archiveBytes(path))}`, item.integrity, 'Archive integrity changed.');
     assert.equal(item.version, sources.get(item.name).version);
     inspectTarball(path, sources.get(item.name), versions, root);
   }
@@ -232,9 +239,15 @@ export async function stage(context, directory, api, { state = registryState, ex
   const isolated = mkdtempSync(join(tmpdir(), 'partylayer-npm-stage-'));
   try {
   for (const item of pending) {
+    if (item.alreadyPublished) continue;
+    const bytes = archiveBytes(resolve(directory, item.filename));
+    assert.equal(`sha512-${digest(bytes)}`, item.integrity, 'Archive changed after validation.');
+    writeFileSync(join(isolated, item.filename), bytes, { flag: 'wx', mode: 0o400 });
+  }
+  for (const item of pending) {
     if (item.alreadyPublished) { receipt.packages.push({ name: item.name, version: item.version, status: 'already-published-identical' }); save(); continue; }
     try {
-      const output = execute('npm', ['stage', 'publish', resolve(directory, item.filename), `--registry=${REGISTRY}`, '--access=public', `--tag=${manifest.tag}`, '--ignore-scripts', '--json'], isolated);
+      const output = execute('npm', ['stage', 'publish', join(isolated, item.filename), `--registry=${REGISTRY}`, '--access=public', `--tag=${manifest.tag}`, '--ignore-scripts', '--json'], isolated);
       const parsed = JSON.parse(output);
       const result = Array.isArray(parsed) ? parsed[0] : (parsed.stageId ? parsed : parsed[item.name]);
       assert.match(result?.stageId ?? '', /^[a-zA-Z0-9_.:-]{1,256}$/, 'Registry did not return a stage ID; inspect the run before retrying.');
