@@ -131,7 +131,7 @@ server.listen(PORT, async () => {
     process.exit(0);
   } catch (e) {
     console.error(e instanceof Error ? e.message : String(e));
-    if (errors.length) console.error('page errors:\n' + errors.join('\n'));
+    if (pageErrors.length) console.error('page errors:\n' + pageErrors.join('\n'));
     await browser.close();
     fail('exception during smoke');
   }
