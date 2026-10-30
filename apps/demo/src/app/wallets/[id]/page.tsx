@@ -24,8 +24,9 @@ export function generateStaticParams(): { id: string }[] {
   return getAllWalletIds().map((id) => ({ id }));
 }
 
-export function generateMetadata({ params }: { params: { id: string } }): Metadata {
-  const w = getWallet(params.id);
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
+  const { id } = await params;
+  const w = getWallet(id);
   if (!w) return {};
 
   const url = `https://partylayer.xyz/wallets/${w.id}`;
@@ -108,8 +109,9 @@ function CodeBlock({ children }: { children: string }) {
   );
 }
 
-export default function WalletIntegrationPage({ params }: { params: { id: string } }) {
-  const w = getWallet(params.id);
+export default async function WalletIntegrationPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  const w = getWallet(id);
   if (!w) notFound();
 
   const snapshot = getRegistrySnapshot();

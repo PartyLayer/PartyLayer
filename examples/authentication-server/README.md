@@ -19,6 +19,14 @@ Tests execute actual PostgreSQL SQL in PGlite and real Ed25519/P-256 cryptograph
 HTTP sign-in/logout, concurrent replay attempts and persisted database restoration.
 They are synthetic signing profiles, not live vendor-wallet acceptance.
 
+CI additionally starts PostgreSQL 16 and tests multiple real connections and two
+HTTP replicas sharing nonce/session state, including concurrent logout/verification.
+To repeat that integration locally, provision a dedicated test database, set
+`PARTYLAYER_TEST_DATABASE_URL` and run
+`pnpm --filter partylayer-authentication-server-example test:postgres`. The regular
+local suite needs no database service; the integration target fails if its required
+database setting is absent rather than silently skipping the check.
+
 For a server, provision a dedicated PostgreSQL database and configure these
 server-only environment variables, then run
 `pnpm --filter partylayer-authentication-server-example start`:

@@ -97,7 +97,7 @@ test('connected account menu has accessible labels, roles and contrast', async (
   page,
 }, testInfo) => {
   await connectToMockWallet(page);
-  const trigger = page.locator('button[aria-haspopup="menu"]');
+  const trigger = page.getByRole('button', { name: /party:/i });
   await trigger.click();
   await expect(page.getByRole('menu', { name: 'Wallet account' })).toBeVisible();
   await scan(page, testInfo, '[role="menu"]');

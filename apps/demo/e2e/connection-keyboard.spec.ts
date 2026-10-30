@@ -48,7 +48,7 @@ test('wallet dialog keeps Tab inside and restores the opener after Escape', asyn
 
 test('account actions support keyboard navigation and Tab leaves the menu', async ({ page }) => {
   await connectToMockWallet(page);
-  const trigger = page.locator('button[aria-haspopup="menu"]');
+  const trigger = page.getByRole('button', { name: /party:/i });
   await trigger.focus();
   await trigger.press('ArrowDown');
   const copy = page.getByRole('menuitem', { name: 'Copy address' });
@@ -71,7 +71,7 @@ test('account actions support keyboard navigation and Tab leaves the menu', asyn
 
 test('keyboard disconnect restores focus to Connect Wallet', async ({ page }) => {
   await connectToMockWallet(page);
-  const trigger = page.locator('button[aria-haspopup="menu"]');
+  const trigger = page.getByRole('button', { name: /party:/i });
   await trigger.focus();
   await trigger.press('ArrowUp');
   await expect(page.getByRole('menuitem', { name: 'Disconnect' })).toBeFocused();
@@ -91,7 +91,7 @@ test('language and RTL changes preserve the connected account and keyboard actio
   const original = await identity.textContent();
   await page.getByRole('combobox', { name: 'Wallet UI language' }).selectOption('tr');
   await page.getByRole('checkbox', { name: 'RTL', exact: true }).check();
-  const trigger = page.locator('button[aria-haspopup="menu"]');
+  const trigger = page.getByRole('button', { name: /party:/i });
   await trigger.focus();
   await trigger.press('ArrowDown');
   const menu = page.getByRole('menu', { name: 'Cüzdan hesabı' });
