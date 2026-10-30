@@ -1,5 +1,12 @@
 # create-partylayer-app
 
+## 0.7.1
+
+### Patch Changes
+
+- a3e52c2: Correct the README's outdated Node 18 minimum to Node 20.12.0 and document that offline Doctor diagnostics are available from CLI 0.7.0.
+- de16860: Move the Next.js SSR starter to the patched Next 15.5.28 maintenance line and React 19, use asynchronous request cookies, and label the persisted cookie identity as a display hint until the wallet is revalidated. The demo and Studio use the same patched framework line with asynchronous route parameters.
+
 ## 0.7.0
 
 - Align the declared Node minimum (20.12.0) with the existing prompt-library requirement; add a direct-runtime engine compatibility check.

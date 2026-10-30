@@ -114,7 +114,7 @@ npm run dev`}</CodeBlock>
 
       <H2 id="troubleshooting">Common setup questions</H2>
       <P>Upgrading an existing integration? Follow the <A href="/docs/migration">migration guide</A>. For a coding assistant, use the <A href="/docs/ai-integration">AI integration guide</A> and maintained plain-text reference.</P>
-      <Callout type="note">CLI 0.7.0 requires Node 20.12.0+ and adds read-only --doctor diagnostics for installed package, peer and Node compatibility. Until that release is published, use the current CLI for scaffolding and follow the <A href="https://github.com/PartyLayer/PartyLayer/tree/main/packages/create-partylayer-app#diagnose-an-existing-application">release and diagnostic usage notes</A> before invoking the new flag.</Callout>
+      <Callout type="note">CLI 0.7.0 and newer require Node 20.12.0+ and include read-only --doctor diagnostics for installed package, peer and Node compatibility. CLI 0.7.0 is published on npm; follow the <A href="https://github.com/PartyLayer/PartyLayer/tree/main/packages/create-partylayer-app#diagnose-an-existing-application">release and diagnostic usage notes</A> before invoking the new flag.</Callout>
       <H3>Why is a wallet missing from Connect Wallet?</H3>
       <P>Check the configured network and registry channel first. Send requires Mainnet; Vala requires Devnet beta. Then check required application configuration for WalletConnect or Bron and whether the wallet is installed or logged in. See the <A href="/docs/wallets">wallet support matrix</A> and <A href="/docs/error-handling">error-handling guide</A>.</P>
       <H3>Does signing a message prove that transfers and swaps work?</H3>

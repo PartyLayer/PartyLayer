@@ -1,6 +1,6 @@
 {
   "name": "@partylayer/react-native",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "sideEffects": false,
   "description": "Canton Network wallet integration for React Native: PartyLayer client, CIP-0103 integrations, session storage, hooks and optional Connect Wallet UI.",
   "main": "./dist/index.js",

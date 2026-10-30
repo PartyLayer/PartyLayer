@@ -1,6 +1,6 @@
 {
   "name": "@partylayer/sdk",
-  "version": "0.20.1",
+  "version": "0.21.0",
   "sideEffects": false,
   "description": "TypeScript wallet integration SDK for Canton Network, with CIP-0103 provider access, wallet discovery, sessions and supported wallet runtimes.",
   "main": "./dist/index.js",

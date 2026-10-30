@@ -1,6 +1,6 @@
 {
   "name": "@partylayer/react",
-  "version": "3.1.2",
+  "version": "3.2.0",
   "sideEffects": false,
   "description": "Canton Network wallet connection kit for React: CIP-0103 integrations, included wallet runtimes, hooks, themes and a ready-made Connect Wallet button.",
   "main": "./dist/index.js",
