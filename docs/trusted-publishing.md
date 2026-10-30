@@ -7,15 +7,18 @@ files through npm OIDC. There is no separate npm approval for each package in th
 model. The npm account retains 2FA; initial package/trust configuration can still
 require separate npm verification.
 
-**Activation status (2026-10-30):** direct-publishing connections for the nine selected
-packages were created and their repository, workflow, environment and permissions
-verified. Authenticated collaborator queries identify only `cayvox` with read-write
-access. The first owner-approved run published `@partylayer/core@0.15.1`; its public
-integrity and `latest` match the reviewed file. npm processed that publication
-asynchronously, and the old six-second verification window stopped the job before
-the other eight packages. Those eight publications and their first OIDC activation
-remain pending. Traditional-token restrictions on the eight non-CLI packages also
-remain pending. This is not a completed migration claim for all 20 packages.
+**Activation status (2026-10-30):** all nine selected versions are public with the
+reviewed SHA-512 integrity and `latest` tag. Their exact direct-publishing
+connections were verified; authenticated collaborator queries identify only
+`cayvox` with read-write access. The owner approved each specific release run.
+Core was published by the first run; the remaining eight were published by the
+successful recovery run after adding bounded asynchronous-processing waits.
+Clean public consumer checks passed. npm accepted the **require 2FA and disallow
+traditional tokens** setting for all eight non-CLI packages; the CLI setting had
+already been accepted during its earlier release. These observations are successful
+authenticated setting responses, not a separate settings-page read-back audit.
+The other 11 existing packages have not completed this
+migration; this is not a migration claim for all 20 packages.
 
 ## Owner and trust boundaries
 
@@ -124,6 +127,52 @@ Vite build were checked. Its stage-only connection and token restriction were
 accepted by npm; an independent settings read-back remains to be recorded.
 Those observations validate the old path, not the new direct publisher or live
 wallet send/swap acceptance.
+
+## First direct release
+
+The owner approved [run 41033004742](https://github.com/PartyLayer/PartyLayer/actions/runs/41033004742)
+for nine packages. npm accepted core, but asynchronous processing outlasted the
+old six-second metadata check. The job stopped before any other write. Core's
+public bytes, tag, registry signature and provenance were checked before recovery;
+it was excluded from the next dispatch and was never resent.
+
+After the bounded read-only wait was fixed and all four required workflows passed
+on the new main commit, the owner separately approved
+[run 41039254435](https://github.com/PartyLayer/PartyLayer/actions/runs/41039254435).
+That run successfully published the remaining eight reviewed versions:
+
+| Package | Version | Source commit |
+| --- | --- | --- |
+| `@partylayer/core` | `0.15.1` | `8d0417b0812f9c75530802aa3b98fee899c2522c` |
+| `@partylayer/adapter-loop` | `0.6.2` | `4c12b933860baaf670110120511ae617f94eed0f` |
+| `@partylayer/registry-client` | `0.7.1` | `4c12b933860baaf670110120511ae617f94eed0f` |
+| `@partylayer/adapter-cantor8` | `0.5.2` | `4c12b933860baaf670110120511ae617f94eed0f` |
+| `@partylayer/adapter-walletconnect` | `0.5.1` | `4c12b933860baaf670110120511ae617f94eed0f` |
+| `@partylayer/sdk` | `0.21.0` | `4c12b933860baaf670110120511ae617f94eed0f` |
+| `@partylayer/react` | `3.2.0` | `4c12b933860baaf670110120511ae617f94eed0f` |
+| `@partylayer/react-native` | `1.0.4` | `4c12b933860baaf670110120511ae617f94eed0f` |
+| `create-partylayer-app` | `0.7.1` | `4c12b933860baaf670110120511ae617f94eed0f` |
+
+The recovery files were checked against the first reviewed files: compiled code
+and dependency values were identical. Only JSON key ordering changed in the SDK
+and React package manifests; the recovery manifest records their actual hashes.
+Publication receipts and npm provenance identify the actual source/run for each
+version, rather than attributing the whole release to one commit.
+
+For all nine versions, public registry signatures and Sigstore attestations were
+verified with npm 11.19.0's verification implementation. Downloaded tarball SHA-512,
+provenance subject, workflow, source commit and invocation matched the reviewed
+records. Clean installations from the public npm registry passed the single-command
+React contract, ESM/CommonJS imports, SSR initialization, official wallet defaults,
+server authentication and lossless amount checks. The public CLI generated both
+Vite and Next.js applications; both installed and built successfully without
+workspace links or a local registry. The React consumer audit reported no high or
+critical findings and 20 propagated moderate entries; see
+[dependency maintenance](./dependency-maintenance.md) for the remaining upstream
+dependency limitations.
+
+This records npm publication, not funded wallet send/swap acceptance, physical
+mobile testing, a completed VoiceOver session or an independent security audit.
 
 ## Failure and recovery
 
