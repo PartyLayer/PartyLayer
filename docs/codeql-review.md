@@ -41,6 +41,16 @@ added to CodeQL. Re-evaluate these decisions if a use crosses a trust boundary.
 | 17–20 | Plaintext heading/document inspection. The transformed strings are never inserted into a DOM or treated as sanitized HTML. |
 | 53 | The request Origin comparison implements CSRF checking. Proof verification, browser-bound nonce consumption and opaque server-session authorization are independent checks; choosing an Origin header does not grant access. |
 
+## Subsequent publisher review
+
+Alert 54 (`js/file-access-to-http`) in the direct publisher is an intentional public
+npm metadata lookup. Only an allowlisted package identity, reviewed version and
+tag enter an encoded URL under the constant `https://registry.npmjs.org` origin;
+redirects are forbidden. Archive contents, credentials and private file data are
+not sent. The registry-verification test checks the fixed origin and matching
+version/integrity. This is classified individually as a false positive, with the
+reason preserved in GitHub; no query or path exclusion is introduced.
+
 ## Scope
 
 Validate the corrective changes with the full repository gate, new regression

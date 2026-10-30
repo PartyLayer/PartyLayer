@@ -7,7 +7,12 @@
   "npmMaintainer": "cayvox",
   "environment": "npm-release",
   "workflow": "npm-stage.yml",
-  "requiredWorkflows": ["ci.yml", "regression-gate.yml"],
+  "requiredWorkflows": [
+    "ci.yml",
+    "regression-gate.yml",
+    "browser-compatibility.yml",
+    "codeql.yml"
+  ],
   "nodeVersion": "24.21.0",
   "npmVersion": "11.19.0",
   "packages": {
@@ -31,5 +36,6 @@
     "@partylayer/adapter-nightly": "packages/adapters/nightly",
     "@partylayer/adapter-send": "packages/adapters/send",
     "@partylayer/adapter-walletconnect": "packages/adapters/walletconnect"
-  }
+  },
+  "publishWorkflow": "npm-publish.yml"
 }
