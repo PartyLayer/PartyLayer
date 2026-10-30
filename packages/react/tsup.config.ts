@@ -1,7 +1,7 @@
 import { defineConfig } from 'tsup';
 
 export default defineConfig({
-  entry: ['src/index.ts', 'src/query.ts'],
+  entry: ['src/index.ts', 'src/query.ts', 'src/journal.ts'],
   format: ['cjs', 'esm'],
   // Mark the published bundles as client modules so importing @partylayer/react
   // (and /query) into a Server Component gives a correct client boundary instead

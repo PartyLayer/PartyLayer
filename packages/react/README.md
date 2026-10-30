@@ -510,6 +510,14 @@ caches. See [protocol migration](https://github.com/PartyLayer/PartyLayer/blob/m
 
 ## TypeScript
 
+Starting with React 3.2.0, ready authenticated holdings reads are available as `useWalletTokenHoldings` from
+`@partylayer/react/query`. Existing application-fetcher hooks remain unchanged.
+Use `useTransactionFlow` for submit-once/independent-confirmation behavior. Optional
+reload recovery uses `createTransactionJournal` from `@partylayer/react/journal`
+with `PartyLayerKit.transactionJournal`; persisted pending records return as unknown
+and are never resubmitted. See [wallet ledger reads](https://github.com/PartyLayer/PartyLayer/blob/main/docs/wallet-ledger-reader.md)
+and [transaction lifecycle](https://partylayer.xyz/docs/transaction-lifecycle).
+
 All hooks and components are fully typed:
 
 ```typescript

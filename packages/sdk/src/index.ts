@@ -13,6 +13,13 @@
 
 // Public API
 export { createPartyLayer, PartyLayerClient } from './client';
+export { createWalletLedgerReader } from './wallet-ledger-reader';
+export { createApplicationLedgerReader } from './application-ledger-reader';
+export type { ApplicationLedgerReaderOptions } from './application-ledger-reader';
+export type {
+  WalletLedgerClient, WalletLedgerReader, WalletLedgerReaderOptions, WalletHoldingsSnapshot,
+  WalletTransactionReference, WalletTransactionConfirmation,
+} from './wallet-ledger-reader';
 // A2 — announce discovery: dynamic adapter for announce-only wallets without a
 // first-party adapter (canonical providerId `browser:ext:<id>`, provider.md).
 export {

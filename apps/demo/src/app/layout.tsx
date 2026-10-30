@@ -103,7 +103,7 @@ const softwareJsonLd = {
   applicationCategory: 'DeveloperApplication',
   operatingSystem: 'Web',
   description:
-    'CIP-0103 compliant wallet integration SDK for the Canton Network — registry-backed, verified wallets, and a clean developer experience.',
+    'CIP-0103 wallet integration SDK for the Canton Network, with a wallet catalog, React connection UI and TypeScript APIs.',
 };
 
 export default function RootLayout({

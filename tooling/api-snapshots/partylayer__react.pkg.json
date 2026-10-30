@@ -5,6 +5,11 @@
       "require": "./dist/index.js",
       "types": "./dist/index.d.ts"
     },
+    "./journal": {
+      "import": "./dist/journal.mjs",
+      "require": "./dist/journal.js",
+      "types": "./dist/journal.d.ts"
+    },
     "./query": {
       "import": "./dist/query.mjs",
       "require": "./dist/query.js",

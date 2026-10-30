@@ -1,5 +1,5 @@
 /**
- * Live backends against DevNet Amulet via the official @canton-network/wallet-sdk 1.4.0,
+ * Live backends against DevNet Amulet via the official @canton-network/wallet-sdk 1.6.0,
  * a narrow typed ledger client, and the Scan registry.
  *
  * How each surface is served (stated plainly, since some reads have an sdk method and
@@ -101,14 +101,15 @@ export async function createLiveBackends(cfg: GatewayConfig): Promise<Backends> 
       assetCache = {
         instrument,
         instrumentId: { admin: instrument.admin, id: instrument.id },
-        asset: {
-          id: instrument.id,
-          displayName: instrument.name,
-          symbol: instrument.symbol,
-          registryUrl,
-          admin: instrument.admin,
-        },
+        // Resolve the full upstream AssetBody, including the registry's declared
+        // API capabilities. Never invent v1/v2 support to satisfy a newer type.
+        asset: await sdk.token.find(instrument.id),
       };
+      if (assetCache.asset.id !== instrument.id || assetCache.asset.admin !== instrument.admin ||
+        assetCache.asset.registryUrl.href !== registryUrl.href) {
+        assetCache = undefined;
+        throw new Error('Registry asset identity does not match the configured Amulet instrument');
+      }
     }
     return assetCache;
   }
@@ -506,11 +507,5 @@ export async function createLiveBackends(cfg: GatewayConfig): Promise<Backends> 
   };
 }
 
-/** The wallet-sdk asset body for the Amulet instrument. Mirrors the sdk's AssetBody. */
-interface AssetBody {
-  id: string;
-  displayName: string;
-  symbol: string;
-  registryUrl: URL;
-  admin: string;
-}
+/** Derive the upstream shape so new required registry capabilities cannot silently drift. */
+type AssetBody = Awaited<ReturnType<LiveSdk['token']['find']>>;

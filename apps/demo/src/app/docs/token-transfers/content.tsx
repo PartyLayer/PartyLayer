@@ -12,22 +12,23 @@ export default function TokenTransfersContent() {
         Transferring Amulet (or any CIP-56 token) on Canton goes through the{' '}
         <Strong>Token Standard</Strong>: you exercise a factory choice by{' '}
         <Strong>interface</Strong>, not a choice on the holding contract itself. The wallet prompts
-        the user, the factory produces a <Code>{'TransferInstruction'}</Code> contract, and the
-        recipient accepts it.
+        the user. Depending on the registry and receiver preapproval, the result can settle
+        directly or create a <Code>{'TransferInstruction'}</Code> awaiting further steps.
       </P>
 
       <Callout type="warning">
         <Strong>Common mistake:</Strong> exercising{' '}
         <Code>{'Amulet_Transfer'}</Code> directly on{' '}
         <Code>{'#splice-amulet:Splice.Amulet:Amulet'}</Code> is the{' '}
-        <Strong>legacy (pre-Token Standard) path</Strong>. On today{"'"}s Canton the ledger rejects
-        it as an unknown choice and Loop{"'"}s UI shows{' '}
-        <Code>{'Execute Unknown on Unknown'}</Code>. Use the Token Standard flow described below.
+        wrong contract/choice combination for the Token Standard factory flow. A legacy command
+        cannot be assumed valid for your deployed package. Use the deployed Token Standard
+        interface and the registry&apos;s current factory/context.
       </Callout>
 
       <H2 id="the-flow">The Token Standard transfer flow</H2>
       <P>
-        Canton Improvement Proposal <Strong>CIP-56</Strong> defines a two-step transfer:
+        Canton Improvement Proposal <Strong>CIP-0056</Strong> supports direct, self and offer
+        transfer workflows. An offer commonly uses these two steps:
       </P>
       <UL>
         <LI>
@@ -72,7 +73,8 @@ export default function TokenTransfersContent() {
 
       <H2 id="react">React (interface-based TransferFactory_Transfer)</H2>
 
-      <CodeBlock language="tsx">{`import { useAccount, useLedgerApi } from '@partylayer/react';
+      <CodeBlock language="tsx">{`import { useAccount, useTransactionFlow } from '@partylayer/react';
+import type { TokenDisclosedContract } from '@partylayer/react/query';
 
 const TRANSFER_FACTORY_INTERFACE =
   '#splice-api-token-transfer-instruction-v1:Splice.Api.Token.TransferInstructionV1:TransferFactory';
@@ -80,18 +82,20 @@ const TRANSFER_FACTORY_INTERFACE =
 function TransferButton({
   factoryCid,
   choiceContext,
+  disclosedContracts,
   inputHoldingCids,
   dsoParty,
   receiverPartyId,
 }: {
   factoryCid: string;             // factoryId from Scan transfer-factory
   choiceContext: Record<string, unknown>; // raw choiceContext.choiceContextData from Scan
+  disclosedContracts: TokenDisclosedContract[]; // from that SAME fresh choice context
   inputHoldingCids: string[];     // from your ACS query
   dsoParty: string;               // instrument admin (e.g. DSO on the network)
   receiverPartyId: string;
 }) {
   const { isConnected, party } = useAccount();
-  const { ledgerApi, isLoading, error } = useLedgerApi();
+  const flow = useTransactionFlow(); // add an independent confirm reader; see Transaction lifecycle
 
   const handleTransfer = async () => {
     if (!isConnected || !party) return;
@@ -115,6 +119,7 @@ function TransferButton({
                 receiver: receiverPartyId,
                 amount: '10.0',
                 instrumentId: { admin: dsoParty, id: 'Amulet' },
+                lock: null,
                 requestedAt: nowIso,
                 executeBefore: expiresIso,
                 inputHoldingCids,
@@ -137,42 +142,34 @@ function TransferButton({
       applicationId: 'my-app',
       actAs: [party],
       readAs: [],
+      disclosedContracts,
     };
 
-    const result = await ledgerApi({
-      requestMethod: 'POST',
-      resource: '/v2/commands/submit-and-wait',
-      body: JSON.stringify(payload),
-    });
-
-    if (result) {
-      console.log('TransferInstruction created:', JSON.parse(result.response));
-    }
+    // Wallet-owned prepare/approve/sign/execute. Exactly one submission.
+    const result = await flow.submitTransaction({ signedTx: payload }, { commandId: payload.commandId });
+    console.log(result.status, result.receipt); // submitted is NOT settled
   };
 
   if (!isConnected) return null;
 
   return (
     <>
-      <button onClick={handleTransfer} disabled={isLoading}>
-        {isLoading ? 'Submitting…' : 'Transfer 10 Amulet'}
+      <button onClick={() => { void handleTransfer().catch(console.error); }} disabled={flow.isPending}>
+        {flow.isPending ? 'Awaiting wallet…' : 'Transfer 10 Amulet'}
       </button>
-      {error && <p>Error: {error.message}</p>}
+      {flow.transaction?.error && <p>Error: {flow.transaction.error.message}</p>}
     </>
   );
 }`}</CodeBlock>
 
       <Callout type="warning">
-        <Strong>Submission path depends on the wallet.</Strong> The raw{' '}
-        <Code>{'ledgerApi'}</Code> call to <Code>{'/v2/commands/submit-and-wait'}</Code> above works when
-        the connected wallet proxies the JSON Ledger API for a party that can submit directly to a
-        participant node. External or passkey parties (for example <Code>{'Send'}</Code>) do not submit
-        raw ledger commands; the wallet prepares, signs, and submits in one step. For those wallets, use
-        PartyLayer{"'"}s <Code>{'submitTransaction()'}</Code>, which routes the command set through the
-        wallet{"'"}s <Code>{'prepareExecute'}</Code> / <Code>{'prepareExecuteAndWait'}</Code> (the generic
-        announce bridge maps <Code>{'submitTransaction'}</Code> to <Code>{'prepareExecute'}</Code>). Build
-        the same <Code>{'TransferFactory_Transfer'}</Code> command and submit it through the path your
-        target wallet supports.
+        <Strong>Preserve the wallet approval path.</Strong> Submit through the supported wallet
+        action; native CIP-0103 connections use <Code>{'prepareExecute'}</Code> or the negotiated
+        wait extension. Do not substitute a raw ledger write or sign an arbitrary transaction hash.
+        The factory/context must be prepared for this exact party, network, amount, receiver and
+        expiry; discard it when any of those change. Include its disclosures and synchronizer data.
+        Independently confirm the ledger update, then inspect the transfer result: a committed
+        instruction can still require receiver acceptance. See <a href="/docs/transaction-lifecycle">Transaction lifecycle</a>.
       </Callout>
 
       <Callout type="note">
@@ -188,33 +185,23 @@ function TransferButton({
         PartyLayer does not abstract it.
       </Callout>
 
-      <H2 id="loop-fast-path">Loop wallet, convenience helper</H2>
+      <H2 id="loop-fast-path">Wallet-owned transfer convenience</H2>
       <P>
-        Loop{"'"}s own SDK ships a <Code>{'loop.wallet.transfer()'}</Code> helper that handles the
-        Scan lookup, factory resolution, and submission for you. If your dApp targets Loop
-        specifically, this is the simplest path. Access the underlying Loop SDK via the{' '}
-        <Code>{'@fivenorth/loop-sdk'}</Code> package alongside PartyLayer:
+        PartyLayer also exposes a typed <Code>{'useTransfer'}</Code> / <Code>{'client.transfer'}</Code>
+        action for wallets that declare the transfer capability. The wallet then selects holdings,
+        constructs the transfer, displays approval and returns a real update id. This convenience
+        is capability-dependent; it is not a universal CIP-0103 method. The ordinary PartyLayer
+        installation already includes supported wallet runtimes.
       </P>
-      <CodeBlock language="tsx">{`import { loop } from '@fivenorth/loop-sdk';
-
-// After connecting via PartyLayer, loop.provider is the same provider instance.
-await loop.wallet.transfer(
-  receiverPartyId,   // "party::fingerprint"
-  '10',              // amount as string
-  { instrument_admin: dsoParty, instrument_id: 'Amulet' },
-  { message: 'Payment for invoice #42', executionMode: 'wait' },
-);`}</CodeBlock>
       <P>
-        Under the helper, Loop exposes the lower-level <Code>{'provider.submitTransaction(command, options)'}</Code>{' '}
-        (returns first, with the ledger update arriving via <Code>{'onTransactionUpdate'}</Code>) and the
-        opt-in <Code>{'provider.submitAndWaitForTransaction(command, options)'}</Code>, which waits for the
-        final result. Both accept the same Token Standard <Code>{'ExerciseCommand'}</Code> payload shown above.
+        For application-owned Token Standard workflows, retain the factory command route above.
+        A typed hook supplies the cache and mutation lifecycle; the registry still supplies current
+        choice context and disclosures. Refresh spent contract ids and expired context before a new intent.
       </P>
       <Callout type="tip">
-        This helper works only with Loop. For Console / Nightly / Bron / Send, use the Token Standard
-        command flow above; those wallets do not expose a high-level transfer helper. Send fuses the
-        prepare-sign-submit steps into <Code>{'prepareExecuteAndWait'}</Code> internally, so the
-        Token Standard command flow is the canonical path there.
+        Check the connected wallet&apos;s capabilities and supported network. A successful message
+        signature is not proof that a transfer works. Never retry an unknown submission to obtain
+        a better receipt; reconcile the original command or business intent first.
       </Callout>
 
       <H2 id="recipient-accept">Recipient accepts the instruction</H2>
@@ -227,10 +214,8 @@ await loop.wallet.transfer(
       <CodeBlock language="typescript">{`const TRANSFER_INSTRUCTION_INTERFACE =
   '#splice-api-token-transfer-instruction-v1:Splice.Api.Token.TransferInstructionV1:TransferInstruction';
 
-await client.ledgerApi({
-  requestMethod: 'POST',
-  resource: '/v2/commands/submit-and-wait',
-  body: JSON.stringify({
+await client.submitTransaction({
+  signedTx: {
     commands: [{
       ExerciseCommand: {
         templateId: TRANSFER_INSTRUCTION_INTERFACE, // interfaceId goes in templateId
@@ -248,7 +233,8 @@ await client.ledgerApi({
     applicationId: 'my-app',
     actAs: [recipientPartyId],
     readAs: [],
-  }),
+    disclosedContracts: acceptDisclosedContracts, // from the fresh ACCEPT context
+  },
 });`}</CodeBlock>
       <P>
         Other instruction choices: <Code>{'TransferInstruction_Reject'}</Code>,{' '}
@@ -277,17 +263,18 @@ await client.ledgerApi({
 
       <H3 id="template-id-format">Template / interface ID format</H3>
       <P>
-        Loop requires the fully-qualified Daml form with the package-name prefix , {' '}
-        <Code>{'#splice-amulet:...'}</Code> or{' '}
-        <Code>{'#splice-api-token-transfer-instruction-v1:...'}</Code>, not the short Canton form.
-        Our adapter surfaces the short-form mistake as a clear error pointing at this fix.
+        Use a fully-qualified identifier: deployed package id, module and entity. A package-name
+        reference such as <Code>{'#splice-api-token-transfer-instruction-v1:...'}</Code> also
+        requires support from the selected wallet and participant. Do not pass an unqualified
+        module/entity or a guessed package hash.
       </P>
 
       <H3 id="command-id">commandId uniqueness</H3>
       <P>
-        Always generate a fresh <Code>{'commandId'}</Code> per submission (for example{' '}
-        <Code>{'crypto.randomUUID()'}</Code>). The ledger deduplicates on{' '}
-        <Code>{'commandId'}</Code>, so reusing one silently drops the second submission.
+        Generate one <Code>{'commandId'}</Code> for each new business intent and retain it across
+        lost responses and reload recovery. Do not generate a new id to retry an unknown write.
+        Ledger deduplication has a submission identity and configured window; it does not replace
+        application intent tracking. Never reuse an old id for a different operation.
       </P>
 
       <H3 id="error-handling">Error handling</H3>
@@ -298,22 +285,17 @@ await client.ledgerApi({
 } from '@partylayer/sdk';
 
 try {
-  const result = await client.ledgerApi({
-    requestMethod: 'POST',
-    resource: '/v2/commands/submit-and-wait',
-    body: JSON.stringify(payload),
-  });
+  const result = await client.submitTransaction({ signedTx: payload });
+  // A returned acknowledgement still needs independent ledger confirmation.
 } catch (err) {
   if (err instanceof UserRejectedError) {
-    // User declined in the wallet, safe to retry
+    // Show rejection. A new attempt requires another explicit user action.
   } else if (err instanceof SessionExpiredError) {
-    await client.connect();
+    // Offer reconnect. Reconcile any issued write before a new submission.
   } else if (err instanceof CapabilityNotSupportedError) {
-    // Wallet doesn't support ledgerApi (e.g. Cantor8)
+    // Explain that this operation is unavailable for the selected wallet.
   } else {
-    // Includes our defensive adapter errors:
-    //  "requires a request body", "not valid JSON",
-    //  "resolved with an empty response", "unexpected response shape"
+    // Preserve unknown outcome. Do not automatically send the payload again.
   }
 }`}</CodeBlock>
 

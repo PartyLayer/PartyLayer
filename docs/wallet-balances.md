@@ -29,6 +29,12 @@ separate live acceptance are still required.
 
 ## React
 
+For a compatible wallet's JSON Ledger API v2 proxy, use the ready
+[`useWalletTokenHoldings` reader](./wallet-ledger-reader.md). It handles the
+live identity checks, exact interface filter, snapshot validation and scoped
+query key. The application-fetcher API below remains unchanged for custom,
+server-authorized data sources.
+
 ```tsx
 import { ConnectButton, useAccount } from '@partylayer/react';
 import { useTokenHoldings } from '@partylayer/react/query';

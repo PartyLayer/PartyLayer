@@ -17,8 +17,16 @@ pnpm --filter wallet-balance-loop-example dev
 
 Open the Vite URL printed by the command (normally http://localhost:5174).
 This checkout uses workspace dependencies. It is not a standalone npm project.
-For an independent application, use the published CLI starter and copy the two
-example source files after the coordinated package release is available.
+For an independent application, use the published CLI starter and copy `App.tsx`
+after the coordinated package release is available. The app uses the ready
+`useWalletTokenHoldings` reader; it does not require a custom ledger fetcher.
+
+Copy `.env.example` to `.env.local` and set `VITE_HOLDING_INTERFACE_ID` to the
+exact deployed package-id-qualified `Splice.Api.Token.HoldingV1:Holding` interface.
+This is a public identifier, not a credential. Without it, wallet connection remains
+available and the example explains that holdings are not configured. The retained
+`holdings.ts`/fixture tests demonstrate the lower-level application-fetcher pattern
+for integrations that deliberately own their transport.
 
 The example reads ledger-end and a consistent active-contract snapshot through
 the Holding interface. It keeps contract ids, owner, instrument admin/id, exact

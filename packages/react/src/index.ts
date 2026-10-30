@@ -33,7 +33,8 @@ export { TransactionToast } from './transaction-toast';
 export type { TransactionToastProps, TransactionToastStatus } from './transaction-toast';
 export { useTransactionFlow } from './use-transaction-flow';
 export type { UseTransactionFlowParameters, UseTransactionFlowReturn, TransactionFlowRecord, TransactionFlowStatus, TransactionConfirmation } from './use-transaction-flow';
-export { RecentTransactions, useRecentTransactions } from './transaction-history';
+export { RecentTransactions, useRecentTransactions, useClearRecentTransactions } from './transaction-history';
+export type { TransactionJournal, TransactionJournalOptions } from './transaction-journal';
 export { TokenBalances } from './token-balances';
 export type { TokenBalancesProps, AccountHoldings } from './token-balances';
 

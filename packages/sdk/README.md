@@ -119,9 +119,19 @@ Your app constructs valid commands and independently confirms ledger settlement.
 
 ## Native CIP-0103 provider and migration
 
+Starting with SDK 0.21.0, `createWalletLedgerReader(client, { networkId, holdingInterfaceId })` provides
+read-only, session-bound JSON Ledger API v2 holdings snapshots and independent
+transaction confirmation by original command id and real update id. Wallets must
+expose `ledgerApi`; unsupported responses fail instead of appearing as zero
+balances or confirmed transfers. See the [reader guide](https://github.com/PartyLayer/PartyLayer/blob/main/docs/wallet-ledger-reader.md).
+
 Use `client.asProvider()` for the connected provider surface. Native connections use official Canton discovery and forward native accounts, events and Ledger API requests through a stable facade. Native Ledger API responses are **raw JSON**. Existing `client.ledgerApi()` and explicit `createProviderBridge(client)` compatibility paths retain their documented wrapper/limits.
 
 Existing native caches without the official provider hint need one explicit reconnect. Restored state must agree with the wallet's live party, network, origin and expiry. See [protocol ownership and migration](https://github.com/PartyLayer/PartyLayer/blob/main/docs/protocol-ownership.md).
+
+`createApplicationLedgerReader` uses the same validation through an explicitly
+configured, same-origin application endpoint instead. Its server session authorizes
+the party/network; it does not require or pretend the wallet has a ledger proxy.
 
 ## Errors and cleanup
 

@@ -22,8 +22,10 @@ Start with the quick start for the complete installation and provider/button exa
 - [CIP-0103 provider](https://partylayer.xyz/docs/cip-0103)
 - [Generic provider bridge](https://partylayer.xyz/docs/generic-bridge)
 - [Server-verified authentication](https://partylayer.xyz/docs/authentication)
-- [Transaction lifecycle](https://partylayer.xyz/docs/transaction-lifecycle)
+- [Transaction lifecycle and optional reload recovery](https://partylayer.xyz/docs/transaction-lifecycle)
+- [Wallet holdings and authorized reads](https://partylayer.xyz/docs/wallet-balances)
 - [Token transfers and command requirements](https://partylayer.xyz/docs/token-transfers)
+- [Swap integration and settlement](https://partylayer.xyz/docs/swaps)
 - [Production checklist](https://partylayer.xyz/docs/production-checklist)
 - [Integration support](https://partylayer.xyz/docs/integration-support)
 

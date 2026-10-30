@@ -107,6 +107,8 @@ export class RegistryClient {
   private fetchFn: typeof fetch;
   private fetchTimeout: number;
   private storage?: RegistryClientOptions['storage'];
+  private storageLoad: Promise<void>;
+  private cacheGeneration = 0;
 
   // In-memory cache
   private memoryCache: {
@@ -125,7 +127,7 @@ export class RegistryClient {
   constructor(options: RegistryClientOptions = {}) {
     this.baseUrl = options.registryUrl || DEFAULT_REGISTRY_URL;
     this.channel = options.channel || 'stable';
-    this.publicKeys = options.registryPublicKeys || [];
+    this.publicKeys = [...(options.registryPublicKeys || [])];
     this.cacheTtl = options.cacheTtl || 60 * 60 * 1000; // 1 hour
     this.staleTtl = options.staleTtl || 24 * 60 * 60 * 1000; // 24 hours
     this.enableCache = options.enableCache !== false;
@@ -144,11 +146,7 @@ export class RegistryClient {
     this.storage = options.storage;
 
     // Load from persistent storage if available
-    if (this.storage) {
-      this.loadFromStorage().catch(() => {
-        // Ignore errors on load
-      });
-    }
+    this.storageLoad = this.storage ? this.initializeStorage() : Promise.resolve();
   }
 
   /**
@@ -163,6 +161,11 @@ export class RegistryClient {
    */
   private getSignatureUrl(): string {
     return `${this.baseUrl}/v1/${this.channel}/registry.sig`;
+  }
+
+  private storageKey(): string {
+    // Legacy channel-only caches did not retain signed bytes or isolate origins.
+    return `registry_v2_${encodeURIComponent(this.getRegistryUrl())}`;
   }
 
   /**
@@ -254,6 +257,7 @@ export class RegistryClient {
     registry: WalletRegistryV1;
     outcome: SignatureOutcome;
     etag?: string;
+    registryJson?: string;
   }> {
     const registryUrl = this.getRegistryUrl();
     const sigUrl = this.getSignatureUrl();
@@ -306,6 +310,7 @@ export class RegistryClient {
             ? { kind: 'reused-verified' }
             : { kind: 'not-required' },
           etag: cached.etag,
+          registryJson: cached.registryJson,
         };
       }
 
@@ -336,7 +341,7 @@ export class RegistryClient {
       }
 
       const outcome = await this.establishSignature(registryJson, sigUrl, requireSignature, controller);
-      return { registry, outcome, etag };
+      return { registry, outcome, etag, registryJson };
     } finally {
       clearTimeout(timeoutId);
     }
@@ -409,6 +414,7 @@ export class RegistryClient {
    * - Refreshes in background
    */
   async getRegistry(): Promise<WalletRegistryV1> {
+    await this.storageLoad;
     // Return cached immediately if available
     if (this.memoryCache.lastKnownGood) {
       const now = Date.now();
@@ -419,6 +425,7 @@ export class RegistryClient {
         // Trigger background refresh if not already refreshing
         if (!this.memoryCache.refreshPromise) {
           this.memoryCache.refreshPromise = this.refreshRegistry();
+          void this.memoryCache.refreshPromise.catch(() => { /* Error remains available through getStatus(). */ });
         }
         return this.memoryCache.lastKnownGood.registry;
       }
@@ -428,6 +435,7 @@ export class RegistryClient {
         // Trigger refresh
         if (!this.memoryCache.refreshPromise) {
           this.memoryCache.refreshPromise = this.refreshRegistry();
+          void this.memoryCache.refreshPromise.catch(() => { /* Error remains available through getStatus(). */ });
         }
         return this.memoryCache.lastKnownGood.registry;
       }
@@ -448,7 +456,7 @@ export class RegistryClient {
 
     const refreshPromise = (async () => {
       try {
-        const { registry, outcome, etag } = await this.fetchFromNetwork();
+        const { registry, outcome, etag, registryJson } = await this.fetchFromNetwork();
         const requireSignature = this.publicKeys.length > 0;
 
         // A signature that is required but absent, or that could not be
@@ -490,6 +498,9 @@ export class RegistryClient {
           fetchedAt: Date.now(),
           etag,
           sequence: registry.metadata.sequence,
+          registryJson,
+          signature: outcome.kind === 'verified' ? outcome.signature :
+            outcome.kind === 'reused-verified' ? this.memoryCache.lastKnownGood?.signature : undefined,
         };
 
         this.memoryCache.lastKnownGood = cached;
@@ -625,7 +636,7 @@ export class RegistryClient {
   private async saveToStorage(cached: CachedRegistry): Promise<void> {
     if (!this.storage) return;
 
-    const key = `registry_${this.channel}`;
+    const key = this.storageKey();
     const value = JSON.stringify(cached);
     await this.storage.set(key, value);
   }
@@ -633,15 +644,43 @@ export class RegistryClient {
   /**
    * Load from persistent storage
    */
-  private async loadFromStorage(): Promise<void> {
+  private async initializeStorage(): Promise<void> {
+    const generation = this.cacheGeneration;
+    let active = true;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    try {
+      // An unavailable storage backend must not indefinitely block discovery.
+      await Promise.race([
+        this.loadFromStorage(() => active && generation === this.cacheGeneration),
+        new Promise<void>(resolve => { timer = setTimeout(resolve, Math.min(1000, this.fetchTimeout)); }),
+      ]);
+    } catch { /* Cache failures fall through to the network. */ }
+    finally { active = false; if (timer) clearTimeout(timer); }
+  }
+
+  private async loadFromStorage(isCurrent: () => boolean): Promise<void> {
     if (!this.storage) return;
 
-    const key = `registry_${this.channel}`;
+    const key = this.storageKey();
     const value = await this.storage.get(key);
     if (value) {
       try {
+        if (value.length > 8_000_000) return;
         const cached = JSON.parse(value) as CachedRegistry;
-        this.memoryCache.lastKnownGood = cached;
+        if (!Number.isSafeInteger(cached.fetchedAt) || cached.fetchedAt > Date.now() || Date.now() - cached.fetchedAt >= this.staleTtl) return;
+        // Never trust stored booleans/objects. Recheck the signed bytes using
+        // the current roots, and parse those bytes rather than cached.registry.
+        const registry = cached.registryJson ? JSON.parse(cached.registryJson) : cached.registry;
+        if (!validateRegistry(registry) || registry.metadata.channel !== this.channel || cached.sequence !== registry.metadata.sequence) return;
+        let verified = false;
+        if (this.publicKeys.length) {
+          if (!cached.registryJson || !cached.signature || !(await this.verifyRegistrySignature(cached.registryJson, cached.signature))) return;
+          verified = true;
+        }
+        if (!isCurrent() || this.memoryCache.lastKnownGood) return;
+        this.memoryCache.lastKnownGood = { registry, verified, fetchedAt: cached.fetchedAt, sequence: registry.metadata.sequence,
+          etag: typeof cached.etag === 'string' ? cached.etag : undefined,
+          registryJson: cached.registryJson, signature: verified ? cached.signature : undefined };
       } catch {
         // Ignore parse errors
       }
@@ -697,13 +736,14 @@ export class RegistryClient {
    * Clear cache
    */
   clearCache(): void {
+    this.cacheGeneration++;
     this.memoryCache.lastKnownGood = null;
     this.memoryCache.lastAttempt = null;
     this.memoryCache.refreshPromise = null;
     this.currentStatus = null;
 
     if (this.storage) {
-      this.storage.remove(`registry_${this.channel}`).catch(() => {
+      this.storage.remove(this.storageKey()).catch(() => {
         // Ignore errors
       });
     }

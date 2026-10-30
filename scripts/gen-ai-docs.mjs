@@ -26,8 +26,10 @@ const GUIDES = [
   ['CIP-0103 provider', '/docs/cip-0103'],
   ['Generic provider bridge', '/docs/generic-bridge'],
   ['Server-verified authentication', '/docs/authentication'],
-  ['Transaction lifecycle', '/docs/transaction-lifecycle'],
+  ['Transaction lifecycle and optional reload recovery', '/docs/transaction-lifecycle'],
+  ['Wallet holdings and authorized reads', '/docs/wallet-balances'],
   ['Token transfers and command requirements', '/docs/token-transfers'],
+  ['Swap integration and settlement', '/docs/swaps'],
   ['Production checklist', '/docs/production-checklist'],
   ['Integration support', '/docs/integration-support'],
 ];

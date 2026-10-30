@@ -41,6 +41,9 @@ export interface CachedRegistry {
   etag?: string;
   /** Sequence number */
   sequence: number;
+  /** Exact signed bytes, retained for re-verification after a process restart/key rotation. */
+  registryJson?: string;
+  signature?: import('./schema').RegistrySignature;
 }
 
 /**

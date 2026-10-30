@@ -29,8 +29,10 @@ These guides cover React 3.1.0+ / SDK 0.20.0+. See [release status](./releasing.
 
 - [Authentication](./authentication.md): backend challenges and independent signature/key verification.
 - [Transaction lifecycle](./transaction-lifecycle.md): submit once, reconcile and show actual outcomes.
+- [Swap integration](./swaps.md): protocol quotes, approval, ledger reconciliation and output/refund acceptance.
 - [Typed transfers](./typed-transfer.md) and [wallet support](./typed-transfer-support.md): exact token/issuer data and wallet-specific command contracts.
 - [Wallet balances](./wallet-balances.md): authorized, party/network-bound holdings.
+- [Ready wallet ledger reader](./wallet-ledger-reader.md): authenticated v2 holdings and update/command correlation.
 - [Privacy and reads](./privacy-and-reads.md): explicit data-source and authorization boundaries.
 - [Multi-party patterns](./multi-party-patterns.md): party-aware application state.
 - [API reference](./api.md): client types, methods and events.

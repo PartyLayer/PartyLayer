@@ -15,6 +15,7 @@ import { createPartyLayer } from '@partylayer/sdk';
 import type { PartyLayerClient, WalletAdapter, AdapterClass, OfficialProviderAdapter, OfficialAdapterFactory, PartyLayerConfig, NetworkId } from '@partylayer/sdk';
 import type { SessionStoreOptions } from '@partylayer/session';
 import { PartyLayerProvider } from './context';
+import type { TransactionJournal } from './transaction-journal';
 import { ThemeProvider } from './theme';
 import { PartyLayerLocaleProvider, type PartyLayerDirection } from './localization';
 import { PartyLayerAuthenticationProvider, type PartyLayerAuthenticationAdapter } from './authentication';
@@ -97,6 +98,10 @@ export interface PartyLayerKitProps {
 
   /** Registry URL override (default: https://registry.partylayer.xyz) */
   registryUrl?: string;
+  /** Optional trust roots for a signed registry. No production trust key is implied. */
+  registryPublicKeys?: PartyLayerConfig['registryPublicKeys'];
+  /** Optional pending-only journal. Supply a stable options object. Default: memory only. */
+  transactionJournal?: TransactionJournal;
   /** Registry channel (default: 'stable') */
   channel?: 'stable' | 'beta';
   /** Replace the default wallet catalog. Omit to enable all supported wallets. */
@@ -151,6 +156,8 @@ export function PartyLayerKit({
   appName,
   children,
   registryUrl,
+  registryPublicKeys,
+  transactionJournal,
   channel,
   adapters,
   additionalAdapters,
@@ -179,12 +186,13 @@ export function PartyLayerKit({
         origin: typeof window !== 'undefined' ? window.location.origin : undefined,
       },
       registryUrl,
+      registryPublicKeys,
       channel,
       adapters: adaptersRef.current,
       additionalAdapters, walletConnect, bron,
     });
   // Keep configuration objects stable; changing them rebuilds the client.
-  }, [network, appName, registryUrl, channel, additionalAdapters, walletConnect, bron]);
+  }, [network, appName, registryUrl, registryPublicKeys, channel, additionalAdapters, walletConnect, bron]);
 
   // StrictMode replays effects with the same client in development. Defer
   // disposal by one microtask so that replay does not destroy the live client
@@ -211,7 +219,7 @@ export function PartyLayerKit({
       <WalletOrderContext.Provider value={walletOrder}>
         <AttributionContext.Provider value={attribution}>
           <ThemeProvider theme={themeValue}>
-            <PartyLayerProvider client={client} network={network} sessionOptions={sessionOptions}>
+            <PartyLayerProvider client={client} network={network} sessionOptions={sessionOptions} transactionJournal={transactionJournal}>
               {authentication ? <PartyLayerAuthenticationProvider adapter={authentication}>{children}</PartyLayerAuthenticationProvider> : children}
             </PartyLayerProvider>
           </ThemeProvider>

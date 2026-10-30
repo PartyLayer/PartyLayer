@@ -7,6 +7,28 @@ the remaining milestones below require their own implementation and evidence.
 
 ## Developer contract
 
+### Implementation checkpoint: 2026-10-30 candidate
+
+The following source changes are prepared for the next coordinated release; they
+are not a claim that the currently published npm versions already contain them.
+
+| Area | Candidate implementation | Remaining acceptance boundary |
+| --- | --- | --- |
+| Authorized data | Ready wallet and same-origin application ledger readers; exact holdings snapshots, identity/source isolation and explicit errors | Configure the deployed interface/source and validate actual wallet/participant access |
+| Transaction inclusion | Update/original-command correlation, read-only reconciliation, no automatic write retry | App-owned intent/operation semantics and live transfer or swap settlement |
+| Reload recovery | Opt-in minimal pending journal in the same React package; restored state is unknown, never resubmitted | Browser data is not trusted financial intent or a full-history indexer |
+| Application sign-in | Runnable PostgreSQL reference with real configured crypto, atomic browser-bound nonce consumption, opaque sessions and narrow authorized reads | Independently provision party/key authority and validate each vendor signing profile |
+| Transfer/swap guidance | Wallet approval path, current context/disclosures, direct/offer semantics and an explicit OneSwap protocol settlement recipe | Funded live operation and vendor configuration; maintainer deferred these user-assisted tests |
+| Compatibility | Official discovery 1.16.0, Cantor8 0.9.0, WalletConnect 2.26.0 and the demo wallet SDK 1.6.0; registry-derived asset capabilities replace the stale demo shape | Required release gates, public-package verification and final vendor acceptance |
+| Registry trust | Persistent signed bytes re-verified under current roots; URL/channel isolation, rotation/retirement and late-storage tests; kit accepts optional roots | Production signing remains intentionally inactive; key custody/activation was deferred |
+| UI assurance | Chromium, Firefox and WebKit automated UI/accessibility matrix with desktop and emulated mobile profiles | Physical devices, complete spoken screen-reader flows and vendor popup/biometric acceptance |
+
+The default install and branded button contract below remain unchanged. No new
+wallet-specific PartyLayer package, universal switch-account RPC, EVM ABI layer
+or cross-chain product is introduced. Independent integrations and an external
+audit require evidence from the participating teams; no internal test is recorded
+as that external evidence.
+
 An existing React application installs `@partylayer/react` and its React Query peer
 in one npm command, configures `PartyLayerKit`, and renders `ConnectButton`.
 Supported wallet runtimes come with that integration. Developers do not install or

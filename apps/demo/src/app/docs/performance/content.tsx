@@ -59,9 +59,9 @@ export default function PerformancePage() {
       </P>
 
       <H2 id="what-each-import-scenario-costs">What each import scenario costs</H2>
-      <P>The current candidate measures approximately 52.7 kB gzip for the SDK (52.75 kB budget),
-        53.0 kB for React Native headless (53 kB budget), and 37.02 kB for the React connection
-        surface (37.25 kB budget). Approved wallet runtimes and official discovery remain lazy chunks. The kit lists wallets on mount, so eligible chunks may load before the picker opens; these budgets exclude async chunks and do not measure total first-load bytes. Native ownership, abort/identity guards and the stable provider facade add about 3.5 kB. Complete transaction
+      <P>The current candidate measures approximately 53.23 kB gzip for the SDK (53.5 kB budget),
+        53.47 kB for React Native headless (53.75 kB budget), and 37.30 kB for the React connection
+        surface (37.5 kB budget). Approved wallet runtimes and official discovery remain lazy chunks. The kit lists wallets on mount, so eligible chunks may load before the picker opens; these budgets exclude async chunks and do not measure total first-load bytes. Native ownership, abort/identity guards and the stable provider facade add about 3.5 kB. Complete transaction
         evidence, combined-only routing and signature echo checks add about 0.34 kB to the shared
         client. Server authentication helpers live in the separate core/authentication subpath.
         Run pnpm gate:size for current results; the comparisons below are dated historical measurements.</P>
@@ -169,12 +169,12 @@ export default function PerformancePage() {
           </thead>
           <tbody>
             {[
-              { scenario: 'Connect surface', measured: '37.02 kB', budget: '37.25 kB', headroom: '~0.6%' },
-              { scenario: 'One token hook', measured: '455 B', budget: '700 B', headroom: '~54%' },
-              { scenario: 'Matching helper', measured: '283 B', budget: '500 B', headroom: '~77%' },
-              { scenario: 'RN headless', measured: '52.97 kB', budget: '53 kB', headroom: '<0.1%' },
+              { scenario: 'Connect surface', measured: '37.30 kB', budget: '37.5 kB', headroom: '~0.5%' },
+              { scenario: 'One token hook', measured: '467 B', budget: '700 B', headroom: '~50%' },
+              { scenario: 'Matching helper', measured: '294 B', budget: '500 B', headroom: '~70%' },
+              { scenario: 'RN headless', measured: '53.47 kB', budget: '53.75 kB', headroom: '~0.5%' },
               { scenario: 'RN ui', measured: '5.04 kB', budget: '5.5 kB', headroom: '~9%' },
-              { scenario: 'SDK client', measured: '52.73 kB', budget: '52.75 kB', headroom: '<0.1%' },
+              { scenario: 'SDK client', measured: '53.23 kB', budget: '53.5 kB', headroom: '~0.5%' },
             ].map(r => (
               <tr key={r.scenario} style={{ borderBottom: '1px solid rgba(15,23,42,0.10)' }}>
                 <td style={{ padding: '10px 14px', color: '#0B0F1A', fontSize: 13, fontWeight: 500 }}>{r.scenario}</td>
