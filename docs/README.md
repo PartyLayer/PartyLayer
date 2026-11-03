@@ -50,4 +50,4 @@ These guides cover React 3.1.0+ / SDK 0.20.0+. See [release status](./releasing.
 
 [Developer discovery and adoption roadmap](./growth/roadmap.md) covers npm/GitHub/search visibility, public measurement and verified integration references.
 
-The website at [partylayer.xyz/docs](https://partylayer.xyz/docs) provides the same installation contract and task-oriented guides. English is the documentation language; the wallet UI supports explicit English/Turkish locale settings separately.
+The website at [partylayer.xyz/docs](https://partylayer.xyz/docs) provides the same installation contract and task-oriented guides. English is the documentation language; the wallet UI separately supports 14 languages, an optional searchable selector and automatic Arabic RTL.

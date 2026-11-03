@@ -15,6 +15,7 @@ declare const goldLightTheme: CallableTheme;
 declare const lightTheme: CallableTheme;
 declare const midnightDarkTheme: CallableTheme;
 declare const midnightLightTheme: CallableTheme;
+declare const partyLayerLocales: readonly { locale: PartyLayerLocale; name: string; nativeName: string; direction: 'ltr' | 'rtl'; }[];
 declare const slateDarkTheme: CallableTheme;
 declare const slateLightTheme: CallableTheme;
 declare const tealDarkTheme: CallableTheme;
@@ -24,10 +25,11 @@ declare const warmDarkTheme: CallableTheme;
 declare const warmLightTheme: CallableTheme;
 declare function ConnectButton({ label, connectedLabel, accountStatus, formatAddress, className, style, showDisconnect, holdings, }: ConnectButtonProps): react_jsx_runtime.JSX.Element;
 declare function CostPreview({ estimate, paid, loading, error, formatCost, className, style, }: CostPreviewProps): react_jsx_runtime.JSX.Element | null;
+declare function LanguageSelector({ value, onChange, 'aria-label': label, className, style }: LanguageSelectorProps): react_jsx_runtime.JSX.Element;
 declare function PartyAvatar({ id, size, className, style }: PartyAvatarProps): react_jsx_runtime.JSX.Element;
 declare function PartyLayerAuthenticationProvider({ adapter, children }: PartyLayerAuthenticationProviderProps): react_jsx_runtime.JSX.Element;
 declare function PartyLayerKit({ network, appName, children, registryUrl, registryPublicKeys, transactionJournal, channel, adapters, additionalAdapters, walletConnect, bron, theme, locale, direction, authentication, walletIcons, walletOrder, sessionOptions, showAttribution, disclaimer, }: PartyLayerKitProps): react_jsx_runtime.JSX.Element;
-declare function PartyLayerLocaleProvider({ locale, direction, children, }: PartyLayerLocaleProviderProps): react_jsx_runtime.JSX.Element;
+declare function PartyLayerLocaleProvider({ locale, direction, children }: PartyLayerLocaleProviderProps): react_jsx_runtime.JSX.Element;
 declare function PartyLayerProvider({ client, children, sessionOptions, transactionJournal, }: PartyLayerProviderProps): react_jsx_runtime.JSX.Element;
 declare function RecentTransactions({ transactions, limit }: { transactions: readonly TransactionFlowRecord[]; limit?: number; }): react_jsx_runtime.JSX.Element | null;
 declare function SynchronizerSwitcher({ networkId, options, onSwitch, className, style, }: SynchronizerSwitcherProps): react_jsx_runtime.JSX.Element | null;
@@ -65,13 +67,13 @@ export { AuthenticationChallenge, AuthenticationIdentity, CostEstimation, Traffi
 export { CookieAdapter, CookieSetOptions, CookieStorageOptions, createCookieStorage, documentCookieAdapter } from '@partylayer/session';
 export { RegistryStatus } from '@partylayer/registry-client';
 export { b as TransactionConfirmation, c as TransactionFlowStatus, d as TransactionJournalOptions, U as UseTransactionFlowParameters, e as UseTransactionFlowReturn, u as useTransactionFlow } from './journal-dNHgDw68.js';
-export { type AccountHoldings, type CallableTheme, PartyLayerProvider as CantonConnectProvider, ConnectButton, type ConnectButtonProps, CostPreview, type CostPreviewProps, type DynamicTheme, NativeCIP0103Adapter, PartyAvatar, type PartyAvatarProps, type PartyLayerAuthenticationAdapter, PartyLayerAuthenticationProvider, type PartyLayerAuthenticationProviderProps, type PartyLayerDirection, PartyLayerKit, type PartyLayerKitProps, type PartyLayerLocale, PartyLayerLocaleProvider, type PartyLayerLocaleProviderProps, PartyLayerProvider, type PartyLayerTheme, RecentTransactions, type SessionChain, type SynchronizerOption, SynchronizerSwitcher, type SynchronizerSwitcherProps, type ThemeInput, type ThemeOverrides, ThemeProvider, TokenBalances, type TokenBalancesProps, TransactionFlowRecord, TransactionJournal, TransactionToast, type TransactionToastProps, type TransactionToastStatus, type UseAccountEffectParameters, type UseAccountReturn, type UseAuthenticationReturn, type UsePartyStateReturn, type UseSessionReturn, type WalletIconMap, WalletModal, type WalletModalProps, accentPresets, createLocalStorage, createNativeAdapter, createSyntheticWalletInfo, createTheme, darkTheme, goldDarkTheme, goldLightTheme, lightTheme, midnightDarkTheme, midnightLightTheme, resolveWalletIcon, slateDarkTheme, slateLightTheme, tealDarkTheme, tealLightTheme, themes, truncatePartyId, useAccount, useAccountEffect, useAuthentication, usePartyLayer as useCantonConnect, useClearRecentTransactions, useClientSession, useConnect, useDisconnect, useLedgerApi, usePartyLayer, usePartyLayerContext, usePartyState, useRecentTransactions, useRegistryStatus, useSession, useSignMessage, useSignTransaction, useSubmitTransaction, useTheme, useWalletIcons, useWallets, warmDarkTheme, warmLightTheme };
+export { type AccountHoldings, type CallableTheme, PartyLayerProvider as CantonConnectProvider, ConnectButton, type ConnectButtonProps, CostPreview, type CostPreviewProps, type DynamicTheme, LanguageSelector, type LanguageSelectorProps, NativeCIP0103Adapter, PartyAvatar, type PartyAvatarProps, type PartyLayerAuthenticationAdapter, PartyLayerAuthenticationProvider, type PartyLayerAuthenticationProviderProps, type PartyLayerDirection, PartyLayerKit, type PartyLayerKitProps, type PartyLayerLocale, PartyLayerLocaleProvider, type PartyLayerLocaleProviderProps, PartyLayerProvider, type PartyLayerTheme, RecentTransactions, type SessionChain, type SynchronizerOption, SynchronizerSwitcher, type SynchronizerSwitcherProps, type ThemeInput, type ThemeOverrides, ThemeProvider, TokenBalances, type TokenBalancesProps, TransactionFlowRecord, TransactionJournal, TransactionToast, type TransactionToastProps, type TransactionToastStatus, type UseAccountEffectParameters, type UseAccountReturn, type UseAuthenticationReturn, type UsePartyStateReturn, type UseSessionReturn, type WalletIconMap, WalletModal, type WalletModalProps, accentPresets, createLocalStorage, createNativeAdapter, createSyntheticWalletInfo, createTheme, darkTheme, goldDarkTheme, goldLightTheme, lightTheme, midnightDarkTheme, midnightLightTheme, partyLayerLocales, resolveWalletIcon, slateDarkTheme, slateLightTheme, tealDarkTheme, tealLightTheme, themes, truncatePartyId, useAccount, useAccountEffect, useAuthentication, usePartyLayer as useCantonConnect, useClearRecentTransactions, useClientSession, useConnect, useDisconnect, useLedgerApi, usePartyLayer, usePartyLayerContext, usePartyState, useRecentTransactions, useRegistryStatus, useSession, useSignMessage, useSignTransaction, useSubmitTransaction, useTheme, useWalletIcons, useWallets, warmDarkTheme, warmLightTheme };
 import * as _partylayer_core from '@partylayer/core';
 import * as _partylayer_sdk from '@partylayer/sdk';
 import * as react_jsx_runtime from 'react/jsx-runtime';
 import { AuthenticationIdentity, AuthenticationChallenge } from '@partylayer/core/authentication';
 import { PartyLayerClient, Session, WalletInfo, ConnectOptions, LedgerApiParams, LedgerApiResult, RegistryStatus, SignMessageParams, SignedMessage, SignTransactionParams, SignedTransaction, SubmitTransactionParams, TxReceipt, PartyLayerConfig, WalletAdapter, AdapterClass, OfficialProviderAdapter, OfficialAdapterFactory, WalletId, CIP0103Provider, CapabilityKey, AdapterDetectResult, AdapterContext, PartyId, AdapterConnectResult, DiscoveredProvider, Cip0103StatusForDetection } from '@partylayer/sdk';
-import { ReactNode } from 'react';
+import { ReactNode, CSSProperties } from 'react';
 import { SessionStoreOptions, SessionStore, SessionAccount, SessionStatus, SessionState, SessionEvent, SessionStorage } from '@partylayer/session';
 import { T as TransactionJournal, a as TransactionFlowRecord } from './journal-dNHgDw68.js';
 import { TokenHoldingRef, TokenInstrumentId, CostEstimation, PaidTrafficCost, TrafficCost, TxReceipt as TxReceipt$1 } from '@partylayer/core';
@@ -80,6 +82,7 @@ interface ConnectButtonProps { label?: string; connectedLabel?: 'address' | 'wal
 interface CostPreviewProps { estimate?: CostEstimation | null; paid?: PaidTrafficCost | null; loading?: boolean; error?: Error | null; formatCost?: (cost: TrafficCost) => React.ReactNode; className?: string; style?: React.CSSProperties; }
 interface DynamicTheme { lightMode: PartyLayerTheme; darkMode: PartyLayerTheme; }
 interface EnrichedProvider extends DiscoveredProvider { status?: Cip0103StatusForDetection; matchedWallet?: WalletInfo; }
+interface LanguageSelectorProps { value: PartyLayerLocale; onChange: (locale: PartyLayerLocale) => void; 'aria-label'?: string; className?: string; style?: CSSProperties; }
 interface PartyAvatarProps { id: string; size?: number; className?: string; style?: React.CSSProperties; }
 interface PartyLayerAuthenticationAdapter { getSession(): Promise<AuthenticationIdentity | null>; getChallenge(identity: AuthenticationIdentity): Promise<AuthenticationChallenge>; verify(proof: { nonce: string; signature: string; }): Promise<AuthenticationIdentity | null>; signOut(): Promise<void>; }
 interface PartyLayerAuthenticationProviderProps { adapter: PartyLayerAuthenticationAdapter; children: React.ReactNode; }
@@ -103,7 +106,7 @@ interface UseSessionReturn extends SessionState { isConnected: boolean; isConnec
 interface WalletModalProps { isOpen: boolean; onClose: () => void; onConnect?: (sessionId: string) => void; walletIcons?: WalletIconMap; walletOrder?: readonly string[]; showAttribution?: boolean; disclaimer?: React.ReactNode; showWalletGuide?: boolean; }
 type CallableTheme = ThemeFn & PartyLayerTheme;
 type PartyLayerDirection = 'ltr' | 'rtl';
-type PartyLayerLocale = 'en' | 'tr';
+type PartyLayerLocale = 'en' | 'tr' | 'es' | 'fr' | 'de' | 'pt' | 'it' | 'ru' | 'ar' | 'hi' | 'id' | 'ja' | 'ko' | 'zh';
 type ThemeFn = (overrides?: ThemeOverrides) => PartyLayerTheme;
 type ThemeInput = 'light' | 'dark' | 'auto' | PartyLayerTheme | DynamicTheme;
 type TransactionToastStatus = 'idle' | 'pending' | 'success' | 'error' | 'awaitingApproval' | 'submitted' | 'confirmed' | 'rejected' | 'failed' | 'unknown';

@@ -11,6 +11,8 @@ import {
   themes,
   accentPresets,
   PartyAvatar,
+  LanguageSelector,
+  type PartyLayerLocale,
 } from '@partylayer/react';
 import { isCip0103Native } from '@partylayer/sdk';
 import { useBreakpoint, responsive } from '../hooks/useBreakpoint';
@@ -732,8 +734,8 @@ export default function KitDemoPage() {
   const [family, setFamily] = useState<'default' | 'midnight' | 'slate' | 'teal' | 'gold' | 'warm'>('default');
   const [accent, setAccent] = useState<'default' | 'blue' | 'green' | 'purple' | 'orange' | 'pink' | 'red'>('default');
   const [showAttr, setShowAttr] = useState(true);
-  const [locale, setLocale] = useState<'en' | 'tr'>('en');
-  const [direction, setDirection] = useState<'ltr' | 'rtl'>('ltr');
+  const [locale, setLocale] = useState<PartyLayerLocale>('en');
+  const [direction, setDirection] = useState<'ltr' | 'rtl' | undefined>(undefined);
   const [accountStatus, setAccountStatus] = useState<'full' | 'avatar' | 'address'>('full');
   const [systemDark, setSystemDark] = useState(false);
 
@@ -934,16 +936,10 @@ export default function KitDemoPage() {
                 showAttribution
               </button>
 
-                <label style={{ fontSize: '12px', color: c.slate500 }}>
-                  Language{' '}
-                  <select aria-label="Wallet UI language" value={locale} onChange={event => setLocale(event.target.value as 'en' | 'tr')}>
-                    <option value="en">English</option>
-                    <option value="tr">Türkçe</option>
-                  </select>
-                </label>
-                <label style={{ fontSize: '12px', color: c.slate500 }}>
-                  <input type="checkbox" checked={direction === 'rtl'} onChange={event => setDirection(event.target.checked ? 'rtl' : 'ltr')} /> RTL
-                </label>
+              <LanguageSelector aria-label="Wallet UI language" value={locale} onChange={next => { setLocale(next); setDirection(undefined); }} />
+              <label style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: c.slate500 }}>
+                <input type="checkbox" checked={(direction ?? (locale === 'ar' ? 'rtl' : 'ltr')) === 'rtl'} onChange={event => setDirection(event.target.checked ? 'rtl' : 'ltr')} /> RTL
+              </label>
               <span style={{ fontSize: '12px', color: c.slate500, marginLeft: 'auto' }}>
                 {accent === 'default'
                   ? `<PartyLayerKit showAttribution={${showAttr}}>`

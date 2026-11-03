@@ -310,12 +310,27 @@ See [Wallet balances](./wallet-balances.md) for authorized read/data requirement
 
 ### PartyLayerLocaleProvider
 
-Use `PartyLayerKit locale="tr-TR" direction="rtl"` for localized wallet UI.
-Advanced compositions can wrap `PartyLayerProvider` with `PartyLayerLocaleProvider`.
-Both accept `locale?: string` (English/Turkish tags, otherwise English fallback) and
-`direction?: 'ltr' | 'rtl'` (default `ltr`). Locale changes preserve the SDK client
-and active wallet. Application content and vendor approval screens retain their own
-language settings.
+Use `PartyLayerKit locale="ar-SA"` for Arabic wallet UI with automatic RTL.
+Fourteen language catalogs are supported: `en`, `tr`, `es`, `fr`, `de`, `pt`,
+`it`, `ru`, `ar`, `hi`, `id`, `ja`, `ko` and `zh` (Simplified Chinese). Regional
+variants share a catalog; unsupported languages/scripts fall back to English.
+Advanced compositions can use `PartyLayerLocaleProvider`. Both providers accept
+`locale?: string` and an optional `direction?: 'ltr' | 'rtl'` override.
+
+English/Turkish render synchronously. Other catalogs load on demand, using English
+for deterministic initial server/hydration output and retaining the previous
+language while switching. Locale changes preserve the client and active wallet.
+Application content and vendor approval screens keep their own language settings.
+
+### LanguageSelector
+
+An optional controlled language picker: `<LanguageSelector value={locale}
+onChange={setLocale} />`. Use it inside the kit/provider. It supports native-name
+search, keyboard navigation, accessible announcements, focus restoration and
+mobile/light/dark layouts. `value` and `onChange` use `PartyLayerLocale`;
+`aria-label`, `className` and `style` customize its surrounding application UI.
+The exported `partyLayerLocales` array provides codes, native/English names and
+directions for custom selectors. See the [React guide](../packages/react/README.md#ui-language-and-direction).
 
 ### WalletModal
 

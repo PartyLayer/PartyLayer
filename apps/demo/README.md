@@ -25,7 +25,7 @@ is in use. Do not run multiple Next dev/build processes against the same `.next`
 | `/docs` | Developer documentation |
 | `/docs/quick-start` | One-command React installation and complete Vite/Next.js setup |
 | `/wallets` | Registry-backed wallet directory |
-| `/kit-demo` | Themes, English/Turkish and RTL, wallet discovery and connection tools |
+| `/kit-demo` | Themes, 14 UI languages, searchable language selection, automatic Arabic RTL, wallet discovery and connection tools |
 | `/cost-demo` | Cost-related UI examples |
 | `/debug` | Registry and event diagnostics |
 

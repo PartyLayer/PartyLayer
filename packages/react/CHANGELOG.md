@@ -1,5 +1,11 @@
 # @partylayer/react
 
+## 3.3.0
+
+### Minor Changes
+
+- Add twelve on-demand wallet UI catalogs, automatic Arabic RTL and a controlled, searchable LanguageSelector with native language names and keyboard/focus handling. Preserve English/Turkish rendering, wallet sessions, theme support and deterministic hydration.
+
 ## 3.2.0
 
 ### Minor Changes

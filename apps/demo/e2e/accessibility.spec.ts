@@ -1,3 +1,4 @@
+import { selectWalletLanguage } from './helpers/language';
 import { test, expect, type Page, type TestInfo } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
 import { readFileSync } from 'node:fs';
@@ -84,7 +85,7 @@ test('mobile Turkish RTL picker supports reflow and accessible labels', async ({
   page,
 }, testInfo) => {
   await page.setViewportSize({ width: 320, height: 720 });
-  await page.getByRole('combobox', { name: 'Wallet UI language' }).selectOption('tr');
+  await selectWalletLanguage(page, 'tr');
   await page.getByRole('checkbox', { name: 'RTL', exact: true }).check();
   await page.getByRole('button', { name: 'Cüzdan Bağla', exact: true }).click();
   await expect(page.getByRole('dialog')).toHaveAttribute('lang', 'tr');
