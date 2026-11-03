@@ -17,18 +17,37 @@ test('searchable language selection is keyboard accessible and restores focus', 
   await page.keyboard.press('Escape'); await expect(trigger).toBeFocused();
 });
 
-test('all 14 locales translate the connection surface and Arabic chooses RTL', async ({ page }) => {
-  const labels: Record<string, string> = { en:'Connect Wallet',tr:'Cüzdan Bağla',es:'Conectar cartera',fr:'Connecter un portefeuille',de:'Wallet verbinden',pt:'Conectar carteira',it:'Collega portafoglio',ru:'Подключить кошелёк',ar:'ربط المحفظة',hi:'वॉलेट कनेक्ट करें',id:'Hubungkan dompet',ja:'ウォレットを接続',ko:'지갑 연결',zh:'连接钱包' };
-  for (const [locale, label] of Object.entries(labels)) {
+// Each locale gets its own browser context and timeout. A 14-dialog loop can
+// exhaust a single 30-second CI budget even when individual interactions work.
+const languages: Record<string, { connect: string; close: string }> = {
+  en: { connect: 'Connect Wallet', close: 'Close' },
+  tr: { connect: 'Cüzdan Bağla', close: 'Kapat' },
+  es: { connect: 'Conectar cartera', close: 'Cerrar' },
+  fr: { connect: 'Connecter un portefeuille', close: 'Fermer' },
+  de: { connect: 'Wallet verbinden', close: 'Schließen' },
+  pt: { connect: 'Conectar carteira', close: 'Fechar' },
+  it: { connect: 'Collega portafoglio', close: 'Chiudi' },
+  ru: { connect: 'Подключить кошелёк', close: 'Закрыть' },
+  ar: { connect: 'ربط المحفظة', close: 'إغلاق' },
+  hi: { connect: 'वॉलेट कनेक्ट करें', close: 'बंद करें' },
+  id: { connect: 'Hubungkan dompet', close: 'Tutup' },
+  ja: { connect: 'ウォレットを接続', close: '閉じる' },
+  ko: { connect: '지갑 연결', close: '닫기' },
+  zh: { connect: '连接钱包', close: '关闭' },
+};
+for (const [locale, labels] of Object.entries(languages)) {
+  test(`${locale} translates the connection surface with the correct direction`, async ({ page }) => {
     await selectWalletLanguage(page, locale);
-    const button = page.getByRole('button', { name: label, exact: true }); await expect(button).toBeVisible();
-    await button.click();
-    const dialog = page.getByRole('dialog', { name: label, exact: true });
+    const button = page.getByRole('button', { name: labels.connect, exact: true });
+    await expect(button).toBeVisible(); await button.click();
+    const dialog = page.getByRole('dialog', { name: labels.connect, exact: true });
     await expect(dialog).toHaveAttribute('lang', locale);
     await expect(dialog).toHaveCSS('direction', locale === 'ar' ? 'rtl' : 'ltr');
+    // Wait for keyboard initialization before sending the next keyboard action.
+    await expect(dialog.getByRole('button', { name: labels.close, exact: true })).toBeFocused();
     await page.keyboard.press('Escape'); await expect(dialog).toBeHidden();
-  }
-});
+  });
+}
 
 test('language picker fits mobile viewports and has no serious accessibility findings', async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 720 });
