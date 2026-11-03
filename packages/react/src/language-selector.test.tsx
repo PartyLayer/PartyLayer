@@ -1,12 +1,12 @@
 // @vitest-environment jsdom
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { afterEach, describe, expect, it } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { renderToString } from 'react-dom/server';
 import { LanguageSelector } from './language-selector';
 import { PartyLayerLocaleProvider, resolvePartyLayerLocale, useLocale, type PartyLayerLocale } from './localization';
 import { partyLayerLocales } from './locales/catalog';
-import { en, tr } from './locales/base';
+import { en, tr, type LocaleMessages } from './locales/base';
 
 const imports = {
   es: () => import('./locales/es'), fr: () => import('./locales/fr'), de: () => import('./locales/de'),
@@ -22,7 +22,7 @@ function Probe() {
 
 describe('complete locale catalogs', () => {
   it('covers all 14 languages, every message and the exact interpolation parameters', async () => {
-    const catalogs = { en, tr, ...Object.fromEntries(await Promise.all(Object.entries(imports).map(async ([code, load]) => [code, (await load()).default]))) };
+    const catalogs: Record<string, LocaleMessages> = { en, tr, ...Object.fromEntries(await Promise.all(Object.entries(imports).map(async ([code, load]) => [code, (await load()).default]))) };
     expect(Object.keys(catalogs).sort()).toEqual(partyLayerLocales.map(item => item.locale).sort());
     for (const [code, messages] of Object.entries(catalogs)) {
       expect(Object.keys(messages).sort(), code).toEqual(Object.keys(en).sort());
