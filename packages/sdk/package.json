@@ -49,7 +49,7 @@
   "dependencies": {
     "@canton-network/core-types": "1.14.0",
     "@canton-network/core-wallet-discovery": "1.16.0",
-    "@canton-network/dapp-sdk": "0.24.0",
+    "@canton-network/dapp-sdk": "1.8.0",
     "@k2flabs/walley-dapp-sdk": "1.2.0",
     "@lithiumdigital/cauri-dapp-sdk": "0.2.0",
     "@oneswap/wallet-cip0103-adapter": "0.2.0",
