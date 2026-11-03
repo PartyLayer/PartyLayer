@@ -419,27 +419,51 @@ surfaces keep their own keyboard handling.
 
 ### UI language and direction
 
-`PartyLayerKit` supports English (default) and Turkish. Set `locale="tr"` or
-`locale="tr-TR"`; unsupported language tags fall back to English. Set
-`direction="rtl"` when embedding the wallet UI in a right-to-left layout.
+`PartyLayerKit` supports 14 wallet UI languages: English (default), Turkish,
+Spanish, French, German, Portuguese, Italian, Russian, Arabic, Hindi, Indonesian,
+Japanese, Korean and Simplified Chinese. Regional tags such as `es-MX`, `pt-BR`
+and `ar-SA` share their language's catalog. Unknown languages and unsupported
+Traditional Chinese tags fall back to English.
 
 ```tsx
-<PartyLayerKit network="devnet" appName="My dApp" locale="tr-TR" direction="ltr">
-  <ConnectButton />
-</PartyLayerKit>
+'use client';
+
+import { useState } from 'react';
+import { PartyLayerKit, ConnectButton, LanguageSelector, type PartyLayerLocale } from '@partylayer/react';
+
+function WalletControls() {
+  const [locale, setLocale] = useState<PartyLayerLocale>('en');
+  return (
+    <PartyLayerKit network="devnet" appName="My dApp" locale={locale}>
+      <LanguageSelector value={locale} onChange={setLocale} />
+      <ConnectButton />
+    </PartyLayerKit>
+  );
+}
 ```
 
-The setting covers PartyLayer's connection dialog, account menu, accessible labels,
-`CostPreview`, `TransactionToast` and `SynchronizerSwitcher`. Changing language or
-direction does not recreate the SDK client or disconnect the wallet. The server and
-client use the same explicit setting; PartyLayer does not guess the browser language
-or mutate the application's document language.
+`LanguageSelector` is optional and controlled by your application. It offers
+native and English language names, accent-insensitive search, keyboard selection,
+Escape/outside-click dismissal, focus restoration and theme-aware mobile layout.
+`partyLayerLocales` exposes the supported codes, names and directions if you build
+your own control. There is no separate localization package to install.
 
-Advanced `PartyLayerProvider` compositions can wrap their UI with
-`PartyLayerLocaleProvider`, which accepts the same `locale` and `direction` props.
-Application copy, custom button labels, wallet names, identifiers, provider error
-details and wallet-owned approval screens remain under their respective owners.
-Your app controls cost/number formatting through the existing formatting props.
+Arabic automatically uses RTL. Set `direction="ltr"` or `direction="rtl"` to
+override the automatic direction. Changing language preserves the SDK client and
+active wallet connection. English and Turkish render synchronously; additional
+catalogs load on demand in separate chunks. During initial server rendering and
+hydration, a lazy locale starts in English, then updates after loading. When a
+user switches languages, the previous catalog remains visible until the new one
+is ready. A late download cannot replace a newer selection; failed loads retain
+the current language and the selector announces the failure. PartyLayer does not
+guess browser language or mutate your document's language or direction.
+
+The setting covers PartyLayer's connection dialog, account menu, accessible
+labels, costs, balances and transaction states. Advanced provider compositions
+can use `PartyLayerLocaleProvider`. Your application content, custom labels,
+wallet names, identifiers, provider error details and vendor approval screens
+retain their own language settings. Existing formatting props control numbers
+and costs independently.
 
 ### `PartyAvatar`
 

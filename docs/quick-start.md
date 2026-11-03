@@ -134,7 +134,7 @@ For optional data hooks, wrap the kit in `QueryClientProvider`. In a Next.js cli
 | Bron | `bron={bron}` with your OAuth/API configuration |
 | Add custom integrations | `additionalAdapters={customAdapters}` |
 | Replace the default catalog | `adapters={customAdapters}` |
-| Theme and language | `theme="auto" locale="en"`; Turkish and explicit RTL are supported |
+| Theme and language | `theme="auto" locale="en"`; 14 wallet UI languages, automatic Arabic RTL and explicit direction overrides are supported |
 
 For example, enable WalletConnect without an extra wallet package:
 

@@ -89,9 +89,9 @@ export interface PartyLayerKitProps {
   /** Application name shown to wallets during connection */
   appName: string;
   children: React.ReactNode;
-  /** Connection UI language (en/tr tags); unsupported languages fall back to English. */
+  /** Connection UI language (14 languages); unsupported tags fall back to English. */
   locale?: string;
-  /** UI layout direction. Defaults to ltr. */
+  /** UI layout direction override. Arabic defaults to rtl; other languages use ltr. */
   direction?: PartyLayerDirection;
   /** Optional application-backend authentication; wallet connection alone is not sign-in. */
   authentication?: PartyLayerAuthenticationAdapter;

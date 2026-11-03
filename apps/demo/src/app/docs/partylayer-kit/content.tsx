@@ -29,8 +29,8 @@ function App() {
       <PropsTable data={[
         { prop: 'network', type: '"devnet" | "testnet" | "mainnet"', description: 'Canton network to connect to. Determines which wallets and registry entries are available.' },
         { prop: 'appName', type: 'string', description: 'Your application name, shown to wallets during connection requests.' },
-        { prop: 'locale', type: 'string', default: '"en"', description: 'Connection UI language: English/Turkish language tags; unsupported tags fall back to English.' },
-        { prop: 'direction', type: '"ltr" | "rtl"', default: '"ltr"', description: 'Text and layout direction for PartyLayer UI.' },
+        { prop: 'locale', type: 'string', default: '"en"', description: 'Wallet UI language: 14 languages and regional tags; unsupported tags fall back to English.' },
+        { prop: 'direction', type: '"ltr" | "rtl"', default: 'Automatic', description: 'Override layout direction. Arabic defaults to RTL; other languages use LTR.' },
         { prop: 'authentication', type: 'PartyLayerAuthenticationAdapter', description: 'Application backend integration for server-verified sign-in. Omitted means wallet connection only.' },
         { prop: 'showAttribution', type: 'boolean', default: 'true', description: 'Show Powered by PartyLayer in the connection modal.' },
         { prop: 'disclaimer', type: 'ReactNode', description: 'Optional application terms/privacy content in the modal footer.' },
@@ -52,10 +52,15 @@ function App() {
   <ConnectButton />
 </PartyLayerKit>`}</CodeBlock>
       <P>
-        English is the default; Turkish tags such as <Code>tr</Code> and <Code>tr-TR</Code>
-        select Turkish. Unsupported language tags fall back to English. Changing language
-        or direction preserves the client and wallet connection. The explicit setting is
-        shared by server and client; browser language is not guessed automatically.
+        English is the default. Supported languages are English, Turkish, Spanish,
+        French, German, Portuguese, Italian, Russian, Arabic, Hindi, Indonesian,
+        Japanese, Korean and Simplified Chinese. Regional tags share a catalog;
+        unsupported languages and Traditional Chinese scripts fall back to English.
+        Arabic automatically uses RTL; <Code>direction</Code> overrides that choice.
+        Changing language preserves the client and wallet connection. English and
+        Turkish render synchronously. Other catalogs load on demand; initial server
+        and hydration output uses English, then updates when ready. Browser language
+        is not guessed and the application document is not mutated.
       </P>
       <P>
         This translates PartyLayer connection, account, cost and transaction UI, including

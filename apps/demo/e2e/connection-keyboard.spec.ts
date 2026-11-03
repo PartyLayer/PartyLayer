@@ -1,3 +1,4 @@
+import { selectWalletLanguage } from './helpers/language';
 import { test, expect } from '@playwright/test';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -89,7 +90,7 @@ test('language and RTL changes preserve the connected account and keyboard actio
     .locator('..')
     .getByText(/party::demo-user-/);
   const original = await identity.textContent();
-  await page.getByRole('combobox', { name: 'Wallet UI language' }).selectOption('tr');
+  await selectWalletLanguage(page, 'tr');
   await page.getByRole('checkbox', { name: 'RTL', exact: true }).check();
   const trigger = page.getByRole('button', { name: /party:/i });
   await trigger.focus();
@@ -99,14 +100,14 @@ test('language and RTL changes preserve the connected account and keyboard actio
   await expect(page.getByRole('menuitem', { name: 'Adresi kopyala' })).toBeFocused();
   await expect(identity).toHaveText(original!);
   await page.keyboard.press('Escape');
-  await page.getByRole('combobox', { name: 'Wallet UI language' }).selectOption('en');
+  await selectWalletLanguage(page, 'en');
   await expect(identity).toHaveText(original!);
   await trigger.press('ArrowUp');
   await expect(page.getByRole('menuitem', { name: 'Disconnect' })).toBeFocused();
 });
 
 test('Turkish wallet dialog translates search and education in RTL layout', async ({ page }) => {
-  await page.getByRole('combobox', { name: 'Wallet UI language' }).selectOption('tr');
+  await selectWalletLanguage(page, 'tr');
   await page.getByRole('checkbox', { name: 'RTL', exact: true }).check();
   await page.getByRole('button', { name: 'Cüzdan Bağla', exact: true }).click();
   const dialog = page.getByRole('dialog', { name: 'Cüzdan Bağla' });
@@ -127,7 +128,7 @@ test('Turkish wallet dialog translates search and education in RTL layout', asyn
 
 test('localized wallet controls and dialog fit a mobile viewport', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.getByRole('combobox', { name: 'Wallet UI language' }).selectOption('tr');
+  await selectWalletLanguage(page, 'tr');
   await page.getByRole('button', { name: 'Cüzdan Bağla', exact: true }).click();
   const dialog = page.locator('.pl-panel');
   await expect(dialog).toBeVisible();
@@ -144,4 +145,16 @@ test('localized wallet controls and dialog fit a mobile viewport', async ({ page
     path: 'test-results/localized-wallet-dialog-mobile.png',
     animations: 'disabled',
   });
+});
+
+// Changing an asynchronously loaded catalog must preserve the real SDK session fixture.
+test('new language catalogs preserve the connected party and wallet session', async ({ page }) => {
+  await connectToMockWallet(page);
+  const identity = page.getByText('Party ID', { exact: true }).locator('..').getByText(/party::demo-user-/);
+  const original = await identity.textContent();
+  for (const locale of ['es', 'ar', 'ja']) {
+    await selectWalletLanguage(page, locale);
+    await expect(identity).toHaveText(original!);
+    await expect(page.getByRole('button', { name: /party:/i })).toBeVisible();
+  }
 });

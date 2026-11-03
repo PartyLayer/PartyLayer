@@ -139,7 +139,7 @@ export function Account() {
         <LI><Strong>WalletConnect:</Strong> supply your own project ID through <Code>walletConnect</Code>.</LI>
         <LI><Strong>Bron:</Strong> supply your OAuth/API configuration through <Code>bron</Code>.</LI>
         <LI><Strong>Custom integrations:</Strong> <Code>additionalAdapters</Code> extends the catalog; <Code>adapters</Code> replaces it.</LI>
-        <LI><Strong>Appearance:</Strong> use <Code>theme="auto" locale="en"</Code>; Turkish and explicit RTL are also supported.</LI>
+        <LI><Strong>Appearance:</Strong> use <Code>theme="auto" locale="en"</Code>; 14 UI languages, automatic Arabic RTL and explicit direction overrides are supported.</LI>
       </UL>
       <CodeBlock language="tsx">{`const walletConnect = { projectId: 'YOUR_PROJECT_ID' };
 

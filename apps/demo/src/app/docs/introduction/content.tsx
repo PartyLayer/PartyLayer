@@ -37,7 +37,7 @@ export default function App() {
           { title: 'CIP-0103 integration', desc: 'Official discovery owns browser-native connections. Accounts, events and provider requests follow the connected wallet.' },
           { title: 'Application controls', desc: 'Choose network, channel, themes and wallet order. Extend the catalog or build a custom UI when needed.' },
           { title: 'Account and operation UI', desc: 'Reactive party/network state, optional backend sign-in, transaction activity and authorized holdings integration.' },
-          { title: 'Language and theming', desc: 'English and Turkish UI, explicit RTL, light/dark/auto themes, keyboard navigation and typed React APIs.' },
+          { title: 'Language and theming', desc: '14 UI languages, searchable language selection, automatic Arabic RTL, light/dark/auto themes, keyboard navigation and typed React APIs.' },
         ].map(feature => (
           <div key={feature.title} style={{ padding: 20, borderRadius: 10, border: '1px solid rgba(15,23,42,0.10)', background: '#FAFBFC' }}>
             <div style={{ fontSize: 15, fontWeight: 600, color: '#0B0F1A', marginBottom: 6 }}>{feature.title}</div>

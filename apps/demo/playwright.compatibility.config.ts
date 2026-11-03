@@ -4,7 +4,7 @@ import base from './playwright.config';
 /** Controlled UI acceptance only; not vendor-wallet or physical-device certification. */
 export default defineConfig({
   ...base,
-  testMatch: ['**/accessibility.spec.ts', '**/docs-accessibility.spec.ts'],
+  testMatch: ['**/accessibility.spec.ts', '**/docs-accessibility.spec.ts', '**/language-selector.spec.ts'],
   outputDir: 'test-results/compatibility',
   reporter: [['list'], ['json', { outputFile: 'test-results/compatibility.json' }]],
   workers: 1,
