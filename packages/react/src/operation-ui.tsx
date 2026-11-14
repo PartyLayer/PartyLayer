@@ -12,7 +12,7 @@ export function operationUI(theme: PartyLayerTheme) {
     label: { display: 'block', fontSize: 13, fontWeight: 600, color: theme.colors.textSecondary, marginBottom: 8 } as CSSProperties,
     input: { ...base, width: '100%', minHeight: 48, padding: '13px 14px', border: `1px solid ${theme.colors.border}`,
       borderRadius: 12, background: theme.colors.surface, color: theme.colors.text, font: 'inherit', fontSize: 16 } as CSSProperties,
-    button: { ...base, minHeight: 46, padding: '12px 18px', border: `1px solid ${theme.colors.border}`, borderRadius: 12,
+    button: { ...base, minHeight: 46, padding: '12px 18px', borderWidth: 1, borderStyle: 'solid', borderColor: theme.colors.border, borderRadius: 12,
       background: theme.colors.surface, color: theme.colors.text, font: 'inherit', fontWeight: 600, lineHeight: 1.4,
       whiteSpace: 'normal', cursor: 'pointer', textAlign: 'center' } as CSSProperties,
     primary: { background: theme.colors.primary, color: theme.colors.primaryForeground ?? theme.colors.text,
