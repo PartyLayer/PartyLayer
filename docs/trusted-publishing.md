@@ -76,7 +76,9 @@ alone does not prove that no other trusted-publisher connection exists.
    required by its generated applications. Public registry version, integrity
    and requested tag are checked after each write. npm can accept a publication
    before its asynchronous processing finishes; read-only checks poll for up to
-   five minutes per package. Integrity mismatches stop immediately, and no write
+   twenty minutes per package, within a six-hour total job limit. A package accepted
+   by npm may become visible after a local deadline; inspect the receipt and registry
+   before recovery. Integrity mismatches stop immediately, and no write
    is retried. Preserve the partial receipt. Verify
    provenance/signatures and a clean public installation before marking the full
    release complete and creating package-version tags at the source commit.
