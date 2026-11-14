@@ -7,12 +7,13 @@ the remaining milestones below require their own implementation and evidence.
 
 ## Developer contract
 
-### Implementation checkpoint: 2026-10-30 candidate
+### Implementation checkpoint: 2026-11-14
 
-The following source changes are prepared for the next coordinated release; they
-are not a claim that the currently published npm versions already contain them.
+The published foundation is SDK 0.21.0, React 3.3.0 and CLI 0.7.1. React 3.3.0
+adds the reviewed fourteen-language experience. The table describes the existing
+foundation and its evidence boundaries; new operation-kit work is listed below.
 
-| Area | Candidate implementation | Remaining acceptance boundary |
+| Area | Implementation | Acceptance boundary |
 | --- | --- | --- |
 | Authorized data | Ready wallet and same-origin application ledger readers; exact holdings snapshots, identity/source isolation and explicit errors | Configure the deployed interface/source and validate actual wallet/participant access |
 | Transaction inclusion | Update/original-command correlation, read-only reconciliation, no automatic write retry | App-owned intent/operation semantics and live transfer or swap settlement |
@@ -28,6 +29,18 @@ wallet-specific PartyLayer package, universal switch-account RPC, EVM ABI layer
 or cross-chain product is introduced. Independent integrations and an external
 audit require evidence from the participating teams; no internal test is recorded
 as that external evidence.
+
+The current `feat/canton-operation-kit` branch adds a local preview of reviewed
+send and accept/reject/withdraw UI, separately correlated transfer outcomes,
+account-aware HoldingV2 reads and a V1/V2 server allowlist, legacy OAuth callback
+completion, current-baseline migration diagnostics and website audience
+measurement. See [the operation contract](operation-kit.md) and
+[website measurement](website-analytics.md). These new source changes are not yet
+a production or npm release. The existing Connect Wallet design is retained;
+the new operation entry point remains in the same React package. Physical-device,
+funded transfer and swap acceptance follow the maintainer's separately scheduled
+wallet tests. Production registry-key activation and AI/agent work are not part
+of this approval.
 
 An existing React application installs `@partylayer/react` and its React Query peer
 in one npm command, configures `PartyLayerKit`, and renders `ConnectButton`.

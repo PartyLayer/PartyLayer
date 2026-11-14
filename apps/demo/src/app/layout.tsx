@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import './globals.css';
+import { WebsiteAnalytics } from './components/WebsiteAnalytics';
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://partylayer.xyz'),
@@ -169,6 +170,7 @@ export default function RootLayout({
           <script src="/mock-cip0103-wallet.js" />
         )}
         {children}
+        <WebsiteAnalytics />
       </body>
     </html>
   );

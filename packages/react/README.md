@@ -419,23 +419,33 @@ surfaces keep their own keyboard handling.
 
 ### UI language and direction
 
-`PartyLayerKit` supports 14 wallet UI languages: English (default), Turkish,
+`PartyLayerKit` supports 14 wallet UI languages: English, Turkish,
 Spanish, French, German, Portuguese, Italian, Russian, Arabic, Hindi, Indonesian,
 Japanese, Korean and Simplified Chinese. Regional tags such as `es-MX`, `pt-BR`
 and `ar-SA` share their language's catalog. Unknown languages and unsupported
-Traditional Chinese tags fall back to English.
+Traditional Chinese tags fall back to English. When `locale` is omitted, the
+first supported browser preference is selected after hydration; English is the
+fallback when no preference matches or browser settings are inaccessible.
+An explicit `locale` always takes priority, including a user's manual selection.
+Automatic browser defaults and `usePartyLayerLocale` require React 3.4.0 or later;
+React 3.3 defaults to English and supports an explicit `locale` with the same catalogs.
 
 ```tsx
 'use client';
 
 import { useState } from 'react';
-import { PartyLayerKit, ConnectButton, LanguageSelector, type PartyLayerLocale } from '@partylayer/react';
+import { PartyLayerKit, ConnectButton, LanguageSelector, usePartyLayerLocale, type PartyLayerLocale } from '@partylayer/react';
+
+function LanguageControl({ onChange }: { onChange: (locale: PartyLayerLocale) => void }) {
+  const { locale } = usePartyLayerLocale();
+  return <LanguageSelector value={locale} onChange={onChange} />;
+}
 
 function WalletControls() {
-  const [locale, setLocale] = useState<PartyLayerLocale>('en');
+  const [locale, setLocale] = useState<PartyLayerLocale>();
   return (
     <PartyLayerKit network="devnet" appName="My dApp" locale={locale}>
-      <LanguageSelector value={locale} onChange={setLocale} />
+      <LanguageControl onChange={setLocale} />
       <ConnectButton />
     </PartyLayerKit>
   );
@@ -455,8 +465,9 @@ catalogs load on demand in separate chunks. During initial server rendering and
 hydration, a lazy locale starts in English, then updates after loading. When a
 user switches languages, the previous catalog remains visible until the new one
 is ready. A late download cannot replace a newer selection; failed loads retain
-the current language and the selector announces the failure. PartyLayer does not
-guess browser language or mutate your document's language or direction.
+the current language and the selector announces the failure. Server output and
+initial hydration remain deterministic in English when `locale` is omitted.
+PartyLayer does not mutate your document's language or direction.
 
 The setting covers PartyLayer's connection dialog, account menu, accessible
 labels, costs, balances and transaction states. Advanced provider compositions

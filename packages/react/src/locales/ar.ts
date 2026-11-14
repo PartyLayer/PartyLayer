@@ -20,6 +20,8 @@ const messages: LocaleMessages = {
   "copied": "تم النسخ",
   "account": "الحساب {party}",
   "walletAccount": "حساب المحفظة",
+  "defaultAccount": "الحساب الافتراضي",
+  "accountProvider": "المزوّد: {provider}",
   "back": "رجوع",
   "close": "إغلاق",
   "searchWallets": "البحث عن المحافظ",

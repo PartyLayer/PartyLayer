@@ -157,7 +157,9 @@ export function useTransactionFlow(parameters: UseTransactionFlowParameters = {}
     let requestedWallet = false;
     try {
       const live = await captured.client.getActiveSession();
-      if (!live || captured.key !== recordKey({ ...live, networkId: toCAIP2Network(live.network).networkId }) ||
+      if (!live || live.networkMismatch || live.sessionId !== captured.session.sessionId ||
+        captured.key !== recordKey({ ...live, networkId: toCAIP2Network(live.network).networkId }) ||
+        active.current.session?.sessionId !== captured.session.sessionId || active.current.session?.networkMismatch ||
         active.current.key !== captured.key || active.current.client !== captured.client || !mounted.current) {
         return write({ ...record, status: 'failed', error: new Error('Wallet account or network changed before submission'), updatedAt: Date.now() });
       }

@@ -1,16 +1,19 @@
 // @vitest-environment jsdom
 import React from 'react';
-import { afterEach, beforeEach, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, expect, expectTypeOf, it, vi } from 'vitest';
 import { cleanup, renderHook, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import type { Session } from '@partylayer/core';
-import { useWalletTokenHoldings } from './wallet-token-holdings';
+import type { Session, TokenHoldingRef, TokenHoldingV2Ref } from '@partylayer/core';
+import { useWalletTokenHoldings, useWalletTokenHoldingsV2 } from './wallet-token-holdings';
+
+expectTypeOf<ReturnType<typeof useWalletTokenHoldings>['holdings']>().toEqualTypeOf<TokenHoldingRef[] | undefined>();
+expectTypeOf<ReturnType<typeof useWalletTokenHoldingsV2>['holdings']>().toEqualTypeOf<TokenHoldingV2Ref[] | undefined>();
 
 const state = vi.hoisted(() => ({ client: {} as object | null, session: null as Session | null, read: vi.fn(), factory: vi.fn(), applicationFactory: vi.fn() }));
 vi.mock('./context', () => ({ usePartyLayerContext: () => state }));
 vi.mock('@partylayer/sdk', () => ({
-  createWalletLedgerReader: (...args: unknown[]) => { state.factory(...args); return { readHoldings: state.read }; },
-  createApplicationLedgerReader: (...args: unknown[]) => { state.applicationFactory(...args); return { readHoldings: state.read }; },
+  createWalletLedgerReader: (...args: unknown[]) => { state.factory(...args); return { readHoldings: state.read, readHoldingsV2: state.read }; },
+  createApplicationLedgerReader: (...args: unknown[]) => { state.applicationFactory(...args); return { readHoldings: state.read, readHoldingsV2: state.read }; },
 }));
 const options = { networkId: 'canton:da-devnet', holdingInterfaceId: 'pkg:Splice.Api.Token.HoldingV1:Holding' };
 beforeEach(() => {
@@ -19,6 +22,16 @@ beforeEach(() => {
 });
 afterEach(cleanup);
 function wrapper() { const q = new QueryClient(); return ({ children }: { children: React.ReactNode }) => <QueryClientProvider client={q}>{children}</QueryClientProvider>; }
+it('keeps version-specific reads and changed V2 interfaces in separate cache entries', async () => {
+  let holdingV2InterfaceId = 'v2:Splice.Api.Token.HoldingV2:Holding';
+  const view = renderHook(() => ({ v1: useWalletTokenHoldings(options), v2: useWalletTokenHoldingsV2({ networkId: options.networkId, holdingV2InterfaceId }) }), { wrapper: wrapper() });
+  await waitFor(() => expect(state.read).toHaveBeenCalledTimes(2));
+  await waitFor(() => expect(view.result.current.v2.isSuccess).toBe(true));
+  expect(state.factory).toHaveBeenCalledWith(state.client, expect.objectContaining({ holdingV2InterfaceId }));
+  holdingV2InterfaceId = 'other:Splice.Api.Token.HoldingV2:Holding'; view.rerender();
+  expect(view.result.current.v2.snapshot).toBeUndefined();
+  await waitFor(() => expect(state.read).toHaveBeenCalledTimes(3));
+});
 it('reads through the SDK, scopes each query to its current source/account/network and forwards cancellation', async () => {
   const view = renderHook(() => useWalletTokenHoldings(options), { wrapper: wrapper() });
   await waitFor(() => expect(view.result.current.isSuccess).toBe(true));

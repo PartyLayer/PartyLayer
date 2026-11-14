@@ -4,7 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { render, screen, cleanup, fireEvent, act } from '@testing-library/react';
 import { renderToString } from 'react-dom/server';
 import { toPartyId, toWalletId, type Session } from '@partylayer/core';
-import { PartyLayerLocaleProvider } from './localization';
+import { PartyLayerLocaleProvider, useLocale } from './localization';
 import { ConnectButton } from './connect-button';
 import { WalletModal } from './modal';
 import { CostPreview } from './cost-preview';
@@ -58,7 +58,45 @@ beforeEach(() => {
 });
 afterEach(() => {
   cleanup();
+  vi.restoreAllMocks();
   vi.useRealTimers();
+});
+
+function CurrentLocale() { const { locale } = useLocale(); return <span data-testid="locale">{locale}</span>; }
+
+describe('browser language defaults', () => {
+  it('chooses the first supported browser preference and keeps server output English', () => {
+    vi.spyOn(navigator, 'languages', 'get').mockReturnValue(['zz-ZZ', 'zh-Hant', 'tr-TR', 'en']);
+    const tree = <PartyLayerLocaleProvider><CurrentLocale /></PartyLayerLocaleProvider>;
+    expect(renderToString(tree)).toContain('>en<');
+    render(tree);
+    expect(screen.getByTestId('locale').textContent).toBe('tr');
+  });
+  it('honors explicit application choices and English browser preference', () => {
+    vi.spyOn(navigator, 'languages', 'get').mockReturnValue(['en-GB', 'tr']);
+    const view = render(<PartyLayerLocaleProvider><CurrentLocale /></PartyLayerLocaleProvider>);
+    expect(screen.getByTestId('locale').textContent).toBe('en');
+    view.rerender(<PartyLayerLocaleProvider locale="tr"><CurrentLocale /></PartyLayerLocaleProvider>);
+    expect(screen.getByTestId('locale').textContent).toBe('tr');
+    act(() => window.dispatchEvent(new Event('languagechange')));
+    expect(screen.getByTestId('locale').textContent).toBe('tr');
+    view.rerender(<PartyLayerLocaleProvider locale="unsupported"><CurrentLocale /></PartyLayerLocaleProvider>);
+    expect(screen.getByTestId('locale').textContent).toBe('en');
+  });
+  it('falls back to English if browser preferences are unsupported or inaccessible', () => {
+    const languages = vi.spyOn(navigator, 'languages', 'get').mockReturnValue(['zz', 'zh-TW']);
+    render(<PartyLayerLocaleProvider><CurrentLocale /></PartyLayerLocaleProvider>);
+    expect(screen.getByTestId('locale').textContent).toBe('en');
+    languages.mockImplementation(() => { throw new Error('Browser settings unavailable'); });
+    act(() => window.dispatchEvent(new Event('languagechange')));
+    expect(screen.getByTestId('locale').textContent).toBe('en');
+  });
+  it('uses navigator.language if the preferences list is empty', () => {
+    vi.spyOn(navigator, 'languages', 'get').mockReturnValue([]);
+    vi.spyOn(navigator, 'language', 'get').mockReturnValue('tr_TR');
+    render(<PartyLayerLocaleProvider><CurrentLocale /></PartyLayerLocaleProvider>);
+    expect(screen.getByTestId('locale').textContent).toBe('tr');
+  });
 });
 
 function modal() {

@@ -20,6 +20,8 @@ const messages: LocaleMessages = {
   "copied": "कॉपी हो गया",
   "account": "खाता {party}",
   "walletAccount": "वॉलेट खाता",
+  "defaultAccount": "डिफ़ॉल्ट खाता",
+  "accountProvider": "प्रदाता: {provider}",
   "back": "वापस",
   "close": "बंद करें",
   "searchWallets": "वॉलेट खोजें",

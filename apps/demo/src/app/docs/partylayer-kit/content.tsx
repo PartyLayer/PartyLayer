@@ -29,7 +29,7 @@ function App() {
       <PropsTable data={[
         { prop: 'network', type: '"devnet" | "testnet" | "mainnet"', description: 'Canton network to connect to. Determines which wallets and registry entries are available.' },
         { prop: 'appName', type: 'string', description: 'Your application name, shown to wallets during connection requests.' },
-        { prop: 'locale', type: 'string', default: '"en"', description: 'Wallet UI language: 14 languages and regional tags; unsupported tags fall back to English.' },
+        { prop: 'locale', type: 'string', default: 'Browser language / English', description: 'Uses the first supported browser preference after hydration, with English fallback. An explicit locale overrides detection. Supports 14 languages and regional tags.' },
         { prop: 'direction', type: '"ltr" | "rtl"', default: 'Automatic', description: 'Override layout direction. Arabic defaults to RTL; other languages use LTR.' },
         { prop: 'authentication', type: 'PartyLayerAuthenticationAdapter', description: 'Application backend integration for server-verified sign-in. Omitted means wallet connection only.' },
         { prop: 'showAttribution', type: 'boolean', default: 'true', description: 'Show Powered by PartyLayer in the connection modal.' },
@@ -52,15 +52,23 @@ function App() {
   <ConnectButton />
 </PartyLayerKit>`}</CodeBlock>
       <P>
-        English is the default. Supported languages are English, Turkish, Spanish,
+        English is the fallback. Supported languages are English, Turkish, Spanish,
         French, German, Portuguese, Italian, Russian, Arabic, Hindi, Indonesian,
         Japanese, Korean and Simplified Chinese. Regional tags share a catalog;
         unsupported languages and Traditional Chinese scripts fall back to English.
         Arabic automatically uses RTL; <Code>direction</Code> overrides that choice.
         Changing language preserves the client and wallet connection. English and
         Turkish render synchronously. Other catalogs load on demand; initial server
-        and hydration output uses English, then updates when ready. Browser language
-        is not guessed and the application document is not mutated.
+        and hydration output uses English, then updates when ready. When locale is
+        omitted, the first supported browser preference is selected after hydration,
+        with English fallback. An explicit locale takes priority; the application
+        document is not mutated. Use <Code>usePartyLayerLocale()</Code> inside the
+        provider to read the resolved language for a controlled picker.
+      </P>
+      <P>
+        Automatic browser-language selection and <Code>usePartyLayerLocale</Code>
+        require React 3.4.0 or later. React 3.3 uses English by default and supports
+        an explicit <Code>locale</Code> with the same fourteen language catalogs.
       </P>
       <P>
         This translates PartyLayer connection, account, cost and transaction UI, including

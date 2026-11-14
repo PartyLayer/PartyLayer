@@ -96,16 +96,29 @@ import { readFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { createPartyLayer } from '@partylayer/sdk';
 import { registryEntryToWalletInfo } from '@partylayer/registry-client';
+import { createElement } from 'react';
+import { renderToString } from 'react-dom/server';
+import { PartyLayerProvider, PartyLayerLocaleProvider, usePartyLayerLocale } from '@partylayer/react';
+import { TransferForm, TransferInbox, OperationStatus, useReviewedTransaction } from '@partylayer/react/operations';
 const require = createRequire(import.meta.url);
 assert.equal(typeof require('@partylayer/sdk').createPartyLayer, 'function');
 assert.equal(typeof require('@partylayer/react').PartyLayerKit, 'function');
 assert.equal(typeof require('@partylayer/react').useAuthentication, 'function');
+assert.equal(typeof require('@partylayer/react').usePartyLayerLocale, 'function');
+function LocaleProbe() { return createElement('span', null, usePartyLayerLocale().locale); }
+assert.equal(renderToString(createElement(PartyLayerLocaleProvider, null, createElement(LocaleProbe))), '<span>en</span>');
+for (const component of [TransferForm, TransferInbox, OperationStatus, useReviewedTransaction]) assert.equal(typeof component, 'function');
+assert.equal(typeof require('@partylayer/react/operations').TransferForm, 'function');
+assert.equal(typeof require('@partylayer/react/query').useWalletTokenHoldingsV2, 'function');
 const registry = JSON.parse(readFileSync(new URL('./registry.json', import.meta.url)));
 const client = createPartyLayer({ network: 'devnet', channel: 'beta', app: { name: 'Packed consumer' }, discovery: { announce: false } });
 client.registryClient.getRegistry = async () => registry;
 client.registryClient.getWallets = async () => registry.wallets.map(w => registryEntryToWalletInfo(w, 'beta'));
 client.registryClient.getWalletEntry = async id => registry.wallets.find(w => w.id === id);
 try {
+  const html = renderToString(createElement(PartyLayerProvider, { client },
+    createElement(TransferForm, { networkId: 'canton:da-devnet', instrumentId: { admin: 'fixture-issuer', id: 'DEMO' } })));
+  assert.ok(html.includes('Send tokens'), 'Optional operations must SSR without a QueryClientProvider');
   const wallets = await client.listWallets();
   for (const entry of registry.wallets.filter(w => w.adapter.transport === 'discovery-adapter')) {
     assert.ok(wallets.some(w => String(w.walletId) === entry.id), entry.id + ' missing from packed defaults');
@@ -155,6 +168,27 @@ console.log('Packed server authentication: clean npm, ESM and CommonJS passed');
     const target = join(staging, template);
     console.log(`Installing ${template} dependencies…`);
     await run('npm', ['install', ...npmFlags], target);
+    // Compile the actual optional exports under both React 18 (Vite) and
+    // React 19 (Next), without workspace aliases or type-path workarounds.
+    await writeFile(join(target, template === 'react-vite' ? 'src/operation-contract.tsx' : 'app/operation-contract.tsx'), `
+'use client';
+import { TransferForm, TransferInbox, OperationStatus, type PreparedOperation } from '@partylayer/react/operations';
+import { useWalletTokenHoldings, useWalletTokenHoldingsV2 } from '@partylayer/react/query';
+import { LanguageSelector, usePartyLayerLocale, type PartyLayerLocale } from '@partylayer/react';
+export function BrowserLanguageControl({ onChange }: { onChange: (locale: PartyLayerLocale) => void }) {
+  const { locale } = usePartyLayerLocale();
+  return <LanguageSelector value={locale} onChange={onChange} />;
+}
+type V1 = NonNullable<ReturnType<typeof useWalletTokenHoldings>['holdings']>[number]['holding'];
+type V2 = NonNullable<ReturnType<typeof useWalletTokenHoldingsV2>['holdings']>[number]['holding'];
+export const v1Owner = (holding: V1): string => holding.owner;
+export const v2Account = (holding: V2): string => holding.account.id;
+export type Candidate = PreparedOperation;
+export function OperationContract() {
+  return <><TransferForm networkId="canton:da-devnet" instrumentId={{ admin: 'fixture', id: 'DEMO' }} />
+    <TransferInbox networkId="canton:da-devnet" /><OperationStatus transaction={null} /></>;
+}
+`);
     console.log(`Building ${template}…`);
     const built = await run('npm', ['run', 'build'], target);
     await writeFile(join(staging, `${template}-build.log`), built.stdout + built.stderr);
@@ -164,7 +198,7 @@ console.log('Packed server authentication: clean npm, ESM and CommonJS passed');
   const result = JSON.stringify({ passed: true,
     sdk: packages.get('@partylayer/sdk').pkg.version,
     react: packages.get('@partylayer/react').pkg.version, cli: cliVersion,
-    checks: ['single-command-install', 'clean-consumer-security-audit', 'esm', 'commonjs', 'ssr', 'official-defaults', 'authentication-backend', 'react-vite', 'next-ssr'],
+    checks: ['single-command-install', 'clean-consumer-security-audit', 'esm', 'commonjs', 'ssr', 'official-defaults', 'authentication-backend', 'react-vite', 'next-ssr', 'operations-esm-cjs-ssr', 'operations-react18-react19-types', 'v1-v2-return-types'],
   }, null, 2);
   await writeFile(join(staging, 'result.json'), result);
   const evidence = join(root, 'artifacts/packed-wallets');

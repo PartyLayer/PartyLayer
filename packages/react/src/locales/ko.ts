@@ -20,6 +20,8 @@ const messages: LocaleMessages = {
   "copied": "복사됨",
   "account": "계정 {party}",
   "walletAccount": "지갑 계정",
+  "defaultAccount": "기본 계정",
+  "accountProvider": "제공자: {provider}",
   "back": "뒤로",
   "close": "닫기",
   "searchWallets": "지갑 검색",

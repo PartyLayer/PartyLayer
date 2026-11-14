@@ -121,7 +121,7 @@ describe('token persistence', () => {
       ({
         ok: true,
         json: async () => TOKEN_RESPONSE,
-        text: async () => '',
+        text: async () => JSON.stringify(TOKEN_RESPONSE),
       })) as unknown as typeof fetch;
   }
 
@@ -138,7 +138,8 @@ describe('token persistence', () => {
     };
 
     const client = new BronAuthClient(config, storage as never);
-    await client.finishAuth('https://app.test.com/callback?code=auth-code');
+    const state = new URL(await client.startAuth()).searchParams.get('state');
+    await client.finishAuth(`https://app.test.com/callback?code=auth-code&state=${state}`);
 
     expect(writes).toHaveLength(1);
     expect(writes[0][0]).toBe('bron_tokens');
@@ -148,7 +149,8 @@ describe('token persistence', () => {
   it('persists NOTHING when no storage adapter is configured', async () => {
     mockTokenEndpoint();
     const client = new BronAuthClient(config); // no storage — the default
-    const tokens = await client.finishAuth('https://app.test.com/callback?code=auth-code');
+    const state = new URL(await client.startAuth()).searchParams.get('state');
+    const tokens = await client.finishAuth(`https://app.test.com/callback?code=auth-code&state=${state}`);
 
     // The token is usable in this instance...
     expect(tokens.accessToken).toBe('access-abc');

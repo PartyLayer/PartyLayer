@@ -2,7 +2,7 @@
 
 import { useMemo } from 'react';
 import { useQuery, type UseQueryOptions } from '@tanstack/react-query';
-import { createWalletLedgerReader, createApplicationLedgerReader, type ApplicationLedgerReaderOptions, type WalletHoldingsSnapshot, type WalletLedgerReaderOptions } from '@partylayer/sdk';
+import { createWalletLedgerReader, createApplicationLedgerReader, type ApplicationLedgerReaderOptions, type WalletHoldingsSnapshot, type WalletHoldingsV2Snapshot, type WalletLedgerReader, type WalletLedgerReaderOptions } from '@partylayer/sdk';
 import { toCAIP2Network } from '@partylayer/core';
 import { usePartyLayerContext } from './context';
 
@@ -22,21 +22,43 @@ export interface UseWalletTokenHoldingsParameters extends WalletLedgerReaderOpti
   query?: Pick<UseQueryOptions<WalletHoldingsSnapshot, Error>, 'staleTime' | 'gcTime' | 'refetchInterval' | 'refetchOnWindowFocus'> & { enabled?: boolean };
 }
 
+export interface UseWalletTokenHoldingsV2Parameters extends Omit<UseWalletTokenHoldingsParameters, 'holdingInterfaceId' | 'query'> {
+  holdingV2InterfaceId: string;
+  query?: Pick<UseQueryOptions<WalletHoldingsV2Snapshot, Error>, 'staleTime' | 'gcTime' | 'refetchInterval' | 'refetchOnWindowFocus'> & { enabled?: boolean };
+}
+
 /** Ready, authenticated holdings read via the connected wallet's CIP-0103 ledgerApi. */
-export function useWalletTokenHoldings({ query, application, ...options }: UseWalletTokenHoldingsParameters) {
+export function useWalletTokenHoldings(parameters: UseWalletTokenHoldingsParameters) {
+  return useScopedHoldings(parameters, 'v1', (reader, signal) => reader.readHoldings(signal));
+}
+
+/** Explicit HoldingV2 read. Preserves managed account identity; returns owned accounts only. */
+export function useWalletTokenHoldingsV2(parameters: UseWalletTokenHoldingsV2Parameters) {
+  return useScopedHoldings(parameters, 'v2', (reader, signal) => reader.readHoldingsV2(signal));
+}
+
+function useScopedHoldings<T extends WalletHoldingsSnapshot | WalletHoldingsV2Snapshot>(
+  { query, application, ...options }: WalletLedgerReaderOptions & {
+    application?: UseWalletTokenHoldingsParameters['application'];
+    query?: Pick<UseQueryOptions<T, Error>, 'staleTime' | 'gcTime' | 'refetchInterval' | 'refetchOnWindowFocus'> & { enabled?: boolean };
+  },
+  version: 'v1' | 'v2',
+  readSnapshot: (reader: WalletLedgerReader, signal: AbortSignal) => Promise<T>,
+) {
   const { client, session } = usePartyLayerContext();
-  const { networkId, holdingInterfaceId, timeoutMs, maxContracts } = options;
+  const { networkId, holdingInterfaceId, holdingV2InterfaceId, timeoutMs, maxContracts } = options;
   const reader = useMemo(() => client ? application
-    ? createApplicationLedgerReader(client, { networkId, holdingInterfaceId, timeoutMs, maxContracts, ...application })
-    : createWalletLedgerReader(client, { networkId, holdingInterfaceId, timeoutMs, maxContracts }) : null,
-    [client, networkId, holdingInterfaceId, timeoutMs, maxContracts, application]);
+    ? createApplicationLedgerReader(client, { networkId, holdingInterfaceId, holdingV2InterfaceId, timeoutMs, maxContracts, ...application })
+    : createWalletLedgerReader(client, { networkId, holdingInterfaceId, holdingV2InterfaceId, timeoutMs, maxContracts }) : null,
+    [client, networkId, holdingInterfaceId, holdingV2InterfaceId, timeoutMs, maxContracts, application]);
   const activeNetwork = session ? toCAIP2Network(session.network).networkId : null;
-  const result = useQuery<WalletHoldingsSnapshot, Error>({
+  const result = useQuery<T, Error>({
     ...query,
     queryKey: ['partylayer', 'wallet-holdings', client ? sourceId(client) : null, session?.sessionId ?? null,
       session?.walletId ?? null, session?.partyId ?? null, activeNetwork, networkId, holdingInterfaceId, maxContracts ?? 1000,
-      application?.endpoint ?? null, application?.sourceId ?? null],
-    queryFn: ({ signal }) => { if (!reader) throw new Error('PartyLayer client is not ready'); return reader.readHoldings(signal); },
+      application?.endpoint ?? null, application?.sourceId ?? null, version, holdingV2InterfaceId ?? null,
+      application?.origin ?? null, application?.fetch ? sourceId(application.fetch) : null],
+    queryFn: ({ signal }) => { if (!reader) throw new Error('PartyLayer client is not ready'); return readSnapshot(reader, signal); },
     enabled: Boolean(client && session && !session.networkMismatch && activeNetwork === networkId) && query?.enabled !== false,
     // A failing authorization, schema or snapshot check must not be hidden by retries.
     retry: false,
@@ -44,5 +66,5 @@ export function useWalletTokenHoldings({ query, application, ...options }: UseWa
   // Mask stale data on disconnect/mismatch even if a consumer manually refetches a disabled query.
   const snapshot = session && !session.networkMismatch && activeNetwork === networkId && result.data?.partyId === String(session.partyId) &&
     result.data.walletId === String(session.walletId) && result.data.networkId === networkId ? result.data : undefined;
-  return { ...result, data: snapshot, snapshot, holdings: snapshot?.holdings };
+  return { ...result, data: snapshot, snapshot, holdings: snapshot?.holdings as T['holdings'] | undefined };
 }

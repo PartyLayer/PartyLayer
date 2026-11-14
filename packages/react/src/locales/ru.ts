@@ -20,6 +20,8 @@ const messages: LocaleMessages = {
   "copied": "Скопировано",
   "account": "Аккаунт {party}",
   "walletAccount": "Аккаунт кошелька",
+  "defaultAccount": "Счёт по умолчанию",
+  "accountProvider": "Провайдер: {provider}",
   "back": "Назад",
   "close": "Закрыть",
   "searchWallets": "Поиск кошельков",

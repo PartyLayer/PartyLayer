@@ -42,7 +42,8 @@ jobs:
           PARTYLAYER_TEST_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/partylayer_test
 
   build-and-test:
-    runs-on: ubuntu-latest
+    # Keep the host within the pinned Playwright version's supported images.
+    runs-on: ubuntu-24.04
 
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4

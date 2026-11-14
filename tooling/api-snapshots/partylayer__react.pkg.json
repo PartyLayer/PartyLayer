@@ -10,6 +10,11 @@
       "require": "./dist/journal.js",
       "types": "./dist/journal.d.ts"
     },
+    "./operations": {
+      "import": "./dist/operations.mjs",
+      "require": "./dist/operations.js",
+      "types": "./dist/operations.d.ts"
+    },
     "./query": {
       "import": "./dist/query.mjs",
       "require": "./dist/query.js",

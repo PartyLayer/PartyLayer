@@ -22,6 +22,24 @@ beforeEach(() => {
 });
 
 describe('authorized wallet Ledger API v2 reads', () => {
+  it('reads explicitly configured V2 owned accounts and excludes provider-only/admin visibility', async () => {
+    const v2Id = 'v2pkg:Splice.Api.Token.HoldingV2:Holding';
+    const accounts = [{ owner: 'alice', provider: 'custodian', id: 'managed-1' },
+      { owner: 'bob', provider: 'alice', id: 'provider-only' }, { owner: null, provider: 'alice', id: 'mint' }];
+    request.mockImplementation(async ({ params }) => params.resource.endsWith('ledger-end') ? { offset: 123 } : accounts.map((account, i) => {
+      const r = row(); const created = r.contractEntry.JsActiveContract.createdEvent;
+      return { contractEntry: { JsActiveContract: { createdEvent: { ...created, contractId: `v2-${i}`,
+        interfaceViews: [{ interfaceId: v2Id, viewStatus: { code: 0 }, viewValue: { ...created.interfaceViews[0].viewValue, owner: undefined, account } }] } } } };
+    }));
+    const result = await createWalletLedgerReader(client, { ...options, holdingV2InterfaceId: v2Id }).readHoldingsV2();
+    expect(result.holdings).toHaveLength(1);
+    expect(result.holdings[0].holding.account).toEqual(accounts[0]);
+    expect(JSON.stringify(request.mock.calls[1][0])).toContain(v2Id);
+  });
+  it('never falls back from a missing V2 interface to the configured V1 interface', async () => {
+    await expect(createWalletLedgerReader(client, options).readHoldingsV2()).rejects.toThrow(/version-specific/);
+    expect(request).not.toHaveBeenCalled();
+  });
   it('uses exact party/interface filters and retains decimal precision and locks', async () => {
     const result = await createWalletLedgerReader(client, options).readHoldings();
     expect(result).toMatchObject({ partyId: 'alice', networkId: options.networkId, offset: 123 });

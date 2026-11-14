@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
-import type { Session } from '@partylayer/core';
+import type { Session, TokenHoldingV2Ref } from '@partylayer/core';
 import type { TokenHoldingRef } from './token-holdings';
 import { summarizeTokenHoldings } from './token-balance-summary';
 import { TokenBalances } from './token-balances';
@@ -21,6 +21,19 @@ beforeEach(() => { state.session = { walletId: 'vala', partyId: 'alice', network
 afterEach(cleanup);
 
 describe('token balance summaries', () => {
+  it('separates V2 account numbers/providers and never counts provider visibility as ownership', () => {
+    const reference = (cid: string, owner: string | undefined, provider: string | undefined, id: string): TokenHoldingV2Ref => ({ cid,
+      holding: { account: { owner, provider, id }, amount: '10', instrumentId: { admin: 'issuer', id: 'USD' } } });
+    const balances = summarizeTokenHoldings([
+      reference('1', 'alice', 'provider-a', ''), reference('2', 'alice', 'provider-a', 'savings'),
+      reference('3', 'alice', 'provider-b', ''), reference('4', 'bob', 'alice', ''), reference('5', undefined, 'alice', 'mint'),
+    ], 'alice');
+    expect(balances).toHaveLength(3);
+    expect(balances.every(balance => balance.total === '10' && balance.account?.owner === 'alice')).toBe(true);
+    render(<TokenBalances owner="alice" holdings={[reference('1', 'alice', 'provider-a', '')]} />);
+    expect(screen.getByText('Default account')).not.toBeNull();
+    expect(screen.getByText('Provider: provider-a')).not.toBeNull();
+  });
   it('separates issuers and locks, filters owners and preserves exact decimals', () => {
     const summaries = summarizeTokenHoldings([
       holding('1', '9007199254740993.1'), holding('2', '0.2'), holding('3', '2', 'issuer-a', true),

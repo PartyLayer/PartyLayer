@@ -21,6 +21,7 @@ import {
   toPartyId,
   toSignature,
   NetworkMismatchError,
+  OriginNotAllowedError,
   type AdapterConnectResult,
   type AdapterDetectResult,
   type CapabilityKey,
@@ -28,6 +29,7 @@ import {
   type WalletAdapter,
 } from '@partylayer/core';
 import { createPartyLayer } from './client';
+import type { RegistryClient } from '@partylayer/registry-client';
 
 class MockNetAdapter implements WalletAdapter {
   readonly walletId = toWalletId('mock-net');
@@ -109,6 +111,13 @@ afterEach(() => {
 });
 
 describe('network enforcement', () => {
+  it('rejects a legacy connection outside its configured origin allowlist', async () => {
+    const client = makeClient({ configNetwork: 'devnet', walletNetwork: 'devnet' });
+    const registry = (client as unknown as { registryClient: RegistryClient }).registryClient;
+    vi.spyOn(registry, 'getWalletEntry').mockResolvedValue({ originAllowlist: ['https://approved.example'] } as never);
+    await expect(client.connect({ walletId: toWalletId('mock-net') })).rejects.toBeInstanceOf(OriginNotAllowedError);
+    expect(await client.getActiveSession()).toBeNull();
+  });
   it("'strict' blocks connect on a mismatch (and still emits the event)", async () => {
     const client = makeClient({ configNetwork: 'mainnet', walletNetwork: 'devnet', enforcement: 'strict' });
     const events: unknown[] = [];
