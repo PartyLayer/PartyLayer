@@ -89,7 +89,7 @@ export interface PartyLayerKitProps {
   /** Application name shown to wallets during connection */
   appName: string;
   children: React.ReactNode;
-  /** Connection UI language (14 languages); unsupported tags fall back to English. */
+  /** Defaults to a supported browser language after hydration, otherwise English. Explicit tags override detection. */
   locale?: string;
   /** UI layout direction override. Arabic defaults to rtl; other languages use ltr. */
   direction?: PartyLayerDirection;

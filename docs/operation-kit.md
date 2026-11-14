@@ -18,6 +18,9 @@ Use `PartyLayerKit` and `ConnectButton` for connection. Import the optional
 operation components from `@partylayer/react/operations`. They share the same
 client, session, locale, theme and transaction history. Their code and fourteen
 operation translations stay outside the Connect Wallet import surface.
+When no locale is configured, the UI uses a supported browser language after
+hydration and falls back to English. An application's explicit language setting
+or a manual language choice takes priority.
 
 ## Review, then approve
 

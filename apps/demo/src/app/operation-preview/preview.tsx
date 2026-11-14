@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useState } from 'react';
-import { PartyLayerProvider, ThemeProvider, PartyLayerLocaleProvider, LanguageSelector, ConnectButton, TokenBalances, darkTheme, lightTheme, type PartyLayerLocale } from '@partylayer/react';
+import { PartyLayerProvider, ThemeProvider, PartyLayerLocaleProvider, LanguageSelector, ConnectButton, TokenBalances, darkTheme, lightTheme, useLocale, type PartyLayerLocale } from '@partylayer/react';
 import { TransferForm, TransferInbox, OperationStatus, type OperationPreparationContext, type TransferInboxEntry } from '@partylayer/react/operations';
 import type { PartyLayerClient } from '@partylayer/sdk';
 import type { SubmitTransactionParams } from '@partylayer/core';
@@ -9,6 +9,10 @@ import { createMockWalletClient } from '@partylayer/testing';
 import { createProviderBridge } from '@partylayer/provider';
 
 const instrumentId = { admin: 'issuer::preview-only', id: 'DEMO' };
+function PreviewLanguage({ onChange }: { onChange: (locale: PartyLayerLocale) => void }) {
+  const { locale } = useLocale();
+  return <LanguageSelector value={locale} onChange={onChange} />;
+}
 function previewClient() {
   const mock = createMockWalletClient({ connected: true, partyId: 'party::preview-only', network: 'devnet' });
   const provider = createProviderBridge(mock);
@@ -27,7 +31,7 @@ const entries: TransferInboxEntry[] = [{ standard: 'v1', reference: { cid: 'prev
 /** Development-only fixtures. No wallet, participant, or asset is contacted. */
 export function OperationPreview() {
   const [client] = useState(previewClient);
-  const [locale, setLocale] = useState<PartyLayerLocale>('tr');
+  const [locale, setLocale] = useState<PartyLayerLocale>();
   const [dark, setDark] = useState(false);
   const prepare = useCallback(async (_input: unknown, context: OperationPreparationContext) => ({
     parameters: { signedTx: { commandId: context.commandId, commands: [{ previewOnly: true }] } }, expiresAt: Date.now() + 60_000,
@@ -44,7 +48,7 @@ export function OperationPreview() {
           <div><div style={{ fontSize: 12, letterSpacing: '.12em', fontWeight: 700, color: theme.colors.textSecondary }}>PARTYLAYER</div>
             <h1 style={{ margin: '8px 0', fontSize: 32 }}>Canton Operation Kit</h1></div>
           <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'center' }}>
-            <LanguageSelector value={locale} onChange={setLocale} />
+            <PreviewLanguage onChange={setLocale} />
             <button onClick={() => setDark(!dark)} style={{ padding: 12, borderRadius: 10, background: theme.colors.surface, color: theme.colors.text, border: `1px solid ${theme.colors.border}` }}>{dark ? 'Light' : 'Dark'}</button>
             <ConnectButton />
           </div>

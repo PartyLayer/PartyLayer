@@ -29,7 +29,7 @@ function App() {
       <PropsTable data={[
         { prop: 'network', type: '"devnet" | "testnet" | "mainnet"', description: 'Canton network to connect to. Determines which wallets and registry entries are available.' },
         { prop: 'appName', type: 'string', description: 'Your application name, shown to wallets during connection requests.' },
-        { prop: 'locale', type: 'string', default: '"en"', description: 'Wallet UI language: 14 languages and regional tags; unsupported tags fall back to English.' },
+        { prop: 'locale', type: 'string', default: 'Browser language / English', description: 'Uses the first supported browser preference after hydration, with English fallback. An explicit locale overrides detection. Supports 14 languages and regional tags.' },
         { prop: 'direction', type: '"ltr" | "rtl"', default: 'Automatic', description: 'Override layout direction. Arabic defaults to RTL; other languages use LTR.' },
         { prop: 'authentication', type: 'PartyLayerAuthenticationAdapter', description: 'Application backend integration for server-verified sign-in. Omitted means wallet connection only.' },
         { prop: 'showAttribution', type: 'boolean', default: 'true', description: 'Show Powered by PartyLayer in the connection modal.' },

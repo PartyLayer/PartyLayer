@@ -46,16 +46,34 @@ const LocaleContext = createContext<LocaleContextValue>({
 });
 
 export interface PartyLayerLocaleProviderProps {
-  /** Wallet UI language. Supports 14 languages and regional tags; unknown tags use English. */
+  /** Defaults to a supported browser language after hydration, otherwise English. Explicit tags override detection. */
   locale?: string;
   /** Overrides automatic direction (Arabic defaults to RTL). */
   direction?: PartyLayerDirection;
   children: ReactNode;
 }
 
-/** No browser-language guess, global DOM mutation or provider remount on language changes. */
-export function PartyLayerLocaleProvider({ locale = 'en', direction, children }: PartyLayerLocaleProviderProps) {
-  const requested = resolvePartyLayerLocale(locale);
+/** Browser detection runs after hydration; explicit application language always wins. */
+export function PartyLayerLocaleProvider({ locale, direction, children }: PartyLayerLocaleProviderProps) {
+  const [browserLocale, setBrowserLocale] = useState<PartyLayerLocale>('en');
+  useEffect(() => {
+    if (locale !== undefined) return;
+    const detect = () => {
+      try {
+        const languages = navigator.languages?.length ? navigator.languages : [navigator.language];
+        for (const language of languages) {
+          if (typeof language !== 'string') continue;
+          const resolved = resolvePartyLayerLocale(language);
+          if (resolved !== 'en' || /^en(?:[-_]|$)/i.test(language.trim())) { setBrowserLocale(resolved); return; }
+        }
+      } catch { /* Restricted browser settings retain the English fallback. */ }
+      setBrowserLocale('en');
+    };
+    detect();
+    window.addEventListener('languagechange', detect);
+    return () => window.removeEventListener('languagechange', detect);
+  }, [locale]);
+  const requested = locale === undefined ? browserLocale : resolvePartyLayerLocale(locale);
   // Keep the server and initial hydration deterministic, even if another request
   // has already downloaded a catalog. English/Turkish remain synchronous.
   const [loaded, setLoaded] = useState<{ locale: PartyLayerLocale; messages: LocaleMessages }>({ locale: 'en', messages: en });
