@@ -37,7 +37,7 @@ permissions:
 jobs:
   gate-main:
     name: Gate (main, drift detection)
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
         with:
@@ -200,7 +200,7 @@ jobs:
 
   session-persistence-e2e:
     name: Session persistence e2e (real browser)
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
         with:
@@ -233,7 +233,7 @@ jobs:
 
   mock-e2e:
     name: Mock E2E + security (full demo suite)
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
         with:
