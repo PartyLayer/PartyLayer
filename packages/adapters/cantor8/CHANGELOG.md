@@ -1,5 +1,12 @@
 # @partylayer/adapter-cantor8
 
+## 0.5.3
+
+### Patch Changes
+
+- Updated dependencies [6163ee3]
+  - @partylayer/core@0.16.0
+
 ## 0.5.2
 
 ### Patch Changes
@@ -102,6 +109,7 @@
   Cantor8 has no arbitrary-message signing, so `signMessage` now fails with `CapabilityNotSupportedError` rather than the stub's fabricated deep-link signature. It is not simulated, not routed through a transaction method, and does not silently succeed.
 
   BREAKING for `@partylayer/adapter-cantor8`:
+
   - Removed the `Cantor8VendorConfig` and `Cantor8VendorModule` types (the deep-link vendor abstraction).
   - `Cantor8AdapterConfig` no longer has `vendorModule`, `vendorConfig`, or `useMockTransport`; it now has `dappUrl?` and `detectTimeoutMs?`.
   - Removed `signTransaction` and `restore`; added `submitTransaction`, `on`, and the `Cantor8SubmitPayload` type.
@@ -233,6 +241,7 @@
   CantonConnect provides a WalletConnect-like experience for Canton Network dApps, enabling seamless integration with multiple Canton wallets through a unified API.
 
   Features:
+
   - Support for Console Wallet, 5N Loop, Cantor8, and Bron wallets
   - React hooks and components for easy integration
   - TypeScript support with full type definitions

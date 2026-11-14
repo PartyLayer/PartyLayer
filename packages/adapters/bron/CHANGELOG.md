@@ -1,5 +1,26 @@
 # @partylayer/adapter-bron
 
+## 0.7.0
+
+### Minor Changes
+
+- 6163ee3: Add account-aware HoldingV2 reads alongside unchanged V1 APIs, typed V2 transfer
+  records and actor-group eligibility, exact account-separated balances and a
+  server-allowlisted V1/V2 application participant read preset.
+
+  Complete the explicitly configured legacy OAuth callback path with same-origin
+  popup/state/PKCE checks, cancellation and validated token responses. Browser
+  client secrets and non-PKCE browser authorization are rejected. Vendor endpoint
+  contracts and live wallet acceptance remain independently validated.
+
+  Remove an unnecessary dynamic core-module import from the initial SDK bundle
+  without changing origin-allowlist enforcement.
+
+### Patch Changes
+
+- Updated dependencies [6163ee3]
+  - @partylayer/core@0.16.0
+
 ## 0.6.1
 
 ### Patch Changes
@@ -81,6 +102,7 @@
   ## Who is affected
 
   The compiler enumerated this, not a grep. Every site that had to change:
+
   - `@partylayer/sdk` — the three `tx:status` emissions in `client.ts` (sign, submit, transfer)
   - `@partylayer/provider` — `BridgeableClient`'s structural type, and the `signed` / `executed` CIP-0103 payloads
   - `@partylayer/react` and `@partylayer/vue` — the `TransactionToast` detail line
@@ -98,6 +120,7 @@
   Two of the nine were found only while making this change — in our Bron adapter, which an earlier survey of this exact problem had missed because they were ternaries rather than `??` chains. That is the argument in miniature: fixing the sites one at a time finds the ones you already know how to look for, and leaving the field required guarantees the next adapter writes a tenth.
 
   ## Also fixed here
+
   - **`BronAdapter`** omits `transactionHash` instead of reporting the word `'pending'` as one (two sites).
   - **`LoopAdapter`** omits it instead of reporting the command id under it. The command id is still reported as `commandId`, which is true of it. A real value under a wrong name is the same error as a fabricated one for anyone reading the field by its name.
 
@@ -173,6 +196,7 @@
   boundary (`LedgerApiParams`) accepts a friendly superset, `requestMethod` in
   either case (plus `PATCH`) and `body` as a JSON string **or** a plain object, and
   each adapter normalizes to what its wallet requires:
+
   - **CIP-0103 `window.canton` RPC wallets**, Send, Console, Nightly,
     WalletConnect, and the SDK announce bridge, get a **lower-case** verb + an
     **object** body, per the canonical CIP-0103 OpenRPC `LedgerApiRequest` schema
@@ -287,6 +311,7 @@
   CantonConnect provides a WalletConnect-like experience for Canton Network dApps, enabling seamless integration with multiple Canton wallets through a unified API.
 
   Features:
+
   - Support for Console Wallet, 5N Loop, Cantor8, and Bron wallets
   - React hooks and components for easy integration
   - TypeScript support with full type definitions

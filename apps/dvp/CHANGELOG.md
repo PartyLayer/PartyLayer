@@ -1,5 +1,14 @@
 # partylayer-dvp
 
+## 0.0.8
+
+### Patch Changes
+
+- Updated dependencies [6163ee3]
+- Updated dependencies [645285d]
+  - @partylayer/sdk@0.22.0
+  - @partylayer/react@3.4.0
+
 ## 0.0.7
 
 ### Patch Changes

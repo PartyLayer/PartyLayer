@@ -1,5 +1,34 @@
 # @partylayer/react
 
+## 3.4.0
+
+### Minor Changes
+
+- 645285d: Add the optional `/operations` entry point to the existing React package: review
+  transfer intent before one wallet submission, accept/reject/withdraw pending
+  instructions, and distinguish ledger inclusion from correlated business outcome.
+  Keep unknown outcomes explicit, never automatically retry writes, invalidate stale
+  session/configuration reviews and support all fourteen UI languages. Public
+  reviews expose immutable input and expiry rather than internal prepared commands.
+
+  Add explicit, separately typed HoldingV2 queries and exact account-separated
+  balances alongside unchanged V1 return types. Preserve the current Connect Wallet
+  design and keep optional operation code outside its initial import surface.
+
+  Default to the first supported browser language after hydration, with an English
+  fallback and explicit application/user choices taking priority. Expose
+  `usePartyLayerLocale` for controlled language pickers. Refine operation cards,
+  review controls and account balances with responsive layouts tested against long
+  identifiers, exact large amounts, RTL and narrow or zoomed viewports.
+
+### Patch Changes
+
+- Updated dependencies [6163ee3]
+  - @partylayer/core@0.16.0
+  - @partylayer/sdk@0.22.0
+  - @partylayer/registry-client@0.7.2
+  - @partylayer/session@1.1.11
+
 ## 3.3.0
 
 ### Minor Changes
@@ -216,6 +245,7 @@
   ## Who is affected
 
   The compiler enumerated this, not a grep. Every site that had to change:
+
   - `@partylayer/sdk` — the three `tx:status` emissions in `client.ts` (sign, submit, transfer)
   - `@partylayer/provider` — `BridgeableClient`'s structural type, and the `signed` / `executed` CIP-0103 payloads
   - `@partylayer/react` and `@partylayer/vue` — the `TransactionToast` detail line
@@ -233,6 +263,7 @@
   Two of the nine were found only while making this change — in our Bron adapter, which an earlier survey of this exact problem had missed because they were ternaries rather than `??` chains. That is the argument in miniature: fixing the sites one at a time finds the ones you already know how to look for, and leaving the field required guarantees the next adapter writes a tenth.
 
   ## Also fixed here
+
   - **`BronAdapter`** omits `transactionHash` instead of reporting the word `'pending'` as one (two sites).
   - **`LoopAdapter`** omits it instead of reporting the command id under it. The command id is still reported as `commandId`, which is true of it. A real value under a wrong name is the same error as a fabricated one for anyone reading the field by its name.
 
@@ -366,6 +397,7 @@
   QueryClient, mirroring the wagmi model.
 
   Breaking changes:
+
   - TanStack Query v5 is now a peer dependency and the data hooks are query/mutation
     hooks. Adding QueryClientProvider is a required setup change.
   - useSession's return type changed: it is now the reactive session hook. The previous
@@ -376,6 +408,7 @@
   one minor cycle; the canonical names are PartyLayerProvider and usePartyLayer.
 
   What v2 adds:
+
   - A /query entrypoint (@partylayer/react/query) for the TanStack query and mutation
     hooks and the useSuspenseQuery variants (useSuspenseWallets,
     useSuspenseTransactionCostEstimate, useSuspensePaidTrafficCost).
@@ -431,6 +464,7 @@
 - 4f6fa01: Reactive wallet list: late-announcing wallets now appear LIVE in the picker (no manual refresh), completing the UX of the announce race fix.
 
   Previously the persistent accumulator CAPTURED a late `canton:announceProvider` (data layer), but `listWallets()` returned a stale one-shot snapshot and the React picker only loaded once on mount, so a wallet injecting after the modal opened never surfaced.
+
   - **@partylayer/sdk** (minor, additive): new `wallets:changed` event (signal-only `{ type: 'wallets:changed'; reason: 'announced' }`). When the announce accumulator gains a wallet, the client now invalidates the one-shot announce cache (the same invalidation as `refreshDiscovery`) and emits a **debounced** (~50ms, coalesces a burst into one) `wallets:changed`. The authoritative read stays `listWallets()` (which does registry-merge + gating + filtering), mirroring EIP-6963/mipd. `warmPlans` (popup gesture-sync) is a disjoint cache and is untouched; `listWallets()`/`refreshDiscovery()` signatures are unchanged; zero announces → no emit (byte-identical idle); the debounce timer + listener are torn down in `destroy()`.
   - **@partylayer/react** (patch): `PartyLayerProvider` subscribes to `wallets:changed` and re-lists → `useWallets()` re-renders with the new wallet automatically. `useWallets()`'s signature is unchanged (still a pure context read); the one-shot mount load is preserved; SSR-safe (subscription inside the browser-only effect).
 
@@ -483,6 +517,7 @@
 ### Minor Changes
 
 - 88006e3: Reactive session hooks + demo wiring.
+
   - NEW `useSession()`: reactive `SessionState` + bound actions
     (`connect`/`disconnect`/`restore`) + the narrowed `on(event, handler)` for
     resilience/sync events. Backed by `@partylayer/session` via context. SSR-safe.
@@ -562,6 +597,7 @@
 ### Minor Changes
 
 - c18a275: Add framework-agnostic session React hooks (Step 6b), additively.
+
   - **@partylayer/react**: new `useAccount()` and `useAccountEffect()` hooks
     (wagmi parity) backed by the `@partylayer/session` core via
     `useSyncExternalStore` (SSR-safe). `PartyLayerProvider` now creates and
@@ -713,6 +749,7 @@ string) => void`). A connect modal shouldn't require a connect callback. It
   CantonConnect provides a WalletConnect-like experience for Canton Network dApps, enabling seamless integration with multiple Canton wallets through a unified API.
 
   Features:
+
   - Support for Console Wallet, 5N Loop, Cantor8, and Bron wallets
   - React hooks and components for easy integration
   - TypeScript support with full type definitions

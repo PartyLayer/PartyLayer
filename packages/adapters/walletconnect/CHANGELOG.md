@@ -1,5 +1,12 @@
 # @partylayer/adapter-walletconnect
 
+## 0.5.2
+
+### Patch Changes
+
+- Updated dependencies [6163ee3]
+  - @partylayer/core@0.16.0
+
 ## 0.5.1
 
 ### Patch Changes
@@ -68,6 +75,7 @@
 ### Minor Changes
 
 - a0292e5: **These calls now throw where they previously returned a value:**
+
   - **`ConsoleAdapter.connect`** — when the wallet reports no party id.
   - **`ConsoleAdapter.signTransaction`** — when the wallet returns no signature. Note this call _never_ failed before: it generated a hash on every invocation regardless of what the wallet said.
   - **`ConsoleAdapter.submitTransaction`** — when the wallet returns no signature.
@@ -151,6 +159,7 @@
   boundary (`LedgerApiParams`) accepts a friendly superset, `requestMethod` in
   either case (plus `PATCH`) and `body` as a JSON string **or** a plain object, and
   each adapter normalizes to what its wallet requires:
+
   - **CIP-0103 `window.canton` RPC wallets**, Send, Console, Nightly,
     WalletConnect, and the SDK announce bridge, get a **lower-case** verb + an
     **object** body, per the canonical CIP-0103 OpenRPC `LedgerApiRequest` schema
@@ -240,6 +249,7 @@ account.networkId ?? ctx.network`. A1 already constrains the requested WC chain;
   that wraps the official `@canton-network/dapp-sdk` `WalletConnectAdapter`, so
   dApps can connect Canton wallets over WalletConnect (hosted/mobile wallets, e.g.
   Nightly mobile).
+
   - Wraps (does not reimplement) the official adapter: SIWX, the `canton_` method
     mapping, `session_event` handling, and restore all come from dapp-sdk.
   - Config: `projectId` (required), `metadata`, `onUri` (wire to the connect
@@ -264,6 +274,7 @@ account.networkId ?? ctx.network`. A1 already constrains the requested WC chain;
 - 53b1714: WalletConnect / QR-only wallets now show a scannable QR **in the connect modal**
   out of the box (no integrator wiring), with a mobile deep-link, and the official
   dapp-sdk blank `about:blank` popup is suppressed.
+
   - **core / sdk:** add an optional `onDisplayUri(uri)` callback to the adapter
     `connect()` options and to `ConnectOptions`. Adapters call it with a
     pairing/display URI (e.g. a WalletConnect `wc:` URI) the moment one is
@@ -291,6 +302,7 @@ account.networkId ?? ctx.network`. A1 already constrains the requested WC chain;
   `client.ledgerApi(...)` threw `CapabilityNotSupportedError` in
   `@partylayer/sdk`. The request never reached the wallet. Both now delegate to
   the official `@canton-network/dapp-sdk` adapter (mirroring `submitTransaction`):
+
   - `signMessage` → `canton_signMessage` (`SignMessageParams { message }` →
     `SignedMessage { signature, partyId, message, … }`).
   - `ledgerApi` → `canton_ledgerApi` (proxies a JSON Ledger API request; response

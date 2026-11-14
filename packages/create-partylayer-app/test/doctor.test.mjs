@@ -37,7 +37,7 @@ function run(root, args = ['--doctor', '--json']) {
   return result;
 }
 test('healthy React app: valid JSON, metadata only, no mutation or credentials in output', () => fixture(root => {
-  app(root); installedReact(root, { version: '3.3.0' });
+  app(root); installedReact(root, { version: '3.4.0' });
   writeFileSync(join(root, '.env'), 'PRIVATE_SENTINEL'); writeFileSync(join(root, '.npmrc'), 'AUTH_SENTINEL');
   const before = snapshot(root); const result = run(root); const report = JSON.parse(result.stdout);
   assert.equal(result.status, 0); assert.equal(report.schemaVersion, 1); assert.equal(report.summary.status, 'pass');
