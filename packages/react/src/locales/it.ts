@@ -20,6 +20,8 @@ const messages: LocaleMessages = {
   "copied": "Copiato",
   "account": "Account {party}",
   "walletAccount": "Account del portafoglio",
+  "defaultAccount": "Conto predefinito",
+  "accountProvider": "Fornitore: {provider}",
   "back": "Indietro",
   "close": "Chiudi",
   "searchWallets": "Cerca portafogli",

@@ -20,6 +20,8 @@ const messages: LocaleMessages = {
   "copied": "已复制",
   "account": "账户 {party}",
   "walletAccount": "钱包账户",
+  "defaultAccount": "默认账户",
+  "accountProvider": "服务商：{provider}",
   "back": "返回",
   "close": "关闭",
   "searchWallets": "搜索钱包",

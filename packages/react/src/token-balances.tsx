@@ -1,14 +1,14 @@
 'use client';
 
 import { useMemo } from 'react';
-import type { TokenHoldingRef, TokenInstrumentId } from './token-holdings';
+import type { AnyTokenHoldingRef, TokenInstrumentId } from '@partylayer/core';
 import { useLocale } from './localization';
 import { useTheme } from './theme';
 import { summarizeTokenHoldings } from './token-balance-summary';
 
 export interface TokenBalancesProps {
   owner: string;
-  holdings: readonly TokenHoldingRef[];
+  holdings: readonly AnyTokenHoldingRef[];
   loading?: boolean;
   error?: Error | null;
   /** Resolve a human-readable instrument name from BOTH admin and id. */
@@ -19,7 +19,7 @@ export interface TokenBalancesProps {
 export interface AccountHoldings {
   partyId: string;
   networkId: string;
-  holdings: readonly TokenHoldingRef[];
+  holdings: readonly AnyTokenHoldingRef[];
   loading?: boolean;
   error?: Error | null;
 }
@@ -39,9 +39,13 @@ export function TokenBalances({ owner, holdings, loading, error, formatInstrumen
       : problem ? <div role="alert" style={{ color: theme.colors.error, overflowWrap: 'anywhere' }}><bdi dir="auto">{t('balancesFailed', { reason: problem.message })}</bdi></div>
       : !result.balances.length ? <div><bdi dir="auto">{t('noHoldings')}</bdi></div>
       : <ul style={{ listStyle: 'none', margin: 0, padding: 0 }}>{result.balances.map(balance => (
-        <li key={JSON.stringify([balance.instrumentId.admin, balance.instrumentId.id])} style={{ padding: '6px 0', overflowWrap: 'anywhere' }}>
+        <li key={JSON.stringify([balance.instrumentId.admin, balance.instrumentId.id, balance.account ?? null])} style={{ padding: '6px 0', overflowWrap: 'anywhere' }}>
           <div style={{ fontWeight: 600 }}><bdi dir="auto">{formatInstrument?.(balance.instrumentId) ?? balance.instrumentId.id}</bdi></div>
           <div dir="ltr" style={{ fontFamily: 'ui-monospace, monospace', fontSize: '10px', color: theme.colors.textSecondary }}>{balance.instrumentId.admin}</div>
+          {balance.account && <div dir="ltr" style={{ fontFamily: 'ui-monospace, monospace', fontSize: '10px', color: theme.colors.textSecondary }}>
+            <bdi dir="auto">{balance.account.id ? t('account', { party: balance.account.id }) : t('defaultAccount')}</bdi>
+            {balance.account.provider && <div><bdi dir="auto">{t('accountProvider', { provider: balance.account.provider })}</bdi></div>}
+          </div>}
           <div><bdi dir="auto">{t('availableBalance', { amount: balance.available })}</bdi></div>
           <div><bdi dir="auto">{t('lockedBalance', { amount: balance.locked })}</bdi></div>
         </li>

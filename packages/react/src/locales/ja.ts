@@ -20,6 +20,8 @@ const messages: LocaleMessages = {
   "copied": "コピーしました",
   "account": "アカウント {party}",
   "walletAccount": "ウォレットのアカウント",
+  "defaultAccount": "デフォルトアカウント",
+  "accountProvider": "プロバイダー: {provider}",
   "back": "戻る",
   "close": "閉じる",
   "searchWallets": "ウォレットを検索",

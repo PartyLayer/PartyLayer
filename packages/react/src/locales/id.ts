@@ -20,6 +20,8 @@ const messages: LocaleMessages = {
   "copied": "Tersalin",
   "account": "Akun {party}",
   "walletAccount": "Akun dompet",
+  "defaultAccount": "Akun default",
+  "accountProvider": "Penyedia: {provider}",
   "back": "Kembali",
   "close": "Tutup",
   "searchWallets": "Cari dompet",

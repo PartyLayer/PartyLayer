@@ -5,7 +5,7 @@ import type { SubmitTransactionParams, TxReceipt } from '@partylayer/core';
 import { useTransactionFlow, type TransactionFlowRecord, type TransactionConfirmation } from './use-transaction-flow';
 
 const state = vi.hoisted(() => ({
-  session: { walletId: 'vala', partyId: 'alice::party', network: 'devnet', networkMismatch: undefined as unknown } as { walletId: string; partyId: string; network: string; networkMismatch?: unknown } | null,
+  session: { walletId: 'vala', partyId: 'alice::party', network: 'devnet', networkMismatch: undefined as unknown } as { sessionId?: string; walletId: string; partyId: string; network: string; networkMismatch?: unknown } | null,
   client: { submitTransaction: vi.fn(), getActiveSession: vi.fn() },
 }));
 vi.mock('./context', () => ({ usePartyLayerContext: () => state }));
@@ -24,6 +24,17 @@ beforeEach(() => {
 afterEach(cleanup);
 
 describe('transaction lifecycle', () => {
+  it.each(['new-session', 'live-mismatch'])('blocks %s while identity lookup is pending, before the wallet write', async kind => {
+    state.session = { ...state.session!, sessionId: 'original' };
+    const active = deferred<typeof state.session>();
+    state.client.getActiveSession.mockReturnValue(active.promise);
+    const view = renderHook(() => useTransactionFlow());
+    let result!: Promise<TransactionFlowRecord>;
+    act(() => { result = view.result.current.submitTransaction(input); });
+    const live = { ...state.session!, ...(kind === 'new-session' ? { sessionId: 'replacement' } : { networkMismatch: true }) };
+    await act(async () => { active.resolve(live); expect((await result).status).toBe('failed'); });
+    expect(state.client.submitTransaction).not.toHaveBeenCalled();
+  });
   it('separates wallet approval, submission and ledger confirmation', async () => {
     const submission = deferred<TxReceipt>();
     state.client.submitTransaction.mockReturnValue(submission.promise);

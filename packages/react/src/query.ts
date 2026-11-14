@@ -94,8 +94,9 @@ export type {
 // CIP-0056 (Canton Token Standard) typed holdings read: a typed specialization
 // of useDamlContract for the HoldingV1 interface. Holdings read only.
 export { useTokenHoldings } from './token-holdings';
-export { useWalletTokenHoldings } from './wallet-token-holdings';
-export type { UseWalletTokenHoldingsParameters } from './wallet-token-holdings';
+export { useWalletTokenHoldings, useWalletTokenHoldingsV2 } from './wallet-token-holdings';
+export type { UseWalletTokenHoldingsParameters, UseWalletTokenHoldingsV2Parameters } from './wallet-token-holdings';
+export type { TokenAccount, TokenHoldingV2, TokenHoldingV2Ref, AnyTokenHoldingRef } from '@partylayer/core';
 export { sumTokenAmounts, summarizeTokenHoldings } from './token-balance-summary';
 export type { TokenBalanceSummary } from './token-balance-summary';
 export type {
