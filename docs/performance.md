@@ -26,12 +26,12 @@ gzipped cost of the exports it actually imports. That is measured below.
 
 The current default catalog loads reviewed official SDKs lazily during wallet discovery;
 configured WalletConnect and Bron transports also load lazily. The current measured initial
-SDK contribution is about 53.23 kB gzip (53.5 kB budget); React Native headless is about 53.47 kB
+SDK contribution is about 50.10 kB gzip (53.5 kB budget); React Native headless is about 50.35 kB
 (53.75 kB budget). These budgets exclude asynchronous chunks. The kit lists wallets on mount, so
 eligible wallet/discovery chunks can start loading before the picker opens;
 these numbers are not total first-load bytes. Connecting WalletConnect loads
 its underlying transport. Run `pnpm gate:size`
-for the current numbers. The React connection surface measures about 37.30 kB gzip with
+for the current numbers. The React connection surface measures about 36.02 kB gzip with
 a 37.5 kB budget after adding keyboard behavior, English/Turkish UI, optional
 authentication actions, scoped recent activity, network guidance and exact-decimal
 holdings UI. Server challenge/verification helpers use a separate
@@ -97,12 +97,12 @@ in CI rather than reaching a consumer.
 
 | Scenario | Measured | Budget | Headroom |
 |---|---|---|---|
-| Connect surface | 37.30 kB | 37.5 kB | ~0.5% |
+| Connect surface | 36.02 kB | 37.5 kB | ~0.5% |
 | One token hook | 467 B | 700 B | ~50% |
 | Matching helper | 294 B | 500 B | ~70% |
-| RN headless | 53.47 kB | 53.75 kB | ~0.5% |
+| RN headless | 50.35 kB | 53.75 kB | ~0.5% |
 | RN ui | 5.04 kB | 5.5 kB | ~9% |
-| SDK client | 53.23 kB | 53.5 kB | ~0.5% |
+| SDK client | 50.10 kB | 53.5 kB | ~0.5% |
 
 Request/receipt command-ID correlation adds about 0.12 kB to the shared SDK and
 RN headless entrypoints. The budgets include that reviewed guard so an unrelated

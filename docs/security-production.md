@@ -1,397 +1,140 @@
-# Production Security Guide
+# Production security guide
 
-This guide covers security requirements and best practices for deploying dApps that use PartyLayer SDK in production.
+PartyLayer supplies wallet discovery, session handling and the supported wallet
+request paths. An application remains responsible for its authenticated backend,
+participant permissions, asset registry configuration and business authorization.
+A successful wallet connection or message signature is not proof that a transfer
+or swap has settled.
 
-## Table of Contents
+## HTTPS requirements
 
-- [HTTPS Requirements](#https-requirements)
-- [Content Security Policy (CSP)](#content-security-policy-csp)
-- [Platform-Specific Configuration](#platform-specific-configuration)
-- [Pre-Deployment Checklist](#pre-deployment-checklist)
-- [Security Best Practices](#security-best-practices)
-
----
-
-## HTTPS Requirements
-
-**HTTPS is mandatory for production deployments.**
-
-### Why HTTPS?
-
-1. **Web Crypto API** - Session encryption (AES-GCM) requires a secure context
-2. **Origin Security** - Session origin binding depends on secure origins
-3. **Wallet Security** - Wallets may reject connections from insecure origins
-4. **Browser Requirements** - Modern browsers restrict sensitive APIs on HTTP
-
-### Platform HTTPS Support
-
-| Platform | HTTPS | Configuration |
-|----------|-------|---------------|
-| Vercel | Automatic | No config needed |
-| Netlify | Automatic | No config needed |
-| Cloudflare Pages | Automatic | No config needed |
-| GitHub Pages | Automatic | Use `https://` URL |
-| AWS S3 + CloudFront | Manual | Configure SSL certificate |
-| Self-hosted | Manual | Use Let's Encrypt or commercial SSL |
-
----
+Serve production applications and authenticated application endpoints over HTTPS.
+Keep the configured application origin aligned with the actual browser origin.
+Web Crypto, passkeys, browser storage and popup authorization depend on the
+browser's secure-context and origin rules. Local loopback development is a
+separate environment, not a production deployment configuration.
 
 ## Content Security Policy (CSP)
 
-CSP headers protect your dApp from XSS attacks and control resource loading.
+Build the policy for the application's framework and the wallets actually enabled
+on its configured network. PartyLayer's npm integration bundles reviewed runtimes
+and loads optional wallet/discovery chunks as needed. It does not require a
+remote JavaScript CDN to load the Loop runtime. Do not copy an old wallet-domain
+allowlist: use the current registry/network configuration and each vendor's
+integration documentation.
 
-### Recommended CSP for PartyLayer
+This is a restrictive starting point for a client-rendered application whose
+scripts are external files served by the application. It is not a complete
+allowlist for every wallet, an SSR framework, or optional third-party services:
 
-```
-Content-Security-Policy: 
-  default-src 'self';
-  script-src 'self' https://cdn.jsdelivr.net;
-  connect-src 'self' https://registry.partylayer.xyz https://*.cantonloop.com wss://*.cantonloop.com;
-  frame-src 'self' https://*.cantonloop.com;
-  style-src 'self' 'unsafe-inline';
-  img-src 'self' data: https:;
-```
-
-### CSP Directives Explained
-
-| Directive | Purpose | Required For |
-|-----------|---------|--------------|
-| `script-src https://cdn.jsdelivr.net` | Loop SDK lazy-loading | Loop Wallet |
-| `connect-src https://registry.partylayer.xyz` | Registry fetch | All wallets |
-| `connect-src https://*.cantonloop.com` | Loop API | Loop Wallet |
-| `frame-src https://*.cantonloop.com` | Loop popup/iframe | Loop Wallet |
-| `style-src 'unsafe-inline'` | WalletModal styling | React components |
-
-### Additional Headers
-
-```
-X-Content-Type-Options: nosniff
-X-Frame-Options: SAMEORIGIN
-Referrer-Policy: strict-origin-when-cross-origin
-Permissions-Policy: camera=(), microphone=(), geolocation=()
+```text
+default-src 'self';
+base-uri 'self';
+object-src 'none';
+script-src 'self';
+style-src 'self' 'unsafe-inline';
+connect-src 'self' https://registry.partylayer.xyz;
+img-src 'self' data: https://registry.partylayer.xyz;
+frame-src 'self';
+frame-ancestors 'self';
+form-action 'self';
 ```
 
----
-
-## Platform-Specific Configuration
-
-### Vercel
-
-Create `vercel.json` in your project root:
-
-```json
-{
-  "headers": [
-    {
-      "source": "/(.*)",
-      "headers": [
-        {
-          "key": "Content-Security-Policy",
-          "value": "default-src 'self'; script-src 'self' https://cdn.jsdelivr.net; connect-src 'self' https://registry.partylayer.xyz https://*.cantonloop.com wss://*.cantonloop.com; frame-src 'self' https://*.cantonloop.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:;"
-        },
-        {
-          "key": "X-Content-Type-Options",
-          "value": "nosniff"
-        },
-        {
-          "key": "X-Frame-Options",
-          "value": "SAMEORIGIN"
-        },
-        {
-          "key": "Referrer-Policy",
-          "value": "strict-origin-when-cross-origin"
-        }
-      ]
-    }
-  ]
-}
-```
-
-### Netlify
-
-Create `netlify.toml` in your project root:
-
-```toml
-[[headers]]
-  for = "/*"
-  [headers.values]
-    Content-Security-Policy = "default-src 'self'; script-src 'self' https://cdn.jsdelivr.net; connect-src 'self' https://registry.partylayer.xyz https://*.cantonloop.com wss://*.cantonloop.com; frame-src 'self' https://*.cantonloop.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:;"
-    X-Content-Type-Options = "nosniff"
-    X-Frame-Options = "SAMEORIGIN"
-    Referrer-Policy = "strict-origin-when-cross-origin"
-```
-
-### Cloudflare Pages
-
-Create `_headers` file in your `public` folder:
-
-```
-/*
-  Content-Security-Policy: default-src 'self'; script-src 'self' https://cdn.jsdelivr.net; connect-src 'self' https://registry.partylayer.xyz https://*.cantonloop.com wss://*.cantonloop.com; frame-src 'self' https://*.cantonloop.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:;
-  X-Content-Type-Options: nosniff
-  X-Frame-Options: SAMEORIGIN
-  Referrer-Policy: strict-origin-when-cross-origin
-```
-
-### Next.js
-
-Add to `next.config.js`:
-
-```javascript
-const securityHeaders = [
-  {
-    key: 'Content-Security-Policy',
-    value: "default-src 'self'; script-src 'self' https://cdn.jsdelivr.net; connect-src 'self' https://registry.partylayer.xyz https://*.cantonloop.com wss://*.cantonloop.com; frame-src 'self' https://*.cantonloop.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:;"
-  },
-  {
-    key: 'X-Content-Type-Options',
-    value: 'nosniff'
-  },
-  {
-    key: 'X-Frame-Options',
-    value: 'SAMEORIGIN'
-  },
-  {
-    key: 'Referrer-Policy',
-    value: 'strict-origin-when-cross-origin'
-  }
-];
-
-module.exports = {
-  async headers() {
-    return [
-      {
-        source: '/:path*',
-        headers: securityHeaders,
-      },
-    ];
-  },
-};
-```
-
-### Vite (Static Hosting)
-
-For Vite apps deployed to static hosting, use the platform-specific configuration above. For development, you can add headers via `vite.config.ts`:
-
-```typescript
-import { defineConfig } from 'vite';
-
-export default defineConfig({
-  server: {
-    headers: {
-      'Content-Security-Policy': "default-src 'self'; script-src 'self' 'unsafe-eval' https://cdn.jsdelivr.net; connect-src 'self' https://registry.partylayer.xyz https://*.cantonloop.com wss://*.cantonloop.com; frame-src 'self' https://*.cantonloop.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:;",
-    },
-  },
-});
-```
-
-> **Note:** `'unsafe-eval'` is only needed for development with Vite's HMR. Remove it in production.
-
----
-
-## Pre-Deployment Checklist
-
-Run through this checklist before deploying to production:
-
-### Infrastructure
-
-- [ ] HTTPS enabled (automatic on most platforms)
-- [ ] Custom domain configured with SSL
-- [ ] CSP headers configured
-- [ ] Security headers (X-Frame-Options, etc.) configured
-
-### SDK Configuration
-
-- [ ] Using `mainnet` network
-- [ ] Using `stable` channel
-- [ ] App name configured correctly
-- [ ] Production origin set (if explicitly configured)
-
-```typescript
-const client = createPartyLayer({
-  network: 'mainnet',      // ✓ Production network
-  channel: 'stable',       // ✓ Stable registry
-  app: { 
-    name: 'My Production App',
-    // origin is auto-detected from window.location.origin
-  },
-});
-```
-
-### Error Handling
-
-- [ ] Error events handled (`client.on('error', ...)`)
-- [ ] User-friendly error messages displayed
-- [ ] React Error Boundary implemented
-- [ ] Fallback UI for connection failures
-
-### Testing
-
-- [ ] Tested with Console Wallet (if targeting browser extension users)
-- [ ] Tested with Loop Wallet (if targeting mobile/QR users)
-- [ ] Tested session persistence (page refresh)
-- [ ] Tested disconnect flow
-- [ ] Tested error scenarios (wallet not installed, user rejected, timeout)
-
----
-
-## Security Best Practices
-
-### 1. Never Store Sensitive Data
-
-The SDK encrypts session data, but you should never store:
-- Private keys
-- Seed phrases
-- Unencrypted credentials
-
-```typescript
-// ❌ Don't do this
-localStorage.setItem('privateKey', userPrivateKey);
-
-// ✅ SDK handles session storage securely
-const session = await client.connect({ walletId: 'console' });
-// Session is automatically encrypted and stored
-```
-
-### 2. Validate Wallet Responses
-
-Always validate data received from wallets:
-
-```typescript
-const session = await client.connect({ walletId: 'console' });
-
-// ✅ Validate session data
-if (!session.partyId || !session.sessionId) {
-  throw new Error('Invalid session response');
-}
-```
-
-### 3. Handle Errors Gracefully
-
-```typescript
-import { 
-  WalletNotInstalledError,
-  UserRejectedError,
-  TimeoutError 
-} from '@partylayer/sdk';
-
-try {
-  await client.connect({ walletId: 'console' });
-} catch (error) {
-  if (error instanceof WalletNotInstalledError) {
-    showMessage('Please install Console Wallet extension');
-  } else if (error instanceof UserRejectedError) {
-    showMessage('Connection was cancelled');
-  } else if (error instanceof TimeoutError) {
-    showMessage('Connection timed out. Please try again.');
-  } else {
-    showMessage('An unexpected error occurred');
-    console.error(error);
-  }
-}
-```
-
-### 4. Use Event Listeners
-
-Monitor SDK events for security-relevant changes:
-
-```typescript
-client.on('session:disconnected', () => {
-  // Clear any cached user data
-  clearUserState();
-  redirectToLogin();
-});
-
-client.on('session:expired', () => {
-  // Session expired, prompt re-authentication
-  showReconnectPrompt();
-});
-
-client.on('error', (event) => {
-  // Log errors for monitoring (without sensitive data)
-  logError({
-    code: event.error.code,
-    message: event.error.message,
-    timestamp: Date.now(),
-  });
-});
-```
-
-### 5. Implement React Error Boundaries
-
-```tsx
-import { Component, ErrorInfo, ReactNode } from 'react';
-
-class WalletErrorBoundary extends Component<
-  { children: ReactNode; fallback: ReactNode },
-  { hasError: boolean }
-> {
-  state = { hasError: false };
-
-  static getDerivedStateFromError() {
-    return { hasError: true };
-  }
-
-  componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    console.error('Wallet error:', error, errorInfo);
-  }
-
-  render() {
-    if (this.state.hasError) {
-      return this.props.fallback;
-    }
-    return this.props.children;
-  }
-}
-
-// Usage
-<WalletErrorBoundary fallback={<WalletErrorFallback />}>
-  <PartyLayerProvider client={client}>
-    <App />
-  </PartyLayerProvider>
-</WalletErrorBoundary>
-```
-
----
-
-## Registry Security
-
-The SDK includes built-in registry security:
-
-| Feature | Description |
-|---------|-------------|
-| **Schema Validation** | Every entry checked against the registry schema on each build |
-| **CIP-0103 Flag Gate** | Blocks removal of a wallet's `cip0103.native` marker |
-| **Public History** | Published from a public repository; every change is in commit history |
-| **Ed25519 Signatures** | Implemented in the client, NOT enabled in production (see `SIGNING.md`) |
-| **Sequence Numbers** | Prevents downgrade attacks |
-| **Schema Validation** | Validates registry structure |
-| **Last-Known-Good Cache** | Falls back to verified cache on failure |
-
-These features work automatically - no configuration needed.
-
----
-
-## Reporting Security Issues
-
-If you discover a security vulnerability:
-
-1. **Do not** disclose publicly
-2. Email: security@partylayer.xyz
-3. Include: Description, steps to reproduce, potential impact
-
-We follow responsible disclosure and will credit reporters (with permission).
-
----
-
-## Summary
-
-| Requirement | Priority | Status |
-|-------------|----------|--------|
-| HTTPS | Critical | Platform-dependent |
-| CSP Headers | High | Configure per platform |
-| Error Handling | High | Implement in your app |
-| Security Headers | Medium | Configure per platform |
-| Event Monitoring | Medium | Implement in your app |
-
-Following this guide ensures your dApp is secure and production-ready.
+Add the reviewed connection/frame/image origins required by the enabled wallet
+transports. A custom registry requires its actual origin. Permit only the
+configured service origins; do not automatically turn untrusted catalog data into
+an unrestricted CSP. The React UI uses inline style attributes, which must be
+accounted for by the application's styling policy.
+
+SSR frameworks may emit inline bootstrap scripts. Follow the framework's nonce
+or hash integration rather than pasting a fixed nonce into a static hosting
+configuration. For Next.js, use its [CSP guide](https://nextjs.org/docs/app/guides/content-security-policy)
+and the documentation for your framework version. A nonce is unpredictable and
+unique per response. Test both the production build and the real wallet journey
+before enforcing the policy.
+
+The PartyLayer marketing site's optional Cloudflare measurement needs its
+explicit script/connection sources; that measurement is not injected into SDK
+consumers. See [website measurement](website-analytics.md).
+
+## Platform-specific configuration
+
+Apply response headers through the application's hosting/framework integration
+(Vercel, Netlify, Cloudflare or a self-hosted server). The host does not determine
+a universal wallet allowlist. Nonce-based SSR policies require response-time
+coordination with the renderer and cannot be implemented with a hardcoded nonce
+in a static headers file.
+
+Keep popup behavior in the review. Cross-Origin-Opener-Policy can sever the
+relationship between an OAuth popup and its opener. Applications using a popup
+callback must choose compatible isolation headers and validate the returned
+window source, origin and single-use authorization state. Do not weaken isolation
+for unrelated routes without assessing the application requirement. Refer to the
+[COOP header documentation](https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Cross-Origin-Opener-Policy).
+
+## Pre-deployment checklist
+
+Use the repository's build, type, lint, conformance, API, package-content and clean
+consumer checks as release evidence. Record actual wallet versions, network,
+connect/reject/sign/restore/disconnect and funded transaction outcomes separately
+in [wallet acceptance](wallet-acceptance.md). Mock transports, emulated mobile
+screens and an automated accessibility scan do not certify a physical passkey,
+a live wallet account or a financial settlement.
+
+Inspect the effective production response headers and browser console. Verify
+that the enabled wallet flow works under those headers. Source examples or a
+passing local development page alone do not demonstrate production compatibility.
+
+## Security best practices
+
+Keep signing keys, recovery phrases, participant credentials, client secrets and
+API keys out of browser bundles, logs and the public repository. A public website
+analytics site id is not an account-management API credential. Do not add npm or
+GitHub publishing credentials to source; use the maintainer-protected release
+workflow and the existing ownership controls.
+
+For application sign-in, verify the exact challenge with authoritative party/key
+bindings, consume a browser-bound nonce atomically, validate origin/network and
+issue a server-side authenticated session. See [authentication](authentication.md)
+and the [runnable server reference](../examples/authentication-server/README.md).
+A public key supplied by the same untrusted signing response is not, by itself,
+authoritative proof of a Canton party's identity.
+
+The explicitly configured legacy OAuth integration uses a dedicated registered
+callback, S256 PKCE and single-use state. Browser client secrets are rejected.
+Keep analytics and unrelated third-party scripts off authorization callback
+pages. Vendor onboarding and endpoint contracts remain application configuration;
+see the [Bron compatibility guide](../packages/adapters/bron/README.md).
+
+Use least-privilege participant credentials on the server. Rebuild party and
+interface filters from authenticated policy. Browser requests must not choose
+an arbitrary participant URL, replacement credentials or another party's actAs.
+A read permission, account provider role or visible contract does not establish
+delegated signing authority.
+
+Never automatically retry an uncertain ledger write. Correlate its original
+application command and ledger update, then verify the operation's actual result.
+Browser journals and UI records are recoverable hints, not an authoritative
+financial-intent database. See [operation semantics](operation-kit.md).
+
+Production registry signing is a separate maintained trust configuration. Code
+support for signature verification does not make an unsigned registry signed.
+Configure approved trust roots only as part of the documented signing rollout;
+see [SIGNING.md](../SIGNING.md). Do not activate a mandatory verification policy
+before its actual production signatures and trust roots are available.
+
+## Dependency security evidence
+
+The clean-consumer check audits the installed production dependency graph and
+saves the complete report at `artifacts/packed-wallets/react-audit.json`.
+The release gate rejects high and critical findings and retains moderate findings
+in the report. A passing gate is not a claim that every dependency finding is zero
+or that all affected paths are unreachable.
+
+Review direct and transitive findings against their advisories and the real
+installed versions. Re-test vendor contracts when upgrading wallet runtimes.
+Do not use a forced audit downgrade that removes supported integrations, suppress
+severities, or rely on workspace-only overrides as proof that published npm
+consumers receive a patch.
+
+Report security concerns through [SECURITY.md](../SECURITY.md).
