@@ -63,8 +63,8 @@ export interface SessionStoreOptions {
   /** Defer provider subscriptions and BroadcastChannel creation until init/connect. */
   deferInitialization?: boolean;
   /**
-   * Pluggable persistence. Defaults to in-memory storage (no DOM access).
-   * Inject a `localStorage`-backed adapter from the browser framework layer.
+   * Pluggable persistence. Defaults to encrypted IndexedDB where supported,
+   * with an in-memory fallback elsewhere. An explicit adapter overrides it.
    */
   storage?: SessionStorage;
   /** Storage key used for the auto-reconnect marker. */
@@ -72,8 +72,8 @@ export interface SessionStoreOptions {
   /**
    * automatic reconnect with exponential backoff on TRANSIENT disconnects
    * (a `statusChanged(isConnected:false)` that was NOT an explicit
-   * `store.disconnect()`). A `RetryPolicy` enables it; `false` disables it;
-   * omitted ⇒ the default policy (enabled). NEVER fires after a user disconnect.
+   * `store.disconnect()`). A `RetryPolicy` enables it; omitted or `false`
+   * disables it. NEVER fires after a user disconnect.
    */
   reconnect?: RetryPolicy | false;
   /**
@@ -95,7 +95,7 @@ export interface SessionStoreOptions {
   /**
    * persist the FULL session snapshot (session envelope) at `storageKey`,
    * rewriting it on party/network change, instead of the legacy `'1'` marker.
-   * Default `false` (legacy marker behavior preserved — additive).
+   * Defaults to `true`; set `false` to persist only the reconnect marker.
    */
   persistSnapshot?: boolean;
   /**
