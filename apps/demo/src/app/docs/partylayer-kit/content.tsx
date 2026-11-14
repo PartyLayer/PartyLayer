@@ -59,8 +59,11 @@ function App() {
         Arabic automatically uses RTL; <Code>direction</Code> overrides that choice.
         Changing language preserves the client and wallet connection. English and
         Turkish render synchronously. Other catalogs load on demand; initial server
-        and hydration output uses English, then updates when ready. Browser language
-        is not guessed and the application document is not mutated.
+        and hydration output uses English, then updates when ready. When locale is
+        omitted, the first supported browser preference is selected after hydration,
+        with English fallback. An explicit locale takes priority; the application
+        document is not mutated. Use <Code>usePartyLayerLocale()</Code> inside the
+        provider to read the resolved language for a controlled picker.
       </P>
       <P>
         This translates PartyLayer connection, account, cost and transaction UI, including
