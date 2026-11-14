@@ -22,7 +22,7 @@ export async function publishPreflight(context, api) {
 /** Read-only retries cover registry propagation; immutable integrity mismatches stop immediately. */
 export async function verifyPublicPackage(item, tag, fetcher = fetch, {
   now = () => performance.now(), sleep = ms => new Promise(resolve => setTimeout(resolve, ms)),
-  timeoutMs = 300_000, pollMs = 5_000,
+  timeoutMs = 1_200_000, pollMs = 5_000,
 } = {}) {
   const deadline = now() + timeoutMs;
   const transient = message => Object.assign(new Error(message), { retryable: true });

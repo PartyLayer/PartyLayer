@@ -143,7 +143,7 @@ test('public registry verification requires matching version, integrity and dist
   for (const value of [{ ...good, version: '0.9.0' }, { ...good, name: 'other' }, { ...good, dist: { integrity: 'different' } }]) await assert.rejects(verifyPublicPackage(item, 'next', async () => Response.json(value)));
   const clock = registryClock();
   await assert.rejects(verifyPublicPackage(item, 'latest', async () => new Response('', { status: 503 }), clock));
-  assert.equal(clock.now(), 300_000);
+  assert.equal(clock.now(), 1_200_000);
 });
 test('registry propagation retries reads without issuing a second publication', async () => fixture(async ({ output, options }) => {
   let writes = 0, tagReads = 0;
@@ -170,12 +170,27 @@ test('asynchronous npm processing waits minutes for version and tag without repu
   assert.equal(writes, 1); assert.ok(reads > 70); assert.equal(clock.now(), 205_000);
   assert.equal(receipt.packages[0].status, 'published-verified');
 }));
+test('npm processing longer than five minutes still verifies the original single write', async () => fixture(async ({ output, options }) => {
+  let writes = 0;
+  const clock = registryClock();
+  const receipt = await publish(context, output, apiFixture(), { ...options, execute: () => { writes++; },
+    verify: (item, tag) => verifyPublicPackage(item, tag, async url => {
+      if (clock.now() < 420_000) return new Response('', { status: 404 });
+      return Response.json({ name: item.name,
+        version: url.endsWith('/latest') && clock.now() < 435_000 ? '0.9.0' : item.version,
+        dist: { integrity: item.integrity } });
+    }, clock),
+  });
+  assert.equal(writes, 1);
+  assert.equal(clock.now(), 435_000);
+  assert.equal(receipt.packages[0].status, 'published-verified');
+}));
 test('propagation deadline bounds reads and never waits on immutable integrity failures', async () => {
   const item = { name: '@partylayer/core', version: '1.0.0', integrity: 'sha512-reviewed' };
   for (const status of [404, 429, 503]) {
     const clock = registryClock(); let reads = 0;
     await assert.rejects(verifyPublicPackage(item, 'latest', async () => { reads++; return new Response('', { status }); }, clock), /not available yet/);
-    assert.equal(clock.now(), 300_000); assert.equal(reads, 122);
+    assert.equal(clock.now(), 1_200_000); assert.equal(reads, 482);
   }
   const clock = registryClock();
   await assert.rejects(verifyPublicPackage(item, 'latest', async () => Response.json({ ...item, dist: { integrity: 'different' } }), clock), /integrity differs/);
@@ -197,7 +212,8 @@ test('real publishing workflow has one protected owner gate and defaults to no p
   assert.deepEqual(workflow.jobs.publish.permissions, { contents: 'read', actions: 'read', 'security-events': 'read', 'id-token': 'write' });
   assert.equal(workflow.jobs.prepare.environment, undefined); assert.equal(workflow.jobs.publish.environment.name, POLICY.environment);
   assert.equal(workflow.jobs.publish.needs, 'prepare'); assert.ok(workflow.jobs.publish.if.includes('inputs.publish == true'));
-  assert.ok(workflow.jobs.publish['timeout-minutes'] >= 9 * (2 + 5));
+  assert.ok(workflow.jobs.publish['timeout-minutes'] >= 19 * (2 + 5));
+  assert.ok(workflow.jobs.publish['timeout-minutes'] <= 360);
   for (const job of Object.values(workflow.jobs)) {
     for (const check of [`github.actor_id == '${POLICY.ownerId}'`, `github.repository_id == '${POLICY.repositoryId}'`, `github.triggering_actor == '${POLICY.ownerLogin}'`, "github.ref == 'refs/heads/main'"]) assert.ok(job.if.includes(check));
     for (const step of job.steps) {
