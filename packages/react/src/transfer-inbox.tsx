@@ -7,6 +7,7 @@ import { useTheme } from './theme';
 import { useOperationLocale } from './operation-messages';
 import { useReviewedTransaction, type OperationPreparationContext, type PreparedOperation, type UseReviewedTransactionParameters } from './use-reviewed-transaction';
 import { OperationStatus, type OperationOutcome } from './operation-status';
+import { operationUI, OperationIcon } from './operation-ui';
 
 export type TransferInboxEntry = { standard: 'v1'; reference: TokenTransferInstructionV1Ref }
   | { standard: 'v2'; reference: TokenTransferInstructionV2Ref };
@@ -84,6 +85,7 @@ export function TransferInbox({ snapshot, loading, error, ...parameters }: Trans
   const { session } = usePartyLayerContext();
   const { locale, direction, t, operationText: text } = useOperationLocale();
   const theme = useTheme();
+  const ui = operationUI(theme);
   const current = session && !session.networkMismatch && snapshot?.walletId === String(session.walletId) &&
     snapshot.partyId === String(session.partyId) && snapshot.networkId === parameters.networkId &&
     toCAIP2Network(session.network).networkId === parameters.networkId;
@@ -91,8 +93,11 @@ export function TransferInbox({ snapshot, loading, error, ...parameters }: Trans
   const invalid = Boolean(current && !Array.isArray(snapshot.entries)) || entries.length > 1000 || entries.some(entry => !validEntry(entry));
   const duplicate = !invalid && new Set(entries.map(entry => entry.reference.cid)).size !== entries.length;
   return <section lang={locale} dir={direction} aria-label={text('incomingTransfers')}
-    style={{ fontFamily: theme.fontFamily, color: theme.colors.text }}>
-    <h2>{text('incomingTransfers')}</h2>
+    style={{ ...ui.card, display: 'grid', gap: 18 }}>
+    <header style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+      <span style={{ display: 'grid', placeItems: 'center', width: 38, height: 38, borderRadius: 12, background: theme.colors.surface }}><OperationIcon kind="inbox" /></span>
+      <h2 style={ui.heading}>{text('incomingTransfers')}</h2>
+    </header>
     {loading ? <p role="status">{t('loadingBalances')}</p> : error || duplicate || invalid ? <p role="alert">{error?.message ?? t('unknownError')}</p>
       : !entries.length ? <p>{text('noIncomingTransfers')}</p>
       : entries.map(entry => <InboxItem key={JSON.stringify([snapshot!.walletId, snapshot!.partyId, snapshot!.networkId, entry])}
@@ -113,6 +118,7 @@ function InboxItem({ entry, partyId, prepareAction, outcomes, ...parameters }: P
   const operation = useReviewedTransaction({ ...parameters, prepare: prepareAction ? prepare : undefined });
   const { operationText: text, t } = useOperationLocale();
   const theme = useTheme();
+  const ui = operationUI(theme);
   const transfer = stableEntry.reference.instruction.transfer;
   const accountDetails = (account: typeof transfer.sender) => typeof account === 'string' ? <bdi>{account}</bdi> : <>
     {account.owner && <bdi>{account.owner}</bdi>}
@@ -123,19 +129,21 @@ function InboxItem({ entry, partyId, prepareAction, outcomes, ...parameters }: P
   const actionLabel = (action: TransferInboxActionKind) => text(action === 'accept' ? 'acceptTransfer' : action === 'reject' ? 'rejectTransfer' : 'withdrawTransfer');
   const unresolved = operation.transaction && ['submitted', 'unknown', 'awaitingApproval'].includes(operation.transaction.status);
   const busy = operation.preparing || operation.isPending;
-  const button = { padding: '12px 16px', border: `1px solid ${theme.colors.border}`, borderRadius: theme.borderRadius,
-    color: theme.colors.text, background: theme.colors.background, font: 'inherit', cursor: 'pointer' } as const;
-  return <article style={{ padding: 20, border: `1px solid ${theme.colors.border}`, borderRadius: theme.borderRadius, marginBottom: 12, background: theme.colors.surface, overflowWrap: 'anywhere' }}>
-    <strong><bdi>{transfer.amount} {transfer.instrumentId.id}</bdi></strong>
-    <p style={{ fontSize: 12 }}>{text('issuer')}: <bdi>{transfer.instrumentId.admin}</bdi></p>
-    <p>{text('fromAccount')}: {accountDetails(transfer.sender)}</p><p>{text('toAccount')}: {accountDetails(transfer.receiver)}</p>
-    <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+  const button = { ...ui.button, background: theme.colors.background, opacity: busy ? .65 : 1 };
+  return <article style={{ padding: 18, border: `1px solid ${theme.colors.border}`, borderRadius: 14, background: theme.colors.surface, minWidth: 0, overflowWrap: 'anywhere' }}>
+    <strong style={{ fontSize: 22, fontVariantNumeric: 'tabular-nums', letterSpacing: '-.025em', lineHeight: 1.4 }}><bdi>{transfer.amount} {transfer.instrumentId.id}</bdi></strong>
+    <p style={{ ...ui.mono, color: theme.colors.textSecondary, margin: '6px 0 12px' }}>{text('issuer')}: <bdi>{transfer.instrumentId.admin}</bdi></p>
+    <dl style={{ margin: '0 0 18px' }}>
+      <div style={ui.row}><dt style={{ color: theme.colors.textSecondary }}>{text('fromAccount')}</dt><dd style={{ ...ui.mono, margin: 0, maxWidth: '100%' }}>{accountDetails(transfer.sender)}</dd></div>
+      <div style={ui.row}><dt style={{ color: theme.colors.textSecondary }}>{text('toAccount')}</dt><dd style={{ ...ui.mono, margin: 0, maxWidth: '100%' }}>{accountDetails(transfer.receiver)}</dd></div>
+    </dl>
+    <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
       {operation.review ? <>
         <p style={{ flexBasis: '100%', margin: 0 }}>{text('reviewAction')}: <strong>{actionLabel(operation.review.input.action)}</strong></p>
-        <button type="button" disabled={busy} style={{ ...button, background: theme.colors.primary, color: theme.colors.primaryForeground }} onClick={() => { void operation.submit().catch(() => {}); }}>{text('approveTransfer')}</button>
-        <button type="button" disabled={busy} style={button} onClick={operation.discard}>{t('cancel')}</button>
+        <button type="button" disabled={busy} style={{ ...button, ...ui.primary, flex: '1 1 150px' }} onClick={() => { void operation.submit().catch(() => {}); }}>{text('approveTransfer')}</button>
+        <button type="button" disabled={busy} style={{ ...button, flex: '1 1 100px' }} onClick={operation.discard}>{t('cancel')}</button>
       </> : operation.supported && !unresolved && (!operation.transaction || ['failed', 'rejected'].includes(operation.transaction.status)) ? actions.map(action =>
-        <button type="button" key={action} disabled={busy} style={button} onClick={() => { void operation.prepare({ entry: stableEntry, action }).catch(() => {}); }}>{actionLabel(action)}</button>,
+        <button type="button" key={action} disabled={busy} style={{ ...button, ...(action === 'accept' ? ui.primary : {}), flex: '1 1 100px' }} onClick={() => { void operation.prepare({ entry: stableEntry, action }).catch(() => {}); }}>{actionLabel(action)}</button>,
       ) : null}
     </div>
     {operation.preparing && <p role="status">{text('preparingTransfer')}</p>}

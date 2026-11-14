@@ -18,7 +18,7 @@ export interface OperationOutcome {
 
 /** A ledger-inclusion result alone is never presented as a completed transfer/swap. */
 export function OperationStatus({ transaction, outcome }: { transaction: TransactionFlowRecord | null; outcome?: OperationOutcome | null }) {
-  const { operationText } = useOperationLocale();
+  const { operationText, locale, direction } = useOperationLocale();
   const theme = useTheme();
   if (!transaction) return null;
   const bound = transaction.status === 'confirmed' && transaction.commandId && transaction.updateId && typeof outcome?.sourceId === 'string' && outcome.sourceId.trim() &&
@@ -32,12 +32,12 @@ export function OperationStatus({ transaction, outcome }: { transaction: Transac
   const background = failed ? theme.colors.errorBg : completed ? theme.colors.successBg : theme.colors.warningBg;
   const receipt = transaction.receipt && transaction.status === 'confirmed' && transaction.updateId
     ? { ...transaction.receipt, updateId: transaction.updateId } : transaction.receipt;
-  return <div>
-    <TransactionToast status={transaction.status} receipt={receipt} error={transaction.error} />
+  return <div lang={locale} dir={direction} style={{ display: 'grid', gap: 10, minWidth: 0, maxWidth: '100%', marginTop: 16, overflowWrap: 'anywhere' }}>
+    <TransactionToast status={transaction.status} receipt={receipt} error={transaction.error} style={{ borderRadius: 12, padding: '14px 16px', lineHeight: 1.6 }} />
     {transaction.status === 'confirmed' && <p role={failed ? 'alert' : 'status'} aria-live={failed ? 'assertive' : 'polite'}
-      style={{ padding: '12px 16px', borderInlineStart: `3px solid ${color}`, borderRadius: theme.borderRadius, color: theme.colors.text, background }}>
+      style={{ margin: 0, padding: '14px 16px', borderInlineStart: `3px solid ${color}`, borderRadius: 12, color: theme.colors.text, background, fontFamily: theme.fontFamily, fontSize: 13, lineHeight: 1.6 }}>
       <bdi dir="auto">{operationText(message)}</bdi>
     </p>}
-    {transaction.status === 'confirmed' && transaction.updateId && !receipt && <code dir="ltr" style={{ overflowWrap: 'anywhere' }}>{transaction.updateId}</code>}
+    {transaction.status === 'confirmed' && transaction.updateId && !receipt && <code dir="ltr" style={{ display: 'block', minWidth: 0, fontSize: 11, color: theme.colors.textSecondary, overflowWrap: 'anywhere' }}>{transaction.updateId}</code>}
   </div>;
 }

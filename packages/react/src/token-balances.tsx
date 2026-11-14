@@ -33,21 +33,21 @@ export function TokenBalances({ owner, holdings, loading, error, formatInstrumen
   }, [holdings, owner]);
   const problem = error ?? result.error;
   return <section lang={locale} dir={direction} aria-label={t('tokenBalances')}
-    style={{ padding: '12px 16px', fontFamily: theme.fontFamily, fontSize: '12px', color: theme.colors.text }}>
-    <div style={{ fontWeight: 600, marginBottom: '8px' }}><bdi dir="auto">{t('tokenBalances')}</bdi></div>
+    style={{ boxSizing: 'border-box', minWidth: 0, maxWidth: '100%', padding: '16px', fontFamily: theme.fontFamily, fontSize: '13px', lineHeight: 1.6, color: theme.colors.text, overflowWrap: 'anywhere' }}>
+    <div style={{ fontWeight: 600, fontSize: 14, marginBottom: 16 }}><bdi dir="auto">{t('tokenBalances')}</bdi></div>
     {loading ? <div role="status"><bdi dir="auto">{t('loadingBalances')}</bdi></div>
       : problem ? <div role="alert" style={{ color: theme.colors.error, overflowWrap: 'anywhere' }}><bdi dir="auto">{t('balancesFailed', { reason: problem.message })}</bdi></div>
       : !result.balances.length ? <div><bdi dir="auto">{t('noHoldings')}</bdi></div>
       : <ul style={{ listStyle: 'none', margin: 0, padding: 0 }}>{result.balances.map(balance => (
-        <li key={JSON.stringify([balance.instrumentId.admin, balance.instrumentId.id, balance.account ?? null])} style={{ padding: '6px 0', overflowWrap: 'anywhere' }}>
-          <div style={{ fontWeight: 600 }}><bdi dir="auto">{formatInstrument?.(balance.instrumentId) ?? balance.instrumentId.id}</bdi></div>
-          <div dir="ltr" style={{ fontFamily: 'ui-monospace, monospace', fontSize: '10px', color: theme.colors.textSecondary }}>{balance.instrumentId.admin}</div>
-          {balance.account && <div dir="ltr" style={{ fontFamily: 'ui-monospace, monospace', fontSize: '10px', color: theme.colors.textSecondary }}>
+        <li key={JSON.stringify([balance.instrumentId.admin, balance.instrumentId.id, balance.account ?? null])} style={{ padding: '14px 0', borderTop: `1px solid ${theme.colors.border}`, minWidth: 0, overflowWrap: 'anywhere' }}>
+          <div style={{ fontWeight: 650, fontSize: 16, marginBottom: 4 }}><bdi dir="auto">{formatInstrument?.(balance.instrumentId) ?? balance.instrumentId.id}</bdi></div>
+          <div dir="ltr" style={{ fontFamily: 'ui-monospace, monospace', fontSize: 11, color: theme.colors.textSecondary }}>{balance.instrumentId.admin}</div>
+          {balance.account && <div style={{ fontSize: 11, color: theme.colors.textSecondary, marginTop: 8 }}>
             <bdi dir="auto">{balance.account.id ? t('account', { party: balance.account.id }) : t('defaultAccount')}</bdi>
             {balance.account.provider && <div><bdi dir="auto">{t('accountProvider', { provider: balance.account.provider })}</bdi></div>}
           </div>}
-          <div><bdi dir="auto">{t('availableBalance', { amount: balance.available })}</bdi></div>
-          <div><bdi dir="auto">{t('lockedBalance', { amount: balance.locked })}</bdi></div>
+          <div style={{ fontSize: 18, fontWeight: 600, fontVariantNumeric: 'tabular-nums', marginTop: 14 }}><bdi dir="auto">{t('availableBalance', { amount: balance.available })}</bdi></div>
+          <div style={{ color: theme.colors.textSecondary, marginTop: 4 }}><bdi dir="auto">{t('lockedBalance', { amount: balance.locked })}</bdi></div>
         </li>
       ))}</ul>}
   </section>;
