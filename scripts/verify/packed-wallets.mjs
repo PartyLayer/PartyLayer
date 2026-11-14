@@ -98,12 +98,15 @@ import { createPartyLayer } from '@partylayer/sdk';
 import { registryEntryToWalletInfo } from '@partylayer/registry-client';
 import { createElement } from 'react';
 import { renderToString } from 'react-dom/server';
-import { PartyLayerProvider } from '@partylayer/react';
+import { PartyLayerProvider, PartyLayerLocaleProvider, usePartyLayerLocale } from '@partylayer/react';
 import { TransferForm, TransferInbox, OperationStatus, useReviewedTransaction } from '@partylayer/react/operations';
 const require = createRequire(import.meta.url);
 assert.equal(typeof require('@partylayer/sdk').createPartyLayer, 'function');
 assert.equal(typeof require('@partylayer/react').PartyLayerKit, 'function');
 assert.equal(typeof require('@partylayer/react').useAuthentication, 'function');
+assert.equal(typeof require('@partylayer/react').usePartyLayerLocale, 'function');
+function LocaleProbe() { return createElement('span', null, usePartyLayerLocale().locale); }
+assert.equal(renderToString(createElement(PartyLayerLocaleProvider, null, createElement(LocaleProbe))), '<span>en</span>');
 for (const component of [TransferForm, TransferInbox, OperationStatus, useReviewedTransaction]) assert.equal(typeof component, 'function');
 assert.equal(typeof require('@partylayer/react/operations').TransferForm, 'function');
 assert.equal(typeof require('@partylayer/react/query').useWalletTokenHoldingsV2, 'function');
@@ -171,6 +174,11 @@ console.log('Packed server authentication: clean npm, ESM and CommonJS passed');
 'use client';
 import { TransferForm, TransferInbox, OperationStatus, type PreparedOperation } from '@partylayer/react/operations';
 import { useWalletTokenHoldings, useWalletTokenHoldingsV2 } from '@partylayer/react/query';
+import { LanguageSelector, usePartyLayerLocale, type PartyLayerLocale } from '@partylayer/react';
+export function BrowserLanguageControl({ onChange }: { onChange: (locale: PartyLayerLocale) => void }) {
+  const { locale } = usePartyLayerLocale();
+  return <LanguageSelector value={locale} onChange={onChange} />;
+}
 type V1 = NonNullable<ReturnType<typeof useWalletTokenHoldings>['holdings']>[number]['holding'];
 type V2 = NonNullable<ReturnType<typeof useWalletTokenHoldingsV2>['holdings']>[number]['holding'];
 export const v1Owner = (holding: V1): string => holding.owner;
