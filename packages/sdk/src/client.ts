@@ -32,6 +32,7 @@ import {
   AdapterNotRegisteredError,
   CapabilityNotSupportedError,
   NetworkMismatchError,
+  OriginNotAllowedError,
   detectNetworkMismatch,
   mapUnknownErrorToPartyLayerError,
   capabilityGuard,
@@ -1023,7 +1024,6 @@ export class PartyLayerClient {
         const walletEntry = await this.registryClient.getWalletEntry(String(selectedWallet.walletId));
         if (walletEntry.originAllowlist && walletEntry.originAllowlist.length > 0) {
           if (!walletEntry.originAllowlist.includes(this.origin)) {
-            const { OriginNotAllowedError } = await import('@partylayer/core');
             throw new OriginNotAllowedError(
               this.origin,
               walletEntry.originAllowlist

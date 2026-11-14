@@ -1,4 +1,4 @@
-import { toCAIP2Network, type Session, type TokenHoldingRef, type TxReceipt } from '@partylayer/core';
+import { toCAIP2Network, parseTokenHoldingV1, parseTokenHoldingV2, type TokenHolding, type TokenHoldingV2, type TokenHoldingV2Ref, type Session, type TokenHoldingRef, type TxReceipt } from '@partylayer/core';
 
 /** The authenticated wallet owns transport and authorization. No participant credentials are accepted. */
 export interface WalletLedgerClient {
@@ -11,6 +11,8 @@ export interface WalletLedgerReaderOptions {
   networkId: string;
   /** Exact package-id-qualified HoldingV1 interface id from the asset deployment. */
   holdingInterfaceId?: string;
+  /** Exact package-id-qualified HoldingV2 interface id; never inferred from V1. */
+  holdingV2InterfaceId?: string;
   /** Default 30s; applies to the complete read, including session checks. */
   timeoutMs?: number;
   /** Reject snapshots at this boundary rather than display potentially incomplete balances. Default 1000. */
@@ -23,6 +25,10 @@ export interface WalletHoldingsSnapshot {
   networkId: string;
   offset: number;
   holdings: TokenHoldingRef[];
+}
+
+export interface WalletHoldingsV2Snapshot extends Omit<WalletHoldingsSnapshot, 'holdings'> {
+  holdings: TokenHoldingV2Ref[];
 }
 
 export interface WalletTransactionReference {
@@ -66,8 +72,14 @@ export function createScopedLedgerReader(client: WalletLedgerClient, options: Wa
   applicationRequest?: (session: Session, resource: string, body: Json | undefined, signal: AbortSignal) => Promise<unknown>) {
   const networkId = text(options.networkId);
   if (!/^canton:[a-zA-Z0-9_-]+$/.test(networkId)) throw new Error('Expected a Canton CAIP-2 network id');
-  const interfaceId = options.holdingInterfaceId === undefined ? undefined : text(options.holdingInterfaceId);
-  if (interfaceId && !/^[^:#\s]+:[^:\s]+:[^:\s]+$/.test(interfaceId)) throw new Error('Use an exact package-id-qualified holding interface id');
+  function configuredInterface(value: string | undefined) {
+    if (value === undefined) return undefined;
+    const id = text(value);
+    if (!/^[^:#\s]+:[^:\s]+:[^:\s]+$/.test(id)) throw new Error('Use an exact package-id-qualified holding interface id');
+    return id;
+  }
+  const interfaceId = configuredInterface(options.holdingInterfaceId);
+  const v2InterfaceId = configuredInterface(options.holdingV2InterfaceId);
   const timeoutMs = options.timeoutMs ?? 30_000;
   const maxContracts = options.maxContracts ?? 1000;
   if (!Number.isInteger(timeoutMs) || timeoutMs < 1 || timeoutMs > 300_000) throw new Error('Invalid ledger read timeout');
@@ -120,61 +132,54 @@ export function createScopedLedgerReader(client: WalletLedgerClient, options: Wa
     finally { if (timer) clearTimeout(timer); if (stop) signal?.removeEventListener('abort', stop); }
   }
 
+  function readHoldings<T extends TokenHolding | TokenHoldingV2>(
+    requestedInterface: string | undefined, parse: (value: unknown) => T,
+    include: (holding: T, owner: string) => boolean, signal?: AbortSignal,
+  ) {
+    return read(signal, async (session, request) => {
+      if (!requestedInterface) throw new Error('Configure the version-specific holding interface id before reading holdings');
+      const end = object(await request('/v2/state/ledger-end'));
+      if (!Number.isSafeInteger(end.offset) || (end.offset as number) < 0) throw new Error('Unsafe or invalid ledger offset');
+      const rows = await request('/v2/state/active-contracts', {
+        activeAtOffset: end.offset,
+        eventFormat: { filtersByParty: { [String(session.partyId)]: { cumulative: [{
+          identifierFilter: { InterfaceFilter: { value: { interfaceId: requestedInterface, includeInterfaceView: true } } },
+        }] } }, verbose: false },
+      });
+      if (!Array.isArray(rows) || rows.length >= maxContracts) throw new Error('Incomplete or oversized holdings snapshot');
+      const seen = new Set<string>();
+      const holdings: { cid: string; holding: T }[] = [];
+      for (const row of rows) {
+        const entry = object(object(row).contractEntry);
+        if (Object.keys(entry).length !== 1 || !entry.JsActiveContract) throw new Error('Snapshot contains an incomplete reassignment');
+        const created = object(object(entry.JsActiveContract).createdEvent);
+        const cid = text(created.contractId);
+        if (seen.has(cid)) throw new Error('Duplicate holding contract in snapshot');
+        seen.add(cid);
+        if (!Array.isArray(created.interfaceViews)) throw new Error('Missing holding interface view');
+        const views = created.interfaceViews.filter(v => object(v).interfaceId === requestedInterface);
+        if (views.length !== 1) throw new Error('Missing or ambiguous holding interface view');
+        const view = object(views[0]);
+        if (object(view.viewStatus).code !== 0) throw new Error('Holding interface view failed');
+        const holding = parse(view.viewValue);
+        if (include(holding, String(session.partyId))) holdings.push({ cid, holding });
+      }
+      return { walletId: String(session.walletId), partyId: String(session.partyId), networkId, offset: end.offset as number, holdings };
+    });
+  }
+
   return {
     /** A bounded, complete ACS snapshot of the connected party's configured HoldingV1 interface. */
     readHoldings(signal?: AbortSignal): Promise<WalletHoldingsSnapshot> {
-      return read(signal, async (session, request) => {
-        if (!interfaceId) throw new Error('Configure holdingInterfaceId before reading holdings');
-        const end = object(await request('/v2/state/ledger-end'));
-        if (!Number.isSafeInteger(end.offset) || (end.offset as number) < 0) throw new Error('Unsafe or invalid ledger offset');
-        const rows = await request('/v2/state/active-contracts', {
-          activeAtOffset: end.offset,
-          eventFormat: { filtersByParty: { [String(session.partyId)]: { cumulative: [{
-            identifierFilter: { InterfaceFilter: { value: { interfaceId, includeInterfaceView: true } } },
-          }] } }, verbose: false },
-        });
-        if (!Array.isArray(rows) || rows.length >= maxContracts) throw new Error('Incomplete or oversized holdings snapshot');
-        const seen = new Set<string>();
-        const holdings = rows.map(row => {
-          const entry = object(object(row).contractEntry);
-          if (Object.keys(entry).length !== 1 || !entry.JsActiveContract) throw new Error('Snapshot contains an incomplete reassignment');
-          const created = object(object(entry.JsActiveContract).createdEvent);
-          const cid = text(created.contractId);
-          if (seen.has(cid)) throw new Error('Duplicate holding contract in snapshot');
-          seen.add(cid);
-          if (!Array.isArray(created.interfaceViews)) throw new Error('Missing holding interface view');
-          const views = created.interfaceViews.filter(v => object(v).interfaceId === interfaceId);
-          if (views.length !== 1) throw new Error('Missing or ambiguous holding interface view');
-          const view = object(views[0]);
-          if (object(view.viewStatus).code !== 0) throw new Error('Holding interface view failed');
-          const value = object(view.viewValue);
-          if (value.owner !== String(session.partyId)) throw new Error('Holding belongs to another party');
-          const instrument = object(value.instrumentId);
-          if (typeof value.amount !== 'string' || !/^(?:0|[1-9]\d{0,27})(?:\.\d{1,10})?$/.test(value.amount)) throw new Error('Invalid token decimal');
-          // Preserve unknown lock/metadata fields through strict validation;
-          // a locked token must never become spendable because of a parser fallback.
-          let lock: TokenHoldingRef['holding']['lock'];
-          if (value.lock !== null && value.lock !== undefined) {
-            const raw = object(value.lock);
-            if (!Array.isArray(raw.holders)) throw new Error('Invalid holding lock');
-            lock = { holders: raw.holders.map(text) };
-            for (const key of ['expiresAt', 'expiresAfter', 'context'] as const) {
-              if (raw[key] !== undefined && raw[key] !== null) lock[key] = text(raw[key]);
-            }
-          }
-          let meta: Record<string, string> | undefined;
-          if (value.meta !== undefined && value.meta !== null) {
-            const raw = object(value.meta);
-            // Token-standard Metadata wraps a TextMap in `values`.
-            const values = Object.hasOwn(raw, 'values') ? object(raw.values) : raw;
-            if (Object.values(values).some(v => typeof v !== 'string')) throw new Error('Invalid holding metadata');
-            meta = { ...values } as Record<string, string>;
-          }
-          return { cid, holding: { owner: String(session.partyId), instrumentId: { admin: text(instrument.admin), id: text(instrument.id) },
-            amount: value.amount, ...(lock ? { lock } : {}), ...(meta ? { meta } : {}) } };
-        });
-        return { walletId: String(session.walletId), partyId: String(session.partyId), networkId, offset: end.offset as number, holdings };
-      });
+      return readHoldings(interfaceId, parseTokenHoldingV1, (holding, owner) => {
+        if (holding.owner !== owner) throw new Error('Holding belongs to another party');
+        return true;
+      }, signal);
+    },
+
+    /** Owned V2 accounts only. Provider visibility and ownerless admin accounts do not confer ownership. */
+    readHoldingsV2(signal?: AbortSignal): Promise<WalletHoldingsV2Snapshot> {
+      return readHoldings(v2InterfaceId, parseTokenHoldingV2, (holding, owner) => holding.account.owner === owner, signal);
     },
 
     /** One read, never polling or resubmission. Unknown remains unknown if ids cannot be correlated. */

@@ -1,10 +1,11 @@
 /** A closed read-only proxy. URLs, tokens, party filters and interface come from server policy. */
-export function createAuthorizedLedgerProxy({ url, bearerToken, holdingInterfaceId, sourceId, networkId }) {
+export function createAuthorizedLedgerProxy({ url, bearerToken, holdingInterfaceId, holdingV2InterfaceId, sourceId, networkId }) {
   const base = new URL(url);
   if (base.username || base.password || base.search || base.hash || base.pathname !== '/' ||
     (base.protocol !== 'https:' && !(base.protocol === 'http:' && ['localhost', '127.0.0.1', '[::1]'].includes(base.hostname)))) throw new Error('Configure a trusted HTTPS ledger origin');
+  const interfaces = [holdingInterfaceId, holdingV2InterfaceId].filter(value => value !== undefined);
   if (typeof bearerToken !== 'string' || !bearerToken || !/^[\w.:-]{1,100}$/.test(sourceId) ||
-    typeof holdingInterfaceId !== 'string' || !/^[^:#\s]+:[^:\s]+:[^:\s]+$/.test(holdingInterfaceId)) throw new Error('Incomplete server ledger policy');
+    !interfaces.length || interfaces.some(value => typeof value !== 'string' || !/^[^:#\s]+:[^:\s]+:[^:\s]+$/.test(value))) throw new Error('Incomplete server ledger policy');
   return async (identity, input) => {
     const denied = () => { throw Object.assign(new Error('Ledger read is not authorized'), { status: 403 }); };
     if (input.version !== 1 || input.sourceId !== sourceId || input.partyId !== identity.partyId || input.networkId !== networkId || identity.networkId !== networkId) denied();
@@ -13,8 +14,15 @@ export function createAuthorizedLedgerProxy({ url, bearerToken, holdingInterface
     if (resource === '/v2/state/active-contracts') {
       const offset = input.body?.activeAtOffset;
       if (!Number.isSafeInteger(offset) || offset < 0) denied();
+      const requested = input.body?.eventFormat?.filtersByParty?.[identity.partyId]?.cumulative;
+      const requestedInterface = requested?.length === 1 ? requested[0]?.identifierFilter?.InterfaceFilter?.value?.interfaceId : undefined;
+      // Only an exact server allowlisted interface may be selected. Every other
+      // part of the filter is rebuilt; no caller-controlled participant URL,
+      // party, readAs, or commands can cross this boundary.
+      const selectedInterface = requestedInterface ?? holdingInterfaceId;
+      if (!interfaces.includes(selectedInterface)) denied();
       body = { activeAtOffset: offset, eventFormat: { filtersByParty: { [identity.partyId]: { cumulative: [{
-        identifierFilter: { InterfaceFilter: { value: { interfaceId: holdingInterfaceId, includeInterfaceView: true } } },
+        identifierFilter: { InterfaceFilter: { value: { interfaceId: selectedInterface, includeInterfaceView: true } } },
       }] } }, verbose: false } };
     } else if (resource === '/v2/updates/update-by-id') {
       const updateId = input.body?.updateId;

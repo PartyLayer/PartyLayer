@@ -64,6 +64,33 @@ Use PKCE for browser flows and never expose a client secret in frontend code.
 Register the callback URL with Bron and follow their onboarding instructions;
 this package does not provision a Bron account or credentials.
 
+### Registered callback page
+
+For the explicitly configured legacy OAuth contract, the application's registered
+same-origin redirect page relays the authorization response to the popup opener:
+
+```ts
+import { completeBronAuthorization } from '@partylayer/sdk';
+
+await completeBronAuthorization('https://your-app.example/oauth/bron/callback');
+```
+
+Use the exact registered URL. Load this helper only on that dedicated callback
+page; avoid analytics and other third-party scripts there. The opener verifies
+the popup source, origin, redirect path, single-use state and S256 PKCE, then
+exchanges the code. Browser client secrets and non-PKCE browser configuration are
+rejected. Authorization is bounded, tokens remain in memory, and disconnect
+invalidates pending authorization. No new PartyLayer wallet package is required.
+
+This compatibility configuration requires a vendor-approved OAuth/signer API
+contract. Bron's current [public API authentication documentation](https://developer.bron.org/api-reference/authentication)
+describes signed API-key JWTs; it does not establish a universal per-dApp OAuth
+client or a delegated submission right on an application's participant. Do not
+put those API private keys in browser configuration or infer a submission route
+from a message-signing capability. The callback helper fixes the local OAuth
+completion path; vendor credentials, endpoint compatibility and live acceptance
+remain independently validated integration requirements.
+
 ---
 
 ## Links

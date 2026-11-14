@@ -84,9 +84,10 @@ must validate its own party/network/operation permission on every request.
 
 ## Optional authenticated ledger reads
 
-Configure all four server-only values `LEDGER_URL` (trusted participant origin),
-`LEDGER_BEARER_TOKEN`, `HOLDING_INTERFACE_ID` (exact deployed HoldingV1 interface)
-and `LEDGER_SOURCE_ID` (app-owned source name) to enable `/api/wallet-data`.
+Configure server-only `LEDGER_URL` (trusted participant origin),
+`LEDGER_BEARER_TOKEN`, `LEDGER_SOURCE_ID` (app-owned source name), and at least
+one exact deployed interface: `HOLDING_INTERFACE_ID` for V1 and/or
+`HOLDING_V2_INTERFACE_ID` for V2, to enable `/api/wallet-data`.
 Without them, that endpoint is disabled. The configured participant identity must
 have the required read rights for the explicitly enabled application parties.
 Use least-privilege read credentials; never put this credential in a public
@@ -95,11 +96,17 @@ environment variable or accept a replacement from a browser request.
 Use `createApplicationLedgerReader` or `useWalletTokenHoldings({ application })`
 with that source id and the same-origin endpoint; see the [reader contract](../../docs/wallet-ledger-reader.md).
 The server derives party/network from its own authenticated session, permits only
-ledger-end, HoldingV1 ACS and update-by-id reads, rebuilds filters and checks the
+ledger-end, allowlisted HoldingV1/V2 ACS and update-by-id reads, rebuilds filters and checks the
 session again after the read. It never forwards caller-supplied URLs, headers,
 party filters, commands or interactive-submission requests. Cross-origin redirects
 and non-JSON upstream responses fail. An upstream full-array ACS response is
 required; the SDK rejects pagination/schema mismatches and bounded snapshots.
+
+Select V2 explicitly with `holdingV2InterfaceId` and `readHoldingsV2()` or
+`useWalletTokenHoldingsV2()`. Browser-selected interface ids must match the
+server's configured allowlist. The ready portfolio retains each account number
+and provider and includes only accounts owned by the connected party. Provider
+visibility does not establish ownership or delegated signing authority.
 
 This verifies ledger inclusion, not business settlement or a trusted original
 intent. Retain your server-owned intent records and verify transfer/swap-specific

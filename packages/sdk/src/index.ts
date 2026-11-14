@@ -17,7 +17,7 @@ export { createWalletLedgerReader } from './wallet-ledger-reader';
 export { createApplicationLedgerReader } from './application-ledger-reader';
 export type { ApplicationLedgerReaderOptions } from './application-ledger-reader';
 export type {
-  WalletLedgerClient, WalletLedgerReader, WalletLedgerReaderOptions, WalletHoldingsSnapshot,
+  WalletLedgerClient, WalletLedgerReader, WalletLedgerReaderOptions, WalletHoldingsSnapshot, WalletHoldingsV2Snapshot,
   WalletTransactionReference, WalletTransactionConfirmation,
 } from './wallet-ledger-reader';
 // A2 — announce discovery: dynamic adapter for announce-only wallets without a
@@ -145,6 +145,7 @@ export {
 } from './builtin-adapters';
 
 // Re-export Bron adapter config types (for advanced usage)
+export { completeBronAuthorization } from './bron-authorization';
 export type {
   BronAdapterConfig,
   BronAuthConfig,

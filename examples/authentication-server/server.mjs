@@ -74,12 +74,12 @@ export async function createAuthenticationServer({ origin, networkId, bindings, 
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   const { APP_ORIGIN, CANTON_NETWORK_ID, TRUSTED_PARTY_KEYS_FILE, DATABASE_URL, PORT = '3190',
-    LEDGER_URL, LEDGER_BEARER_TOKEN, HOLDING_INTERFACE_ID, LEDGER_SOURCE_ID } = process.env;
+    LEDGER_URL, LEDGER_BEARER_TOKEN, HOLDING_INTERFACE_ID, HOLDING_V2_INTERFACE_ID, LEDGER_SOURCE_ID } = process.env;
   if (!APP_ORIGIN || !CANTON_NETWORK_ID || !TRUSTED_PARTY_KEYS_FILE || !DATABASE_URL) throw new Error('Configure APP_ORIGIN, CANTON_NETWORK_ID, TRUSTED_PARTY_KEYS_FILE and DATABASE_URL');
   const bindings = JSON.parse(readFileSync(TRUSTED_PARTY_KEYS_FILE, 'utf8'));
   const database = new Pool({ connectionString: DATABASE_URL, max: 5, connectionTimeoutMillis: 5000, statement_timeout: 5000 });
-  const ledger = [LEDGER_URL, LEDGER_BEARER_TOKEN, HOLDING_INTERFACE_ID, LEDGER_SOURCE_ID].some(Boolean)
-    ? { url: LEDGER_URL, bearerToken: LEDGER_BEARER_TOKEN, holdingInterfaceId: HOLDING_INTERFACE_ID, sourceId: LEDGER_SOURCE_ID } : undefined;
+  const ledger = [LEDGER_URL, LEDGER_BEARER_TOKEN, HOLDING_INTERFACE_ID, HOLDING_V2_INTERFACE_ID, LEDGER_SOURCE_ID].some(Boolean)
+    ? { url: LEDGER_URL, bearerToken: LEDGER_BEARER_TOKEN, holdingInterfaceId: HOLDING_INTERFACE_ID, holdingV2InterfaceId: HOLDING_V2_INTERFACE_ID, sourceId: LEDGER_SOURCE_ID } : undefined;
   const server = await createAuthenticationServer({ origin: APP_ORIGIN, networkId: CANTON_NETWORK_ID, bindings, database, ledger });
   server.on('close', () => { void database.end(); });
   server.listen(Number(PORT), '127.0.0.1', () => { console.log(`PartyLayer authentication reference listening on 127.0.0.1:${PORT}`); });

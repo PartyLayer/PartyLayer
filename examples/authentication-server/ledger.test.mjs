@@ -16,6 +16,18 @@ async function ledger(respond = (_request, response) => { response.setHeader('Co
   return { requests, url: `http://127.0.0.1:${server.address().port}/` };
 }
 const input = resource => ({ version: 1, sourceId: policy.sourceId, ...identity, resource });
+test('selects V2 only from the server allowlist and rebuilds its party filter', async () => {
+  const source = await ledger(); const holdingV2InterfaceId = 'v2:Splice.Api.Token.HoldingV2:Holding';
+  const proxy = createAuthorizedLedgerProxy({ ...policy, url: source.url, holdingV2InterfaceId });
+  const read = interfaceId => ({ ...input('/v2/state/active-contracts'), body: { activeAtOffset: 123,
+    eventFormat: { filtersByParty: { alice: { cumulative: [{ identifierFilter: { InterfaceFilter: { value: { interfaceId, includeInterfaceView: false } } } }] }, bob: {} } } } });
+  await proxy(identity, read(holdingV2InterfaceId));
+  assert.deepEqual(source.requests[0].body.eventFormat.filtersByParty, { alice: { cumulative: [{
+    identifierFilter: { InterfaceFilter: { value: { interfaceId: holdingV2InterfaceId, includeInterfaceView: true } } },
+  }] } });
+  await assert.rejects(proxy(identity, read('unapproved:Other:Holding')), error => error.status === 403);
+  assert.equal(source.requests.length, 1);
+});
 test('rebuilds party and interface filters server-side and never forwards arbitrary input or credentials', async () => {
   const source = await ledger(); const proxy = createAuthorizedLedgerProxy({ ...policy, url: source.url });
   const result = await proxy(identity, { ...input('/v2/state/active-contracts'), body: { activeAtOffset: 123, actAs: ['admin'],
