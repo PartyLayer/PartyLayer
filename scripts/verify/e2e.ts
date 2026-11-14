@@ -149,7 +149,8 @@ function runStep<T>(name: string, fn: () => T): T {
  */
 function packageTestScript(packageName: string): string | null {
   const short = packageName.replace(/^@partylayer\//, '');
-  for (const dir of [`packages/${short}`, `packages/adapters/${short}`]) {
+  const adapter = short.replace(/^adapter-/, '');
+  for (const dir of [`packages/${short}`, `packages/adapters/${adapter}`]) {
     const manifest = join(ROOT, dir, 'package.json');
     if (!existsSync(manifest)) continue;
     const pkg = JSON.parse(readFileSync(manifest, 'utf-8'));
@@ -428,14 +429,12 @@ async function main() {
     ]);
 
     // Step 6: Run integration tests (adapter unit tests)
-    runStep('Run integration tests', () => {
-      // These already ran as part of pnpm test, just record results
-      // In CI, adapter tests that require browser are skipped
-      report.testResults.integration = [
-        { name: 'adapter-console', status: 'passed' },
-        { name: 'adapter-loop', status: 'passed' },
-      ];
-    });
+    // Capture actual adapter unit/transport contract results in this run.
+    // These fixtures do not certify a live wallet account or settlement.
+    report.testResults.integration = runStep('Run integration tests', (): TestResult[] => [
+      ...runTests('@partylayer/adapter-console', 'adapter-console'),
+      ...runTests('@partylayer/adapter-loop', 'adapter-loop'),
+    ]);
 
     // Step 7: Run conformance tests
     report.testResults.conformance = runStep(
