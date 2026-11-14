@@ -432,13 +432,18 @@ An explicit `locale` always takes priority, including a user's manual selection.
 'use client';
 
 import { useState } from 'react';
-import { PartyLayerKit, ConnectButton, LanguageSelector, type PartyLayerLocale } from '@partylayer/react';
+import { PartyLayerKit, ConnectButton, LanguageSelector, usePartyLayerLocale, type PartyLayerLocale } from '@partylayer/react';
+
+function LanguageControl({ onChange }: { onChange: (locale: PartyLayerLocale) => void }) {
+  const { locale } = usePartyLayerLocale();
+  return <LanguageSelector value={locale} onChange={onChange} />;
+}
 
 function WalletControls() {
-  const [locale, setLocale] = useState<PartyLayerLocale>('en');
+  const [locale, setLocale] = useState<PartyLayerLocale>();
   return (
     <PartyLayerKit network="devnet" appName="My dApp" locale={locale}>
-      <LanguageSelector value={locale} onChange={setLocale} />
+      <LanguageControl onChange={setLocale} />
       <ConnectButton />
     </PartyLayerKit>
   );
