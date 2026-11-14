@@ -1,5 +1,5 @@
 import type { CIP0103Provider } from '@partylayer/core';
-import { CIP0103EventBus, toProviderRpcError } from '@partylayer/provider';
+import { CIP0103EventBus, JSON_RPC_ERRORS, ProviderRpcError, toProviderRpcError } from '@partylayer/provider';
 import { assertExecuteCorrelation } from './prepare-execute';
 
 interface SessionProviderOptions {
@@ -25,6 +25,12 @@ export function createSessionProvider(options: SessionProviderOptions): {
   const provider: CIP0103Provider = {
     request: async <T>(args: Parameters<CIP0103Provider['request']>[0]): Promise<T> => {
       try {
+        if (args === null || typeof args !== 'object' || Array.isArray(args) || typeof args.method !== 'string') {
+          throw new ProviderRpcError('Request must be an object with a string method', JSON_RPC_ERRORS.INVALID_REQUEST);
+        }
+        if (args.params !== undefined && (args.params === null || typeof args.params !== 'object')) {
+          throw new ProviderRpcError('Request params must be an object or array', JSON_RPC_ERRORS.INVALID_PARAMS);
+        }
         if (disposed) throw new Error('PartyLayer client was destroyed');
         // Lifecycle stays at the kit boundary. Message signing keeps its reviewed
         // encoding/normalization policy (including Console's declared encoding).

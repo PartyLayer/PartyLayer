@@ -81,10 +81,10 @@ only on real change), so it is safe for `useSyncExternalStore`.
 ## Persistence
 
 Persistence is **pluggable**, inject a `SessionStorage` (`getItem`/`setItem`/
-`removeItem`, sync or async). The default is in-memory, so the core runs in any
-runtime (Node/RN/browser) and tests are deterministic. The auto-reconnect
-marker is written on connect and cleared on disconnect; `restore()` verifies
-against the live provider before trusting it.
+`removeItem`, sync or async). When storage is omitted, the store uses encrypted
+IndexedDB where supported and falls back to in-memory storage elsewhere. The
+session snapshot is written on connect and cleared on disconnect; `restore()`
+verifies against the live provider before trusting it.
 
 ## React integration
 
@@ -299,8 +299,8 @@ layer only emits + invalidates.)
 ### `persistSnapshot`
 
 When `true`, the store persists the **full session envelope** at `storageKey`
-(rewritten on party/network change) instead of the legacy `'1'` marker. Default
-`false` (marker behavior preserved, purely additive).
+(rewritten on party/network change) instead of the legacy `'1'` marker. Defaults
+to `true`; set `false` to persist only the reconnect marker.
 
 ### Session lifecycle scenarios (11 covered)
 

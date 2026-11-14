@@ -16,6 +16,7 @@ import type {
 } from '@partylayer/core';
 import { unsupportedMethod, disconnected } from './errors';
 import { toProviderRpcError } from './error-map';
+import { validateRequestPayload } from './request-validation';
 
 export type MethodHandler<T = unknown> = (
   walletProvider: CIP0103Provider,
@@ -47,6 +48,7 @@ export class MethodRouter {
 
   /** Route a request to the appropriate handler */
   async route<T>(payload: CIP0103RequestPayload): Promise<T> {
+    validateRequestPayload(payload);
     const { method, params } = payload;
 
     const handler = this.handlers.get(method);

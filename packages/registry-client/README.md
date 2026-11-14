@@ -41,11 +41,12 @@ npm install @partylayer/registry-client
 import { RegistryClient } from '@partylayer/registry-client';
 
 const registry = new RegistryClient({
-  url: 'https://registry.partylayer.xyz/v1/wallets.json',
+  registryUrl: 'https://registry.partylayer.xyz',
+  channel: 'stable',
 });
 
 const wallets = await registry.getWallets();
-// [{ id: 'console', name: 'Console Wallet', icon: '...', ... }, ...]
+// [{ walletId: 'console', name: 'Console Wallet', icons: { ... }, ... }, ...]
 ```
 
 ---
