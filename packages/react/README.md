@@ -427,6 +427,8 @@ Traditional Chinese tags fall back to English. When `locale` is omitted, the
 first supported browser preference is selected after hydration; English is the
 fallback when no preference matches or browser settings are inaccessible.
 An explicit `locale` always takes priority, including a user's manual selection.
+Automatic browser defaults and `usePartyLayerLocale` require React 3.4.0 or later;
+React 3.3 defaults to English and supports an explicit `locale` with the same catalogs.
 
 ```tsx
 'use client';

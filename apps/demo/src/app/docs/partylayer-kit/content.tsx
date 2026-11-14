@@ -52,7 +52,7 @@ function App() {
   <ConnectButton />
 </PartyLayerKit>`}</CodeBlock>
       <P>
-        English is the default. Supported languages are English, Turkish, Spanish,
+        English is the fallback. Supported languages are English, Turkish, Spanish,
         French, German, Portuguese, Italian, Russian, Arabic, Hindi, Indonesian,
         Japanese, Korean and Simplified Chinese. Regional tags share a catalog;
         unsupported languages and Traditional Chinese scripts fall back to English.
@@ -64,6 +64,11 @@ function App() {
         with English fallback. An explicit locale takes priority; the application
         document is not mutated. Use <Code>usePartyLayerLocale()</Code> inside the
         provider to read the resolved language for a controlled picker.
+      </P>
+      <P>
+        Automatic browser-language selection and <Code>usePartyLayerLocale</Code>
+        require React 3.4.0 or later. React 3.3 uses English by default and supports
+        an explicit <Code>locale</Code> with the same fourteen language catalogs.
       </P>
       <P>
         This translates PartyLayer connection, account, cost and transaction UI, including
