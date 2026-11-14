@@ -70,9 +70,9 @@ test('contains long identifiers and exact large amounts at narrow widths and zoo
   await form.getByLabel('Betrag', { exact: true }).fill('9999999999999999999999999999.1234567890');
   await form.getByRole('button', { name: 'Transfer prüfen' }).click();
   await expect(form.getByRole('button', { name: 'In der Wallet bestätigen' })).toBeEnabled();
-  for (const locale of ['de', 'ar']) {
+  for (const locale of ['en', 'tr', 'de', 'es', 'fr', 'pt', 'it', 'ru', 'ar', 'hi', 'id', 'ja', 'ko', 'zh']) {
     await selectWalletLanguage(page, locale);
-    for (const width of [320, 375, 768]) {
+    for (const width of locale === 'de' || locale === 'ar' ? [320, 375, 768] : [320]) {
       await page.setViewportSize({ width, height: 900 });
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1)).toBe(true);
       const overflows = await page.locator('main section, main article, main button, main dd').evaluateAll(elements => elements
