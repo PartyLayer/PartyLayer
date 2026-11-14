@@ -1,5 +1,12 @@
 # @partylayer/registry-client
 
+## 0.7.2
+
+### Patch Changes
+
+- Updated dependencies [6163ee3]
+  - @partylayer/core@0.16.0
+
 ## 0.7.1
 
 ### Patch Changes
@@ -277,6 +284,7 @@ keyFingerprint: '' }` and returned it as though all was well. Once keys are
   CantonConnect provides a WalletConnect-like experience for Canton Network dApps, enabling seamless integration with multiple Canton wallets through a unified API.
 
   Features:
+
   - Support for Console Wallet, 5N Loop, Cantor8, and Bron wallets
   - React hooks and components for easy integration
   - TypeScript support with full type definitions

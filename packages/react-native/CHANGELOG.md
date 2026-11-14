@@ -1,5 +1,14 @@
 # @partylayer/react-native
 
+## 1.0.5
+
+### Patch Changes
+
+- Updated dependencies [6163ee3]
+  - @partylayer/core@0.16.0
+  - @partylayer/sdk@0.22.0
+  - @partylayer/session@1.1.11
+
 ## 1.0.4
 
 ### Patch Changes
@@ -141,6 +150,7 @@
   installed" error at runtime even when the peer WAS installed. Opening the connect UI on
   web crashed for exactly this reason; the deep link and storage loaders carried the same
   latent pattern.
+
   - The `./ui` entrypoint statically imports react-native-svg. A consumer of `./ui` without
     it now gets a bundler resolution error at build time rather than a runtime crash. The
     headless "." entrypoint still never imports it.

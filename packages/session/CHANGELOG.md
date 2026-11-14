@@ -1,5 +1,12 @@
 # @partylayer/session
 
+## 1.1.11
+
+### Patch Changes
+
+- Updated dependencies [6163ee3]
+  - @partylayer/core@0.16.0
+
 ## 1.1.10
 
 ### Patch Changes
@@ -131,6 +138,7 @@
 
   `@partylayer/session` is the framework-agnostic session core for Canton dApps.
   This release makes secure persistence the default and marks the API stable:
+
   - **Secure by default.** With no `storage` configured, sessions persist to
     encrypted IndexedDB (AES-GCM-256, non-extractable origin-bound key) where the
     platform supports it, falling back to in-memory otherwise; `persistSnapshot`
@@ -166,6 +174,7 @@
   of restored snapshot vs live wallet status). Honest threat model documented:
   protects at-rest data + casual inspection; does NOT defend same-origin XSS.
 - ae3e889: Session resilience. ADDITIVE, opt-in.
+
   - **Automatic reconnect** with exponential backoff (`RetryPolicy { baseDelayMs,
 factor, maxDelayMs, maxAttempts, jitter? }`, sane defaults; `reconnect` option
     `RetryPolicy | false`). Fires ONLY on transient provider-driven disconnects;
@@ -183,6 +192,7 @@ factor, maxDelayMs, maxAttempts, jitter? }`, sane defaults; `reconnect` option
   `enqueue`; `SessionStoreOptions` gains `reconnect` + `expiry`.
 
 - 63a9ac5: Multi-tab sync + party-switch + network-change invalidation. ADDITIVE, opt-in.
+
   - **Multi-tab** via BroadcastChannel (`broadcast` option; origin-bound channel
     using the origin-bound originTag pattern; injectable `channelFactory`). Disconnect in one
     tab propagates to all tabs; a receiving tab applies WITHOUT rebroadcasting

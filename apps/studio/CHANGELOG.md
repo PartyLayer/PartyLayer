@@ -1,5 +1,16 @@
 # @partylayer/studio
 
+## 0.0.10
+
+### Patch Changes
+
+- Updated dependencies [6163ee3]
+- Updated dependencies [645285d]
+  - @partylayer/sdk@0.22.0
+  - @partylayer/react@3.4.0
+  - @partylayer/provider@0.6.2
+  - @partylayer/session@1.1.11
+
 ## 0.0.9
 
 ### Patch Changes

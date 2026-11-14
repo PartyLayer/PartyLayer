@@ -1,8 +1,9 @@
 # Canton operation kit
 
-Status: local preview on `feat/canton-operation-kit`. The published React 3.3.0
-release does not contain the new `/operations` entry point. Release follows
-maintainer review, required checks and the protected npm approval workflow.
+Status: the implementation is merged on `main`; React 3.4.0 is the prepared npm
+release candidate. The published React 3.3.0 release does not contain the new
+`/operations` entry point. Publication follows required checks and the protected
+owner approval workflow. The fixture preview remains development-only.
 
 ## Installation and architecture
 

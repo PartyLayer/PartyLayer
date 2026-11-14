@@ -1,5 +1,13 @@
 # @partylayer/vue
 
+## 2.0.3
+
+### Patch Changes
+
+- Updated dependencies [6163ee3]
+  - @partylayer/core@0.16.0
+  - @partylayer/session@1.1.11
+
 ## 2.0.2
 
 ### Patch Changes
@@ -42,6 +50,7 @@
   ## Who is affected
 
   The compiler enumerated this, not a grep. Every site that had to change:
+
   - `@partylayer/sdk` — the three `tx:status` emissions in `client.ts` (sign, submit, transfer)
   - `@partylayer/provider` — `BridgeableClient`'s structural type, and the `signed` / `executed` CIP-0103 payloads
   - `@partylayer/react` and `@partylayer/vue` — the `TransactionToast` detail line
@@ -59,6 +68,7 @@
   Two of the nine were found only while making this change — in our Bron adapter, which an earlier survey of this exact problem had missed because they were ternaries rather than `??` chains. That is the argument in miniature: fixing the sites one at a time finds the ones you already know how to look for, and leaving the field required guarantees the next adapter writes a tenth.
 
   ## Also fixed here
+
   - **`BronAdapter`** omits `transactionHash` instead of reporting the word `'pending'` as one (two sites).
   - **`LoopAdapter`** omits it instead of reporting the command id under it. The command id is still reported as `commandId`, which is true of it. A real value under a wrong name is the same error as a fabricated one for anyone reading the field by its name.
 
@@ -116,6 +126,7 @@
   and cache keys.
 
   What v1.0 includes:
+
   - Reactive session state composables: useSession, useAccount, and usePartyState (each
     field a ComputedRef), plus useAccountEffect for session-transition side effects.
   - CIP-0104 cost composables: useTransactionCostEstimate (pre-submission) and
@@ -183,6 +194,7 @@
 - 55310e7: New package: Vue 3 composables for PartyLayer sessions.
 
   Thin reactive bindings over `@partylayer/session`, mirroring `@partylayer/react`:
+
   - `useSession()`: reactive session state (`status`/`account`/`accounts`/
     `networkId`/`lastError` + `isConnected`/`isConnecting`/`isReconnecting`/
     `isDisconnected`) and actions (`connect`/`disconnect`/`restore`/`on`), returned

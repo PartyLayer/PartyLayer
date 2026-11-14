@@ -30,13 +30,14 @@ or cross-chain product is introduced. Independent integrations and an external
 audit require evidence from the participating teams; no internal test is recorded
 as that external evidence.
 
-The current `feat/canton-operation-kit` branch adds a local preview of reviewed
+The merged operation-kit implementation adds a local preview of reviewed
 send and accept/reject/withdraw UI, separately correlated transfer outcomes,
 account-aware HoldingV2 reads and a V1/V2 server allowlist, legacy OAuth callback
 completion, current-baseline migration diagnostics and website audience
 measurement. See [the operation contract](operation-kit.md) and
-[website measurement](website-analytics.md). These new source changes are not yet
-a production or npm release. The existing Connect Wallet design is retained;
+[website measurement](website-analytics.md). SDK 0.22.0, React 3.4.0 and CLI 0.7.2
+are prepared release candidates, not a claim of npm publication. Website-only
+changes follow the separate deployment/measurement checks. The existing Connect Wallet design is retained;
 the new operation entry point remains in the same React package. Physical-device,
 funded transfer and swap acceptance follow the maintainer's separately scheduled
 wallet tests. Production registry-key activation and AI/agent work are not part
