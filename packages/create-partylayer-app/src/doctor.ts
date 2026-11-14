@@ -117,7 +117,7 @@ export function runDoctor(projectDir: string) {
         }
       }
     }
-    const minimum = name === '@partylayer/react' ? '3.1.2' : name === '@partylayer/sdk' ? '0.20.1' : undefined;
+    const minimum = name === '@partylayer/react' ? '3.3.0' : name === '@partylayer/sdk' ? '0.21.0' : undefined;
     if (minimum && dependency.manifest.version && semver.valid(dependency.manifest.version) && semver.lt(dependency.manifest.version, minimum)) {
       add(`migration:${name}`, 'warning', `${name} predates the current integration guide baseline (${minimum}).`, 'Review https://partylayer.xyz/docs/migration before upgrading. This offline check does not query npm latest.');
     }

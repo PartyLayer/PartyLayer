@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { mkdtempSync, mkdirSync, readFileSync, readdirSync, realpathSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdtempSync, mkdirSync, readFileSync, readdirSync, realpathSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -37,12 +37,23 @@ function run(root, args = ['--doctor', '--json']) {
   return result;
 }
 test('healthy React app: valid JSON, metadata only, no mutation or credentials in output', () => fixture(root => {
-  app(root); installedReact(root);
+  app(root); installedReact(root, { version: '3.3.0' });
   writeFileSync(join(root, '.env'), 'PRIVATE_SENTINEL'); writeFileSync(join(root, '.npmrc'), 'AUTH_SENTINEL');
   const before = snapshot(root); const result = run(root); const report = JSON.parse(result.stdout);
   assert.equal(result.status, 0); assert.equal(report.schemaVersion, 1); assert.equal(report.summary.status, 'pass');
   assert.deepEqual(snapshot(root), before); assert.doesNotMatch(result.stdout, /PRIVATE_SENTINEL|AUTH_SENTINEL|EXECUTED/);
   assert.ok(report.checks.some(check => check.id === 'peer:@partylayer/react:react'));
+}));
+test('older SDK/React versions receive an explicit migration warning without executing application code', () => fixture(root => {
+  app(root, { '@partylayer/react': '^3.1.2', '@partylayer/sdk': '^0.20.1', react: '^18', '@tanstack/react-query': '^5' });
+  installedReact(root); pkg(root, '@partylayer/sdk', '0.20.1');
+  const result = run(root); const report = JSON.parse(result.stdout);
+  assert.equal(result.status, 0);
+  for (const name of ['@partylayer/react', '@partylayer/sdk']) {
+    const check = report.checks.find(check => check.id === `migration:${name}`);
+    assert.equal(check.severity, 'warning'); assert.match(check.remediation, /docs\/migration/);
+  }
+  assert.equal(existsSync(join(root, 'EXECUTED')), false);
 }));
 test('missing and malformed project manifests produce redacted actionable reports', () => fixture(root => {
   for (const content of [null, '{"PRIVATE_SENTINEL":', '[]', '{"dependencies":[]}']) {
