@@ -4,6 +4,10 @@
 
 ### Patch Changes
 
+- Reject malformed provider request envelopes and parameter shapes with numeric
+  CIP-0103 errors before calling a wallet or opening an extension channel. Apply
+  the same validation to the native provider and the client compatibility bridge.
+
 - Updated dependencies [6163ee3]
   - @partylayer/core@0.16.0
 

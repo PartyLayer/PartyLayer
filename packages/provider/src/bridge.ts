@@ -29,6 +29,7 @@ import { CIP0103_EVENTS } from '@partylayer/core';
 import { CIP0103EventBus } from './event-bus';
 import { unsupportedMethod, disconnected, resourceUnavailable } from './errors';
 import { toProviderRpcError } from './error-map';
+import { validateRequestPayload } from './request-validation';
 import { toCAIP2Network } from './network';
 
 /** Injected at build time by tsup from package.json version */
@@ -141,6 +142,7 @@ async function handleRequest(
   eventBus: CIP0103EventBus,
   pendingEmitted: Set<string>,
 ): Promise<unknown> {
+  validateRequestPayload(args);
   const { method, params } = args;
 
   try {

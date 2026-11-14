@@ -24,6 +24,7 @@ import type {
 } from '@partylayer/core';
 import { CIP0103EventBus } from './event-bus';
 import { ProviderRpcError, JSON_RPC_ERRORS, RPC_ERRORS } from './errors';
+import { validateRequestPayload } from './request-validation';
 
 // ─── Splice wallet postMessage protocol (mirrors @canton-network/core-types) ──
 
@@ -140,6 +141,8 @@ export function createExtensionChannelProvider(
 
   const provider: ExtensionChannelProvider = {
     request<T>(args: CIP0103RequestPayload): Promise<T> {
+      try { validateRequestPayload(args); }
+      catch (error) { return Promise.reject(error); }
       if (destroyed) return Promise.reject(new ProviderRpcError('Extension channel was destroyed', RPC_ERRORS.DISCONNECTED));
       if (typeof window === 'undefined') {
         return Promise.reject(
