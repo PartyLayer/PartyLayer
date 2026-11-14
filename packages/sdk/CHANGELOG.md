@@ -18,6 +18,9 @@
 
 ### Patch Changes
 
+- Validate `asProvider()` request envelopes and parameter shapes before session
+  lookup or wallet routing, returning numeric CIP-0103 request errors.
+
 - Updated dependencies [6163ee3]
   - @partylayer/core@0.16.0
   - @partylayer/adapter-bron@0.7.0
