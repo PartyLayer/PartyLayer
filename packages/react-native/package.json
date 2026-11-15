@@ -1,6 +1,6 @@
 {
   "name": "@partylayer/react-native",
-  "version": "1.0.6",
+  "version": "1.0.5",
   "sideEffects": false,
   "description": "Canton Network wallet integration for React Native: PartyLayer client, CIP-0103 integrations, session storage, hooks and optional Connect Wallet UI.",
   "main": "./dist/index.js",
@@ -77,7 +77,7 @@
     "react": ">=18.0.0",
     "react-native": ">=0.70.0",
     "react-native-svg": ">=13.0.0",
-    "@partylayer/sdk": "^0.22.1"
+    "@partylayer/sdk": "workspace:^"
   },
   "peerDependenciesMeta": {
     "@react-native-async-storage/async-storage": {

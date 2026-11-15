@@ -1,14 +1,5 @@
 # @partylayer/react-native
 
-## 1.0.6
-
-### Patch Changes
-
-- 259c5fd: Add a native-safe SDK entry sharing the existing client implementation and use it from React Native. Native clients load only application-supplied compatible transports, disable browser discovery, and reject automatic browser-only wallet configuration with actionable guidance. Preserve the browser default wallet catalog. Declare the Buffer runtime dependency required by the native SVG UI so standard Metro builds resolve without global shims.
-- Updated dependencies [259c5fd]
-- Updated dependencies [912f4d1]
-  - @partylayer/sdk@0.22.1
-
 ## 1.0.5
 
 ### Patch Changes

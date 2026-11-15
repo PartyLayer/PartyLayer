@@ -1,12 +1,5 @@
 # @partylayer/sdk
 
-## 0.22.1
-
-### Patch Changes
-
-- 259c5fd: Add a native-safe SDK entry sharing the existing client implementation and use it from React Native. Native clients load only application-supplied compatible transports, disable browser discovery, and reject automatic browser-only wallet configuration with actionable guidance. Preserve the browser default wallet catalog. Declare the Buffer runtime dependency required by the native SVG UI so standard Metro builds resolve without global shims.
-- 912f4d1: Replace OneSwap's runtime package peer on an older core with the existing generic discovery owner and an independently implemented hosted-popup protocol profile. Preserve supported options and request mapping while isolating each channel's popup and cryptographic request identifiers; uncertain dispatched writes are never replayed or labeled failed without evidence.
-
 ## 0.22.0
 
 ### Minor Changes
