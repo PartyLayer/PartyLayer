@@ -1,14 +1,14 @@
 {
   "exports": {
     ".": {
+      "types": "./dist/index.d.ts",
       "import": "./dist/index.mjs",
-      "require": "./dist/index.js",
-      "types": "./dist/index.d.ts"
+      "require": "./dist/index.js"
     },
     "./query": {
+      "types": "./dist/query.d.ts",
       "import": "./dist/query.mjs",
-      "require": "./dist/query.js",
-      "types": "./dist/query.d.ts"
+      "require": "./dist/query.js"
     }
   },
   "main": "./dist/index.js",
@@ -16,6 +16,11 @@
   "name": "@partylayer/testing",
   "peerDependencies": {
     "@tanstack/query-core": ">=5.0.0"
+  },
+  "peerDependenciesMeta": {
+    "@tanstack/query-core": {
+      "optional": true
+    }
   },
   "types": "./dist/index.d.ts"
 }

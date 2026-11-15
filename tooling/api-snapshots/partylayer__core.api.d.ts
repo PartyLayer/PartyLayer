@@ -188,3 +188,14 @@ type TransactionHash = string & { readonly __brand: 'TransactionHash'; };
 type TransactionStatus = 'pending' | 'submitted' | 'committed' | 'rejected' | 'failed';
 type TransportType = 'deeplink' | 'popup' | 'postmessage' | 'injected';
 type WalletId = string & { readonly __brand: 'WalletId'; };
+
+// Local declaration: "authentication.d.ts"
+declare function createAuthenticationChallenge(parameters: CreateAuthenticationChallengeParameters): AuthenticationChallenge;
+declare function formatAuthenticationMessage(challenge: AuthenticationChallenge): string;
+declare function validateAuthenticationChallenge(challenge: AuthenticationChallenge, expected: AuthenticationIdentity & { origin: string; }, now?: number): void;
+declare function verifyAuthenticationProof(parameters: VerifyAuthenticationProofParameters): Promise<AuthenticationIdentity>;
+export { type AuthenticationChallenge, type AuthenticationIdentity, type CreateAuthenticationChallengeParameters, type VerifyAuthenticationProofParameters, createAuthenticationChallenge, formatAuthenticationMessage, validateAuthenticationChallenge, verifyAuthenticationProof };
+interface AuthenticationChallenge extends AuthenticationIdentity { version: 1; origin: string; domain: string; nonce: string; issuedAt: string; expiresAt: string; }
+interface AuthenticationIdentity { partyId: string; networkId: string; }
+interface CreateAuthenticationChallengeParameters extends AuthenticationIdentity { origin: string; nonce: string; now?: number; ttlMs?: number; }
+interface VerifyAuthenticationProofParameters { proof: { nonce: string; signature: string; }; origin: string; networkId?: string; consumeChallenge(nonce: string): Promise<AuthenticationChallenge | null>; verifySignatureAndParty(parameters: { message: string; signature: string; challenge: AuthenticationChallenge; }): Promise<boolean>; now?: number; }

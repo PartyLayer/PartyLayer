@@ -1,24 +1,24 @@
 {
   "exports": {
+    "./operations": {
+      "types": "./dist/operations.d.ts",
+      "import": "./dist/operations.mjs",
+      "require": "./dist/operations.js"
+    },
     ".": {
+      "types": "./dist/index.d.ts",
       "import": "./dist/index.mjs",
-      "require": "./dist/index.js",
-      "types": "./dist/index.d.ts"
+      "require": "./dist/index.js"
     },
     "./journal": {
+      "types": "./dist/journal.d.ts",
       "import": "./dist/journal.mjs",
-      "require": "./dist/journal.js",
-      "types": "./dist/journal.d.ts"
-    },
-    "./operations": {
-      "import": "./dist/operations.mjs",
-      "require": "./dist/operations.js",
-      "types": "./dist/operations.d.ts"
+      "require": "./dist/journal.js"
     },
     "./query": {
+      "types": "./dist/query.d.ts",
       "import": "./dist/query.mjs",
-      "require": "./dist/query.js",
-      "types": "./dist/query.d.ts"
+      "require": "./dist/query.js"
     }
   },
   "main": "./dist/index.js",

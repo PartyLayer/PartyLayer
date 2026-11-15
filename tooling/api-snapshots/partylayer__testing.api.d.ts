@@ -27,3 +27,23 @@ interface SessionHarnessConfig { partyId?: string; networkId?: string; ttlMs?: n
 interface TransactionLifecycle { readonly commandId: string; readonly phase: LifecyclePhase; readonly isPreparing: boolean; readonly isSubmitting: boolean; readonly isConfirming: boolean; readonly isFinalized: boolean; readonly isFailed: boolean; on(event: string, listener: (event: CIP0103TxChangedEvent) => void): () => void; advance(): LifecyclePhase; fail(): void; start(): Promise<void>; reset(): void; }
 type LifecycleDelays = Partial<Record<'preparing' | 'submitting' | 'confirming' | 'finalized', number>>;
 type LifecyclePhase = 'idle' | 'preparing' | 'submitting' | 'confirming' | 'finalized' | 'failed';
+
+// Local declaration: "offline-kSIUSZ3L.d.ts"
+declare const MOCK_SCENARIO_NAMES: MockScenarioName[];
+declare function connectMock(provider: CIP0103Provider): Promise<{ isConnected: boolean; }>;
+declare function createMockWallet(config?: MockWalletConfig): CIP0103Provider;
+declare function createMockWalletClient(config?: MockWalletConfig): MockWalletClient;
+declare function createOfflineHarness(config?: { wallet?: MockWalletConfig; session?: Partial<SessionStoreOptions>; }): OfflineHarness;
+declare function recordTxEvents(provider: CIP0103Provider): TxEventRecorder;
+declare function scenarioToError(scenario: MockScenario): ProviderRpcError;
+export { MOCK_SCENARIO_NAMES as M, type OfflineHarness as O, type TxEventRecorder as T, type MockMethod as a, type MockScenario as b, type MockScenarioName as c, type MockWalletClient as d, type MockWalletConfig as e, connectMock as f, createMockWallet as g, createMockWalletClient as h, createOfflineHarness as i, recordTxEvents as r, scenarioToError as s };
+import { CIP0103Provider, CIP0103TxChangedEvent } from '@partylayer/core';
+import { ProviderRpcError, createProviderBridge } from '@partylayer/provider';
+import { SessionStore, SessionStoreOptions } from '@partylayer/session';
+interface MockWalletConfig { partyId?: string; network?: string; connected?: boolean; scenarios?: Partial<Record<MockMethod, MockScenario>>; delays?: Partial<Record<MockMethod, number>>; }
+interface OfflineHarness { readonly provider: CIP0103Provider; readonly store: SessionStore; destroy(): void; }
+interface TxEventRecorder { readonly events: CIP0103TxChangedEvent[]; statuses(): CIP0103TxChangedEvent['status'][]; stop(): void; }
+type MockMethod = 'connect' | 'disconnect' | 'getActiveSession' | 'signMessage' | 'signTransaction' | 'submitTransaction' | 'ledgerApi';
+type MockScenario = MockScenarioName | ProviderRpcError | { code: number; message: string; };
+type MockScenarioName = 'userRejected' | 'insufficientTraffic' | 'synchronizerError' | 'transactionTimeout' | 'genericError';
+type MockWalletClient = Parameters<typeof createProviderBridge>[0];

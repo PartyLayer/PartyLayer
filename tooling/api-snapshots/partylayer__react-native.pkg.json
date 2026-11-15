@@ -1,29 +1,51 @@
 {
   "exports": {
     ".": {
+      "browser": {
+        "types": "./dist/web.d.ts",
+        "import": "./dist/web.mjs",
+        "require": "./dist/web.js"
+      },
+      "types": "./dist/index.d.ts",
       "import": "./dist/index.mjs",
-      "require": "./dist/index.js",
-      "types": "./dist/index.d.ts"
-    },
-    "./async-storage": {
-      "import": "./dist/async-storage.mjs",
-      "require": "./dist/async-storage.js",
-      "types": "./dist/async-storage.d.ts"
+      "require": "./dist/index.js"
     },
     "./ui": {
+      "types": "./dist/ui.d.ts",
       "import": "./dist/ui.mjs",
-      "require": "./dist/ui.js",
-      "types": "./dist/ui.d.ts"
+      "require": "./dist/ui.js"
+    },
+    "./async-storage": {
+      "types": "./dist/async-storage.d.ts",
+      "import": "./dist/async-storage.mjs",
+      "require": "./dist/async-storage.js"
+    },
+    "./web": {
+      "types": "./dist/web.d.ts",
+      "import": "./dist/web.mjs",
+      "require": "./dist/web.js"
     }
   },
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",
   "name": "@partylayer/react-native",
   "peerDependencies": {
+    "@partylayer/sdk": "workspace:^",
     "@react-native-async-storage/async-storage": ">=1.17.0",
     "react": ">=18.0.0",
     "react-native": ">=0.70.0",
     "react-native-svg": ">=13.0.0"
+  },
+  "peerDependenciesMeta": {
+    "@partylayer/sdk": {
+      "optional": true
+    },
+    "@react-native-async-storage/async-storage": {
+      "optional": true
+    },
+    "react-native-svg": {
+      "optional": true
+    }
   },
   "types": "./dist/index.d.ts"
 }
