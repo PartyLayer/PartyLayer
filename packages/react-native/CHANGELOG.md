@@ -1,5 +1,14 @@
 # @partylayer/react-native
 
+## 1.0.6
+
+### Patch Changes
+
+- 259c5fd: Add a native-safe SDK entry sharing the existing client implementation and use it from React Native. Native clients load only application-supplied compatible transports, disable browser discovery, and reject automatic browser-only wallet configuration with actionable guidance. Preserve the browser default wallet catalog. Declare the Buffer runtime dependency required by the native SVG UI so standard Metro builds resolve without global shims.
+- Updated dependencies [259c5fd]
+- Updated dependencies [912f4d1]
+  - @partylayer/sdk@0.22.1
+
 ## 1.0.5
 
 ### Patch Changes
@@ -150,7 +159,6 @@
   installed" error at runtime even when the peer WAS installed. Opening the connect UI on
   web crashed for exactly this reason; the deep link and storage loaders carried the same
   latent pattern.
-
   - The `./ui` entrypoint statically imports react-native-svg. A consumer of `./ui` without
     it now gets a bundler resolution error at build time rather than a runtime crash. The
     headless "." entrypoint still never imports it.
