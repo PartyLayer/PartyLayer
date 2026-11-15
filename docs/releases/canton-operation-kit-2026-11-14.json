@@ -1,0 +1,207 @@
+{
+  "producers": [
+    {
+      "source": "5b181acd520e2e26e28f018d1910451e3f699689",
+      "runId": "43617342925",
+      "runAttempt": "1"
+    },
+    {
+      "source": "a91b9ce1089b661c5e48d6a7d1e587e4254761f1",
+      "runId": "43626767946",
+      "runAttempt": "1"
+    }
+  ],
+  "packages": [
+    {
+      "name": "@partylayer/core",
+      "version": "0.16.0",
+      "integrity": "sha512-76XPAr9lPCvqKqQ17hS0033Z7DGR7Lqj7PgbgY0SMYJU3mWKZ9eYFbvpvJY0m8BZs6cOqsf+GJ7umbuof8fo6A==",
+      "source": "5b181acd520e2e26e28f018d1910451e3f699689",
+      "runId": "43617342925",
+      "runAttempt": "1",
+      "signaturesVerified": true,
+      "provenanceVerified": true
+    },
+    {
+      "name": "@partylayer/adapter-starter",
+      "version": "0.1.23",
+      "integrity": "sha512-7z8bmorM4zA42rrW1jl+fEUECoMBT9+ee1phNwBD0O25nWDNYJm4Ao//k9OiO+2h4CPyEGPUn606WLl9loY75A==",
+      "source": "a91b9ce1089b661c5e48d6a7d1e587e4254761f1",
+      "runId": "43626767946",
+      "runAttempt": "1",
+      "signaturesVerified": true,
+      "provenanceVerified": true
+    },
+    {
+      "name": "@partylayer/provider",
+      "version": "0.6.2",
+      "integrity": "sha512-pneAdgENJMKLw2RcqqrknobmYtVhP76Y2gwcturrEUyu600V0Vz7Y3CfbP0Qi2TASUscrkONF87megVnTa0WtQ==",
+      "source": "a91b9ce1089b661c5e48d6a7d1e587e4254761f1",
+      "runId": "43626767946",
+      "runAttempt": "1",
+      "signaturesVerified": true,
+      "provenanceVerified": true
+    },
+    {
+      "name": "@partylayer/conformance-runner",
+      "version": "0.2.12",
+      "integrity": "sha512-43CImC/QyySVufkXjeEsiOmIRIbccA/xsL1aCHHe4HVQUa/akkbhhtNtMvXI7hsDIuzSKV71xDu7phNM56juaQ==",
+      "source": "a91b9ce1089b661c5e48d6a7d1e587e4254761f1",
+      "runId": "43626767946",
+      "runAttempt": "1",
+      "signaturesVerified": true,
+      "provenanceVerified": true
+    },
+    {
+      "name": "@partylayer/adapter-bron",
+      "version": "0.7.0",
+      "integrity": "sha512-ZPo6QVQy4q8pbx4MM4SH1gJ7cpeq3yI4W2okPbfQmKo3ZQv59x9x/Jw1iekEzqFYH8fLnbdWZ5uZVj+uJr4m8A==",
+      "source": "a91b9ce1089b661c5e48d6a7d1e587e4254761f1",
+      "runId": "43626767946",
+      "runAttempt": "1",
+      "signaturesVerified": true,
+      "provenanceVerified": true
+    },
+    {
+      "name": "@partylayer/adapter-cantor8",
+      "version": "0.5.3",
+      "integrity": "sha512-nnMAfN+R++cIuATFnscGVKOSzTrvm4O+lGHIs3gbxqJhhgsA7PHGhQHn5KU90bb3wUxj4NdX2/ZDSIxGPwHkFQ==",
+      "source": "a91b9ce1089b661c5e48d6a7d1e587e4254761f1",
+      "runId": "43626767946",
+      "runAttempt": "1",
+      "signaturesVerified": true,
+      "provenanceVerified": true
+    },
+    {
+      "name": "@partylayer/adapter-console",
+      "version": "0.5.2",
+      "integrity": "sha512-Ay/3Rzs6RH+FKOZJzwWDOKcf1mzJCDRAI5btexFj+jmXKgm+UvKzvLtdE0lfXlpHSNEenHCE2adN7RFHseXJGQ==",
+      "source": "a91b9ce1089b661c5e48d6a7d1e587e4254761f1",
+      "runId": "43626767946",
+      "runAttempt": "1",
+      "signaturesVerified": true,
+      "provenanceVerified": true
+    },
+    {
+      "name": "@partylayer/adapter-loop",
+      "version": "0.6.3",
+      "integrity": "sha512-Kn/+rMf/wg+aJ2Ap0dbvCAeIa9WoS0gsEstoatXw9/lFcEHPeSS6SCcTrH/R4AhFeDqbLx3E/L7UmffMZIaVEA==",
+      "source": "a91b9ce1089b661c5e48d6a7d1e587e4254761f1",
+      "runId": "43626767946",
+      "runAttempt": "1",
+      "signaturesVerified": true,
+      "provenanceVerified": true
+    },
+    {
+      "name": "@partylayer/adapter-nightly",
+      "version": "0.3.3",
+      "integrity": "sha512-ggs5yTWT9KnDvbJl/2v77fYjGolZRmJVfGHBmicUcAeyWk4Ntpa4pM/ACqKPfB1kT+SO2t4hAivB8LHMI2IUYg==",
+      "source": "a91b9ce1089b661c5e48d6a7d1e587e4254761f1",
+      "runId": "43626767946",
+      "runAttempt": "1",
+      "signaturesVerified": true,
+      "provenanceVerified": true
+    },
+    {
+      "name": "@partylayer/adapter-send",
+      "version": "1.2.11",
+      "integrity": "sha512-QADPr0VnsK1RltYtboZuSt/6At2y5rWsjGaTGAVwXrXFWxM80GLIyfwvLvP+0VpaHNA1sUwfTHyzE9HDwJRr3w==",
+      "source": "a91b9ce1089b661c5e48d6a7d1e587e4254761f1",
+      "runId": "43626767946",
+      "runAttempt": "1",
+      "signaturesVerified": true,
+      "provenanceVerified": true
+    },
+    {
+      "name": "@partylayer/adapter-walletconnect",
+      "version": "0.5.2",
+      "integrity": "sha512-28iOdIa+v5esMgjfzKwYnDjNoOncnYXELv62Bvn6elF7zlBmhye92C4XpmjGLMa2D+LzAKNF9aBh0RQzJBzpwg==",
+      "source": "a91b9ce1089b661c5e48d6a7d1e587e4254761f1",
+      "runId": "43626767946",
+      "runAttempt": "1",
+      "signaturesVerified": true,
+      "provenanceVerified": true
+    },
+    {
+      "name": "@partylayer/registry-client",
+      "version": "0.7.2",
+      "integrity": "sha512-bh5WvllsSTiFwh2bx9Dh+TaK4yfXJ7ESXVBtmqVU5JC0sZJhS/FJ2hDUBm65UeUcgFqeBtG9g77H24VfZOolOg==",
+      "source": "a91b9ce1089b661c5e48d6a7d1e587e4254761f1",
+      "runId": "43626767946",
+      "runAttempt": "1",
+      "signaturesVerified": true,
+      "provenanceVerified": true
+    },
+    {
+      "name": "@partylayer/sdk",
+      "version": "0.22.0",
+      "integrity": "sha512-mWOBJ3KdCs6gmkYJkHv4z4+wVeXZoA4lBUS+US5wHODXcf2J7SdvjeF1MsT+HE+WpiAO/beAg0A5UKCNeS5zsA==",
+      "source": "a91b9ce1089b661c5e48d6a7d1e587e4254761f1",
+      "runId": "43626767946",
+      "runAttempt": "1",
+      "signaturesVerified": true,
+      "provenanceVerified": true
+    },
+    {
+      "name": "@partylayer/session",
+      "version": "1.1.11",
+      "integrity": "sha512-lhoTTQCD6JLelLSL+nozmUcvZ1RPPByu3WfHvFyezMVPaMtufaC4h/DV5XAOSSLuI6e8vQzZCHHawSyrcHmoXw==",
+      "source": "a91b9ce1089b661c5e48d6a7d1e587e4254761f1",
+      "runId": "43626767946",
+      "runAttempt": "1",
+      "signaturesVerified": true,
+      "provenanceVerified": true
+    },
+    {
+      "name": "@partylayer/react",
+      "version": "3.4.0",
+      "integrity": "sha512-1ZFtMwFm64Svh/bql7gZSFOO9IYJObbDqzgWWO9jwwOpexjns6xJj3RdtZYTjj4FVm9HZZTuLG+rEqGgzFVeNg==",
+      "source": "a91b9ce1089b661c5e48d6a7d1e587e4254761f1",
+      "runId": "43626767946",
+      "runAttempt": "1",
+      "signaturesVerified": true,
+      "provenanceVerified": true
+    },
+    {
+      "name": "@partylayer/vue",
+      "version": "2.0.3",
+      "integrity": "sha512-L4zgEX1NLxjmeEsNyz5g2K1XOS9Uf1DvpdlG2rIDR0JOb6iCdpOh3HxOHpvnxeg4B/HiwIDfC8w1IuMr9DrIkg==",
+      "source": "a91b9ce1089b661c5e48d6a7d1e587e4254761f1",
+      "runId": "43626767946",
+      "runAttempt": "1",
+      "signaturesVerified": true,
+      "provenanceVerified": true
+    },
+    {
+      "name": "create-partylayer-app",
+      "version": "0.7.2",
+      "integrity": "sha512-DgOlXTfnT/I7MYwSZFD8eEAVAKU/Bx4YT/bDOFi3qOVz+i24HpD+qlxVOP2C6PQ5Tk6KL0LnqHyPMLRX7+fBTg==",
+      "source": "a91b9ce1089b661c5e48d6a7d1e587e4254761f1",
+      "runId": "43626767946",
+      "runAttempt": "1",
+      "signaturesVerified": true,
+      "provenanceVerified": true
+    },
+    {
+      "name": "@partylayer/react-native",
+      "version": "1.0.5",
+      "integrity": "sha512-ndX8VNJfzT3ZfrmOsYbqx5MFKSkgAF0m/hq45zStUu25qae1+v/ca2OrGboygQgQdpODFoKgp0JKQhYFuszlNg==",
+      "source": "a91b9ce1089b661c5e48d6a7d1e587e4254761f1",
+      "runId": "43626767946",
+      "runAttempt": "1",
+      "signaturesVerified": true,
+      "provenanceVerified": true
+    },
+    {
+      "name": "@partylayer/testing",
+      "version": "1.1.12",
+      "integrity": "sha512-X+Whq8PI2ScqKdHmMLFZDy2R84jf88hrp3CHCcDuRKKlDQBIQjChLyMeHbqxHb1oePSmJDHX9pCmO7l+7sSRrg==",
+      "source": "a91b9ce1089b661c5e48d6a7d1e587e4254761f1",
+      "runId": "43626767946",
+      "runAttempt": "1",
+      "signaturesVerified": true,
+      "provenanceVerified": true
+    }
+  ],
+  "pending": []
+}

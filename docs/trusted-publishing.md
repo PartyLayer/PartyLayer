@@ -7,7 +7,7 @@ files through npm OIDC. There is no separate npm approval for each package in th
 model. The npm account retains 2FA; initial package/trust configuration can still
 require separate npm verification.
 
-**Activation status (2026-10-30):** all nine selected versions are public with the
+**Earlier activation (2026-10-30):** all nine selected versions are public with the
 reviewed SHA-512 integrity and `latest` tag. Their exact direct-publishing
 connections were verified; authenticated collaborator queries identify only
 `cayvox` with read-write access. The owner approved each specific release run.
@@ -17,8 +17,25 @@ Clean public consumer checks passed. npm accepted the **require 2FA and disallow
 traditional tokens** setting for all eight non-CLI packages; the CLI setting had
 already been accepted during its earlier release. These observations are successful
 authenticated setting responses, not a separate settings-page read-back audit.
-The other 11 existing packages have not completed this
-migration; this is not a migration claim for all 20 packages.
+That checkpoint covered nine packages only; the following coordinated release
+extends publication evidence, with separate package-security activation status.
+
+## Coordinated operation-kit release
+
+Nineteen existing package versions are public with verified SHA-512 bytes, latest
+tags, registry signatures and GitHub workflow/source provenance. Core 0.16.0 was
+published by [run 43617342925](https://github.com/PartyLayer/PartyLayer/actions/runs/43617342925)
+from `5b181acd520e2e26e28f018d1910451e3f699689`. The owner separately approved the
+remaining eighteen files in [run 43626767946](https://github.com/PartyLayer/PartyLayer/actions/runs/43626767946),
+which completed from `a91b9ce1089b661c5e48d6a7d1e587e4254761f1`.
+See [per-package release evidence](releases/canton-operation-kit-2026-11-14.md).
+
+The ten additional connections accepted during setup are now proven by actual
+OIDC publication. Their traditional-token restrictions still require their
+one-time npm setting verification; the earlier nine-package restriction record
+is unchanged. Registry CLI is the twentieth existing package and has not yet
+completed trusted-publisher activation. Do not describe all twenty as migrated
+or all nineteen as token-restricted on the basis of successful OIDC publication.
 
 ## Owner and trust boundaries
 

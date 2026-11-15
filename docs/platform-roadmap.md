@@ -9,9 +9,10 @@ the remaining milestones below require their own implementation and evidence.
 
 ### Implementation checkpoint: 2026-11-14
 
-The published foundation is SDK 0.21.0, React 3.3.0 and CLI 0.7.1. React 3.3.0
-adds the reviewed fourteen-language experience. The table describes the existing
-foundation and its evidence boundaries; new operation-kit work is listed below.
+The published foundation is SDK 0.22.0, React 3.4.0 and CLI 0.7.2. The coordinated
+release includes the operation kit and reviewed fourteen-language experience.
+The table records implementation and acceptance boundaries, not universal wallet
+or native-platform certification.
 
 | Area | Implementation | Acceptance boundary |
 | --- | --- | --- |
@@ -36,8 +37,10 @@ account-aware HoldingV2 reads and a V1/V2 server allowlist, legacy OAuth callbac
 completion, current-baseline migration diagnostics and website audience
 measurement. See [the operation contract](operation-kit.md) and
 [website measurement](website-analytics.md). SDK 0.22.0, React 3.4.0 and CLI 0.7.2
-are prepared release candidates, not a claim of npm publication. Website-only
-changes follow the separate deployment/measurement checks. The existing Connect Wallet design is retained;
+are published. All nineteen selected versions have verified public bytes, latest
+tags, registry signatures and exact-workflow provenance; see the
+[release evidence](releases/canton-operation-kit-2026-11-14.md). Website-only
+changes follow separate deployment/measurement checks. The existing Connect Wallet design is retained;
 the new operation entry point remains in the same React package. Physical-device,
 funded transfer and swap acceptance follow the maintainer's separately scheduled
 wallet tests. Production registry-key activation and AI/agent work are not part
