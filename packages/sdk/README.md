@@ -142,3 +142,26 @@ Handle user rejection, unavailable wallets, timeouts, network mismatch and unsup
 ## License
 
 MIT
+
+## Native applications
+
+Import `createPartyLayer` from `@partylayer/sdk/native` for a native application. This
+entry shares the SDK client implementation, but registers only the native-compatible
+adapters/providers your application supplies. It excludes browser wallet runtimes and
+disables browser extension discovery. With no configured transport, the wallet list is empty.
+
+```ts
+import { createPartyLayer } from '@partylayer/sdk/native';
+
+const client = createPartyLayer({
+  network: 'devnet',
+  app: { name: 'Native application', origin: 'myapp://' },
+  adapters: [myNativeCompatibleAdapter],
+});
+```
+
+Automatic `walletConnect` and `bron` options belong to the browser entry. Native callers
+must supply a compatible transport through `adapters`; configuring those browser-only
+options on the native entry produces an explicit error. React Native applications can
+use `@partylayer/react-native`, which selects this entry and provides Linking and storage
+building blocks. See that package's README for a development transport fixture.

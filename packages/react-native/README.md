@@ -20,6 +20,27 @@ Peer dependencies:
   for the storage factories).
 - `react-native-svg` (optional; needed only for the `./ui` entrypoint).
 
+## Native transports
+
+The React Native client uses `@partylayer/sdk/native`. It shares the browser SDK's
+session, capability and transaction handling, while loading only the transports your
+application supplies in `adapters` or `additionalAdapters`. Browser wallet SDKs,
+browser popup catalogs are not loaded on a phone; extension discovery stays disabled. An empty
+adapter list therefore has no connectable wallets. For SDK class instance checks,
+import `PartyLayerClient` from `@partylayer/sdk/native`.
+
+Supply a `WalletAdapter`, adapter class, or an official provider/factory whose transport
+actually supports your native application. The `createReactNativeDeepLinkPlatform`
+building block below can help a custom adapter use React Native Linking. Browser-only
+`walletConnect` and `bron` automatic configuration throws an actionable error on the
+native entry; browser SDK configuration continues to work unchanged. A native
+WalletConnect integration needs a native-compatible adapter and WalletConnect's own
+native setup, including its documented compatibility dependencies; the browser Canton
+SDK barrel does not supply that integration.
+
+The SDK does not install global WebCrypto or browser APIs. Supply the SDK's `crypto`
+option when your native runtime needs an application-provided crypto implementation.
+
 ## A complete minimal app
 
 ```tsx
@@ -37,6 +58,8 @@ const client = createReactNativeClient({
   network: 'devnet',
   app: { name: 'My RN dApp' },
   asyncStorage: AsyncStorage,
+  // Add your application-owned native-compatible transport(s) here.
+  adapters: [],
 });
 
 function Account() {
@@ -61,6 +84,44 @@ export default function App() {
 
 The client is created once, outside the component, so it is stable. Creating it inside a
 component body makes a new client on every render, which resets the hooks.
+
+
+### Development transport fixture
+
+This runnable in-memory fixture exercises the integration without a real wallet. It
+has no signing, ledger or real account capabilities and must be replaced for production.
+Install `@partylayer/core` as a direct dependency for the adapter helpers used here:
+
+```sh
+npm install @partylayer/core
+```
+
+```ts
+import { toPartyId, toWalletId, type WalletAdapter } from '@partylayer/core';
+import { createReactNativeClient } from '@partylayer/react-native';
+
+const developmentTransport: WalletAdapter = {
+  walletId: toWalletId('native-development-fixture'),
+  name: 'Development fixture (no wallet)',
+  getCapabilities: () => ['connect', 'disconnect'],
+  detectInstalled: async () => ({ installed: true }),
+  connect: async () => ({
+    partyId: toPartyId('development::fixture'),
+    session: { network: 'devnet' },
+    capabilities: ['connect', 'disconnect'],
+  }),
+  disconnect: async () => {},
+};
+
+const developmentClient = createReactNativeClient({
+  network: 'devnet',
+  app: { name: 'Native development fixture', origin: 'myapp://' },
+  adapters: [developmentTransport],
+});
+```
+
+Calling `developmentClient.connect({ walletId: developmentTransport.walletId })`
+exercises the session lifecycle. The example certifies no wallet or network operation.
 
 ## Session persistence: read this once
 
@@ -320,8 +381,9 @@ constructs it, as above.
 
 ## Upgrading from 0.2.2
 
-**Nothing you use has changed.** Every export from 0.2.2 is still exported, with the same
-behavior:
+The hook and UI exports from 0.2.2 remain available. Client construction now uses the
+native-safe SDK entry described above, so configure native-compatible transports explicitly.
+The hook/provider compatibility behavior is preserved:
 
 - `useConnect(client)` and `useWallets(client, parameters)` still take an explicit client
   and still work with no provider anywhere in the tree. The provider forms are additional

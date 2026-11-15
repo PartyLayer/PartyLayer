@@ -2,7 +2,7 @@
  * Headless client factory tests. The RN modules are mocked; no device runs here.
  */
 import { describe, it, expect } from 'vitest';
-import { PartyLayerClient } from '@partylayer/sdk';
+import { PartyLayerClient } from '@partylayer/sdk/native';
 import { createReactNativeClient } from '../client';
 import type { RNAsyncStorage } from '../types';
 

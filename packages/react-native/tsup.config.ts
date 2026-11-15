@@ -24,6 +24,7 @@ export default defineConfig({
     '@react-native-async-storage/async-storage',
     '@partylayer/core',
     '@partylayer/sdk',
+    '@partylayer/sdk/native',
     '@partylayer/session',
   ],
 });
