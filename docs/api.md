@@ -71,6 +71,8 @@ cryptography, invalid keys and unauthenticated ciphertext instead of falling bac
 plain base64. Valid existing AES-GCM caches remain readable; unsupported legacy cache
 records are discarded and require a wallet reconnect. A native custom adapter must
 provide authenticated encryption and matching decryption as well as key generation.
+Local cache encryption does not establish wallet identity or authorize server
+requests; restored state still requires the documented wallet-side validation.
 
 ---
 

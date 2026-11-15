@@ -391,6 +391,8 @@ The default encryption implementation requires WebCrypto AES-GCM; unavailable or
 failed cryptography does not downgrade to plain base64. Valid AES-GCM cache records
 remain supported. Unsupported legacy records require a wallet reconnect. Session
 identifiers are client lifecycle identifiers, not server authentication credentials.
+Cache encryption does not establish wallet identity or replace wallet-side restore
+validation and independent server authorization.
 
 ## License
 
