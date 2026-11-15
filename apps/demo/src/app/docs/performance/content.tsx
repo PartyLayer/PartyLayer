@@ -58,13 +58,15 @@ export default function PerformancePage() {
         of the exports it actually imports. That is measured below.
       </P>
 
-      <H3>Installed-consumer correction candidates</H3>
+      <H3>Published installation corrections</H3>
       <P>
-        Core 0.16.1, SDK 0.22.1 and React Native 2.0.0 candidates were measured on 2026-11-15:
+        Core 0.16.1, SDK 0.22.1 and React Native 2.0.0 were published on 2026-11-15:
         React connection 36.09 kB, holdings query 467 B, token comparison 336 B, native headless
         23.00 kB, native UI 5.04 kB and browser SDK 53.29 kB gzip. All six existing limits pass
-        unchanged. These source and packed checks do not mean the candidates are published;
-        see the roadmap for release status. Actual packed Vite and Next.js builds place the
+        unchanged. The reviewed compiled files match the public archives;
+        see the{' '}
+        <a href="https://github.com/PartyLayer/PartyLayer/blob/main/docs/releases/consumer-installation-corrections-2026-11-15.md" style={{ color: 'inherit', textDecoration: 'underline' }}>publication evidence</a>.
+        {' '}Actual packed Vite and Next.js builds place the
         private OneSwap hosted profile outside the initial static chunk graph. Discovery can
         prewarm it before a wallet is selected.
       </P>

@@ -1,7 +1,10 @@
 # Canton operation-kit publication evidence
 
-All nineteen versions below are public with the reviewed `latest` tag and
-SHA-512 bytes. Registry signatures and Sigstore attestations were cryptographically
+This historical checkpoint records the nineteen versions and `latest` tags
+verified for the coordinated release. Subsequent Core, SDK, React Native and
+conformance corrections are recorded in the
+[2026-11-15 corrections](consumer-installation-corrections-2026-11-15.md).
+The original SHA-512 bytes, registry signatures and Sigstore attestations were cryptographically
 verified against the exact `PartyLayer/PartyLayer/.github/workflows/npm-publish.yml`
 main-branch identity, GitHub issuer, source commit and run/attempt.
 [Machine-readable proofs](canton-operation-kit-2026-11-14.json) record each producer.

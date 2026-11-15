@@ -43,11 +43,12 @@ add approximately 3.5 kB; the dynamically imported official discovery runtime
 is excluded from the initial-bundle scenario and downloaded during preparation.
 The older comparisons below remain dated historical measurements.
 
-### Installed-consumer correction candidates
+### Published installation corrections
 
-The Core 0.16.1, SDK 0.22.1 and React Native 2.0.0 candidates passed the following
-measurements on 2026-11-15. These source/packed checks do not mean the candidates
-are published; see [the roadmap](platform-roadmap.md) for release status.
+Core 0.16.1, SDK 0.22.1 and React Native 2.0.0 were published on 2026-11-15.
+The following measurements apply to the reviewed files whose compiled contents
+match the public archives. See the
+[publication evidence](releases/consumer-installation-corrections-2026-11-15.md).
 
 | Scenario | Gzip contribution | Existing budget |
 | --- | --- | --- |
