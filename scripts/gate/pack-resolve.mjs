@@ -153,7 +153,7 @@ function classify(stderr, spec, ownDir) {
  * Resolve every consumer specifier of an unpacked package. Returns a list of problems;
  * an empty list means every entry point loaded.
  */
-export function resolveEntryPoints(repoRoot, pkg, unpackedDir) {
+export function resolveEntryPoints(repoRoot, pkg, unpackedDir, { checkBinVersions = false } = {}) {
   const sandbox = makeSandbox(repoRoot, pkg.name, unpackedDir);
   // Node reports real paths. On macOS the temp dir is /var/... but resolves to
   // /private/var/..., so comparing against the unresolved path silently never matches and
@@ -197,7 +197,8 @@ export function resolveEntryPoints(repoRoot, pkg, unpackedDir) {
     }
     // Run each bin from the unpacked payload, not its workspace source. Build-time
     // version injection or runtime metadata lookup must survive the shipped layout.
-    const bins = typeof pkg.bin === 'string' ? { [pkg.name]: pkg.bin } : (pkg.bin ?? {});
+    const bins = !checkBinVersions ? {}
+      : typeof pkg.bin === 'string' ? { [pkg.name]: pkg.bin } : (pkg.bin ?? {});
     for (const [command, target] of Object.entries(bins)) {
       try {
         const version = execFileSync(process.execPath, [resolve(ownDir, target), '--version'], {

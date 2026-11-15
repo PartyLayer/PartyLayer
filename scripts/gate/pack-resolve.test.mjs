@@ -22,7 +22,7 @@ for (const [type, extension] of [['module', 'js'], ['commonjs', 'cjs']]) {
         writeFileSync(join(payload, 'package.json'), JSON.stringify(pkg));
         writeFileSync(join(payload, 'dist', `cli.${extension}`),
           `if (process.argv[2] !== '--version') process.exit(2);\nconsole.log(${JSON.stringify(matches ? pkg.version : '0.1.0')});\n`);
-        const problems = resolveEntryPoints(root, pkg, payload);
+        const problems = resolveEntryPoints(root, pkg, payload, { checkBinVersions: true });
         if (matches) assert.deepEqual(problems, []);
         else {
           assert.equal(problems.length, 1);
@@ -34,3 +34,18 @@ for (const [type, extension] of [['module', 'js'], ['commonjs', 'cjs']]) {
     });
   }
 }
+
+test('entry resolution leaves CLIs without a version flag unchanged', () => {
+  const root = mkdtempSync(join(tmpdir(), 'pl-bin-unversioned-'));
+  try {
+    const payload = join(root, 'payload');
+    mkdirSync(join(root, 'node_modules'));
+    mkdirSync(payload);
+    const pkg = { name: 'interactive-fixture', version: '1.0.0', bin: './cli.cjs' };
+    writeFileSync(join(payload, 'package.json'), JSON.stringify(pkg));
+    writeFileSync(join(payload, 'cli.cjs'), 'throw new Error("No version flag is supported");\n');
+    assert.deepEqual(resolveEntryPoints(root, pkg, payload), []);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});

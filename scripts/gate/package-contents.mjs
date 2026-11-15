@@ -21,7 +21,7 @@
  *      resolve, so it was present and still unloadable;
  *   3. LICENSE and README.md are present;
  *   4. no `src/`, no test files, no tsconfig and no tsbuildinfo are included;
- *   5. every declared bin reports the packed package version through `--version`.
+ *   5. the version-aware CLIs report their packed package version through `--version`.
  *
  * It packs with `pnpm pack`, not `npm pack`, because pnpm rewrites the `workspace:` protocol
  * into the range that will really be published. An npm-packed tarball would misrepresent
@@ -153,7 +153,10 @@ try {
     const unpackDir = join(staging, 'unpacked', name.replace('/', '__'));
     mkdirSync(unpackDir, { recursive: true });
     execFileSync('tar', ['-xzf', tarball, '-C', unpackDir, '--strip-components', '1'], { stdio: 'pipe' });
-    for (const problem of resolveEntryPoints(repoRoot, pkg, unpackDir)) problems.push(problem);
+    for (const problem of resolveEntryPoints(repoRoot, pkg, unpackDir, {
+      // The scaffold CLI is interactive and does not declare a --version flag.
+      checkBinVersions: ['@partylayer/conformance-runner', '@partylayer/registry-cli'].includes(pkg.name),
+    })) problems.push(problem);
 
     rows.push({ name, count: listed.length, ok: problems.length === 0 });
     if (problems.length > 0) {
