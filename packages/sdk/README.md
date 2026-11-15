@@ -168,6 +168,19 @@ options on the native entry produces an explicit error. React Native application
 use `@partylayer/react-native`, which selects this entry and provides Linking and storage
 building blocks. See that package's README for a development transport fixture.
 
+### Secure randomness and session caches
+
+New session identifiers require WebCrypto `getRandomValues`. A native runtime
+without it must supply the `crypto` option with a secure platform-backed
+`randomBytes(byteLength)` method returning exactly that many bytes as a `Uint8Array`
+or a Promise for one, alongside the adapter's encryption, decryption and key-generation
+methods. Encryption keys or key handles are never used as session identifiers.
+
+The default encryption implementation requires WebCrypto AES-GCM; unavailable or
+failed cryptography does not downgrade to plain base64. Valid AES-GCM cache records
+remain supported. Unsupported legacy records require a wallet reconnect. Session
+identifiers are client lifecycle identifiers, not server authentication credentials.
+
 ## License
 
 MIT

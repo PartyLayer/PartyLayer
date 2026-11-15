@@ -91,6 +91,13 @@ SDK barrel does not supply that integration.
 
 The SDK does not install global WebCrypto or browser APIs. Supply the SDK's `crypto`
 option when your native runtime needs an application-provided crypto implementation.
+Without global `crypto.getRandomValues`, that adapter must expose
+`randomBytes(byteLength)` using a platform cryptographic random source, returning a
+`Uint8Array` of exactly the requested length or a Promise for it. Provide authenticated
+encryption/decryption and key generation through the same adapter; never substitute
+`Math.random`, base64 encoding or an encryption key handle for secure random bytes.
+Connecting fails before wallet approval when no secure random source is available.
+The examples below require this runtime configuration wherever WebCrypto is absent.
 
 ## A complete minimal app
 
