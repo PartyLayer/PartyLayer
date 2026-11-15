@@ -24,14 +24,14 @@ consumer bundles.
 Package size is not what a dApp ships. What a dApp ships is the tree shaken, minified, and
 gzipped cost of the exports it actually imports. That is measured below.
 
-The current default catalog loads reviewed official SDKs lazily during wallet discovery;
-configured WalletConnect and Bron transports also load lazily. The current measured initial
+The default catalog loads reviewed official SDKs and hosted profiles lazily during wallet discovery;
+configured WalletConnect and Bron transports also load lazily. At the earlier published checkpoint, the measured initial
 SDK contribution is about 50.10 kB gzip (53.5 kB budget); React Native headless is about 50.35 kB
 (53.75 kB budget). These budgets exclude asynchronous chunks. The kit lists wallets on mount, so
 eligible wallet/discovery chunks can start loading before the picker opens;
 these numbers are not total first-load bytes. Connecting WalletConnect loads
 its underlying transport. Run `pnpm gate:size`
-for the current numbers. The React connection surface measures about 36.02 kB gzip with
+for the current numbers. The React connection surface at that checkpoint measured about 36.02 kB gzip with
 a 37.5 kB budget after adding keyboard behavior, English/Turkish UI, optional
 authentication actions, scoped recent activity, network guidance and exact-decimal
 holdings UI. Server challenge/verification helpers use a separate
@@ -42,6 +42,26 @@ signature echo checks add a further ~0.34 kB. Official native ownership, abort/i
 add approximately 3.5 kB; the dynamically imported official discovery runtime
 is excluded from the initial-bundle scenario and downloaded during preparation.
 The older comparisons below remain dated historical measurements.
+
+### Installed-consumer correction candidates
+
+The Core 0.16.1, SDK 0.22.1 and React Native 2.0.0 candidates passed the following
+measurements on 2026-11-15. These source/packed checks do not mean the candidates
+are published; see [the roadmap](platform-roadmap.md) for release status.
+
+| Scenario | Gzip contribution | Existing budget |
+| --- | --- | --- |
+| React connection surface | 36.09 kB | 37.5 kB |
+| Token holdings query | 467 B | 700 B |
+| Exact token comparison | 336 B | 500 B |
+| React Native headless | 23.00 kB | 53.75 kB |
+| React Native UI | 5.04 kB | 5.5 kB |
+| Browser SDK client | 53.29 kB | 53.5 kB |
+
+The independently implemented OneSwap hosted profile is emitted as a private
+dynamic module. Actual packed Vite and Next.js builds place it outside their
+initial static chunk graph. Discovery can prewarm this module before a wallet
+is selected. None of the six byte limits was increased.
 
 ## What each import scenario costs
 

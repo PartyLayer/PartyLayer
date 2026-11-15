@@ -371,6 +371,12 @@ export const walletXAdapter: ProviderAdapter = {
         additionalAdapters extends them.
       </P>
       <P>
+        OneSwap uses an independently implemented hosted protocol profile inside the same SDK:
+        its current vendor package requires an older, incompatible Core peer. The vendor is
+        pinned only for development interoperability tests. The profile uses the same generic
+        bridge and requires no separate PartyLayer wallet package.
+      </P>
+      <P>
         For an advanced custom integration, the dApp passes your adapter instance in the SDK config. The SDK detects the official shape and
         wraps it through the generic discovery bridge automatically:
       </P>

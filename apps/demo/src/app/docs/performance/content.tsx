@@ -58,8 +58,19 @@ export default function PerformancePage() {
         of the exports it actually imports. That is measured below.
       </P>
 
+      <H3>Installed-consumer correction candidates</H3>
+      <P>
+        Core 0.16.1, SDK 0.22.1 and React Native 2.0.0 candidates were measured on 2026-11-15:
+        React connection 36.09 kB, holdings query 467 B, token comparison 336 B, native headless
+        23.00 kB, native UI 5.04 kB and browser SDK 53.29 kB gzip. All six existing limits pass
+        unchanged. These source and packed checks do not mean the candidates are published;
+        see the roadmap for release status. Actual packed Vite and Next.js builds place the
+        private OneSwap hosted profile outside the initial static chunk graph. Discovery can
+        prewarm it before a wallet is selected.
+      </P>
+
       <H2 id="what-each-import-scenario-costs">What each import scenario costs</H2>
-      <P>The current candidate measures approximately 50.10 kB gzip for the SDK (53.5 kB budget),
+      <P>The earlier published checkpoint measured approximately 50.10 kB gzip for the SDK (53.5 kB budget),
         50.35 kB for React Native headless (53.75 kB budget), and 36.02 kB for the React connection
         surface (37.5 kB budget). Approved wallet runtimes and official discovery remain lazy chunks. The kit lists wallets on mount, so eligible chunks may load before the picker opens; these budgets exclude async chunks and do not measure total first-load bytes. Native ownership, abort/identity guards and the stable provider facade add about 3.5 kB. Complete transaction
         evidence, combined-only routing and signature echo checks add about 0.34 kB to the shared
@@ -169,12 +180,12 @@ export default function PerformancePage() {
           </thead>
           <tbody>
             {[
-              { scenario: 'Connect surface', measured: '36.02 kB', budget: '37.5 kB', headroom: '~3.9%' },
+              { scenario: 'Connect surface', measured: '36.09 kB', budget: '37.5 kB', headroom: '~3.8%' },
               { scenario: 'One token hook', measured: '467 B', budget: '700 B', headroom: '~33.3%' },
               { scenario: 'Matching helper', measured: '336 B', budget: '500 B', headroom: '~32.8%' },
-              { scenario: 'RN headless', measured: '50.35 kB', budget: '53.75 kB', headroom: '~6.3%' },
+              { scenario: 'RN headless', measured: '23.00 kB', budget: '53.75 kB', headroom: '~57.2%' },
               { scenario: 'RN ui', measured: '5.04 kB', budget: '5.5 kB', headroom: '~8.4%' },
-              { scenario: 'SDK client', measured: '50.10 kB', budget: '53.5 kB', headroom: '~6.4%' },
+              { scenario: 'SDK client', measured: '53.29 kB', budget: '53.5 kB', headroom: '~0.4%' },
             ].map(r => (
               <tr key={r.scenario} style={{ borderBottom: '1px solid rgba(15,23,42,0.10)' }}>
                 <td style={{ padding: '10px 14px', color: '#0B0F1A', fontSize: 13, fontWeight: 500 }}>{r.scenario}</td>

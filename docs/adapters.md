@@ -216,6 +216,11 @@ capabilityGuard(adapter, ['signMessage', 'signTransaction']);
 
 The full default catalog combines existing adapters, CIP-0103 announced providers, and reviewed official SDKs loaded lazily through the generic bridge. It is selected automatically by network and channel. Vala is Devnet beta; WalletConnect uses `config.walletConnect`, and Bron uses `config.bron`.
 
+OneSwap's hosted profile is independently implemented inside the existing SDK and
+loads through that same bridge. Its incompatible older-core vendor package is a
+development-only protocol oracle; it is not a runtime dependency. See the
+[compatibility matrix](wallet-cip0103-matrix.md).
+
 `getBuiltinAdapters()` is the synchronous legacy subset: Loop, Cantor8 and Nightly. It does not enumerate the full catalog. Omit `adapters` for the recommended defaults, use `additionalAdapters` to extend them, or supply `adapters` only when deliberately replacing them.
 
 ### Nightly Adapter
