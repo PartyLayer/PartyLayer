@@ -195,6 +195,24 @@ export function resolveEntryPoints(repoRoot, pkg, unpackedDir) {
         }
       }
     }
+    // Run each bin from the unpacked payload, not its workspace source. Build-time
+    // version injection or runtime metadata lookup must survive the shipped layout.
+    const bins = typeof pkg.bin === 'string' ? { [pkg.name]: pkg.bin } : (pkg.bin ?? {});
+    for (const [command, target] of Object.entries(bins)) {
+      try {
+        const version = execFileSync(process.execPath, [resolve(ownDir, target), '--version'], {
+          cwd: sandbox,
+          stdio: 'pipe',
+          encoding: 'utf8',
+          timeout: 30_000,
+        }).trim();
+        if (version !== pkg.version) {
+          problems.push(`${command} --version reports ${JSON.stringify(version)}; packed package version is ${pkg.version}.`);
+        }
+      } catch (error) {
+        problems.push(`${command} --version fails: ${firstLine(String(error.stderr ?? error.message ?? ''))}`);
+      }
+    }
   } finally {
     rmSync(sandbox, { recursive: true, force: true });
   }

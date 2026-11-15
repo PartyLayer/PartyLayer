@@ -1,4 +1,5 @@
 import { defineConfig } from 'tsup';
+import packageJson from './package.json';
 
 // The previous build was two `tsc` passes that emitted ESM with extensionless relative
 // specifiers, which Node cannot resolve, so the CLI could not start. tsup bundles the
@@ -16,6 +17,7 @@ export default defineConfig({
       incremental: false,
     },
   },
+  define: { __CLI_VERSION__: JSON.stringify(packageJson.version) },
   clean: true,
   sourcemap: true,
   splitting: false,

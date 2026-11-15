@@ -11,10 +11,14 @@ import { loadAdapter } from './loader';
 import { runConformanceTests, createMockContext } from './tests';
 import { generateReport, formatReportText, type ConformanceReport } from './report';
 
+// Inject the package metadata at build time so installed bins need no runtime
+// package.json path assumptions, regardless of the emitted module format.
+declare const __CLI_VERSION__: string;
+
 program
   .name('partylayer-conformance')
   .description('Run conformance tests for PartyLayer wallet adapters')
-  .version('0.1.0');
+  .version(__CLI_VERSION__);
 
 program
   .command('run')

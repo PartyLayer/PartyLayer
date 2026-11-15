@@ -24,10 +24,14 @@ import {
 import { signRegistry, writeSignature } from './sign';
 import type { RegistryWalletEntry, RegistryChannel } from '@partylayer/registry-client';
 
+// Inject the package metadata at build time so installed bins need no runtime
+// package.json path assumptions, regardless of the emitted module format.
+declare const __CLI_VERSION__: string;
+
 program
   .name('partylayer-registry')
   .description('CLI tool for managing PartyLayer wallet registry')
-  .version('0.1.0');
+  .version(__CLI_VERSION__);
 
 /**
  * Initialize registry structure

@@ -20,7 +20,8 @@
  *      registry was a file that existed but whose own relative imports Node could not
  *      resolve, so it was present and still unloadable;
  *   3. LICENSE and README.md are present;
- *   4. no `src/`, no test files, no tsconfig and no tsbuildinfo are included.
+ *   4. no `src/`, no test files, no tsconfig and no tsbuildinfo are included;
+ *   5. every declared bin reports the packed package version through `--version`.
  *
  * It packs with `pnpm pack`, not `npm pack`, because pnpm rewrites the `workspace:` protocol
  * into the range that will really be published. An npm-packed tarball would misrepresent
