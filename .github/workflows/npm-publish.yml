@@ -88,8 +88,9 @@ jobs:
       name: npm-release
     runs-on: ubuntu-24.04
     # Each package can take over five minutes to appear after npm accepts it.
-    # Read-only verification is bounded to twenty minutes per package. Keep the
-    # complete coordinated release within GitHub's six-hour hosted-job limit.
+    # Writes remain serial; accepted independent packages share a bounded
+    # read-only verification wave. Keep the complete coordinated release within
+    # GitHub's six-hour hosted-job limit.
     timeout-minutes: 360
     permissions:
       contents: read
