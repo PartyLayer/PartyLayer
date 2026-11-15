@@ -8,6 +8,7 @@
 
 ### Patch Changes
 
+- Require a secure platform random source for new connections; native runtimes without global WebCrypto can provide `crypto.randomBytes` alongside their crypto implementation. Invalid legacy SDK caches require reconnect instead of weak cryptography fallbacks.
 - Updated dependencies [727c1b3]
 - Updated dependencies [d47df49]
 - Updated dependencies [d47df49]
