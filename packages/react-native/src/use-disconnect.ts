@@ -7,7 +7,8 @@
  * without a provider.
  */
 import { useCallback, useEffect, useRef, useState } from 'react';
-import type { PartyLayerClient } from '@partylayer/sdk';
+import type { PartyLayerClient } from './client';
+
 import { useResolvedClient } from './party-layer-context';
 
 export interface UseDisconnectResult {

@@ -10,7 +10,8 @@
  * unchanged, or omitted to read the one from `PartyLayerProvider`.
  */
 import { useCallback, useEffect, useRef, useState } from 'react';
-import type { PartyLayerClient, ConnectOptions, Session, PartyLayerEvent } from '@partylayer/sdk';
+import type { PartyLayerClient, ConnectOptions, PartyLayerEvent } from './client';
+import type { Session } from '@partylayer/core';
 import { useResolvedClient } from './party-layer-context';
 
 /** The lifecycle status of the connect flow. */

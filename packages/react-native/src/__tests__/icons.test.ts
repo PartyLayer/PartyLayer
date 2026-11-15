@@ -4,7 +4,7 @@
  */
 import { describe, it, expect } from 'vitest';
 import { deriveIconFormat, walletIconInfo } from '../icons';
-import type { WalletInfo } from '@partylayer/sdk';
+import type { WalletInfo } from '@partylayer/core';
 
 describe('deriveIconFormat', () => {
   it('derives svg, png, and jpg (and jpeg) from the extension', () => {

@@ -10,7 +10,7 @@ export class PartyLayerClient extends PartyLayerClientBase {
   constructor(config: PartyLayerConfig) {
     super(config, {
       getBuiltinAdapters,
-      loadDefaultWallet,
+      loadDefaultWallet: (id, _sharedConfig, origin) => loadDefaultWallet(id, config, origin),
       createOwner: (onIdentityChanged) => new NativeConnectionOwner(onIdentityChanged),
       browserDiscovery: true,
     });

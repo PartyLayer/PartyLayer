@@ -57,10 +57,10 @@ import { nativeAdapterCopies, nativeOwnerBindings } from './native-owner-binding
 import { createSessionProvider } from './session-provider';
 import {
   DEFAULT_REGISTRY_URL,
-  type PartyLayerConfig,
+  type PartyLayerBaseConfig as PartyLayerConfig,
   type ConnectOptions,
   type WalletFilter,
-} from './config';
+} from './config-base';
 import type {
   PartyLayerEvent,
   EventHandler,

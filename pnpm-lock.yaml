@@ -781,9 +781,12 @@ importers:
       '@partylayer/core':
         specifier: workspace:^
         version: link:../core
-      '@partylayer/sdk':
+      '@partylayer/provider':
         specifier: workspace:^
-        version: link:../sdk
+        version: link:../provider
+      '@partylayer/registry-client':
+        specifier: workspace:^
+        version: link:../registry-client
       '@partylayer/session':
         specifier: workspace:^
         version: link:../session
@@ -800,6 +803,9 @@ importers:
         specifier: '>=13.0.0'
         version: 15.15.5(react-native@0.86.0(@babel/core@7.29.6)(@types/react@18.3.27)(react@18.3.1))(react@18.3.1)
     devDependencies:
+      '@partylayer/sdk':
+        specifier: workspace:^
+        version: link:../sdk
       '@testing-library/react':
         specifier: ^14.2.0
         version: 14.3.1(@types/react@18.3.27)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)

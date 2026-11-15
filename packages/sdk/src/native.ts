@@ -3,9 +3,9 @@
  * browser wallet runtimes are excluded and browser discovery stays disabled.
  */
 import { PartyLayerClientBase } from './client-base';
-import type { PartyLayerConfig as SharedPartyLayerConfig } from './config';
+import type { PartyLayerBaseConfig } from './config-base';
 
-export type PartyLayerConfig = Omit<SharedPartyLayerConfig, 'walletConnect' | 'bron' | 'discovery'>;
+export type PartyLayerConfig = Omit<PartyLayerBaseConfig, 'discovery'>;
 
 export class PartyLayerClient extends PartyLayerClientBase {
   constructor(config: PartyLayerConfig) {
@@ -27,8 +27,10 @@ export function createPartyLayer(config: PartyLayerConfig): PartyLayerClient {
   return new PartyLayerClient(config);
 }
 
-export type { ConnectOptions, WalletFilter, AdapterClass } from './config';
+export type { ConnectOptions, WalletFilter, AdapterClass } from './config-base';
 export { createWalletLedgerReader } from './wallet-ledger-reader';
 export { createApplicationLedgerReader } from './application-ledger-reader';
 export type { WalletLedgerClient, WalletLedgerReader, WalletLedgerReaderOptions } from './wallet-ledger-reader';
 export type { ApplicationLedgerReaderOptions } from './application-ledger-reader';
+
+export type { PartyLayerEvent } from './events';

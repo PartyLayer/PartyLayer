@@ -9,7 +9,8 @@
  * `ConnectModal` is the name to reach for in new code: it takes the same props and adds
  * `insets`.
  */
-import type { PartyLayerClient } from '@partylayer/sdk';
+import type { PartyLayerClient } from '../client';
+
 import type { ReactNativeTheme } from '../theme';
 import { ConnectModal, type ConnectModalInsets } from './connect-modal';
 

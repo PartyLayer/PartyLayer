@@ -31,7 +31,8 @@ import {
   Text,
   View,
 } from 'react-native';
-import type { PartyLayerClient, WalletInfo } from '@partylayer/sdk';
+import type { PartyLayerClient } from '../client';
+import type { WalletInfo } from '@partylayer/core';
 import type { ReactNativeTheme } from '../theme';
 import { useResolvedTheme } from '../theme-context';
 import { useResolvedClient } from '../party-layer-context';

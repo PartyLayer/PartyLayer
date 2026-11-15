@@ -10,7 +10,7 @@
  * (for example a URL that returns an HTML fallback), so the caller should treat
  * `unknown` as "no native renderer known" rather than guessing.
  */
-import type { WalletInfo } from '@partylayer/sdk';
+import type { WalletInfo } from '@partylayer/core';
 
 /** The icon format a wallet URL points at, inferred from its extension. */
 export type IconFormat = 'svg' | 'png' | 'jpg' | 'unknown';

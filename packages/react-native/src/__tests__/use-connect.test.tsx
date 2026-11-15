@@ -11,7 +11,8 @@
  */
 import { describe, it, expect, vi } from 'vitest';
 import { renderHook, waitFor, act } from '@testing-library/react';
-import type { PartyLayerClient, Session } from '@partylayer/sdk';
+import type { PartyLayerClient } from '../client';
+import type { Session } from '@partylayer/core';
 import { useConnect } from '../use-connect';
 
 const session = { sessionId: 's1', walletId: 'console', partyId: 'party::user' } as unknown as Session;

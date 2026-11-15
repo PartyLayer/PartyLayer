@@ -13,7 +13,8 @@
  * component does not pull `createSessionStore` into the bundle.
  */
 import { useEffect, useRef, useState } from 'react';
-import type { PartyLayerClient, Session, WalletInfo } from '@partylayer/sdk';
+import type { PartyLayerClient } from './client';
+import type { Session, WalletInfo } from '@partylayer/core';
 import { createSessionStore, type SessionStore, type SessionStoreOptions } from '@partylayer/session';
 import { createAsyncStorage } from './storage';
 import type { RNAsyncStorage } from './types';

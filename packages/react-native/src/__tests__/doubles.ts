@@ -9,7 +9,8 @@
  * stuck in `reconnecting`, so it lives in one place rather than being retyped per file.
  */
 import { vi } from 'vitest';
-import type { PartyLayerClient, WalletInfo } from '@partylayer/sdk';
+import type { PartyLayerClient } from '../client';
+import type { WalletInfo } from '@partylayer/core';
 import type { RNAsyncStorage } from '../types';
 
 export const ACCOUNT = { partyId: 'party::a' };

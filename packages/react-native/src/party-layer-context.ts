@@ -7,7 +7,8 @@
  * store into the ui bundle when these lived together, which the size gate caught.
  */
 import { createContext, useContext } from 'react';
-import type { PartyLayerClient, Session, WalletInfo } from '@partylayer/sdk';
+import type { PartyLayerClient } from './client';
+import type { Session, WalletInfo } from '@partylayer/core';
 import type { SessionStore } from '@partylayer/session';
 
 export interface PartyLayerContextValue {

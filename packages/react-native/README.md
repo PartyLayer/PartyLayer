@@ -20,16 +20,62 @@ Peer dependencies:
   for the storage factories).
 - `react-native-svg` (optional; needed only for the `./ui` entrypoint).
 
+## Migrating to 2.0
+
+Native applications continue importing the factory, hooks and UI from the same entry
+points. The package now bundles only PartyLayer's own native client code and installs
+its native-safe dependencies directly; the browser SDK and wallet vendor runtimes are
+not production dependencies. AsyncStorage 2.x remains supported.
+
+For native constructor checks, use the constructor exported by this package:
+
+```ts
+import { createReactNativeClient, PartyLayerClient } from '@partylayer/react-native';
+const client = createReactNativeClient({ network: 'devnet', app: { name: 'Native app' }, adapters: [] });
+console.log(client instanceof PartyLayerClient); // true
+```
+
+Existing SDK clients can still be passed to providers, hooks and UI through the public
+structural client interface. A factory-created native client is no longer an instance
+of a separately installed SDK constructor. Applications using SDK types or values
+directly must declare `@partylayer/sdk` themselves.
+
+### React Native Web
+
+Web applications retain browser wallet discovery, the default browser catalog and
+browser configuration options through the web entry. Install both existing packages
+in one command:
+
+```sh
+npm install @partylayer/react-native @partylayer/sdk
+```
+
+```ts
+import { createReactNativeClient, PartyLayerProvider } from '@partylayer/react-native/web';
+import { ConnectButton } from '@partylayer/react-native/ui';
+const client = createReactNativeClient({ network: 'devnet', app: { name: 'Web app' } });
+```
+
+The root's `browser` export condition also selects the web factory in browser-aware
+bundlers. Use the explicit `/web` import for unambiguous browser runtime and types.
+The SDK peer is optional for native applications and required for the web factory.
+The web SDK brings its own vendor dependency constraints. In particular, its current
+WalletConnect storage dependency declares an optional AsyncStorage 1.x peer; installing
+the web SDK alongside AsyncStorage 2.x produces an invalid npm peer tree. Web applications
+can use the SDK's default browser storage without AsyncStorage, or select a peer-compatible
+storage version. This constraint does not apply to the native-only package, which supports
+AsyncStorage 2.x without installing the browser SDK or WalletConnect dependencies.
+
 ## Native transports
 
-This native-safe client requires React Native package 1.0.6 and SDK 0.22.1 or later.
+The native build bundles PartyLayer's own native client implementation. No separate SDK installation is needed for native applications.
 
-The React Native client uses `@partylayer/sdk/native`. It shares the browser SDK's
+The React Native client shares the SDK's native implementation and its
 session, capability and transaction handling, while loading only the transports your
 application supplies in `adapters` or `additionalAdapters`. Browser wallet SDKs,
 browser popup catalogs are not loaded on a phone; extension discovery stays disabled. An empty
 adapter list therefore has no connectable wallets. For SDK class instance checks,
-import `PartyLayerClient` from `@partylayer/sdk/native`.
+import `PartyLayerClient` from `@partylayer/react-native`.
 
 Supply a `WalletAdapter`, adapter class, or an official provider/factory whose transport
 actually supports your native application. The `createReactNativeDeepLinkPlatform`
