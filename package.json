@@ -42,7 +42,7 @@
     "//gate:dead-env-vars": "A NEXT_PUBLIC_* variable set in CI or scripts but read by no product code. Setting one cannot fail, so it silently licenses the belief that a mechanism exists: NEXT_PUBLIC_MOCK_WALLETS was set in six places, read in none, and left four e2e tests switched off waiting for a switch that had been deleted. Scoped to NEXT_PUBLIC_* on purpose \u2014 those exist only to be read by app code, so the rule needs no allowlist and is always right.",
     "gate:dead-env-vars": "node --test scripts/gate/dead-env-vars.test.mjs",
     "gate:conformance": "node scripts/gate/conformance-native.mjs",
-    "gate:api": "node --test scripts/gate/api-normalize.test.mjs && node scripts/gate/api-snapshot.mjs",
+    "gate:api": "node --test scripts/gate/api-normalize.test.mjs scripts/gate/api-declarations.test.mjs scripts/gate/api-packaging.test.mjs scripts/gate/api-snapshot.test.mjs && node scripts/gate/api-snapshot.mjs",
     "gate:api:update": "node scripts/gate/api-snapshot.mjs --update",
     "gate:registry": "node scripts/gate/registry-check.mjs && node --test scripts/gate/registry-worker.test.mjs",
     "gate:wallet-marks": "node --test scripts/gate/wallet-marks-drift.test.mjs",
