@@ -31,11 +31,17 @@ which completed from `a91b9ce1089b661c5e48d6a7d1e587e4254761f1`.
 See [per-package release evidence](releases/canton-operation-kit-2026-11-14.md).
 
 The ten additional connections accepted during setup are now proven by actual
-OIDC publication. Their traditional-token restrictions still require their
-one-time npm setting verification; the earlier nine-package restriction record
-is unchanged. Registry CLI is the twentieth existing package and has not yet
-completed trusted-publisher activation. Do not describe all twenty as migrated
-or all nineteen as token-restricted on the basis of successful OIDC publication.
+OIDC publication. On 2026-11-15, npm accepted `mfa=publish` for each of those ten
+packages: Bron, Console, Send, Nightly, adapter-starter, conformance-runner,
+provider, session, testing and Vue. Together with the earlier nine-package record,
+all nineteen have accepted require-2FA/disallow-traditional-token settings. These
+are authenticated setting responses, not an additional settings-page audit.
+
+Registry CLI is the twentieth existing package. npm accepted its exact
+`PartyLayer/PartyLayer → npm-publish.yml → npm-release` publish connection
+(`bbd0ab3d-5251-4f46-83c2-19323fac1932`). Its first actual OIDC publication and
+subsequent token restriction remain pending; configuration acceptance alone is
+not proof of completed twenty-package activation.
 
 ## Owner and trust boundaries
 

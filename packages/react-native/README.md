@@ -1,5 +1,8 @@
 # @partylayer/react-native
 
+Version 2.0 separates native and web installation contracts. Follow the migration
+section below when upgrading from 1.x.
+
 React Native support for PartyLayer, with the same mental model as the web package: a
 provider at the root, hooks that need no arguments, and components that need no props.
 

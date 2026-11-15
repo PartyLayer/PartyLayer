@@ -46,6 +46,13 @@ funded transfer and swap acceptance follow the maintainer's separately scheduled
 wallet tests. Production registry-key activation and AI/agent work are not part
 of this approval.
 
+Installed-consumer follow-up candidates are SDK 0.22.1, React Native 2.0.0,
+conformance-runner 0.2.13 and registry-cli 0.1.15. They correct CLI version output,
+OneSwap's older-core runtime peer and native production dependency isolation.
+React Native 2.0 explicitly separates native and web setup with migration notes;
+the browser SDK/default wallet catalog remains the same contract. Candidate
+packed checks and source tests do not mean these follow-ups are published.
+
 An existing React application installs `@partylayer/react` and its React Query peer
 in one npm command, configures `PartyLayerKit`, and renders `ConnectButton`.
 Supported wallet runtimes come with that integration. Developers do not install or

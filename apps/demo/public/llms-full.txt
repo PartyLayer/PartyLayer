@@ -353,6 +353,10 @@ Handle user rejection, unavailable wallets, timeouts, network mismatch and unsup
 ## Native applications
 
 The native entry is available from SDK 0.22.1; SDK 0.22.0 does not include it.
+React Native applications should normally install `@partylayer/react-native` 2.0
+or later: it bundles the same native implementation without installing the web
+SDK dependency graph. The direct SDK package retains that graph for its browser
+wallet catalog.
 
 Import `createPartyLayer` from `@partylayer/sdk/native` for a native application. This
 entry shares the SDK client implementation, but registers only the native-compatible

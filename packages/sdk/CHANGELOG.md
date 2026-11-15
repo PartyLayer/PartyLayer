@@ -1,5 +1,13 @@
 # @partylayer/sdk
 
+## 0.22.1
+
+### Patch Changes
+
+- 727c1b3: Bundle PartyLayer's own native client implementation into React Native so native installations no longer pull the browser SDK or wallet vendor dependency graph. Keep AsyncStorage 2.x supported, expose the bundled constructor, and accept external SDK clients through a structural public client interface. Preserve React Native Web's browser factory through the browser export condition and explicit `/web` entry with an optional SDK peer; web applications install the SDK explicitly. Separate shared SDK configuration types from browser-only wallet configuration so native declarations remain self-contained.
+- d47df49: Replace OneSwap's runtime peer on an older core with the existing discovery owner and an independently implemented hosted-popup profile. Preserve supported protocol behavior while isolating each channel's popup and cryptographic request IDs. Uncertain dispatched writes are never replayed or labeled failed without evidence.
+- d47df49: Add a native-safe entry sharing the client implementation while preserving browser defaults. Native applications supply platform-compatible transports; browser-only automatic configuration fails explicitly.
+
 ## 0.22.0
 
 ### Minor Changes
