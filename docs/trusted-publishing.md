@@ -39,9 +39,14 @@ are authenticated setting responses, not an additional settings-page audit.
 
 Registry CLI is the twentieth existing package. npm accepted its exact
 `PartyLayer/PartyLayer → npm-publish.yml → npm-release` publish connection
-(`bbd0ab3d-5251-4f46-83c2-19323fac1932`). Its first actual OIDC publication and
-subsequent token restriction remain pending; configuration acceptance alone is
-not proof of completed twenty-package activation.
+(`bbd0ab3d-5251-4f46-83c2-19323fac1932`). Its first actual OIDC publication,
+version 0.1.15, was cryptographically verified from owner-approved
+[run 43700649247](https://github.com/PartyLayer/PartyLayer/actions/runs/43700649247).
+The owner then completed npm's web MFA and npm accepted its `mfa=publish` setting
+on 2026-11-15. All twenty existing packages now have actual OIDC publication
+evidence and accepted traditional-token restrictions. See the
+[five-package correction evidence](releases/consumer-installation-corrections-2026-11-15.md).
+Setting responses remain distinct from a separate settings-page read-back audit.
 
 ## Owner and trust boundaries
 

@@ -7,9 +7,9 @@ the remaining milestones below require their own implementation and evidence.
 
 ## Developer contract
 
-### Implementation checkpoint: 2026-11-14
+### Implementation checkpoint: 2026-11-15
 
-The published foundation is SDK 0.22.0, React 3.4.0 and CLI 0.7.2. The coordinated
+The published web baseline is SDK 0.22.1, React 3.4.0 and CLI 0.7.2. The coordinated
 release includes the operation kit and reviewed fourteen-language experience.
 The table records implementation and acceptance boundaries, not universal wallet
 or native-platform certification.
@@ -46,13 +46,15 @@ funded transfer and swap acceptance follow the maintainer's separately scheduled
 wallet tests. Production registry-key activation and AI/agent work are not part
 of this approval.
 
-Installed-consumer follow-up candidates are core 0.16.1, SDK 0.22.1, React Native 2.0.0,
-conformance-runner 0.2.13 and registry-cli 0.1.15. They correct CLI version output,
+Installed-consumer corrections were published on 2026-11-15: core 0.16.1, SDK 0.22.1,
+React Native 2.0.0, conformance-runner 0.2.13 and registry-cli 0.1.15.
+They correct CLI version output,
 OneSwap's older-core runtime peer and native production dependency isolation,
 require secure session entropy and remove weak cryptography fallbacks.
 React Native 2.0 explicitly separates native and web setup with migration notes;
-the browser SDK/default wallet catalog remains the same contract. Candidate
-packed checks and source tests do not mean these follow-ups are published.
+the browser SDK/default wallet catalog remains the same contract. All five public
+versions, SHA-512 bytes and exact-workflow provenance are verified. See the
+[correction release evidence](releases/consumer-installation-corrections-2026-11-15.md).
 
 An existing React application installs `@partylayer/react` and its React Query peer
 in one npm command, configures `PartyLayerKit`, and renders `ConnectButton`.

@@ -1,0 +1,167 @@
+{
+  "schemaVersion": 1,
+  "verifiedDate": "2026-11-15",
+  "producers": [
+    {
+      "source": "c606e8350acf34d096226eb685b9f89f1382bdf7",
+      "runId": "43700649247",
+      "runAttempt": "1"
+    }
+  ],
+  "packages": [
+    {
+      "name": "@partylayer/core",
+      "version": "0.16.1",
+      "integrity": "sha512-bl1uIG3ywv4CYqCCzeGsoqe6Cp2I9xDBM/sNmAMMbBnq21VNekcfXkIHF6Dxu2C4Bp8klpQq9owcpKKX2hPkew==",
+      "source": "c606e8350acf34d096226eb685b9f89f1382bdf7",
+      "runId": "43700649247",
+      "runAttempt": "1",
+      "signaturesVerified": true,
+      "provenanceVerified": true
+    },
+    {
+      "name": "@partylayer/sdk",
+      "version": "0.22.1",
+      "integrity": "sha512-r3DGO6DUReWSYEFhkYuO/hLajYWIzjQOVmi4v9EAqgFAtqlJUnSSPtGAsKBNgBeAx/eOltREPpSrk64Yr47+UA==",
+      "source": "c606e8350acf34d096226eb685b9f89f1382bdf7",
+      "runId": "43700649247",
+      "runAttempt": "1",
+      "signaturesVerified": true,
+      "provenanceVerified": true
+    },
+    {
+      "name": "@partylayer/react-native",
+      "version": "2.0.0",
+      "integrity": "sha512-WJQsGmnyap0OEcZdoFQ3VRdgZFkNkRvvQARYKtddvsH9MJV12SOiJQ4gfVsvqlf/BMGGQcaJqGPrM76u7AK5Xw==",
+      "source": "c606e8350acf34d096226eb685b9f89f1382bdf7",
+      "runId": "43700649247",
+      "runAttempt": "1",
+      "signaturesVerified": true,
+      "provenanceVerified": true
+    },
+    {
+      "name": "@partylayer/conformance-runner",
+      "version": "0.2.13",
+      "integrity": "sha512-/lyqT+Gh1ExHN4gHDvtH8N7/6p4lB9f3/UahPYVb+HhYKvrB90ydjz+NTLbaz8HGjjAz9lGoLgDQmtM8rEVoSw==",
+      "source": "c606e8350acf34d096226eb685b9f89f1382bdf7",
+      "runId": "43700649247",
+      "runAttempt": "1",
+      "signaturesVerified": true,
+      "provenanceVerified": true
+    },
+    {
+      "name": "@partylayer/registry-cli",
+      "version": "0.1.15",
+      "integrity": "sha512-5sQvkyO7l4wIfd/DaWNuZr8+hx20XSt6JxkPdcOAAoW2s1B4pZwJCphM/XNm9ityHuEZSLjnqhGtH1YQmjPBSQ==",
+      "source": "c606e8350acf34d096226eb685b9f89f1382bdf7",
+      "runId": "43700649247",
+      "runAttempt": "1",
+      "signaturesVerified": true,
+      "provenanceVerified": true
+    }
+  ],
+  "pending": [],
+  "securityActivation": {
+    "packages": 20,
+    "mode": "mfa=publish",
+    "evidence": "Accepted authenticated npm setting responses; registry CLI setting applied after cryptographically verified first OIDC publication. Not a separate settings-page read-back audit."
+  },
+  "consumerVerification": {
+    "source": "public npm registry",
+    "freshConsumerDirectories": true,
+    "emptyNpmUserAndGlobalConfigs": true,
+    "homePreserved": true,
+    "publicTarballCacheReused": true,
+    "workspaceOrFileDependencies": false,
+    "peerOverrides": false,
+    "aliasesOrGlobalShims": false,
+    "backendAndCli": {
+      "passed": true,
+      "packages": [
+        {
+          "name": "@partylayer/core",
+          "version": "0.16.1",
+          "integrity": "sha512-bl1uIG3ywv4CYqCCzeGsoqe6Cp2I9xDBM/sNmAMMbBnq21VNekcfXkIHF6Dxu2C4Bp8klpQq9owcpKKX2hPkew=="
+        },
+        {
+          "name": "@partylayer/sdk",
+          "version": "0.22.1",
+          "integrity": "sha512-r3DGO6DUReWSYEFhkYuO/hLajYWIzjQOVmi4v9EAqgFAtqlJUnSSPtGAsKBNgBeAx/eOltREPpSrk64Yr47+UA=="
+        },
+        {
+          "name": "@partylayer/conformance-runner",
+          "version": "0.2.13",
+          "integrity": "sha512-/lyqT+Gh1ExHN4gHDvtH8N7/6p4lB9f3/UahPYVb+HhYKvrB90ydjz+NTLbaz8HGjjAz9lGoLgDQmtM8rEVoSw=="
+        },
+        {
+          "name": "@partylayer/registry-cli",
+          "version": "0.1.15",
+          "integrity": "sha512-5sQvkyO7l4wIfd/DaWNuZr8+hx20XSt6JxkPdcOAAoW2s1B4pZwJCphM/XNm9ityHuEZSLjnqhGtH1YQmjPBSQ=="
+        }
+      ]
+    },
+    "react": {
+      "passed": true,
+      "versions": {
+        "@partylayer/react": "3.4.0",
+        "@partylayer/sdk": "0.22.1",
+        "@partylayer/core": "0.16.1",
+        "react": "18.3.1",
+        "react-dom": "18.3.1",
+        "@tanstack/react-query": "5.107.1"
+      },
+      "productionBuilds": [
+        "public CLI 0.7.2 \u2192 React 18 Vite",
+        "public CLI 0.7.2 \u2192 React 19 Next.js"
+      ],
+      "localeCatalogCount": 14
+    },
+    "native": {
+      "passed": true,
+      "asyncStorage": "2.2.0",
+      "runtimeSDK": false,
+      "browserVendors": [],
+      "skipLibCheck": false,
+      "metroBundles": 3,
+      "jestTests": 4
+    },
+    "audit": {
+      "counts": {
+        "info": 0,
+        "low": 0,
+        "moderate": 23,
+        "high": 0,
+        "critical": 0,
+        "total": 23
+      },
+      "uniqueAdvisories": [
+        {
+          "source": "1244013",
+          "package": "glob",
+          "severity": "moderate",
+          "title": "Glob: AbortSignal cancellation bypass allows post-timeout filesystem traversal",
+          "url": "https://github.com/advisories/GHSA-3g3m-2fjr-6pw4"
+        },
+        {
+          "source": "1244623",
+          "package": "minimatch",
+          "severity": "moderate",
+          "title": "minimatch has potential denial of service via globparts amplification",
+          "url": "https://github.com/advisories/GHSA-g3hv-75wg-m249"
+        },
+        {
+          "source": "1119441",
+          "package": "uuid",
+          "severity": "moderate",
+          "title": "uuid: Missing buffer bounds check in v3/v5/v6 when buf is provided",
+          "url": "https://github.com/advisories/GHSA-w5hq-g745-h8pq"
+        }
+      ]
+    },
+    "limits": [
+      "Controlled transport/security fixtures, not live wallet certification",
+      "Funded ledger transfer/swap, physical-device and full spoken screen-reader acceptance remain separately scheduled",
+      "Production registry signing-key activation remains separate"
+    ]
+  }
+}
