@@ -1,9 +1,21 @@
 {
   "exports": {
     ".": {
+      "types": "./dist/index.d.ts",
       "import": "./dist/index.mjs",
-      "require": "./dist/index.js",
-      "types": "./dist/index.d.ts"
+      "require": "./dist/index.js"
+    },
+    "./native": {
+      "types": "./dist/native.d.ts",
+      "import": "./dist/native.mjs",
+      "require": "./dist/native.js"
+    }
+  },
+  "imports": {
+    "#partylayer-hosted-wallet-profiles": {
+      "types": "./dist/internal/hosted-wallet-profiles.d.ts",
+      "import": "./dist/internal/hosted-wallet-profiles.mjs",
+      "require": "./dist/internal/hosted-wallet-profiles.js"
     }
   },
   "main": "./dist/index.js",

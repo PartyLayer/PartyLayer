@@ -15,7 +15,8 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, renderHook, waitFor, act } from '@testing-library/react';
 import { Text } from 'react-native';
-import type { PartyLayerClient, Session, WalletInfo } from '@partylayer/sdk';
+import type { PartyLayerClient } from '../client';
+import type { Session, WalletInfo } from '@partylayer/core';
 import { PartyLayerProvider, usePartyLayerContext, usePartyLayer } from '../context';
 import { useConnect } from '../use-connect';
 import { useWallets } from '../use-wallets';

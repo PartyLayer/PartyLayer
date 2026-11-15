@@ -6,8 +6,8 @@ import { mkdtempSync, mkdirSync, readFileSync, writeFileSync, rmSync, existsSync
 import { join, dirname } from 'node:path';
 import { tmpdir } from 'node:os';
 import { parse } from 'yaml';
-import { POLICY } from './owner-approved.mjs';
-import { assertPublishingWorkflow, publishPreflight, publish, verifyPublicPackage } from './owner-publish.mjs';
+import { POLICY, sourcePackages } from './owner-approved.mjs';
+import { assertPublishingWorkflow, publishPreflight, publish, verifyPublicPackage, packageWaves } from './owner-publish.mjs';
 
 const context = { repository: POLICY.repository, repositoryId: POLICY.repositoryId, actorId: POLICY.ownerId,
   triggeringActor: POLICY.ownerLogin, event: 'workflow_dispatch', ref: 'refs/heads/main', sha: 'a'.repeat(40),
@@ -31,7 +31,7 @@ function apiFixture(change = () => {}) {
   change(response);
   return async path => { assert.ok(response[path], path); return structuredClone(response[path]); };
 }
-async function fixture(fn, names = ['@partylayer/core']) {
+async function fixture(fn, names = ['@partylayer/core'], configure = () => {}) {
   const root = mkdtempSync(join(tmpdir(), 'partylayer-publish-test-'));
   try {
     writeFileSync(join(root, 'LICENSE'), 'Test license');
@@ -40,6 +40,12 @@ async function fixture(fn, names = ['@partylayer/core']) {
       writeFileSync(join(root, path, 'package.json'), JSON.stringify({ name, version: '1.0.0', main: './dist/index.js' }));
       writeFileSync(join(root, path, 'README.md'), `# ${name}\n`);
     }
+    // Give existing stop-before-dependent tests an actual selected dependency edge.
+    const sdkPath = join(root, POLICY.packages['@partylayer/sdk'], 'package.json');
+    const sdk = JSON.parse(readFileSync(sdkPath)); sdk.dependencies = { '@partylayer/core': '^1.0.0' };
+    writeFileSync(sdkPath, JSON.stringify(sdk));
+    mkdirSync(join(root, POLICY.packages['create-partylayer-app'], 'templates'), { recursive: true });
+    configure(root);
     const output = join(root, 'output'); mkdirSync(output);
     const packages = names.map((name, index) => {
       const payload = join(root, `payload-${index}`); mkdirSync(join(payload, 'package/dist'), { recursive: true });
@@ -120,7 +126,7 @@ test('post-write uncertainty preserves the receipt and never retries or sends la
   let writes = 0;
   await assert.rejects(publish(context, output, apiFixture(), { ...options, execute: () => { writes++; }, verify: async () => { throw new Error('registry temporarily unavailable'); } }), /Publishing stopped/);
   assert.equal(writes, 1);
-  assert.deepEqual(JSON.parse(readFileSync(join(output, 'publish-receipt.json'))).packages.map(p => p.status), ['unknown-stop-and-inspect']);
+  assert.deepEqual(JSON.parse(readFileSync(join(output, 'publish-receipt.json'))).packages.map(p => p.status), ['publish-accepted-unverified']);
 }, ['@partylayer/core', '@partylayer/sdk']));
 test('a partial publication keeps successful results and stops on the first failed write', async () => fixture(async ({ output, options }) => {
   let writes = 0;
@@ -135,6 +141,127 @@ test('archive tampering after validation stops every write', async () => fixture
   }), /Archive changed after validation/);
   assert.equal(writes, 0);
 }));
+function deferred() {
+  let resolve; const promise = new Promise(done => { resolve = done; });
+  return { promise, resolve };
+}
+function sourcePatch(root, name, values) {
+  const file = join(root, POLICY.packages[name], 'package.json');
+  writeFileSync(file, JSON.stringify({ ...JSON.parse(readFileSync(file)), ...values }));
+}
+
+test('wave planning covers every selected target, rejects duplicates/unknowns/cycles, and preserves independent work', () => {
+  const manifests = new Map([
+    ['a', {}], ['b', { dependencies: { a: '^1' } }], ['c', {}],
+    ['d', { optionalDependencies: { b: '^1' } }],
+    ['e', { peerDependencies: { b: '^1' }, peerDependenciesMeta: { b: { optional: true } } }],
+  ]);
+  const names = ['d', 'c', 'e', 'a', 'b'];
+  const waves = packageWaves(names, manifests);
+  assert.deepEqual(waves, [['a', 'c'], ['b'], ['d', 'e']]);
+  assert.deepEqual(waves.flat().sort(), [...names].sort());
+  assert.throws(() => packageWaves(['a', 'a'], manifests), /Duplicate/);
+  assert.throws(() => packageWaves(['missing'], manifests), /Unknown/);
+  assert.throws(() => packageWaves([], manifests), /at least one/);
+  manifests.get('a').dependencies = { d: '^1' };
+  assert.throws(() => packageWaves(names, manifests), /cycle/);
+});
+
+test('wave planning includes shipped template dev dependencies and optional peers as barriers', async () => fixture(async ({ root }) => {
+  const names = ['@partylayer/core', '@partylayer/registry-client', '@partylayer/session', 'create-partylayer-app'];
+  assert.deepEqual(packageWaves(names, sourcePackages(root), root), [
+    ['@partylayer/core'], ['@partylayer/registry-client'], ['@partylayer/session'], ['create-partylayer-app'],
+  ]);
+}, ['@partylayer/core'], root => {
+  sourcePatch(root, '@partylayer/registry-client', { optionalDependencies: { '@partylayer/core': '^1.0.0' } });
+  sourcePatch(root, '@partylayer/session', { peerDependencies: { '@partylayer/registry-client': '^1.0.0' }, peerDependenciesMeta: { '@partylayer/registry-client': { optional: true } } });
+  const template = join(root, POLICY.packages['create-partylayer-app'], 'templates/test'); mkdirSync(template);
+  writeFileSync(join(template, '_package.json'), JSON.stringify({ devDependencies: { '@partylayer/session': '^1.0.0' } }));
+}));
+
+test('writes stay serial and single-attempt; same-wave reads overlap and both block dependent writes', { timeout: 5_000 }, async () => fixture(async ({ output, options }) => {
+  const first = deferred(), second = deferred(), readsStarted = deferred();
+  const events = []; let readers = 0, maxReaders = 0, writes = 0;
+  const running = publish(context, output, apiFixture(), { ...options,
+    execute: (_command, args) => {
+      assert.equal(readers, 0, 'A write must never overlap a verification read.'); writes++;
+      const entry = JSON.parse(readFileSync(join(output, 'publish-receipt.json'))).packages.at(-1);
+      assert.equal(entry.status, 'unknown-stop-and-inspect'); events.push(`write:${entry.name}`);
+      assert.ok(args.includes('--provenance'));
+    },
+    verify: async item => {
+      events.push(`read:${item.name}`);
+      if (['@partylayer/registry-client', '@partylayer/provider'].includes(item.name)) {
+        readers++; maxReaders = Math.max(maxReaders, readers);
+        assert.equal(writes, 3, 'Every same-wave serial write must finish before its reads start.');
+        const entries = JSON.parse(readFileSync(join(output, 'publish-receipt.json'))).packages;
+        assert.ok(entries.filter(entry => entry.name !== '@partylayer/core').every(entry => entry.status === 'publish-accepted-awaiting-verification'));
+        if (readers === 2) readsStarted.resolve();
+        await (item.name === '@partylayer/registry-client' ? first.promise : second.promise);
+        readers--;
+      }
+    },
+  });
+  await readsStarted.promise; assert.equal(writes, 3); assert.equal(maxReaders, 2);
+  first.resolve(); await new Promise(resolve => setImmediate(resolve)); assert.equal(writes, 3);
+  second.resolve(); const receipt = await running;
+  assert.equal(writes, 4); assert.ok(receipt.packages.every(entry => entry.status === 'published-verified'));
+  assert.deepEqual(events.slice(0, 6), ['write:@partylayer/core', 'read:@partylayer/core', 'write:@partylayer/registry-client', 'write:@partylayer/provider', 'read:@partylayer/registry-client', 'read:@partylayer/provider']);
+}, ['@partylayer/core', '@partylayer/registry-client', '@partylayer/provider', '@partylayer/sdk'], root => {
+  sourcePatch(root, '@partylayer/registry-client', { dependencies: { '@partylayer/core': '^1.0.0' } });
+  sourcePatch(root, '@partylayer/provider', { peerDependencies: { '@partylayer/core': '^1.0.0' } });
+  sourcePatch(root, '@partylayer/sdk', { dependencies: { '@partylayer/registry-client': '^1.0.0', '@partylayer/provider': '^1.0.0' } });
+}));
+
+test('a write exception stops the wave immediately but settles accepted earlier writes and saves both outcomes', async () => fixture(async ({ output, options }) => {
+  const writes = [], reads = [];
+  await assert.rejects(publish(context, output, apiFixture(), { ...options,
+    execute: () => {
+      const entry = JSON.parse(readFileSync(join(output, 'publish-receipt.json'))).packages.at(-1);
+      writes.push(entry.name); if (writes.length === 2) throw new Error('uncertain write');
+    }, verify: async item => { reads.push(item.name); },
+  }), /Publishing stopped/);
+  assert.deepEqual(writes, ['@partylayer/core', '@partylayer/provider']);
+  assert.deepEqual(reads, ['@partylayer/core']);
+  assert.deepEqual(JSON.parse(readFileSync(join(output, 'publish-receipt.json'))).packages.map(entry => entry.status), ['published-verified', 'unknown-stop-and-inspect']);
+}, ['@partylayer/core', '@partylayer/provider', '@partylayer/registry-client']));
+
+test('a rejected verifier awaits another accepted verification, saves partial evidence, and blocks the next wave', { timeout: 5_000 }, async () => fixture(async ({ output, options }) => {
+  const slow = deferred(), started = deferred(); let writes = 0, finished = false, directory;
+  const running = publish(context, output, apiFixture(), { ...options,
+    execute: (_command, _args, cwd) => { writes++; directory = cwd; },
+    verify: async item => {
+      if (item.name === '@partylayer/core') throw new Error('integrity mismatch');
+      started.resolve(); await slow.promise;
+    },
+  });
+  const rejected = assert.rejects(running, /Publishing stopped/).then(() => { finished = true; });
+  await started.promise; await new Promise(resolve => setImmediate(resolve));
+  assert.equal(finished, false); assert.equal(writes, 2); assert.equal(existsSync(directory), true);
+  assert.deepEqual(JSON.parse(readFileSync(join(output, 'publish-receipt.json'))).packages.map(entry => entry.status), ['publish-accepted-unverified', 'publish-accepted-awaiting-verification']);
+  slow.resolve(); await rejected; assert.equal(writes, 2); assert.equal(existsSync(directory), false);
+  assert.deepEqual(JSON.parse(readFileSync(join(output, 'publish-receipt.json'))).packages.map(entry => entry.status), ['publish-accepted-unverified', 'published-verified']);
+}, ['@partylayer/core', '@partylayer/registry-client', '@partylayer/sdk']));
+
+test('an already-published wave is verified without writes and still precedes dependents', async () => fixture(async ({ output, manifest, options }) => {
+  const reads = []; let writes = 0;
+  const receipt = await publish(context, output, apiFixture(), { ...options,
+    state: async name => ({ latestVersion: '0.9.0', publishedIntegrity: manifest.packages.find(item => item.name === name).integrity }),
+    execute: () => { writes++; }, verify: async item => { reads.push(item.name); },
+  });
+  assert.equal(writes, 0); assert.deepEqual(reads, ['@partylayer/core', '@partylayer/sdk']);
+  assert.deepEqual(receipt.packages.map(entry => entry.status), ['already-published-identical', 'already-published-identical']);
+}, ['@partylayer/core', '@partylayer/sdk']));
+
+test('every independent archive is snapshotted before the first same-wave write', async () => fixture(async ({ output, manifest, options }) => {
+  let writes = 0;
+  await publish(context, output, apiFixture(), { ...options, execute: (_command, args) => {
+    const item = manifest.packages[writes++]; assert.equal(digest(readFileSync(args[1])), item.integrity);
+    if (writes === 1) writeFileSync(join(output, manifest.packages[1].filename), 'later mutable original replaced');
+  } });
+  assert.equal(writes, 2);
+}, ['@partylayer/core', '@partylayer/provider']));
+
 test('public registry verification requires matching version, integrity and dist-tag', async () => {
   const item = { name: '@partylayer/core', version: '1.0.0', integrity: 'sha512-reviewed' };
   const good = { name: item.name, version: item.version, dist: { integrity: item.integrity } };

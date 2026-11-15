@@ -6,7 +6,8 @@
  */
 import { describe, it, expect, vi } from 'vitest';
 import { renderHook, waitFor, act } from '@testing-library/react';
-import type { PartyLayerClient, WalletInfo } from '@partylayer/sdk';
+import type { PartyLayerClient } from '../client';
+import type { WalletInfo } from '@partylayer/core';
 import { useWallets } from '../use-wallets';
 
 const wallets = [

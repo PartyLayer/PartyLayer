@@ -18,17 +18,8 @@
  * `useConnect` already does, so the two behave the same way within the package.
  */
 import { useCallback, useEffect, useRef, useState } from 'react';
-import type {
-  LedgerApiParams,
-  LedgerApiResult,
-  PartyLayerClient,
-  SignMessageParams,
-  SignTransactionParams,
-  SignedMessage,
-  SignedTransaction,
-  SubmitTransactionParams,
-  TxReceipt,
-} from '@partylayer/sdk';
+import type { PartyLayerClient } from './client';
+import type { LedgerApiParams, LedgerApiResult, SignMessageParams, SignTransactionParams, SignedMessage, SignedTransaction, SubmitTransactionParams, TxReceipt } from '@partylayer/core';
 import { useResolvedClient } from './party-layer-context';
 
 interface MutationState<TParams, TResult> {

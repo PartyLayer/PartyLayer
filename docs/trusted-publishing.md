@@ -7,7 +7,7 @@ files through npm OIDC. There is no separate npm approval for each package in th
 model. The npm account retains 2FA; initial package/trust configuration can still
 require separate npm verification.
 
-**Activation status (2026-10-30):** all nine selected versions are public with the
+**Earlier activation (2026-10-30):** all nine selected versions are public with the
 reviewed SHA-512 integrity and `latest` tag. Their exact direct-publishing
 connections were verified; authenticated collaborator queries identify only
 `cayvox` with read-write access. The owner approved each specific release run.
@@ -17,8 +17,31 @@ Clean public consumer checks passed. npm accepted the **require 2FA and disallow
 traditional tokens** setting for all eight non-CLI packages; the CLI setting had
 already been accepted during its earlier release. These observations are successful
 authenticated setting responses, not a separate settings-page read-back audit.
-The other 11 existing packages have not completed this
-migration; this is not a migration claim for all 20 packages.
+That checkpoint covered nine packages only; the following coordinated release
+extends publication evidence, with separate package-security activation status.
+
+## Coordinated operation-kit release
+
+Nineteen existing package versions are public with verified SHA-512 bytes, latest
+tags, registry signatures and GitHub workflow/source provenance. Core 0.16.0 was
+published by [run 43617342925](https://github.com/PartyLayer/PartyLayer/actions/runs/43617342925)
+from `5b181acd520e2e26e28f018d1910451e3f699689`. The owner separately approved the
+remaining eighteen files in [run 43626767946](https://github.com/PartyLayer/PartyLayer/actions/runs/43626767946),
+which completed from `a91b9ce1089b661c5e48d6a7d1e587e4254761f1`.
+See [per-package release evidence](releases/canton-operation-kit-2026-11-14.md).
+
+The ten additional connections accepted during setup are now proven by actual
+OIDC publication. On 2026-11-15, npm accepted `mfa=publish` for each of those ten
+packages: Bron, Console, Send, Nightly, adapter-starter, conformance-runner,
+provider, session, testing and Vue. Together with the earlier nine-package record,
+all nineteen have accepted require-2FA/disallow-traditional-token settings. These
+are authenticated setting responses, not an additional settings-page audit.
+
+Registry CLI is the twentieth existing package. npm accepted its exact
+`PartyLayer/PartyLayer → npm-publish.yml → npm-release` publish connection
+(`bbd0ab3d-5251-4f46-83c2-19323fac1932`). Its first actual OIDC publication and
+subsequent token restriction remain pending; configuration acceptance alone is
+not proof of completed twenty-package activation.
 
 ## Owner and trust boundaries
 
@@ -71,19 +94,28 @@ alone does not prove that no other trusted-publisher connection exists.
    `npm publish <exact-file> --ignore-scripts --provenance` through OIDC. It does
    not repack source, execute package hooks, use a persistent npm token or OTP,
    manage dist-tags separately, overwrite versions or unpublish packages.
-7. Packages are published in dependency order, including dependencies inside
-   shipped CLI starter manifests. A CLI release cannot precede an unpublished SDK
-   required by its generated applications. Public registry version, integrity
-   and requested tag are checked after each write. npm can accept a publication
-   before its asynchronous processing finishes; read-only checks poll for up to
-   twenty minutes per package, within a six-hour total job limit. A package accepted
-   by npm may become visible after a local deadline; inspect the receipt and registry
-   before recovery. Integrity mismatches stop immediately, and no write
-   is retried. Preserve the partial receipt. Verify
+7. Selected packages are grouped into dependency waves using runtime, optional
+   and peer dependencies, including dependencies inside shipped CLI starter
+   manifests. Every selected dependency must be publicly verified in an earlier
+   wave; a CLI release cannot precede the SDK required by its generated applications.
+   Within a wave, npm writes remain strictly serial and single-attempt. After those
+   writes are accepted, only their read-only public version/integrity/tag checks
+   run concurrently. The next wave cannot write until every check succeeds.
+   npm can accept a publication before its asynchronous processing finishes.
+   Each package's read-only window remains bounded to twenty minutes, with the
+   existing five-second polling and eight-second HTTP request limits, within the
+   six-hour job limit. Independent packages can process during the same window;
+   this does not guarantee npm processing speed. Integrity mismatches end that
+   package's verification immediately and block the next wave; the other accepted
+   writes' read-only checks are allowed to settle and save their evidence.
+   A write exception stops every subsequent write, including the rest of its wave.
+   Only earlier accepted writes are then verified; the uncertain write is never
+   automatically repeated. Preserve the partial receipt and inspect the registry
+   before recovery: npm may finish processing after a local deadline. Verify
    provenance/signatures and a clean public installation before marking the full
    release complete and creating package-version tags at the source commit.
 
-Keep the release window serial. A changed main/check/approval policy at preflight,
+Keep the release window serial across workflow runs. A changed main/check/approval policy at preflight,
 changed registry latest, mismatched file or unknown outcome stops the operation.
 A preparation-only success proves packaging, not publication, npm trust activation
 or final provenance. Never approve an unrelated run to work around a failed gate.
@@ -179,12 +211,23 @@ mobile testing, a completed VoiceOver session or an independent security audit.
 ## Failure and recovery
 
 A multi-package release is not atomic. All selected registry states and all file
-snapshots are checked before the first write. The intent is saved before each write and each verified result updates
-`publish-receipt.json`, uploaded even if the job stops. A failed
-write or failed post-write check records `unknown-stop-and-inspect`; no write is
-automatically retried. Inspect registry version/tag/integrity and provenance before
-resuming. An identical published version is skipped only when its requested tag
-also verifies; differing bytes or an unapproved retag are a hard stop.
+snapshots are checked before the first write. `publish-receipt.json`, uploaded even
+if the job stops, records each package's progress:
+
+- `unknown-stop-and-inspect`: intent persisted before its single write. A write
+  that throws or is interrupted retains this uncertain state.
+- `publish-accepted-awaiting-verification`: npm returned success, but public
+  version, integrity and requested tag have not all been verified yet.
+- `published-verified`: the accepted write's public checks succeeded.
+- `publish-accepted-unverified`: npm accepted the write, but its public check
+  failed or timed out. This does not prove publication failed.
+- `already-published-identical`: existing bytes and the requested tag were checked
+  before publication; the package was skipped without a write or retag.
+
+After a write or verification failure, the job settles the bounded read-only
+checks for accepted writes, saves their individual outcomes, and stops. It does
+not retry writes or start a later wave. Inspect registry version/tag/integrity and
+provenance before resuming. Differing bytes or an unapproved retag are a hard stop.
 
 ## Verification
 
@@ -192,8 +235,9 @@ also verifies; differing bytes or an unapproved retag are a hard stop.
 They cover wrong actors/forks/refs/workflows/jobs, missing explicit publication,
 missing OIDC, token/OTP fallback, changed main or CI, open code-scanning alerts,
 extra reviewers, bypass/wildcard rules, source/hash drift, protected snapshots,
-configuration isolation, publication order, read-only propagation retries and
-partial-failure recovery. Tests use synthetic archives and fake writes: they
+configuration isolation, dependency/template/optional-peer wave barriers, serial
+single writes, concurrent read-only checks, bounded propagation retries and
+partial-failure recovery after all accepted checks settle. Tests use synthetic archives and fake writes: they
 neither publish real versions nor constitute a real OIDC activation test.
 
 See [npm trusted publishing](https://docs.npmjs.com/trusted-publishers/),

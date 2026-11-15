@@ -1,9 +1,9 @@
 {
   "exports": {
     ".": {
+      "types": "./dist/index.d.ts",
       "import": "./dist/index.mjs",
-      "require": "./dist/index.js",
-      "types": "./dist/index.d.ts"
+      "require": "./dist/index.js"
     }
   },
   "main": "./dist/index.js",
@@ -12,6 +12,14 @@
   "peerDependencies": {
     "@walletconnect/sign-client": "^2.26.0",
     "@walletconnect/types": "^2.26.0"
+  },
+  "peerDependenciesMeta": {
+    "@walletconnect/sign-client": {
+      "optional": true
+    },
+    "@walletconnect/types": {
+      "optional": true
+    }
   },
   "types": "./dist/index.d.ts"
 }

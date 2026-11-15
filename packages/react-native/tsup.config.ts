@@ -1,11 +1,11 @@
 import { defineConfig } from 'tsup';
 
 export default defineConfig({
-  // Two entrypoints: the headless "." and the "./ui" components. Splitting is on so
-  // the modules both share (theme, icons, hooks) live in one shared chunk rather than
-  // being inlined into each bundle, mirroring how @partylayer/react handles /query.
-  entry: ['src/index.ts', 'src/ui.ts', 'src/async-storage.ts'],
+  // Native headless/UI/storage and the explicit web entry share common chunks.
+  // The web factory alone keeps the optional browser SDK external.
+  entry: ['src/index.ts', 'src/ui.ts', 'src/async-storage.ts', 'src/web.ts'],
   format: ['cjs', 'esm'],
+  // The relative sdk-native facade bundles only our own shared source and declarations.
   dts: {
     compilerOptions: {
       composite: false,
@@ -23,6 +23,8 @@ export default defineConfig({
     'react-native-svg',
     '@react-native-async-storage/async-storage',
     '@partylayer/core',
+    '@partylayer/provider',
+    '@partylayer/registry-client',
     '@partylayer/sdk',
     '@partylayer/session',
   ],

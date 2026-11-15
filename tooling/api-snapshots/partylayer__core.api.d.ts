@@ -106,7 +106,7 @@ interface Cip0103Support { native: boolean; evidence?: string; since?: string; }
 interface ConnectRequest { appName: string; origin: string; network: string; requestedCapabilities?: string[]; state: string; redirectUri?: string; }
 interface ConnectResponse { state: string; partyId?: PartyId; sessionToken?: string; expiresAt?: number; capabilities?: string[]; error?: { code: string; message: string; }; }
 interface CostEstimation { estimationTimestamp: string; confirmationRequestTrafficCostEstimation: TrafficCost; confirmationResponseTrafficCostEstimation: TrafficCost; totalTrafficCostEstimation: TrafficCost; }
-interface CryptoAdapter { encrypt(data: string, key: string): Promise<string>; decrypt(encrypted: string, key: string): Promise<string>; generateKey(): Promise<string>; }
+interface CryptoAdapter { encrypt(data: string, key: string): Promise<string>; decrypt(encrypted: string, key: string): Promise<string>; generateKey(): Promise<string>; randomBytes?(byteLength: number): Uint8Array | Promise<Uint8Array>; }
 interface DeepLinkCallback { url?: string; data?: Record<string, unknown>; origin?: string; }
 interface DeepLinkPlatform { openUrl(url: string): void; subscribe(onCallback: (callback: DeepLinkCallback) => void): () => void; }
 interface ErrorMappingContext { walletId?: string; phase: 'connect' | 'restore' | 'signMessage' | 'signTransaction' | 'submitTransaction' | 'ledgerApi' | 'requestTransfer'; transport?: 'injected' | 'popup' | 'deeplink' | 'remote'; timeoutMs?: number; details?: Record<string, unknown>; }
@@ -188,3 +188,14 @@ type TransactionHash = string & { readonly __brand: 'TransactionHash'; };
 type TransactionStatus = 'pending' | 'submitted' | 'committed' | 'rejected' | 'failed';
 type TransportType = 'deeplink' | 'popup' | 'postmessage' | 'injected';
 type WalletId = string & { readonly __brand: 'WalletId'; };
+
+// Local declaration: "authentication.d.ts"
+declare function createAuthenticationChallenge(parameters: CreateAuthenticationChallengeParameters): AuthenticationChallenge;
+declare function formatAuthenticationMessage(challenge: AuthenticationChallenge): string;
+declare function validateAuthenticationChallenge(challenge: AuthenticationChallenge, expected: AuthenticationIdentity & { origin: string; }, now?: number): void;
+declare function verifyAuthenticationProof(parameters: VerifyAuthenticationProofParameters): Promise<AuthenticationIdentity>;
+export { type AuthenticationChallenge, type AuthenticationIdentity, type CreateAuthenticationChallengeParameters, type VerifyAuthenticationProofParameters, createAuthenticationChallenge, formatAuthenticationMessage, validateAuthenticationChallenge, verifyAuthenticationProof };
+interface AuthenticationChallenge extends AuthenticationIdentity { version: 1; origin: string; domain: string; nonce: string; issuedAt: string; expiresAt: string; }
+interface AuthenticationIdentity { partyId: string; networkId: string; }
+interface CreateAuthenticationChallengeParameters extends AuthenticationIdentity { origin: string; nonce: string; now?: number; ttlMs?: number; }
+interface VerifyAuthenticationProofParameters { proof: { nonce: string; signature: string; }; origin: string; networkId?: string; consumeChallenge(nonce: string): Promise<AuthenticationChallenge | null>; verifySignatureAndParty(parameters: { message: string; signature: string; challenge: AuthenticationChallenge; }): Promise<boolean>; now?: number; }

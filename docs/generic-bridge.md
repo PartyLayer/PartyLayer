@@ -260,6 +260,12 @@ sets its network and channel; no wallet-specific import or installation is requi
 New Path B SDKs enter that catalog through a reviewed, pinned SDK dependency and lazy loader,
 not an executable package name fetched from registry metadata.
 
+OneSwap uses an independently implemented hosted protocol profile inside the same
+SDK because its current vendor package requires an older, incompatible Core peer.
+The vendor package is pinned only for development interoperability tests. It uses
+the same generic bridge and needs no separate PartyLayer wallet package. See the
+[compatibility matrix](wallet-cip0103-matrix.md).
+
 For an advanced custom integration before catalog inclusion, the dApp can pass your adapter
 instance explicitly. This replaces the defaults; `additionalAdapters` extends them instead:
 

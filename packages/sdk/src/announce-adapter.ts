@@ -50,7 +50,7 @@ import { toPartyId, toWalletId, normalizeLedgerMethodLower, ledgerApiBodyToObjec
 import { submitViaPrepareExecute, type ExecuteVerbState } from './prepare-execute';
 import { normalizeSignedMessage } from './sign-message';
 import { assertConnectionAccepted, assertPrimaryParty } from './connection-result';
-import { nativeAdapterCopies, nativeOwnerBindings } from './native-owner';
+import { nativeAdapterCopies, nativeOwnerBindings } from './native-owner-bindings';
 
 /** Capabilities of the generic announce bridge, including before installation. */
 export function getAnnounceCapabilities(config: AnnounceAdapterConfig = {}): CapabilityKey[] {

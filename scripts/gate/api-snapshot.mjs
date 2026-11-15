@@ -7,12 +7,12 @@
  *
  *   1. tooling/api-snapshots/<pkg>.api.d.ts  — the package's public TYPE
  *      surface (the .d.ts it publishes via package.json "types"/"exports"),
- *      normalized through Prettier so cosmetic ordering/whitespace can never
- *      cause a false gate failure.
+ *      normalized through the TypeScript AST so cosmetic comments, formatting
+ *      and top-level declaration ordering do not cause false gate failures.
  *
  *   2. tooling/api-snapshots/<pkg>.pkg.json  — the package's PACKAGING
- *      surface: a normalized JSON of { name, main, module, types, exports,
- *      bin, peerDependencies } (version intentionally EXCLUDED). A
+ *      surface: a normalized JSON of { name, main, module, types, exports, imports,
+ *      bin, peerDependencies, peerDependenciesMeta } (version intentionally EXCLUDED). A
  *      peerDependencies range change or a removed exports subpath breaks
  *      consumers but never shows up in the .d.ts rollup — this catches it.
  *
@@ -20,11 +20,11 @@
  * silent breakage of the public API OR the packaging contract impossible
  * while we evolve the SDK.
  *
- * Approach — d.ts rollup (NOT Microsoft API Extractor):
- *   The @partylayer/* packages build with tsup, which already emits a single
- *   bundled dist/index.d.ts containing the FULL public type surface. That
- *   bundled file IS the published contract, so snapshotting it (Prettier-
- *   normalized) is both faithful and deterministic — no extra heavy tooling.
+ * Approach — declaration closure (NOT Microsoft API Extractor):
+ *   tsup can move public declarations into shared local chunks. Follow relative
+ *   declaration imports/re-exports recursively and snapshot each reachable file
+ *   through the existing AST canonical. External packages remain references.
+ *   Export/import condition order stays visible because it affects Node routing.
  *
  * Snapshot set is AUTO-DISCOVERED: every workspace package with
  * "private": false AND a "types" entry point, minus EXCLUDED_PACKAGES below.
@@ -50,7 +50,9 @@ import {
   readdirSync,
   mkdirSync,
 } from 'node:fs';
-import { astCanonical, buildHeader, snapshotBody } from './api-normalize.mjs';
+import { buildHeader, snapshotBody } from './api-normalize.mjs';
+import { declarationCanonical } from './api-declarations.mjs';
+import { packagingSnapshot } from './api-packaging.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const repoRoot = resolve(__dirname, '..', '..');
@@ -62,10 +64,8 @@ const UPDATE = process.argv.includes('--update');
 // Packages deliberately kept OUT of the API gate.
 //
 //   @partylayer/adapter-starter — a copy-me template, not a runtime
-//     dependency of any dApp. It builds with `tsc` (not tsup), so its
-//     index.d.ts only RE-EXPORTS from sibling files rather than inlining the
-//     full surface. Snapshotting it would be half-protection (entry file
-//     only) and a source of false failures, so it is excluded entirely.
+//     dependency of any dApp. Its exclusion is an intentional package policy;
+//     local declaration re-exports are supported by the closure collector.
 const EXCLUDED_PACKAGES = new Set(['@partylayer/adapter-starter']);
 
 // .d.ts normalization is AST-based (see ./api-normalize.mjs) — environment-stable,
@@ -127,40 +127,6 @@ function pkgSnapshotFor(name) {
   return join(snapshotDir, `${sanitize(name)}.pkg.json`);
 }
 
-// ─── Packaging-surface normalization ─────────────────────────────────────────
-// Selected fields only; version is intentionally EXCLUDED (it changes every
-// release and is not part of the consumer contract). Keys are sorted
-// recursively so a cosmetic reorder in package.json can't cause a false
-// failure, while an added/removed export subpath or a changed peerDeps range
-// still shows up as a real diff.
-const PACKAGING_FIELDS = [
-  'name',
-  'main',
-  'module',
-  'types',
-  'exports',
-  'bin',
-  'peerDependencies',
-];
-
-function stableSort(value) {
-  if (Array.isArray(value)) return value.map(stableSort);
-  if (value && typeof value === 'object') {
-    const out = {};
-    for (const key of Object.keys(value).sort()) out[key] = stableSort(value[key]);
-    return out;
-  }
-  return value;
-}
-
-function packagingSnapshot(pkgJson) {
-  const picked = {};
-  for (const field of PACKAGING_FIELDS) {
-    if (pkgJson[field] !== undefined) picked[field] = pkgJson[field];
-  }
-  return JSON.stringify(stableSort(picked), null, 2) + '\n';
-}
-
 // ─── Run ─────────────────────────────────────────────────────────────────────
 
 const packages = discoverPackages();
@@ -199,7 +165,12 @@ for (const pkg of packages) {
       missingBuild.push(ep);
       continue;
     }
-    const canonical = astCanonical(readFileSync(ep.typesPath, 'utf-8'));
+    let canonical;
+    try { canonical = declarationCanonical(ep.typesPath); }
+    catch (error) {
+      missingBuild.push({ ...ep, typesPath: `${ep.typesPath} (${error.message})` });
+      continue;
+    }
     const dtsBody = buildHeader(ep.name) + canonical;
     const dtsSnap = dtsSnapshotFor(ep.name);
     if (UPDATE) {
@@ -218,7 +189,7 @@ for (const pkg of packages) {
 }
 
 if (missingBuild.length > 0) {
-  console.error('✗ Missing built type entry points (run `pnpm build` first):');
+  console.error('✗ Missing built type declarations (run `pnpm build` first):');
   for (const ep of missingBuild) console.error(`    ${ep.name} → ${ep.typesPath}`);
   process.exit(1);
 }

@@ -61,14 +61,19 @@ the snapshot files — that is the whole point.
 
 Two committed artifacts per package, under `tooling/api-snapshots/`:
 
-- **`<pkg>.api.d.ts`** — the published `.d.ts` (the `types`/`exports` entry),
-  run through Prettier (repo config) before both writing and diffing so
-  cosmetic ordering/whitespace can never cause a false failure.
+- **`<pkg>.api.d.ts`** — the published `.d.ts` entry plus every reachable local
+  declaration chunk. Relative imports, re-exports, import types and reference paths
+  are followed with cycle/duplicate protection; external packages stay external.
+  Each file uses the existing AST canonical, keeping formatting and comments out
+  of the comparison. A missing local declaration fails the gate. Unchunked entries
+  retain their existing canonical form.
 - **`<pkg>.pkg.json`** — normalized JSON of `{ name, main, module, types,
-  exports, bin, peerDependencies }`. **`version` is excluded** (it changes
-  every release and isn't part of the consumer contract). Keys are sorted
-  recursively. This catches packaging breakage — a tightened `peerDependencies`
-  range or a removed `exports` subpath — that never appears in the `.d.ts`.
+  exports, imports, bin, peerDependencies, peerDependenciesMeta }`.
+  **`version` is excluded** (it changes every release). Ordinary metadata maps are
+  sorted, but `exports` and `imports` preserve source order recursively: Node tests
+  conditions in that order, so placing `default` before `import` can select another
+  runtime. Optional peer changes are also consumer-visible. These checks catch
+  packaging changes that never appear in a declaration entry.
 
 The set is **auto-discovered**: every workspace package with `"private": false`
 and a `"types"` entry, minus `EXCLUDED_PACKAGES` in `api-snapshot.mjs`. New

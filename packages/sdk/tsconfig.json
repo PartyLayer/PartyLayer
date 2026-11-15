@@ -2,11 +2,23 @@
   "extends": "../../tsconfig.json",
   "compilerOptions": {
     "outDir": "./dist",
-    "rootDir": "./src"
+    "rootDir": "./src",
+    "baseUrl": ".",
+    "paths": {
+      "#partylayer-hosted-wallet-profiles": [
+        "src/hosted-wallet-profiles.ts"
+      ]
+    }
   },
-  "include": ["src/**/*"],
+  "include": [
+    "src/**/*"
+  ],
   "references": [
-    { "path": "../core" },
-    { "path": "../registry-client" }
+    {
+      "path": "../core"
+    },
+    {
+      "path": "../registry-client"
+    }
   ]
 }

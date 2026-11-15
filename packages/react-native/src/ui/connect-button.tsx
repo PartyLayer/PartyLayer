@@ -8,7 +8,8 @@
  */
 import { useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
-import type { PartyLayerClient } from '@partylayer/sdk';
+import type { PartyLayerClient } from '../client';
+
 import type { ReactNativeTheme } from '../theme';
 import { useResolvedTheme } from '../theme-context';
 import { useResolvedClient } from '../party-layer-context';

@@ -1,5 +1,5 @@
-/** Reviewed, pinned official SDKs. Registry metadata never becomes executable imports. */
-import type { NetworkId, OfficialAdapterFactory, OfficialProviderAdapter, WalletAdapter } from '@partylayer/core';
+/** Reviewed official SDKs and hosted profiles. Registry metadata never becomes executable imports. */
+import type { NetworkId, OfficialAdapterFactory, WalletAdapter } from '@partylayer/core';
 import type { PartyLayerConfig } from './config';
 import { toCAIP2Network } from '@partylayer/core';
 
@@ -15,13 +15,13 @@ const loaders: Record<string, (network: NetworkId) => Promise<OfficialAdapterFac
     return cauriAdapterFactory as unknown as OfficialAdapterFactory;
   },
   oneswap: async (network) => {
-    const { createOneSwapProviderAdapter } = await import('@oneswap/wallet-cip0103-adapter');
+    const { createOneSwapHostedAdapter } = await import('#partylayer-hosted-wallet-profiles');
     return {
       providerId: 'oneswap',
-      create: (host) => createOneSwapProviderAdapter({
+      create: (host) => createOneSwapHostedAdapter({
         walletUrl: host,
         networkId: toCAIP2Network(network).networkId,
-      }) as unknown as OfficialProviderAdapter,
+      }),
     };
   },
   vala: async () => {

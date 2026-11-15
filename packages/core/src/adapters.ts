@@ -299,6 +299,13 @@ export interface CryptoAdapter {
   encrypt(data: string, key: string): Promise<string>;
   decrypt(encrypted: string, key: string): Promise<string>;
   generateKey(): Promise<string>;
+  /**
+   * Optional native session-ID entropy when platform getRandomValues is unavailable.
+   * Return exactly byteLength fresh bytes from a cryptographically secure OS RNG.
+   * Sync implementations preserve a browser's popup gesture; native bridges may
+   * return a Promise. Never return an encryption key, hardware handle or weak RNG.
+   */
+  randomBytes?(byteLength: number): Uint8Array | Promise<Uint8Array>;
 }
 
 /**

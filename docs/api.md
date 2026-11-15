@@ -38,7 +38,7 @@ interface PartyLayerConfig {
   crypto?: CryptoAdapter;
   /** Registry public keys for signature verification */
   registryPublicKeys?: string[];
-  /** Wallet adapters (default: all built-in: Console, Loop, Cantor8, Nightly) */
+  /** Optional explicit wallet list; omitted to use the browser's default catalog */
   adapters?: (WalletAdapter | AdapterClass | OfficialProviderAdapter | OfficialAdapterFactory)[];
   /** Announce-based wallet discovery */
   discovery?: {
@@ -51,6 +51,28 @@ interface PartyLayerConfig {
   logger?: LoggerAdapter;
 }
 ```
+
+### Session cryptography
+
+Core 0.16.1 and SDK 0.22.1 require cryptographically secure randomness for new
+session identifiers. The browser uses `globalThis.crypto.getRandomValues`.
+`generateSessionId()` remains synchronous and throws when that source is unavailable.
+Session identifiers correlate client state; they are not application authentication
+credentials or proof of ledger authority.
+
+For a native runtime without that global API, supply a `crypto` adapter with
+`randomBytes(byteLength)`, returning a `Uint8Array` of exactly the requested length
+or a Promise for it. The adapter must use a platform cryptographic random source.
+Its encryption key or key handle must never be reused as an identifier. Browser
+clients with WebCrypto retain the synchronous connection path needed by popup wallets.
+
+The default crypto adapter uses AES-GCM and requires WebCrypto. It rejects unavailable
+cryptography, invalid keys and unauthenticated ciphertext instead of falling back to
+plain base64. Valid existing AES-GCM caches remain readable; unsupported legacy cache
+records are discarded and require a wallet reconnect. A native custom adapter must
+provide authenticated encryption and matching decryption as well as key generation.
+Local cache encryption does not establish wallet identity or authorize server
+requests; restored state still requires the documented wallet-side validation.
 
 ---
 

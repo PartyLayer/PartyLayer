@@ -8,7 +8,8 @@
  */
 import { describe, it, expect, vi } from 'vitest';
 import { renderHook, waitFor, act } from '@testing-library/react';
-import type { PartyLayerClient } from '@partylayer/sdk';
+import type { PartyLayerClient } from '../client';
+
 import { CapabilityNotSupportedError } from '@partylayer/core';
 import { PartyLayerProvider } from '../context';
 import {

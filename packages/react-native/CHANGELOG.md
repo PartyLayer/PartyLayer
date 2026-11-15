@@ -1,5 +1,19 @@
 # @partylayer/react-native
 
+## 2.0.0
+
+### Major Changes
+
+- 727c1b3: Bundle PartyLayer's own native client implementation into React Native so native installations no longer pull the browser SDK or wallet vendor dependency graph. Keep AsyncStorage 2.x supported, expose the bundled constructor, and accept external SDK clients through a structural public client interface. Preserve React Native Web's browser factory through the browser export condition and explicit `/web` entry with an optional SDK peer; web applications install the SDK explicitly. Separate shared SDK configuration types from browser-only wallet configuration so native declarations remain self-contained.
+
+### Patch Changes
+
+- Require a secure platform random source for new connections; native runtimes without global WebCrypto can provide `crypto.randomBytes` alongside their crypto implementation. Invalid legacy SDK caches require reconnect instead of weak cryptography fallbacks.
+- Updated dependencies [727c1b3]
+- Updated dependencies [d47df49]
+- Updated dependencies [d47df49]
+  - @partylayer/sdk@0.22.1
+
 ## 1.0.5
 
 ### Patch Changes

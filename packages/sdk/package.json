@@ -1,6 +1,6 @@
 {
   "name": "@partylayer/sdk",
-  "version": "0.22.0",
+  "version": "0.22.1",
   "sideEffects": false,
   "description": "TypeScript wallet integration SDK for Canton Network, with CIP-0103 provider access, wallet discovery, sessions and supported wallet runtimes.",
   "main": "./dist/index.js",
@@ -11,6 +11,11 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.mjs",
       "require": "./dist/index.js"
+    },
+    "./native": {
+      "types": "./dist/native.d.ts",
+      "import": "./dist/native.mjs",
+      "require": "./dist/native.js"
     }
   },
   "files": [
@@ -52,7 +57,6 @@
     "@canton-network/dapp-sdk": "0.24.0",
     "@k2flabs/walley-dapp-sdk": "1.2.0",
     "@lithiumdigital/cauri-dapp-sdk": "0.2.0",
-    "@oneswap/wallet-cip0103-adapter": "0.2.0",
     "@partylayer/adapter-bron": "workspace:^",
     "@partylayer/adapter-cantor8": "workspace:^",
     "@partylayer/adapter-console": "workspace:^",
@@ -68,7 +72,15 @@
     "@walletconnect/types": "^2.26.0"
   },
   "devDependencies": {
+    "@oneswap/wallet-cip0103-adapter": "0.2.0",
     "@types/node": "^20.11.0",
     "typescript": "^5.3.3"
+  },
+  "imports": {
+    "#partylayer-hosted-wallet-profiles": {
+      "types": "./dist/internal/hosted-wallet-profiles.d.ts",
+      "import": "./dist/internal/hosted-wallet-profiles.mjs",
+      "require": "./dist/internal/hosted-wallet-profiles.js"
+    }
   }
 }

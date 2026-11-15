@@ -8,7 +8,8 @@
  */
 import { describe, it, expect, vi } from 'vitest';
 import { renderHook, waitFor, act } from '@testing-library/react';
-import type { PartyLayerClient } from '@partylayer/sdk';
+import type { PartyLayerClient } from '../client';
+
 import { PartyLayerProvider } from '../context';
 import { useAccount, useSession, useAccountEffect } from '../session-hooks';
 import { useDisconnect } from '../use-disconnect';

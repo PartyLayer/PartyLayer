@@ -12,7 +12,8 @@
  * {@link walletIconInfo}) so the UI components can pick a renderer.
  */
 import { useCallback, useEffect, useRef, useState } from 'react';
-import type { PartyLayerClient, WalletFilter, WalletInfo } from '@partylayer/sdk';
+import type { PartyLayerClient, WalletFilter } from './client';
+import type { WalletInfo } from '@partylayer/core';
 import { walletIconInfo, type WalletIconInfo } from './icons';
 import { isPartyLayerClient, useResolvedClient } from './party-layer-context';
 

@@ -111,6 +111,7 @@ export function consumerSpecifiers(pkg) {
 const REAL_FAILURES = [
   'ERR_MODULE_NOT_FOUND',
   'ERR_PACKAGE_PATH_NOT_EXPORTED',
+  'ERR_PACKAGE_IMPORT_NOT_DEFINED',
   'ERR_UNSUPPORTED_DIR_IMPORT',
   'ERR_UNKNOWN_FILE_EXTENSION',
   'ERR_INVALID_PACKAGE_TARGET',
@@ -136,6 +137,11 @@ function classify(stderr, spec, ownDir) {
   // The specifier itself never resolved: unambiguously ours.
   if (stderr.includes(`Cannot find package '${spec}'`)) return marker;
 
+  if (marker === 'ERR_PACKAGE_IMPORT_NOT_DEFINED') {
+    const manifest = /is not defined in package ([^\n]+?package\.json)(?: imported from|\n|$)/.exec(stderr);
+    return manifest && resolve(manifest[1]) === join(ownDir, 'package.json') ? marker : null;
+  }
+
   // A missing module: ours only when the missing path is inside our directory.
   const missing = /Cannot find module '([^']+)'/.exec(stderr);
   if (missing) return missing[1].startsWith(ownDir) ? marker : null;
@@ -153,7 +159,7 @@ function classify(stderr, spec, ownDir) {
  * Resolve every consumer specifier of an unpacked package. Returns a list of problems;
  * an empty list means every entry point loaded.
  */
-export function resolveEntryPoints(repoRoot, pkg, unpackedDir) {
+export function resolveEntryPoints(repoRoot, pkg, unpackedDir, { checkBinVersions = false } = {}) {
   const sandbox = makeSandbox(repoRoot, pkg.name, unpackedDir);
   // Node reports real paths. On macOS the temp dir is /var/... but resolves to
   // /private/var/..., so comparing against the unresolved path silently never matches and
@@ -193,6 +199,25 @@ export function resolveEntryPoints(repoRoot, pkg, unpackedDir) {
             problems.push(`require("${spec}") fails with ${kind}: ${firstLine(stderr)}`);
           }
         }
+      }
+    }
+    // Run each bin from the unpacked payload, not its workspace source. Build-time
+    // version injection or runtime metadata lookup must survive the shipped layout.
+    const bins = !checkBinVersions ? {}
+      : typeof pkg.bin === 'string' ? { [pkg.name]: pkg.bin } : (pkg.bin ?? {});
+    for (const [command, target] of Object.entries(bins)) {
+      try {
+        const version = execFileSync(process.execPath, [resolve(ownDir, target), '--version'], {
+          cwd: sandbox,
+          stdio: 'pipe',
+          encoding: 'utf8',
+          timeout: 30_000,
+        }).trim();
+        if (version !== pkg.version) {
+          problems.push(`${command} --version reports ${JSON.stringify(version)}; packed package version is ${pkg.version}.`);
+        }
+      } catch (error) {
+        problems.push(`${command} --version fails: ${firstLine(String(error.stderr ?? error.message ?? ''))}`);
       }
     }
   } finally {

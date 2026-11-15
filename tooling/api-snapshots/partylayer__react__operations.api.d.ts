@@ -27,3 +27,13 @@ interface TransferInboxSnapshot { walletId: string; partyId: string; networkId: 
 interface UseReviewedTransactionParameters<Input> extends UseTransactionFlowParameters { networkId: string; prepare?: (input: Input, context: OperationPreparationContext) => Promise<PreparedOperation>; preparationTimeoutMs?: number; }
 type TransferInboxActionKind = 'accept' | 'reject' | 'withdraw';
 type TransferInboxEntry = { standard: 'v1'; reference: TokenTransferInstructionV1Ref; } | { standard: 'v2'; reference: TokenTransferInstructionV2Ref; };
+
+// Local declaration: "use-transaction-flow-DUgGBdR4.d.ts"
+declare function useTransactionFlow(parameters?: UseTransactionFlowParameters): UseTransactionFlowReturn;
+export { type TransactionFlowRecord as T, type UseTransactionFlowParameters as U, type TransactionConfirmation as a, type TransactionFlowStatus as b, type UseTransactionFlowReturn as c, useTransactionFlow as u };
+import { TxReceipt, SubmitTransactionParams } from '@partylayer/core';
+interface TransactionFlowRecord { readonly id: string; readonly walletId: string; readonly partyId: string; readonly networkId: string; readonly status: TransactionFlowStatus; readonly createdAt: number; readonly updatedAt: number; readonly commandId?: string; readonly restored?: boolean; readonly receipt?: TxReceipt; readonly updateId?: string; readonly error?: Error; }
+interface UseTransactionFlowParameters { confirm?(parameters: { transaction: TransactionFlowRecord; signal: AbortSignal; }): Promise<TransactionConfirmation>; confirmationTimeoutMs?: number; }
+interface UseTransactionFlowReturn { transaction: TransactionFlowRecord | null; transactions: readonly TransactionFlowRecord[]; isPending: boolean; submitTransaction(parameters: SubmitTransactionParams, metadata?: { commandId: string; }): Promise<TransactionFlowRecord>; reconcile(id: string): Promise<TransactionFlowRecord>; }
+type TransactionConfirmation = { status: 'confirmed'; updateId: string; } | { status: 'failed'; reason: string; } | { status: 'unknown'; reason?: string; };
+type TransactionFlowStatus = 'awaitingApproval' | 'submitted' | 'confirmed' | 'rejected' | 'failed' | 'unknown';

@@ -64,66 +64,34 @@ export class DefaultCrypto implements CryptoAdapter {
   }
 
   async encrypt(data: string, key: string): Promise<string> {
-    if (typeof crypto === 'undefined' || !crypto.subtle) {
-      // Fallback to base64
-      return btoa(data);
-    }
-
-    try {
-      const cryptoKey = await this.getKey(key);
-      const iv = crypto.getRandomValues(new Uint8Array(12));
-      const encoder = new TextEncoder();
-      const encoded = encoder.encode(data);
-
-      const encrypted = await crypto.subtle.encrypt(
-        { name: 'AES-GCM', iv },
-        cryptoKey,
-        encoded
-      );
-
-      const combined = new Uint8Array(iv.length + encrypted.byteLength);
-      combined.set(iv);
-      combined.set(new Uint8Array(encrypted), iv.length);
-
-      return btoa(String.fromCharCode(...combined));
-    } catch {
-      return btoa(data);
-    }
+    const iv = new Uint8Array(this.randomBytes(12));
+    const cryptoKey = await this.getKey(key);
+    const encrypted = await globalThis.crypto.subtle.encrypt(
+      { name: 'AES-GCM', iv }, cryptoKey, new TextEncoder().encode(data)
+    );
+    const combined = new Uint8Array(iv.length + encrypted.byteLength);
+    combined.set(iv); combined.set(new Uint8Array(encrypted), iv.length);
+    return btoa(String.fromCharCode(...combined));
   }
 
   async decrypt(encrypted: string, key: string): Promise<string> {
-    if (typeof crypto === 'undefined' || !crypto.subtle) {
-      return atob(encrypted);
-    }
+    const cryptoKey = await this.getKey(key);
+    const combined = Uint8Array.from(atob(encrypted), character => character.charCodeAt(0));
+    if (combined.length < 28) throw new Error('Invalid AES-GCM session ciphertext');
+    const decrypted = await globalThis.crypto.subtle.decrypt(
+      { name: 'AES-GCM', iv: combined.slice(0, 12) }, cryptoKey, combined.slice(12)
+    );
+    return new TextDecoder('utf-8', { fatal: true }).decode(decrypted);
+  }
 
-    try {
-      const cryptoKey = await this.getKey(key);
-      const combined = Uint8Array.from(atob(encrypted), (c) => c.charCodeAt(0));
-
-      const iv = combined.slice(0, 12);
-      const data = combined.slice(12);
-
-      const decrypted = await crypto.subtle.decrypt(
-        { name: 'AES-GCM', iv },
-        cryptoKey,
-        data
-      );
-
-      const decoder = new TextDecoder();
-      return decoder.decode(decrypted);
-    } catch {
-      return atob(encrypted);
-    }
+  randomBytes(byteLength: number): Uint8Array {
+    if (!globalThis.crypto?.getRandomValues) throw new Error('Secure random entropy is unavailable');
+    if (!Number.isInteger(byteLength) || byteLength < 1 || byteLength > 65_536) throw new Error('Invalid secure byte length');
+    return globalThis.crypto.getRandomValues(new Uint8Array(byteLength));
   }
 
   async generateKey(): Promise<string> {
-    if (typeof crypto === 'undefined' || !crypto.getRandomValues) {
-      return Math.random().toString(36).substring(2, 15);
-    }
-
-    const array = new Uint8Array(32);
-    crypto.getRandomValues(array);
-    return Array.from(array, (b) => b.toString(16).padStart(2, '0')).join('');
+    return Array.from(this.randomBytes(32), byte => byte.toString(16).padStart(2, '0')).join('');
   }
 }
 

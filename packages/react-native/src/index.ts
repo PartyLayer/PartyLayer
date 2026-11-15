@@ -15,7 +15,7 @@ export type { PartyLayerProviderProps, PartyLayerContextValue } from './context'
 
 export { createReactNativeDeepLinkPlatform } from './deeplink-platform';
 export { createAsyncStorage, createAsyncStorageAdapter } from './storage';
-export { createReactNativeClient } from './client';
+export { createReactNativeClient, PartyLayerClient } from './client';
 export type { ReactNativeClientConfig } from './client';
 export type { RNLinking, RNAsyncStorage } from './types';
 
