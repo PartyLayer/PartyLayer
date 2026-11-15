@@ -106,7 +106,7 @@ interface Cip0103Support { native: boolean; evidence?: string; since?: string; }
 interface ConnectRequest { appName: string; origin: string; network: string; requestedCapabilities?: string[]; state: string; redirectUri?: string; }
 interface ConnectResponse { state: string; partyId?: PartyId; sessionToken?: string; expiresAt?: number; capabilities?: string[]; error?: { code: string; message: string; }; }
 interface CostEstimation { estimationTimestamp: string; confirmationRequestTrafficCostEstimation: TrafficCost; confirmationResponseTrafficCostEstimation: TrafficCost; totalTrafficCostEstimation: TrafficCost; }
-interface CryptoAdapter { encrypt(data: string, key: string): Promise<string>; decrypt(encrypted: string, key: string): Promise<string>; generateKey(): Promise<string>; }
+interface CryptoAdapter { encrypt(data: string, key: string): Promise<string>; decrypt(encrypted: string, key: string): Promise<string>; generateKey(): Promise<string>; randomBytes?(byteLength: number): Uint8Array | Promise<Uint8Array>; }
 interface DeepLinkCallback { url?: string; data?: Record<string, unknown>; origin?: string; }
 interface DeepLinkPlatform { openUrl(url: string): void; subscribe(onCallback: (callback: DeepLinkCallback) => void): () => void; }
 interface ErrorMappingContext { walletId?: string; phase: 'connect' | 'restore' | 'signMessage' | 'signTransaction' | 'submitTransaction' | 'ledgerApi' | 'requestTransfer'; transport?: 'injected' | 'popup' | 'deeplink' | 'remote'; timeoutMs?: number; details?: Record<string, unknown>; }

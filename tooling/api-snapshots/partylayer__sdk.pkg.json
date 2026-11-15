@@ -11,6 +11,13 @@
       "require": "./dist/native.js"
     }
   },
+  "imports": {
+    "#partylayer-hosted-wallet-profiles": {
+      "types": "./dist/internal/hosted-wallet-profiles.d.ts",
+      "import": "./dist/internal/hosted-wallet-profiles.mjs",
+      "require": "./dist/internal/hosted-wallet-profiles.js"
+    }
+  },
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",
   "name": "@partylayer/sdk",
