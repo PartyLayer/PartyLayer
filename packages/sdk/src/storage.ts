@@ -4,6 +4,7 @@
  */
 
 import type { Session } from '@partylayer/core';
+import { DefaultCrypto } from './adapters';
 // InvalidSessionError removed - use SessionExpiredError or OriginNotAllowedError instead
 
 /**
@@ -11,114 +12,8 @@ import type { Session } from '@partylayer/core';
  */
 const STORAGE_PREFIX = 'partylayer_session_';
 
-/**
- * Simple encryption/decryption using Web Crypto API
- * In production, consider using a more robust encryption scheme
- */
-class SessionEncryption {
-  private static readonly ALGORITHM = 'AES-GCM';
-  private static readonly KEY_LENGTH = 256;
-  private static readonly IV_LENGTH = 12;
-
-  /**
-   * Generate encryption key from origin (deterministic)
-   */
-  private static async getKey(origin: string): Promise<CryptoKey> {
-    const encoder = new TextEncoder();
-    const data = encoder.encode(origin);
-    const hash = await crypto.subtle.digest('SHA-256', data);
-    return crypto.subtle.importKey(
-      'raw',
-      hash.slice(0, this.KEY_LENGTH / 8),
-      { name: this.ALGORITHM },
-      false,
-      ['encrypt', 'decrypt']
-    );
-  }
-
-  /**
-   * Encrypt session data
-   */
-  static async encrypt(
-    data: string,
-    origin: string
-  ): Promise<string> {
-    if (typeof crypto === 'undefined' || !crypto.subtle) {
-      // Fallback for environments without Web Crypto API
-      return btoa(data);
-    }
-
-    try {
-      const key = await this.getKey(origin);
-      const iv = crypto.getRandomValues(
-        new Uint8Array(this.IV_LENGTH)
-      );
-      const encoder = new TextEncoder();
-      const encoded = encoder.encode(data);
-
-      const encrypted = await crypto.subtle.encrypt(
-        {
-          name: this.ALGORITHM,
-          iv,
-        },
-        key,
-        encoded
-      );
-
-      // Combine IV and encrypted data
-      const combined = new Uint8Array(
-        iv.length + encrypted.byteLength
-      );
-      combined.set(iv);
-      combined.set(new Uint8Array(encrypted), iv.length);
-
-      // Convert to base64
-      return btoa(String.fromCharCode(...combined));
-    } catch (error) {
-      // Fallback to base64 if encryption fails
-      return btoa(data);
-    }
-  }
-
-  /**
-   * Decrypt session data
-   */
-  static async decrypt(
-    encrypted: string,
-    origin: string
-  ): Promise<string> {
-    if (typeof crypto === 'undefined' || !crypto.subtle) {
-      // Fallback for environments without Web Crypto API
-      return atob(encrypted);
-    }
-
-    try {
-      const key = await this.getKey(origin);
-      const combined = Uint8Array.from(
-        atob(encrypted),
-        (c) => c.charCodeAt(0)
-      );
-
-      const iv = combined.slice(0, this.IV_LENGTH);
-      const data = combined.slice(this.IV_LENGTH);
-
-      const decrypted = await crypto.subtle.decrypt(
-        {
-          name: this.ALGORITHM,
-          iv,
-        },
-        key,
-        data
-      );
-
-      const decoder = new TextDecoder();
-      return decoder.decode(decrypted);
-    } catch (error) {
-      // Fallback to base64 if decryption fails
-      return atob(encrypted);
-    }
-  }
-}
+/** Legacy storage shares the SDK's authenticated, fail-closed AES cache codec. */
+const sessionEncryption = new DefaultCrypto();
 
 /**
  * Session storage interface
@@ -154,7 +49,7 @@ export class LocalSessionStorage implements SessionStorage {
         return null;
       }
 
-      const decrypted = await SessionEncryption.decrypt(
+      const decrypted = await sessionEncryption.decrypt(
         encrypted,
         this.origin
       );
@@ -182,7 +77,7 @@ export class LocalSessionStorage implements SessionStorage {
     try {
       const key = `${STORAGE_PREFIX}${session.sessionId}`;
       const data = JSON.stringify(session);
-      const encrypted = await SessionEncryption.encrypt(data, this.origin);
+      const encrypted = await sessionEncryption.encrypt(data, this.origin);
       localStorage.setItem(key, encrypted);
     } catch (error) {
       // Silently fail if storage is unavailable

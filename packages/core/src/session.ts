@@ -9,7 +9,9 @@ import { toSessionId } from './types';
  * Generate a unique session ID
  */
 export function generateSessionId(): SessionId {
-  return toSessionId(`session_${Date.now()}_${Math.random().toString(36).substring(2, 15)}`);
+  if (!globalThis.crypto?.getRandomValues) throw new Error('Secure random session entropy is unavailable');
+  const bytes = globalThis.crypto.getRandomValues(new Uint8Array(32));
+  return toSessionId(`session_${Date.now()}_${Array.from(bytes, byte => byte.toString(16).padStart(2, '0')).join('')}`);
 }
 
 /**

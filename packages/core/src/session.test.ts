@@ -2,7 +2,7 @@
  * Tests for session utilities
  */
 
-import { describe, it, expect } from 'vitest';
+import { afterEach, describe, it, expect, vi } from 'vitest';
 import {
   generateSessionId,
   validateSession,
@@ -11,8 +11,18 @@ import {
 } from './session';
 import type { Session } from './types';
 
+afterEach(() => { vi.unstubAllGlobals(); vi.restoreAllMocks(); });
+
 describe('session utilities', () => {
   describe('generateSessionId', () => {
+    it('uses platform entropy rather than Math.random and fails when no CSPRNG is available', () => {
+      const weak = vi.spyOn(Math, 'random');
+      const id = generateSessionId();
+      expect(id).toMatch(/^session_\d+_[a-f0-9]{64}$/);
+      expect(weak).not.toHaveBeenCalled();
+      vi.stubGlobal('crypto', undefined);
+      expect(() => generateSessionId()).toThrow(/secure|random|crypto/i);
+    });
     it('should generate unique session IDs', () => {
       const id1 = generateSessionId();
       const id2 = generateSessionId();

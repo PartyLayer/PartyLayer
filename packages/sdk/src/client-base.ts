@@ -25,7 +25,6 @@ import type {
   NetworkId,
 } from '@partylayer/core';
 import {
-  toSessionId,
   toWalletId,
   WalletNotFoundError,
   AdapterNotRegisteredError,
@@ -91,6 +90,7 @@ import type {
   TransferResult,
 } from '@partylayer/core';
 import { toTransferIntent } from '@partylayer/core';
+import { createSecureSessionId } from './session-id';
 
 /**
  * Storage key used for the active session.
@@ -1086,8 +1086,8 @@ export class PartyLayerClientBase {
   }
 
   /**
-   * Invoke `adapter.connect()` (its FIRST statement — no await precedes it) and
-   * build / persist / emit the session. Separated from plan resolution so the
+   * Generate secure entropy, invoke `adapter.connect()` without awaiting the
+   * platform RNG path, then build / persist / emit the session. Separated from plan resolution so the
    * popup-safe fast-path can call it gesture-synchronously.
    */
   private async completeConnect(
@@ -1102,6 +1102,11 @@ export class PartyLayerClientBase {
     if (attempt === undefined) ++this.sessionRevision;
     if (this.destroyed || currentAttempt !== this.connectionAttempt) throw new Error('Wallet connection was superseded');
     const { selectedWallet, adapter, ctx } = plan;
+    // Entropy must succeed before wallet calls/release. Do not await the normal
+    // platform path: a prepared browser connect must retain its user gesture.
+    const entropy = createSecureSessionId(this.crypto);
+    const sessionId = typeof entropy === 'string' ? entropy : await entropy;
+    if (this.destroyed || currentAttempt !== this.connectionAttempt) throw new Error('Wallet connection was superseded');
     if (!nativeOwnerBindings.has(adapter) && this.nativeOwner?.getSession()) this.nativeOwner.release();
 
     // Connect
@@ -1141,7 +1146,7 @@ export class PartyLayerClientBase {
 
     // Create session
     const session: Session = {
-      sessionId: toSessionId(`session_${Date.now()}_${Math.random().toString(36).substring(2, 15)}`),
+      sessionId,
       walletId: selectedWallet.walletId,
       partyId: result.partyId,
       // The wallet's reported network (adapters that read the live wallet —
@@ -1890,6 +1895,10 @@ export class PartyLayerClientBase {
       this.activeSessionNeedsProbe = true;
       return session;
     } catch (err) {
+      // Corrupt or legacy plaintext caches cannot authenticate a restore. A
+      // superseded restore must not clear a newer connection's queued storage.
+      if (!current()) return this.activeSession;
+      await this.removeSession();
       this.log('warn', 'session:restore_failed', 'Failed to restore session', {
         error: err instanceof Error ? err.message : String(err),
       }, correlationId);
