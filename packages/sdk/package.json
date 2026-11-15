@@ -57,7 +57,6 @@
     "@canton-network/dapp-sdk": "0.24.0",
     "@k2flabs/walley-dapp-sdk": "1.2.0",
     "@lithiumdigital/cauri-dapp-sdk": "0.2.0",
-    "@oneswap/wallet-cip0103-adapter": "0.2.0",
     "@partylayer/adapter-bron": "workspace:^",
     "@partylayer/adapter-cantor8": "workspace:^",
     "@partylayer/adapter-console": "workspace:^",
@@ -73,6 +72,7 @@
     "@walletconnect/types": "^2.26.0"
   },
   "devDependencies": {
+    "@oneswap/wallet-cip0103-adapter": "0.2.0",
     "@types/node": "^20.11.0",
     "typescript": "^5.3.3"
   }

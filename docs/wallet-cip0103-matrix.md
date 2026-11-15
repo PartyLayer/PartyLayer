@@ -16,7 +16,7 @@ than interpreting registry metadata as a guarantee that a method is available.
 | Console | CIP-0103 announce through official discovery | Devnet, Testnet, Mainnet | Native account/network responses; declared base64 message encoding. The old SDK wrapper is an explicit compatibility path. |
 | Send | CIP-0103 announce through official discovery | Mainnet | Mainnet-only; never offer it as a Devnet test wallet. |
 | Cauri | Official `cauriAdapterFactory` through shared discovery | Devnet, Mainnet | Hosted approval. Native provider events can be forwarded; the generic adapter does not promise normalized transaction-status events. |
-| OneSwap V2 | Official provider adapter through shared discovery | Devnet, Mainnet | `prepareExecuteAndWait` is unsupported; negotiate once, then use `prepareExecute`. Fresh explicit connection is required after reload. |
+| OneSwap V2 | Hosted CIP-0103 profile through shared discovery | Devnet, Mainnet | `prepareExecuteAndWait` is unsupported; negotiate once, then use `prepareExecute`. Fresh explicit connection is required after reload. |
 | Walley | Official `WalleyAdapter` through shared discovery | Devnet, Testnet, Mainnet | Hosted popup and its declared network host; official SDK requires the older compatible Canton SDK peer. |
 | Vala | Official `valaAdapterFactory` through shared discovery | Devnet, beta only | Deployment signing API must be enabled. Live transaction acceptance remains open. No transaction-status event guarantee. |
 | Loop | Existing compatibility integration with official Loop SDK | Devnet, Mainnet | Popup/QR transport. Message signing, ledger submission and intent-level transfer are separate operations. |
@@ -44,8 +44,21 @@ passed PartyLayer's compatibility and live acceptance checks.
 | `@cantor8/wallet-connect-sdk` | 0.4.0 | 0.9.0 | Retained compatibility version. 0.9 adds signing and changes account/session handling; those features are not advertised by the shipped 0.4 integration. |
 | `@k2flabs/walley-dapp-sdk` | 1.2.0 | 1.2.0 | Current; preserve its `@canton-network/dapp-sdk ^0.24.0` peer. |
 | `@lithiumdigital/cauri-dapp-sdk` | 0.2.0 | 0.2.0 | Current. |
-| `@oneswap/wallet-cip0103-adapter` | 0.2.0 | 0.2.0 | Current; its older PartyLayer core peer is tested through a normal packed npm install, without forcing peer resolution. |
+| `@oneswap/wallet-cip0103-adapter` | 0.2.0 (test only) | 0.2.0 | Its `@partylayer/core ^0.12.1` peer excludes core 0.16. It is a development-only protocol oracle; the runtime uses an independent hosted profile. |
 | `@vala-wallet/dapp-sdk` | 0.1.0 | 0.1.0 | Current; contradictory command IDs are rejected at the shared SDK/provider boundary. |
+
+The OneSwap peer conflict was confirmed in a clean public npm consumer on
+2026-11-15. Its [documented hosted protocol](https://www.npmjs.com/package/@oneswap/wallet-cip0103-adapter)
+is implemented through the shared hosted-popup channel, with account, signing,
+execution, error and popup-lifecycle parity checked against the published package.
+This preserves the default wallet without installing an older core at runtime.
+The hosted provider reports the last wallet-approved account and connection
+state, not proof that a remote wallet session remains fresh. Closing an idle
+popup is not verified logout; an explicit request can reopen the popup. A new
+approved connect response supplies any changed account. Explicit disconnect or
+teardown clears the local identity. A lost execution response is an unknown
+ledger outcome, so it never causes automatic write replay or a fabricated failed
+transaction event. Live login and funded acceptance remain separate checks.
 
 Daily dependency PRs and release gates review upgrades. Do not automatically ship
 an unreviewed upstream runtime, or rewrite the version table without checking the
