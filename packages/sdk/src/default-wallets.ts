@@ -1,4 +1,4 @@
-/** Reviewed, pinned official SDKs. Registry metadata never becomes executable imports. */
+/** Reviewed official SDKs and hosted profiles. Registry metadata never becomes executable imports. */
 import type { NetworkId, OfficialAdapterFactory, WalletAdapter } from '@partylayer/core';
 import type { PartyLayerConfig } from './config';
 import { toCAIP2Network } from '@partylayer/core';
