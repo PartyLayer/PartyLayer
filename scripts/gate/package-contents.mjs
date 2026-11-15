@@ -12,7 +12,7 @@
  * once the package is packed. So this packs every publishable package and asserts, per
  * package:
  *
- *   1. every target named in `exports`, `main`, `module`, `types` and `bin` exists in the
+ *   1. every target named in `exports`, `imports`, `main`, `module`, `types` and `bin` exists in the
  *      tarball, so nothing points at a file that was never emitted;
  *   2. every consumer-visible entry point actually RESOLVES, by running a real import and,
  *      where a `require` condition is declared, a real require, against the unpacked
@@ -41,6 +41,7 @@ import { dirname, join, resolve } from 'node:path';
 import { readdirSync, existsSync, readFileSync, mkdtempSync, rmSync, mkdirSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { resolveEntryPoints } from './pack-resolve.mjs';
+import { missingDeclaredTargets } from './package-targets.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const repoRoot = resolve(__dirname, '..', '..');
@@ -67,23 +68,6 @@ function publishablePackages() {
     }
   }
   return out.sort((a, b) => a.name.localeCompare(b.name));
-}
-
-/** Every path a consumer can be routed to by the manifest. */
-function declaredTargets(pkg) {
-  const targets = new Set();
-  const add = (value) => {
-    if (typeof value === 'string' && value.startsWith('.')) targets.add(value.replace(/^\.\//, ''));
-  };
-  const walk = (node) => {
-    if (typeof node === 'string') return add(node);
-    if (node && typeof node === 'object') for (const value of Object.values(node)) walk(value);
-  };
-  walk(pkg.exports);
-  for (const field of ['main', 'module', 'types', 'typings']) add(pkg[field]);
-  if (typeof pkg.bin === 'string') add(pkg.bin);
-  else if (pkg.bin) for (const value of Object.values(pkg.bin)) add(value);
-  return [...targets];
 }
 
 // LICENSE is generated and gitignored, so make sure it exists before judging its absence.
@@ -127,7 +111,7 @@ try {
       .map((entry) => entry.replace(/^\.?\//, '').replace(/\/$/, '') + '/');
     const isPayload = (file) => payloadPrefixes.some((prefix) => file.startsWith(prefix));
 
-    const missing = declaredTargets(pkg).filter((target) => !files.has(target));
+    const missing = missingDeclaredTargets(pkg, files);
     if (missing.length > 0) {
       problems.push(
         `names ${missing.join(', ')} in its manifest, but the tarball has no such file. ` +

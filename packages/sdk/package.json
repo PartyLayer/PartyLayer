@@ -75,5 +75,12 @@
     "@oneswap/wallet-cip0103-adapter": "0.2.0",
     "@types/node": "^20.11.0",
     "typescript": "^5.3.3"
+  },
+  "imports": {
+    "#partylayer-hosted-wallet-profiles": {
+      "types": "./dist/internal/hosted-wallet-profiles.d.ts",
+      "import": "./dist/internal/hosted-wallet-profiles.mjs",
+      "require": "./dist/internal/hosted-wallet-profiles.js"
+    }
   }
 }

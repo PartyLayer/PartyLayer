@@ -15,7 +15,7 @@ const loaders: Record<string, (network: NetworkId) => Promise<OfficialAdapterFac
     return cauriAdapterFactory as unknown as OfficialAdapterFactory;
   },
   oneswap: async (network) => {
-    const { createOneSwapHostedAdapter } = await import('./hosted-wallet-profiles');
+    const { createOneSwapHostedAdapter } = await import('#partylayer-hosted-wallet-profiles');
     return {
       providerId: 'oneswap',
       create: (host) => createOneSwapHostedAdapter({

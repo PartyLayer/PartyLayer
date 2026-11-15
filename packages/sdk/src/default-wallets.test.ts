@@ -30,7 +30,7 @@ vi.mock('@lithiumdigital/cauri-dapp-sdk', () => ({ cauriAdapterFactory: {
 vi.mock('@vala-wallet/dapp-sdk', () => ({ valaAdapterFactory: {
   providerId: 'vala', create: (host: string) => mocks.create(host, 'vala'),
 } }));
-vi.mock('./hosted-wallet-profiles', () => ({
+vi.mock('#partylayer-hosted-wallet-profiles', () => ({
   createOneSwapHostedAdapter: ({ walletUrl }: { walletUrl: string }) => mocks.create(walletUrl, 'oneswap'),
 }));
 

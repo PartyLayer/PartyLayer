@@ -1,7 +1,7 @@
 import { defineConfig } from 'tsup';
 
 export default defineConfig({
-  entry: ['src/index.ts', 'src/native.ts'],
+  entry: { index: 'src/index.ts', native: 'src/native.ts', 'internal/hosted-wallet-profiles': 'src/hosted-wallet-profiles.ts' },
   format: ['cjs', 'esm'],
   dts: {
     compilerOptions: {
@@ -14,6 +14,8 @@ export default defineConfig({
   splitting: false,
   treeshake: true,
   external: [
+    // Preserve the package-private dynamic boundary instead of inlining the profile.
+    '#partylayer-hosted-wallet-profiles',
     '@partylayer/core',
     '@partylayer/registry-client',
     '@partylayer/adapter-console',

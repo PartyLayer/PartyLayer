@@ -111,6 +111,7 @@ export function consumerSpecifiers(pkg) {
 const REAL_FAILURES = [
   'ERR_MODULE_NOT_FOUND',
   'ERR_PACKAGE_PATH_NOT_EXPORTED',
+  'ERR_PACKAGE_IMPORT_NOT_DEFINED',
   'ERR_UNSUPPORTED_DIR_IMPORT',
   'ERR_UNKNOWN_FILE_EXTENSION',
   'ERR_INVALID_PACKAGE_TARGET',
@@ -135,6 +136,11 @@ function classify(stderr, spec, ownDir) {
 
   // The specifier itself never resolved: unambiguously ours.
   if (stderr.includes(`Cannot find package '${spec}'`)) return marker;
+
+  if (marker === 'ERR_PACKAGE_IMPORT_NOT_DEFINED') {
+    const manifest = /is not defined in package ([^\n]+?package\.json)(?: imported from|\n|$)/.exec(stderr);
+    return manifest && resolve(manifest[1]) === join(ownDir, 'package.json') ? marker : null;
+  }
 
   // A missing module: ours only when the missing path is inside our directory.
   const missing = /Cannot find module '([^']+)'/.exec(stderr);
