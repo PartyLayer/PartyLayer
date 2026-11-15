@@ -22,6 +22,8 @@ Peer dependencies:
 
 ## Native transports
 
+This native-safe client requires React Native package 1.0.6 and SDK 0.22.1 or later.
+
 The React Native client uses `@partylayer/sdk/native`. It shares the browser SDK's
 session, capability and transaction handling, while loading only the transports your
 application supplies in `adapters` or `additionalAdapters`. Browser wallet SDKs,

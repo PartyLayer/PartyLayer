@@ -139,11 +139,9 @@ Handle user rejection, unavailable wallets, timeouts, network mismatch and unsup
 
 `client.on(event, handler)` returns an unsubscribe function. Release subscriptions and destroy clients you create when their owner is disposed. Never call `destroy()` on the client managed by a still-mounted React kit.
 
-## License
-
-MIT
-
 ## Native applications
+
+The native entry is available from SDK 0.22.1; SDK 0.22.0 does not include it.
 
 Import `createPartyLayer` from `@partylayer/sdk/native` for a native application. This
 entry shares the SDK client implementation, but registers only the native-compatible
@@ -165,3 +163,7 @@ must supply a compatible transport through `adapters`; configuring those browser
 options on the native entry produces an explicit error. React Native applications can
 use `@partylayer/react-native`, which selects this entry and provides Linking and storage
 building blocks. See that package's README for a development transport fixture.
+
+## License
+
+MIT

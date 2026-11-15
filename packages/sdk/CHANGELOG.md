@@ -238,6 +238,7 @@
 
   A wallet the picker already knows could be minted a SECOND row beside its own,
   in two shapes:
+
   - an INJECTED provider that resolves a known identity — observed on the demo
     surface, where the demo's own test wallet was listed twice and the twin
     connected to the same provider when clicked;
@@ -338,6 +339,7 @@
   ## Who is affected
 
   The compiler enumerated this, not a grep. Every site that had to change:
+
   - `@partylayer/sdk` — the three `tx:status` emissions in `client.ts` (sign, submit, transfer)
   - `@partylayer/provider` — `BridgeableClient`'s structural type, and the `signed` / `executed` CIP-0103 payloads
   - `@partylayer/react` and `@partylayer/vue` — the `TransactionToast` detail line
@@ -355,6 +357,7 @@
   Two of the nine were found only while making this change — in our Bron adapter, which an earlier survey of this exact problem had missed because they were ternaries rather than `??` chains. That is the argument in miniature: fixing the sites one at a time finds the ones you already know how to look for, and leaving the field required guarantees the next adapter writes a tenth.
 
   ## Also fixed here
+
   - **`BronAdapter`** omits `transactionHash` instead of reporting the word `'pending'` as one (two sites).
   - **`LoopAdapter`** omits it instead of reporting the command id under it. The command id is still reported as `commandId`, which is true of it. A real value under a wrong name is the same error as a fabricated one for anyone reading the field by its name.
 
@@ -390,12 +393,14 @@
   This exists so that a transfer does not have to be routed through `ledgerApi`. A generic proxy pointed at the interactive-submission endpoints is a request to sign arbitrary bytes: the wallet cannot decode what was asked for, so it cannot render a meaningful confirmation, so the user approves a hash. `ledgerApi` is unchanged, and this method sits alongside it.
 
   New in `@partylayer/core`:
+
   - `TransferIntent`, `TransferResult`, `TokenInstrumentId`
   - `toTransferIntent()` and `TRANSFER_INTENT_FIELDS` — the field allowlist every adapter builds its wallet request through, so a caller-supplied option cannot reach a wallet
   - `WalletAdapter.requestTransfer?()` — optional; a wallet that cannot both return a real update id and show an explicit user approval does not implement it
   - `CapabilityKey` gains `'transfer'`; `ErrorMappingContext.phase` gains `'requestTransfer'`
 
   New in `@partylayer/sdk`:
+
   - `PartyLayerClient.requestTransfer()`, which narrows the intent through the allowlist before any adapter sees it and throws `CapabilityNotSupportedError` when the active wallet does not implement it
 
   Additive throughout: no existing method signature, adapter contract, or published interface changes. Ask before calling with `session.capabilitiesSnapshot.includes('transfer')`, or require it at connect with `connect({ requiredCapabilities: ['transfer'] })`.
@@ -403,6 +408,7 @@
   `TransferResult.updateId` is required and always real. An adapter that cannot obtain one throws rather than substituting a command id, a submission id, a signature, or a generated string.
 
   Implemented natively by three adapters, each mapping the intent onto its wallet's own typed transfer:
+
   - **Console** — `submitCommands`, with the update id read from the `txChanged` stream and correlated to the call by signature. Requires `executeBefore`, and carries `meta` only as a single `memo`; both are refused rather than silently dropped.
   - **Nightly** — `createTransferCommand` + `submitTransactionCommand`. The only one of the three that carries the instrument's issuing admin through to the wallet.
   - **Loop** — the SDK's `transfer()` in `wait` mode, which is where `RunTransactionResponse.update_id` is populated.
@@ -598,6 +604,7 @@ fields }`, and every emitted event produces one structured log line at a mapped 
   boundary (`LedgerApiParams`) accepts a friendly superset, `requestMethod` in
   either case (plus `PATCH`) and `body` as a JSON string **or** a plain object, and
   each adapter normalizes to what its wallet requires:
+
   - **CIP-0103 `window.canton` RPC wallets**, Send, Console, Nightly,
     WalletConnect, and the SDK announce bridge, get a **lower-case** verb + an
     **object** body, per the canonical CIP-0103 OpenRPC `LedgerApiRequest` schema
@@ -666,6 +673,7 @@ fields }`, and every emitted event produces one structured log line at a mapped 
 - 5fdc6e8: Grow `GenericAnnounceAdapter` to per-registry-entry-configurable capabilities (additive; nothing else changes).
 
   An announced wallet with a registry entry (`adapter.transport: 'announce'`) can now opt into the optional CIP-0103 surface via its `capabilities.events` + `adapter.config`, mirroring wagmi's optional-method model. New `AnnounceAdapterConfig` (`events`/`restore`/`ledgerApi`/`metadata`/`mapError`); each optional method is assigned only when configured, so `getCapabilities()` and feature-detection stay honest.
+
   - **events**: `on()` bridges the provider's CIP-0103 `txChanged` → adapter `txStatus`.
   - **restore**: silent `status()`/`getPrimaryAccount()` probe + expiry + party-match.
   - **ledgerApi**: proxy the standard CIP-0103 `ledgerApi` call.
@@ -681,6 +689,7 @@ fields }`, and every emitted event produces one structured log line at a mapped 
 - 4f6fa01: Reactive wallet list: late-announcing wallets now appear LIVE in the picker (no manual refresh), completing the UX of the announce race fix.
 
   Previously the persistent accumulator CAPTURED a late `canton:announceProvider` (data layer), but `listWallets()` returned a stale one-shot snapshot and the React picker only loaded once on mount, so a wallet injecting after the modal opened never surfaced.
+
   - **@partylayer/sdk** (minor, additive): new `wallets:changed` event (signal-only `{ type: 'wallets:changed'; reason: 'announced' }`). When the announce accumulator gains a wallet, the client now invalidates the one-shot announce cache (the same invalidation as `refreshDiscovery`) and emits a **debounced** (~50ms, coalesces a burst into one) `wallets:changed`. The authoritative read stays `listWallets()` (which does registry-merge + gating + filtering), mirroring EIP-6963/mipd. `warmPlans` (popup gesture-sync) is a disjoint cache and is untouched; `listWallets()`/`refreshDiscovery()` signatures are unchanged; zero announces → no emit (byte-identical idle); the debounce timer + listener are torn down in `destroy()`.
   - **@partylayer/react** (patch): `PartyLayerProvider` subscribes to `wallets:changed` and re-lists → `useWallets()` re-renders with the new wallet automatically. `useWallets()`'s signature is unchanged (still a pure context read); the one-shot mount load is preserved; SSR-safe (subscription inside the browser-only effect).
 
@@ -689,6 +698,7 @@ fields }`, and every emitted event produces one structured log line at a mapped 
 ### Patch Changes
 
 - a3f2ea4: Fix the announce-discovery race: a wallet that announces (`canton:announceProvider`) **after** the one-shot request window, or on inject before any request, was missed, surfacing as `Wallet "…" did not announce`.
+
   - **@partylayer/provider** (additive): new `subscribeAnnouncedProviders(onProvider, opts)`, a PERSISTENT (EIP-6963-style) announce subscription that captures late and inject-time announces until the returned unsubscribe runs, and `waitForAnnouncedProvider(predicate, { timeoutMs })`, which resolves the moment a matching announce arrives (vs a fixed window). The existing one-shot `discoverAnnouncedProviders` / `discoverProviders` are **unchanged**.
   - **@partylayer/sdk** (patch): the client mounts one persistent accumulator at construction (read by `aggregateAnnouncedWallets`, torn down in `destroy()`), so a late/inject-time announce surfaces in `listWallets()`. No public API change.
   - **@partylayer/adapter-send** (minor): `SendProvider` resolves its channel via resolve-on-arrival (`waitForProvider`), so a late Send announce is no longer missed. Detect and connect now use **split bounds** mirroring the EIP-6963 reactive-readiness model: `detectInstalled`/`isInstalled` waits ~1000ms (best-effort readiness, won't stall the UI when Send is absent; the persistent accumulator self-corrects a later announce), while the deliberate connect/request path waits 3000ms. New `SendProviderOptions.detectTimeoutMs` (default 1000) alongside `announceTimeoutMs` (default 3000). The legacy `SendProviderOptions.discover` hook is **kept (deprecated)**, wrapped for backward compatibility.
@@ -799,6 +809,7 @@ fields }`, and every emitted event produces one structured log line at a mapped 
 - 27e5b68: A2: SDK-level announce discovery. `listWallets()` now aggregates
   `canton:announceProvider` wallets (EIP-6963-style, provider.md) with the
   `window.canton` namespace scan, the registry, and registered adapters:
+
   - a known announced id (matching a wallet's `providerDetection` provider.id)
     maps to that adapter, no duplicate picker entry (identity bridge);
   - an UNKNOWN announced id is surfaced as a dynamic `browser:ext:<id>` entry
@@ -1048,6 +1059,7 @@ fields }`, and every emitted event produces one structured log line at a mapped 
   CantonConnect provides a WalletConnect-like experience for Canton Network dApps, enabling seamless integration with multiple Canton wallets through a unified API.
 
   Features:
+
   - Support for Console Wallet, 5N Loop, Cantor8, and Bron wallets
   - React hooks and components for easy integration
   - TypeScript support with full type definitions
