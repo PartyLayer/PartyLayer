@@ -37,9 +37,9 @@ permissions:
 jobs:
   gate-main:
     name: Gate (main, drift detection)
-    runs-on: linux-xarm90
+    runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v18
+      - uses: actions/checkout@v4
         with:
           ref: main
           # Full history + tags: gate:release-changeset compares each package
@@ -48,9 +48,9 @@ jobs:
       - name: Setup pnpm
         uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
       - name: Setup Node.js
-        uses: actions/setup-node@v7
+        uses: actions/setup-node@v4
         with:
-          node-version: '23'
+          node-version: '20'
           cache: 'pnpm'
       - name: Install (frozen)
         run: pnpm install --frozen-lockfile
@@ -68,11 +68,11 @@ jobs:
 
   npm-consumer-canary:
     name: npm consumer canary (published packages)
-    runs-on: linux-xarm90
+    runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v4
       - name: Setup Node.js
-        uses: actions/setup-node@v7
+        uses: actions/setup-node@v4
         with:
           node-version: '20'
       - name: Install published packages into a clean, link-free dir + tsc smoke
@@ -184,7 +184,7 @@ jobs:
           name: public-consumer-security-audit
           path: ${{ runner.temp }}/public-consumer-audit.json
           if-no-files-found: ignore
-          retention-days: 7
+          retention-days: 14
       - name: Summary
         if: always()
         run: |
@@ -200,17 +200,17 @@ jobs:
 
   session-persistence-e2e:
     name: Session persistence e2e (real browser)
-    runs-on: linux-xarm90
+    runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@v4
         with:
           ref: main
       - name: Setup pnpm
         uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
       - name: Setup Node.js
-        uses: actions/setup-node@v8
+        uses: actions/setup-node@v4
         with:
-          node-version: '24'
+          node-version: '20'
           cache: 'pnpm'
       - name: Install (frozen)
         run: pnpm install --frozen-lockfile
@@ -235,15 +235,15 @@ jobs:
     name: Mock E2E + security (full demo suite)
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v4
         with:
           ref: main
       - name: Setup pnpm
         uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
       - name: Setup Node.js
-        uses: actions/setup-node@v7
+        uses: actions/setup-node@v4
         with:
-          node-version: '23'
+          node-version: '20'
           cache: 'pnpm'
       - name: Install (frozen)
         run: pnpm install --frozen-lockfile
@@ -277,12 +277,12 @@ jobs:
 
   manual-coverage:
     name: Manual coverage (by-hand specs still current)
-    runs-on: linux-xarm90
+    runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
-      - uses: actions/setup-node@v7
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
         with:
-          node-version: 24
+          node-version: 20
       - name: Manual run ledger is current
         # Some specs CANNOT run in CI — the a2 pair loads real unpacked
         # extensions into a headed Chromium, which a hosted runner cannot do. They
