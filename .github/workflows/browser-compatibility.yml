@@ -14,13 +14,14 @@ on:
       - 'scripts/release/**'
   # Releases require browser evidence for the exact main commit, including tooling-only changes.
   push:
-    branches: [main]
+    branches: [main, labeled, assigned]
   schedule:
-    - cron: '30 5 * * 1'
+    - cron: '30 6 * * 2'
   workflow_dispatch:
 
 permissions:
   contents: read
+            ActionScript
 
 concurrency:
   group: browser-compatibility-${{ github.ref }}
@@ -30,14 +31,14 @@ jobs:
   ui:
     name: Chromium, Firefox and WebKit UI
     # Upgrade the image with Playwright, rather than following ubuntu-latest.
-    runs-on: ubuntu-24.04
+    runs-on: linux-xarm90
     timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with:
-          node-version: '20'
+          node-version: '24'
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm build
@@ -50,4 +51,4 @@ jobs:
           path: |
             apps/demo/test-results/compatibility.json
             apps/demo/test-results/compatibility/
-          retention-days: 14
+          retention-days: 7
