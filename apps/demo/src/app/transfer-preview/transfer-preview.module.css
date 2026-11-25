@@ -1,0 +1,153 @@
+.page {
+  min-height: 100vh;
+  color: #171b24;
+  background: #f8f8f5;
+  line-height: 1.55;
+  overflow-wrap: anywhere;
+}
+
+.container {
+  width: min(100% - 2rem, 960px);
+  margin-inline: auto;
+  padding-block: 1.4rem 3rem;
+}
+
+.nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  padding-bottom: 1.3rem;
+  border-bottom: 1px solid #deded6;
+  font-size: 0.9rem;
+}
+
+.nav a {
+  color: inherit;
+  text-underline-offset: 0.2em;
+}
+
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-size: 1rem;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.header {
+  margin-block: clamp(1.6rem, 5vw, 3rem) 1.4rem;
+}
+
+.header h1 {
+  font-size: clamp(2.1rem, 6vw, 3.5rem);
+  letter-spacing: -0.048em;
+  line-height: 1.05;
+}
+
+.header p {
+  margin-top: 0.75rem;
+  color: #505868;
+}
+
+.notice {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.3rem 0.8rem;
+  padding: 0.65rem 0.9rem;
+  border: 1px solid #e9d491;
+  border-radius: 10px;
+  background: #fff8df;
+  color: #45350d;
+  font-size: 0.875rem;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
+  align-items: start;
+  gap: clamp(1rem, 4vw, 2.25rem);
+  margin-top: 1.25rem;
+}
+
+.guide,
+.result {
+  border: 1px solid #deded6;
+  border-radius: 16px;
+  padding: clamp(1rem, 3vw, 1.5rem);
+  background: #fff;
+}
+
+.guide h2,
+.result h2 {
+  margin-bottom: 0.45rem;
+  font-size: 1.125rem;
+  letter-spacing: -0.015em;
+}
+
+.guide p,
+.result p {
+  color: #505868;
+  font-size: 0.9375rem;
+}
+
+.sample {
+  display: grid;
+  gap: 0.55rem;
+  margin-top: 0.85rem;
+}
+
+.sample div {
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.25rem 0.75rem;
+  padding: 0.55rem 0.7rem;
+  border-radius: 8px;
+  background: #f4f4ef;
+  font-size: 0.875rem;
+}
+
+.sample dd {
+  min-width: 0;
+  margin: 0;
+}
+
+.boundary {
+  margin-top: 1.3rem;
+  padding-top: 1rem;
+  border-top: 1px solid #e4e4dd;
+}
+
+.panel {
+  min-width: 0;
+}
+
+.panel :focus-visible,
+.nav :focus-visible,
+.panel:focus-visible {
+  outline: 2px solid #5f4d12;
+  outline-offset: 3px;
+}
+
+.result button {
+  min-height: 44px;
+  margin-top: 1.2rem;
+  padding: 0.55rem 0.85rem;
+  border: 1px solid #a88912;
+  border-radius: 8px;
+  background: #ffcf25;
+  color: #191709;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+@media (max-width: 660px) {
+  .grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
