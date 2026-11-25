@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import Image from 'next/image';
 import Link from 'next/link';
 import { TransferPreview } from './transfer-preview';
 import styles from './transfer-preview.module.css';
@@ -22,8 +23,7 @@ export default function TransferPreviewPage() {
       <div className={styles.container}>
         <nav className={styles.nav} aria-label="Demo navigation">
           <Link className={styles.brand} href="/">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/favicon-new.svg" alt="" width={28} height={28} />
+            <Image src="/favicon-new.svg" alt="" width={28} height={28} unoptimized />
             PartyLayer
           </Link>
           <Link href="/docs/token-transfers">Transfer docs <span aria-hidden="true">↗</span></Link>
