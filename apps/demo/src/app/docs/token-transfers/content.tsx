@@ -16,6 +16,11 @@ export default function TokenTransfersContent() {
         directly or create a <Code>{'TransferInstruction'}</Code> awaiting further steps.
       </P>
 
+      <P>
+        <a href="/transfer-preview" style={{ color: '#E6B800' }}>Try the transfer review demo</a>{' '}
+        to see what the app shows before wallet approval. The demo uses sample data.
+      </P>
+
       <Callout type="warning">
         <Strong>Common mistake:</Strong> exercising{' '}
         <Code>{'Amulet_Transfer'}</Code> directly on{' '}
