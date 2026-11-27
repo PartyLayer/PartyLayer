@@ -878,8 +878,8 @@ importers:
   packages/sdk:
     dependencies:
       '@canton-network/core-types':
-        specifier: 1.14.0
-        version: 1.14.0
+        specifier: 2.5.0
+        version: 2.5.0
       '@canton-network/core-wallet-discovery':
         specifier: 1.16.0
         version: 1.16.0
@@ -891,7 +891,7 @@ importers:
         version: 1.2.0(@canton-network/dapp-sdk@0.24.0)
       '@lithiumdigital/cauri-dapp-sdk':
         specifier: 0.2.0
-        version: 0.2.0(@canton-network/core-splice-provider@1.16.0)(@canton-network/core-types@1.14.0)(@canton-network/core-wallet-dapp-rpc-client@1.16.0)(@canton-network/core-wallet-discovery@1.16.0)
+        version: 0.2.0(@canton-network/core-splice-provider@1.16.0)(@canton-network/core-types@2.5.0)(@canton-network/core-wallet-dapp-rpc-client@1.16.0)(@canton-network/core-wallet-discovery@1.16.0)
       '@partylayer/adapter-bron':
         specifier: workspace:^
         version: link:../adapters/bron
@@ -1309,6 +1309,9 @@ packages:
   '@canton-network/core-types@2.2.0':
     resolution: {integrity: sha512-lV1vMpPjrupAfeZ20I+M4F4q7Zscwrfj3t1U2O8T+Apy1FLzNu9KG2LaPJkDcYHqa0fh5wC0HXubZ4HiDre0JA==}
 
+  '@canton-network/core-types@2.5.0':
+    resolution: {integrity: sha512-cg7am6HxlnaL/FzQCeEpZ1pLB/dSCmBCNuEYRtEKBNRhEWCI5GTMz5u/qc6clxJGwY4oo4RKwpLkVngdGHqYUw==}
+
   '@canton-network/core-wallet-auth@0.23.1':
     resolution: {integrity: sha512-+o2l7jb4D1TZqAaU0t2scNAz5k5CpA8A+cB3DcAxslbmxDj0He03NfsKkIiVt416VhWvr9WoyM5FI6mpJuhtJQ==}
 
@@ -1529,6 +1532,9 @@ packages:
 
   '@daml/types@3.6.2':
     resolution: {integrity: sha512-GYZI+KxUicGaCdZ9CVY9V9KoM9zW/doacd6qfTe2+96qvwU1LTU5SG49Sf3b3NUTBHlF0P9Ldm87Xo5r90v57g==}
+
+  '@daml/types@3.7.4':
+    resolution: {integrity: sha512-hQpfs1mYVqfoa/Wd4lRi/Znb9lXij4xcGrPMlEk6IcrRLgUvRI0DrcbEEqkRkbS+Ih4IQ4dCfGuOJvkK1q4mng==}
 
   '@electric-sql/pglite@0.5.13':
     resolution: {integrity: sha512-4rZuxK1k07w6sSpJzjMri0B9+HuXuC7V9pxVB51pR0T9KPqXg6TD0mdaEwBA9rkcL4jdht4tGDf/wYzAiGhT7g==}
@@ -2890,6 +2896,9 @@ packages:
 
   '@types/lodash@4.17.24':
     resolution: {integrity: sha512-gIW7lQLZbue7lRSWEFql49QJJWThrTFFeIMJdp3eH4tKoxm1OvEPg02rm4wCCSHS0cL3/Fizimb35b7k8atwsQ==}
+
+  '@types/lodash@4.17.27':
+    resolution: {integrity: sha512-VenMRv/eKNrspX9v3H4dbmjsrnCOYdYBG3kxXKk3dG6X+urBGcj2Prww3xw1U5K4FV/mE4h5GbWd0szEKf+9ew==}
 
   '@types/mime@1.3.5':
     resolution: {integrity: sha512-/pyBZWSLD2n0dcHE3hq8s8ZvcETHtEuF+3E7XVt0Ig2nvsVQXdghHVcEkIWjy9A0wKfTn97a/PSDYohKIlnP/w==}
@@ -7186,7 +7195,12 @@ snapshots:
 
   '@canton-network/core-types@2.2.0':
     dependencies:
-      '@daml/types': 3.6.2
+      '@daml/types': 3.7.4
+      zod: 4.6.7
+
+  '@canton-network/core-types@2.5.0':
+    dependencies:
+      '@daml/types': 3.7.4
       zod: 4.6.7
 
   '@canton-network/core-wallet-auth@0.23.1':
@@ -7710,6 +7724,12 @@ snapshots:
     dependencies:
       '@mojotech/json-type-validation': 3.1.0
       '@types/lodash': 4.17.24
+      lodash: 4.18.1
+
+  '@daml/types@3.7.4':
+    dependencies:
+      '@mojotech/json-type-validation': 3.1.0
+      '@types/lodash': 4.17.27
       lodash: 4.18.1
 
   '@electric-sql/pglite@0.5.13': {}
@@ -8252,10 +8272,10 @@ snapshots:
     dependencies:
       '@lit-labs/ssr-dom-shim': 1.6.0
 
-  '@lithiumdigital/cauri-dapp-sdk@0.2.0(@canton-network/core-splice-provider@1.16.0)(@canton-network/core-types@1.14.0)(@canton-network/core-wallet-dapp-rpc-client@1.16.0)(@canton-network/core-wallet-discovery@1.16.0)':
+  '@lithiumdigital/cauri-dapp-sdk@0.2.0(@canton-network/core-splice-provider@1.16.0)(@canton-network/core-types@2.5.0)(@canton-network/core-wallet-dapp-rpc-client@1.16.0)(@canton-network/core-wallet-discovery@1.16.0)':
     dependencies:
       '@canton-network/core-splice-provider': 1.16.0
-      '@canton-network/core-types': 1.14.0
+      '@canton-network/core-types': 2.5.0
       '@canton-network/core-wallet-dapp-rpc-client': 1.16.0
       '@canton-network/core-wallet-discovery': 1.16.0
 
@@ -8293,7 +8313,7 @@ snapshots:
       '@noble/hashes': 1.8.0
       '@scure/base': 1.2.6
       '@types/debug': 4.1.13
-      '@types/lodash': 4.17.24
+      '@types/lodash': 4.17.27
       debug: 4.4.3
       lodash: 4.18.1
       pony-cause: 2.1.11
@@ -8845,6 +8865,8 @@ snapshots:
 
   '@types/lodash@4.17.24': {}
 
+  '@types/lodash@4.17.27': {}
+
   '@types/mime@1.3.5': {}
 
   '@types/ms@2.1.0': {}
@@ -9055,7 +9077,7 @@ snapshots:
       pathe: 1.1.2
       picocolors: 1.1.1
       sirv: 2.0.4
-      vitest: 1.6.1(@types/node@20.19.30)(@vitest/ui@1.6.1)(happy-dom@14.12.3)(jsdom@24.1.3)(terser@5.49.0)
+      vitest: 1.6.1(@types/node@25.9.5)(@vitest/ui@1.6.1)(happy-dom@14.12.3)(jsdom@24.1.3)(terser@5.49.0)
 
   '@vitest/utils@1.6.1':
     dependencies:
