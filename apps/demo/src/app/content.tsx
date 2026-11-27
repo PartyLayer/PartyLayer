@@ -13,6 +13,7 @@ import { sortByCanonicalOrder, CANONICAL_WALLET_ORDER } from '../lib/wallet-orde
 import { DEMO_WALLET_ICONS } from '../lib/demo-registry';
 import { registryIconUrl } from '../lib/registry-icon';
 import { useBreakpoint, responsive } from './hooks/useBreakpoint';
+import { DemoNetworkSelector, useDemoNetwork, type DemoNetworkControl } from './components/DemoNetworkSelector';
 const DEMO_ADDITIONAL_ADAPTERS = buildDemoAdapters();
 const DEMO_WALLET_CONNECT = { projectId: wcProjectId(), metadata: WC_METADATA };
 
@@ -1564,7 +1565,10 @@ function DeveloperQuickstart() {
 
 /* ─── Demo CTA (replaces interactive Demo, links to /kit-demo) ────────── */
 
-function DemoCTA({ onConnect }: { onConnect: () => void }) {
+function DemoCTA({ onConnect, networkControl }: {
+  onConnect: () => void;
+  networkControl: DemoNetworkControl;
+}) {
   const bp = useBreakpoint();
   return (
     <section id="demo" style={{ padding: responsive(bp, '56px 0', '64px 0', '80px 0'), borderTop: `1px solid ${t.border}`, fontFamily: t.font }}>
@@ -1575,7 +1579,7 @@ function DemoCTA({ onConnect }: { onConnect: () => void }) {
             Interactive demo
           </h2>
           <p style={{ fontSize: 16, lineHeight: 1.6, color: t.slate500, maxWidth: 480, margin: '0 auto' }}>
-            Try the wallet connection flow right here: click Connect Wallet to see the modal in action.
+            Choose a Canton network and open the wallet picker.
           </p>
         </div>
 
@@ -1600,9 +1604,9 @@ function DemoCTA({ onConnect }: { onConnect: () => void }) {
               </div>
 
               <h4 style={{ fontSize: 20, fontWeight: 600, lineHeight: 1.4, color: t.fg, margin: '0 0 8px' }}>Your dApp</h4>
-              <p style={{ fontSize: 14, lineHeight: 1.5, color: t.slate500, margin: '0 0 24px', textAlign: 'center' }}>
-                Click the button to open the wallet connection modal.
-              </p>
+              <div style={{ margin: '4px 0 16px' }}>
+                <DemoNetworkSelector {...networkControl} />
+              </div>
 
               <button onClick={onConnect}
                 style={{
@@ -1855,7 +1859,7 @@ const faqJsonLd = {
   })),
 };
 
-function LandingContent() {
+function LandingContent({ networkControl }: { networkControl: DemoNetworkControl }) {
   const [modalOpen, setModalOpen] = useState(false);
 
   const openModal = () => setModalOpen(true);
@@ -1879,7 +1883,7 @@ function LandingContent() {
             <a href="/docs/rainbowkit-for-canton" style={{ color: '#806000' }}>Coming from RainbowKit? Build on Canton →</a>
             <a href="/docs/integration-support" style={{ color: '#806000' }}>Get integration help →</a>
           </div>
-          <DemoCTA onConnect={openModal} />
+          <DemoCTA onConnect={openModal} networkControl={networkControl} />
           <FAQ />
         </main>
         <Footer />
@@ -1907,6 +1911,8 @@ const APEX_SESSION_OPTIONS: Partial<SessionStoreOptions> = {
 };
 
 export default function Home() {
+  const networkControl = useDemoNetwork();
+  const { network } = networkControl;
   // No mount gate: PartyLayerKit renders server-side in its disconnected state
   // (session restore runs in a mount effect, not during render, so the first
   // client render matches the server's disconnected paint, no hydration mismatch).
@@ -1914,7 +1920,8 @@ export default function Home() {
   // and removes the prior loading-skeleton flash.
   return (
     <PartyLayerKit
-      network="devnet"
+      key={network}
+      network={network}
       channel="beta"
       walletIcons={DEMO_WALLET_ICONS}
       appName="PartyLayer"
@@ -1923,7 +1930,7 @@ export default function Home() {
       registryUrl="/registry"
       sessionOptions={APEX_SESSION_OPTIONS}
     >
-      <LandingContent />
+      <LandingContent networkControl={networkControl} />
     </PartyLayerKit>
   );
 }

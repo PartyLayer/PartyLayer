@@ -40,11 +40,12 @@ test('playground exposes useful initial HTML and hydrates into the working conne
   const html = await response.text();
   expect(html).toMatch(/<h1\b[^>]*>\s*Canton wallet connection playground\s*<\/h1>/);
   expect(html).toContain('href="/docs/quick-start"');
-  expect(html).toContain('This demo uses Devnet');
+  expect(html).toContain('Choose Devnet, Testnet or Mainnet');
   const errors: string[] = [];
   page.on('pageerror', error => errors.push(error.message));
   await page.goto('/kit-demo');
   await expect(page.getByRole('heading', { level: 1, name: /One SDK for every/ })).toBeVisible();
+  await expect(page.getByRole('combobox', { name: 'Canton network' })).toHaveValue('devnet');
   await page.getByRole('button', {name: /Connect Wallet/i}).first().click();
   await expect(page.getByRole('dialog')).toBeVisible();
   expect(errors.filter(message => /hydrat|server.render|did not match/i.test(message))).toEqual([]);

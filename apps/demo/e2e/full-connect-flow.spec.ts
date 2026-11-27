@@ -81,6 +81,7 @@ test.describe('Full Connect Flow — Kit Demo', () => {
     // Network should show "devnet"
     const networkLabel = page.getByText('Network', { exact: true });
     await expect(networkLabel).toBeVisible();
+    await expect(page.getByText('devnet', { exact: true })).toBeVisible();
   });
 
   test('disconnect clears session and restores connect button', async ({ page }) => {
