@@ -2,9 +2,9 @@
   "metadata": {
     "registryVersion": "1.0.0",
     "schemaVersion": "1.0.0",
-    "publishedAt": "2026-10-22T00:00:00Z",
+    "publishedAt": "2026-11-27T09:17:24Z",
     "channel": "beta",
-    "sequence": 14,
+    "sequence": 15,
     "publisher": "PartyLayer"
   },
   "wallets": [
@@ -348,6 +348,49 @@
         "native": true,
         "evidence": "https://www.npmjs.com/package/@vala-wallet/dapp-sdk",
         "since": "2026-10-22"
+      }
+    },
+    {
+      "id": "ekiden",
+      "name": "Ekiden Wallet",
+      "beta": true,
+      "description": "Self-custodial Canton wallet for the Ekiden ecosystem.",
+      "homepage": "https://chromewebstore.google.com/detail/ekiden-wallet/dafiiombcijhkeajodhdclhmaajnjajb",
+      "icon": "https://registry.partylayer.xyz/wallets/ekiden.png",
+      "supportedNetworks": [
+        "testnet"
+      ],
+      "capabilities": {
+        "signMessage": true,
+        "signTransaction": false,
+        "submitTransaction": true,
+        "transactionStatus": false,
+        "switchNetwork": false,
+        "multiParty": false
+      },
+      "adapter": {
+        "type": "ekiden-wallet",
+        "transport": "announce"
+      },
+      "installation": {
+        "windowProperty": "ekidenWallet",
+        "extensionId": "dafiiombcijhkeajodhdclhmaajnjajb"
+      },
+      "providerDetection": {
+        "transport": "window.canton",
+        "matchers": [
+          {
+            "field": "provider.id",
+            "match": "exact",
+            "values": [
+              "ekiden-wallet"
+            ]
+          }
+        ]
+      },
+      "cip0103": {
+        "native": true,
+        "evidence": "https://chromewebstore.google.com/detail/ekiden-wallet/dafiiombcijhkeajodhdclhmaajnjajb"
       }
     }
   ]
