@@ -67,7 +67,7 @@ test('account actions support keyboard navigation and Tab leaves the menu', asyn
   await page.keyboard.press('Tab');
   await expect(page.getByRole('menu')).toBeHidden();
   await expect(trigger).not.toBeFocused();
-  await expect(page.getByRole('button', { name: 'Default', exact: true })).toBeFocused();
+  await expect(page.getByRole('combobox', { name: 'Canton network' })).toBeFocused();
 });
 
 test('keyboard disconnect restores focus to Connect Wallet', async ({ page }) => {

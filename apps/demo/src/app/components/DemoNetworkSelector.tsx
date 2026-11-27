@@ -54,10 +54,9 @@ export function DemoNetworkSelector({
 }: DemoNetworkControl & { style?: CSSProperties }) {
   return (
     <label style={{ display: 'inline-flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-      <span style={{ fontSize: 13, fontWeight: 600 }}>Network</span>
+      <span style={{ fontSize: 13, fontWeight: 600 }}>Canton network</span>
       <select
         ref={selectRef}
-        aria-label="Canton network"
         value={network}
         onChange={(event) => {
           const requested = event.currentTarget.value;
