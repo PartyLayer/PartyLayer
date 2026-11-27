@@ -24,6 +24,7 @@ import { WC_METADATA, wcProjectId } from '../../lib/walletconnect-demo';
 import { sortByCanonicalOrder, CANONICAL_WALLET_ORDER } from '../../lib/wallet-order';
 import { DEMO_WALLET_ICONS } from '../../lib/demo-registry';
 import { registryIconUrl } from '../../lib/registry-icon';
+import { DemoNetworkSelector, useDemoNetwork, type DemoNetwork } from '../components/DemoNetworkSelector';
 const DEMO_ADDITIONAL_ADAPTERS = buildDemoAdapters();
 const DEMO_WALLET_CONNECT = { projectId: wcProjectId(), metadata: WC_METADATA };
 
@@ -666,7 +667,7 @@ function InfoField({ label, value, mono }: { label: string; value: string; mono?
 
 // ─── Code Block (matching marketing browser chrome pattern) ─────────────────
 
-function CodeBlock() {
+function CodeBlock({ network }: { network: DemoNetwork }) {
   const bp = useBreakpoint();
   const c = useTokens();
   const shadow = c.shadow;
@@ -718,7 +719,7 @@ function CodeBlock() {
       }}>
         <div><span style={{ color: '#c084fc' }}>import</span> {'{ PartyLayerKit, ConnectButton }'} <span style={{ color: '#c084fc' }}>from</span> <span style={{ color: '#86efac' }}>&apos;@partylayer/react&apos;</span>;</div>
         <div style={{ height: '4px' }} />
-        <div><span style={{ color: '#f87171' }}>&lt;PartyLayerKit</span> <span style={{ color: '#fbbf24' }}>network</span>=<span style={{ color: '#86efac' }}>&quot;devnet&quot;</span> <span style={{ color: '#fbbf24' }}>appName</span>=<span style={{ color: '#86efac' }}>&quot;My dApp&quot;</span><span style={{ color: '#f87171' }}>&gt;</span></div>
+        <div><span style={{ color: '#f87171' }}>&lt;PartyLayerKit</span> <span style={{ color: '#fbbf24' }}>network</span>=<span style={{ color: '#86efac' }}>&quot;{network}&quot;</span> <span style={{ color: '#fbbf24' }}>channel</span>=<span style={{ color: '#86efac' }}>&quot;beta&quot;</span> <span style={{ color: '#fbbf24' }}>appName</span>=<span style={{ color: '#86efac' }}>&quot;My dApp&quot;</span><span style={{ color: '#f87171' }}>&gt;</span></div>
         <div style={{ paddingLeft: '20px' }}><span style={{ color: '#f87171' }}>&lt;ConnectButton /&gt;</span> <span style={{ color: '#64748b' }}>{'// CIP-0103 wallets discovered automatically'}</span></div>
         <div><span style={{ color: '#f87171' }}>&lt;/PartyLayerKit&gt;</span></div>
       </div>
@@ -729,6 +730,7 @@ function CodeBlock() {
 // ─── Page ───────────────────────────────────────────────────────────────────
 
 export default function KitDemoPage() {
+  const [network, selectNetwork] = useDemoNetwork();
   const [mounted, setMounted] = useState(false);
   const [theme, setTheme] = useState<'light' | 'dark' | 'auto'>('light');
   const [family, setFamily] = useState<'default' | 'midnight' | 'slate' | 'teal' | 'gold' | 'warm'>('default');
@@ -806,7 +808,7 @@ export default function KitDemoPage() {
       </h1>
       <p style={{ maxWidth: 560, margin: 0, lineHeight: 1.6, color: '#475569' }}>
         Explore PartyLayerKit themes, the Connect Wallet button and supported Canton wallet integrations.
-        This demo uses Devnet and includes beta wallets. Real connections require your own wallet account and approval.
+        Choose Devnet, Testnet or Mainnet to see the available wallets, including beta listings. Real connections require your own wallet account and approval.
       </p>
       <nav aria-label="Playground setup guides" style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: 20 }}>
         <a href="/docs/quick-start" style={{ color: '#806000' }}>React and Next.js quick start</a>
@@ -825,7 +827,7 @@ export default function KitDemoPage() {
         fontFamily: font,
         transition: 'background-color 200ms, color 200ms',
       }}>
-        <PartyLayerKit locale={locale} direction={direction} network="devnet" channel="beta" appName="PartyLayer Kit Demo" theme={kitTheme} showAttribution={showAttr} walletOrder={CANONICAL_WALLET_ORDER} walletIcons={DEMO_WALLET_ICONS} additionalAdapters={DEMO_ADDITIONAL_ADAPTERS} walletConnect={DEMO_WALLET_CONNECT} registryUrl="/registry">
+        <PartyLayerKit key={network} locale={locale} direction={direction} network={network} channel="beta" appName="PartyLayer Kit Demo" theme={kitTheme} showAttribution={showAttr} walletOrder={CANONICAL_WALLET_ORDER} walletIcons={DEMO_WALLET_ICONS} additionalAdapters={DEMO_ADDITIONAL_ADAPTERS} walletConnect={DEMO_WALLET_CONNECT} registryUrl="/registry">
           <div style={{ maxWidth: '880px', margin: '0 auto', padding: '0 24px' }}>
 
             {/* Navbar */}
@@ -890,6 +892,11 @@ export default function KitDemoPage() {
               padding: '14px 16px', marginTop: '20px',
               borderRadius: '12px', border: `1px solid ${c.border}`, backgroundColor: c.muted,
             }}>
+              <DemoNetworkSelector
+                network={network}
+                onChange={selectNetwork}
+                style={{ background: c.bg, borderColor: c.border }}
+              />
               <span style={{ fontSize: '13px', fontWeight: 600, color: c.fg }}>Accent</span>
               <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                 {ACCENT_SWATCHES.map((sw) => {
@@ -1152,7 +1159,7 @@ export default function KitDemoPage() {
             </section>
 
             {/* Code example */}
-            <CodeBlock />
+            <CodeBlock network={network} />
 
             {/* Main content */}
             <DemoContent />

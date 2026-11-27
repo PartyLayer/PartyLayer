@@ -196,15 +196,21 @@ export default async function WalletIntegrationPage({ params }: { params: Promis
             </p>
           ) : (
             <p style={{ margin: 0 }}>
-              No integration notes have been written for {w.name} yet, so this page carries only its
-              registry entry and is not indexed. Its registry entry names a third-party adapter
-              rather than a PartyLayer one, so it is driven through the generic discovery path. See{' '}
-              <Link href="/docs/generic-bridge">Generic bridge</Link> for how that path works, and{' '}
-              <Link href="/wallets">the directory</Link> for the full list.
+              This page summarizes the {w.name} registry entry. See the{' '}
+              <Link href="/docs/generic-bridge">Generic bridge guide</Link> for wallet discovery and{' '}
+              <Link href="/wallets">the directory</Link> for other wallet integrations.
             </p>
           )}
         </div>
       )}
+
+      <nav aria-label="Try wallet by network" style={{ display: 'flex', flexWrap: 'wrap', gap: 16, margin: '0 0 24px' }}>
+        {w.networks.map((network) => (
+          <Link key={network} href={`/kit-demo?network=${encodeURIComponent(network)}`} style={{ color: t.slate700, fontWeight: 600 }}>
+            Try on {network[0].toUpperCase() + network.slice(1)}
+          </Link>
+        ))}
+      </nav>
 
       {/* Registry facts. Always shown, generated. */}
       <h2 style={{ fontSize: 22, margin: '0 0 12px' }}>What the registry declares</h2>
@@ -279,7 +285,7 @@ export default async function WalletIntegrationPage({ params }: { params: Promis
 
 export default function App() {
   return (
-    <PartyLayerKit network="devnet" appName="My dApp"${w.channel === 'beta' ? ' channel="beta"' : ''}>
+    <PartyLayerKit network="${w.networks[0]}" appName="My dApp"${w.channel === 'beta' ? ' channel="beta"' : ''}>
       <ConnectButton />
     </PartyLayerKit>
   );
