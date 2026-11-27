@@ -34,14 +34,14 @@ const require = createRequire(import.meta.url);
 
 // ─── Footgun guard: wallets that MUST stay CIP-0103 native, per channel ──────
 // This allowlist guards against accidental REMOVAL of existing cip0103.native
-// flags. Current: stable={console,send}, beta={console}. When a wallet is
+// flags. When a wallet is
 // verified native during the adapter-sunset work, ADD it here — this list
 // grows additively. (Add the id in the SAME PR that marks the wallet
 // cip0103.native in the registry JSON; removing a flag without removing it
 // here fails the gate, which is the intended behaviour.)
 const REQUIRED_CIP0103_NATIVE = {
   stable: ['console', 'send', 'walley'],
-  beta: ['console', 'vala'],
+  beta: ['console', 'vala', 'ekiden'],
 };
 
 const channels = [

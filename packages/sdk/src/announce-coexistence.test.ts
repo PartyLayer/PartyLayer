@@ -27,6 +27,7 @@ import {
   toWalletId,
   toPartyId,
   WalletNotFoundError,
+  WalletNotInstalledError,
   type AdapterConnectResult,
   type AdapterContext,
   type AdapterDetectResult,
@@ -104,12 +105,40 @@ function makeOfficial(): OfficialProviderAdapter & { detect: ReturnType<typeof v
 
 const GENERIC_ENTRY = {
   id: 'genericw',
+  supportedNetworks: ['devnet'],
   adapter: { transport: 'announce', config: { restore: true, ledgerApi: true } },
   capabilities: { events: true },
 };
 
 describe('generic-announce coexistence + isolation', () => {
   beforeEach(() => vi.clearAllMocks());
+
+  it('reports a listed announce wallet as not installed until its extension announces', async () => {
+    const client = createPartyLayer({
+      network: 'devnet',
+      app: { name: 'install detection', origin: 'https://test.example.com' },
+      discovery: { announceTimeoutMs: 0 },
+    });
+    vi.spyOn(client.registryClient, 'getWallets').mockResolvedValue([walletInfo('genericw', 'genid')]);
+    vi.spyOn(client.registryClient, 'getRegistry').mockResolvedValue({ wallets: [GENERIC_ENTRY] } as never);
+    vi.spyOn(client.registryClient, 'getWalletEntry').mockImplementation(async (id: string) => {
+      if (id === 'genericw') return GENERIC_ENTRY as never;
+      throw new WalletNotFoundError(id);
+    });
+
+    try {
+      const wallets = await client.listWallets();
+      expect(wallets.some((wallet) => wallet.walletId === 'genericw')).toBe(true);
+      await expect(client.connect({ walletId: toWalletId('genericw') })).rejects.toBeInstanceOf(WalletNotInstalledError);
+      await expect(client.connect({ walletId: toWalletId('unknown') })).rejects.toBeInstanceOf(WalletNotFoundError);
+
+      announce('genid');
+      expect((await client.listWallets()).filter((wallet) => wallet.walletId === 'genericw')).toHaveLength(1);
+      expect(client.getAdapter('genericw')).toBeInstanceOf(GenericAnnounceAdapter);
+    } finally {
+      client.destroy();
+    }
+  });
 
   it('(g) bespoke (untouched) and a configured generic-announce wallet both resolve', async () => {
     const bespoke = new BespokeStub();

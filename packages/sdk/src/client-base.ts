@@ -27,6 +27,7 @@ import type {
 import {
   toWalletId,
   WalletNotFoundError,
+  WalletNotInstalledError,
   AdapterNotRegisteredError,
   CapabilityNotSupportedError,
   NetworkMismatchError,
@@ -1023,7 +1024,15 @@ export class PartyLayerClientBase {
     // Get adapter
     const adapter = this.adapters.get(selectedWallet.walletId);
     if (!adapter) {
-      throw new WalletNotFoundError(String(selectedWallet.walletId));
+      const walletId = String(selectedWallet.walletId);
+      if (this.announceEnabled) {
+        // Registry announce entries are visible before the extension advertises itself.
+        const entry = await this.registryClient.getWalletEntry(walletId).catch(() => null);
+        if (entry?.adapter?.transport === 'announce') {
+          throw new WalletNotInstalledError(walletId);
+        }
+      }
+      throw new WalletNotFoundError(walletId);
     }
 
     // Check origin allowlist (skip for native CIP-0103 wallets and

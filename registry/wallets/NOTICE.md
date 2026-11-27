@@ -16,6 +16,7 @@ obtain your own permission from each mark's owner before redistributing these fi
 | cantor8.png | Cantor8 |
 | cauri.svg | Cauri Wallet |
 | console.png | Console Wallet |
+| ekiden.png | Ekiden Wallet. From the official Chrome Web Store extension. |
 | loop.svg | 5N Loop |
 | nightly.png | Nightly |
 | oneswap.svg | OneSwap V2 Wallet. Used with the vendor's permission. |
