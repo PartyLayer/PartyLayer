@@ -7,13 +7,14 @@ test.beforeEach(async ({ page }) => { await page.goto('/kit-demo'); });
 test('searchable language selection is keyboard accessible and restores focus', async ({ page }) => {
   const trigger = page.getByRole('button', { name: /^Wallet UI language:/ });
   await trigger.focus(); await trigger.press('ArrowDown');
-  const search = page.getByRole('combobox', { name: 'Search languages' });
+  const picker = page.locator('[data-pl-language-picker]');
+  const search = picker.getByRole('combobox', { name: 'Search languages' });
   await expect(search).toBeFocused();
-  await search.fill('francais'); await expect(page.getByRole('option')).toHaveCount(1);
+  await search.fill('francais'); await expect(picker.getByRole('option')).toHaveCount(1);
   await search.press('Enter'); await expect(trigger).toBeFocused(); await expect(trigger).toContainText('Français');
   await expect(page.getByRole('button', { name: 'Connecter un portefeuille', exact: true })).toBeVisible();
   await trigger.click();
-  await page.getByRole('combobox').fill('zzzzzz'); await expect(page.getByText('Aucune langue trouvée')).toBeVisible();
+  await picker.getByRole('combobox').fill('zzzzzz'); await expect(page.getByText('Aucune langue trouvée')).toBeVisible();
   await page.keyboard.press('Escape'); await expect(trigger).toBeFocused();
 });
 

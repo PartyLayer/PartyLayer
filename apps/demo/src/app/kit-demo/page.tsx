@@ -730,7 +730,8 @@ function CodeBlock({ network }: { network: DemoNetwork }) {
 // ─── Page ───────────────────────────────────────────────────────────────────
 
 export default function KitDemoPage() {
-  const [network, selectNetwork] = useDemoNetwork();
+  const networkControl = useDemoNetwork();
+  const { network } = networkControl;
   const [mounted, setMounted] = useState(false);
   const [theme, setTheme] = useState<'light' | 'dark' | 'auto'>('light');
   const [family, setFamily] = useState<'default' | 'midnight' | 'slate' | 'teal' | 'gold' | 'warm'>('default');
@@ -893,8 +894,7 @@ export default function KitDemoPage() {
               borderRadius: '12px', border: `1px solid ${c.border}`, backgroundColor: c.muted,
             }}>
               <DemoNetworkSelector
-                network={network}
-                onChange={selectNetwork}
+                {...networkControl}
                 style={{ background: c.bg, borderColor: c.border }}
               />
               <span style={{ fontSize: '13px', fontWeight: 600, color: c.fg }}>Accent</span>

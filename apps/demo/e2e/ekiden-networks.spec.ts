@@ -24,7 +24,9 @@ test('the wallet directory links to Ekiden on Testnet and Mainnet', async ({ pag
   await page.keyboard.press('Escape');
   await expect(modal).toBeHidden();
 
+  await network.focus();
   await network.selectOption('devnet');
+  await expect(network).toBeFocused();
   await page.getByRole('button', { name: /Connect Wallet/i }).first().click();
   await expect(modal.getByRole('button', { name: /Vala Wallet/i })).toBeVisible();
   await expect(modal.getByRole('button', { name: /Ekiden Wallet/i })).toHaveCount(0);
