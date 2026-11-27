@@ -105,6 +105,7 @@ function makeOfficial(): OfficialProviderAdapter & { detect: ReturnType<typeof v
 
 const GENERIC_ENTRY = {
   id: 'genericw',
+  supportedNetworks: ['devnet'],
   adapter: { transport: 'announce', config: { restore: true, ledgerApi: true } },
   capabilities: { events: true },
 };
